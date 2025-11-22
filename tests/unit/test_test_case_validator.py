@@ -4,7 +4,6 @@ Unit tests for test case validator.
 Tests empirical validation through test case execution.
 """
 
-import pytest
 from loft.validation import TestCase, TestCaseValidator, create_test_suite
 
 
@@ -151,7 +150,9 @@ class TestTestCaseValidator:
 
         tests = [
             TestCase("t1", "Test 1", "", {"result": True}),  # Should pass
-            TestCase("t2", "Test 2", "", {"result": False}),  # Should fail - expects false but gets true
+            TestCase(
+                "t2", "Test 2", "", {"result": False}
+            ),  # Should fail - expects false but gets true
         ]
 
         stats = validator.batch_validate(program, tests)

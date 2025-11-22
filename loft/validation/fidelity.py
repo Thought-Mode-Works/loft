@@ -5,7 +5,7 @@ This module measures how well meaning is preserved when translating between
 symbolic (ASP) and neural (natural language) representations.
 """
 
-from typing import Tuple, List, Dict, Any, Optional, Callable
+from typing import Tuple, List, Dict, Any, Callable
 from dataclasses import dataclass
 import clingo
 from loguru import logger
@@ -53,7 +53,7 @@ class FidelityValidator:
             ... )
             >>> assert result.fidelity_score > 0.9
         """
-        errors = []
+        errors: List[str] = []
 
         try:
             # ASP to NL
@@ -65,9 +65,7 @@ class FidelityValidator:
             logger.debug(f"NL→ASP: '{nl_text}' → '{asp_reconstructed}'")
 
             # Measure semantic equivalence
-            is_equivalent, fidelity = self._semantic_equivalence(
-                asp_original, asp_reconstructed
-            )
+            is_equivalent, fidelity = self._semantic_equivalence(asp_original, asp_reconstructed)
 
             explanation = f"""
 Original ASP: {asp_original}
@@ -102,9 +100,7 @@ Semantically Equivalent: {is_equivalent}
                 errors=errors,
             )
 
-    def _semantic_equivalence(
-        self, asp1: str, asp2: str
-    ) -> Tuple[bool, float]:
+    def _semantic_equivalence(self, asp1: str, asp2: str) -> Tuple[bool, float]:
         """
         Check if two ASP expressions are semantically equivalent.
 
@@ -137,9 +133,7 @@ Semantically Equivalent: {is_equivalent}
             if len(answer_sets_1) != len(answer_sets_2):
                 # Different number of answer sets = not equivalent
                 # But compute partial score based on overlap
-                overlap = self._compute_answer_set_overlap(
-                    answer_sets_1, answer_sets_2
-                )
+                overlap = self._compute_answer_set_overlap(answer_sets_1, answer_sets_2)
                 return (False, overlap)
 
             # Compare answer sets (order doesn't matter)
@@ -148,21 +142,15 @@ Semantically Equivalent: {is_equivalent}
                 return (True, 1.0)
             else:
                 # Same number but different content
-                overlap = self._compute_answer_set_overlap(
-                    answer_sets_1, answer_sets_2
-                )
-                logger.debug(
-                    f"ASP programs differ, overlap score: {overlap:.2%}"
-                )
+                overlap = self._compute_answer_set_overlap(answer_sets_1, answer_sets_2)
+                logger.debug(f"ASP programs differ, overlap score: {overlap:.2%}")
                 return (False, overlap)
 
         except Exception as e:
             logger.error(f"Semantic equivalence check failed: {str(e)}")
             return (False, 0.0)
 
-    def _get_answer_sets(
-        self, asp_program: str, max_sets: int = 10
-    ) -> List[frozenset]:
+    def _get_answer_sets(self, asp_program: str, max_sets: int = 10) -> List[frozenset]:
         """
         Get answer sets for an ASP program.
 
@@ -176,16 +164,19 @@ Semantically Equivalent: {is_equivalent}
         answer_sets = []
 
         try:
-            ctl = clingo.Control()
+            # Configure clingo to enumerate all models (0 = all)
+            ctl = clingo.Control(["0"])
             ctl.add("base", [], asp_program)
             ctl.ground([("base", [])])
 
-            def on_model(model: clingo.Model) -> None:
+            def on_model(model: clingo.Model) -> bool:
                 # Convert symbols to string representations
                 symbols = frozenset(str(atom) for atom in model.symbols(shown=True))
                 answer_sets.append(symbols)
+                # Return False to stop solving after max_sets models
+                return len(answer_sets) < max_sets
 
-            ctl.solve(on_model=on_model, yield_=True, models=max_sets)
+            ctl.solve(on_model=on_model)
 
             return answer_sets
 
@@ -193,9 +184,7 @@ Semantically Equivalent: {is_equivalent}
             logger.error(f"Error getting answer sets: {str(e)}")
             return []
 
-    def _answer_sets_match(
-        self, sets1: List[frozenset], sets2: List[frozenset]
-    ) -> bool:
+    def _answer_sets_match(self, sets1: List[frozenset], sets2: List[frozenset]) -> bool:
         """
         Check if two lists of answer sets are equivalent.
 
@@ -217,9 +206,7 @@ Semantically Equivalent: {is_equivalent}
 
         return set_of_sets_1 == set_of_sets_2
 
-    def _compute_answer_set_overlap(
-        self, sets1: List[frozenset], sets2: List[frozenset]
-    ) -> float:
+    def _compute_answer_set_overlap(self, sets1: List[frozenset], sets2: List[frozenset]) -> float:
         """
         Compute similarity score between two lists of answer sets.
 
@@ -288,9 +275,7 @@ Semantically Equivalent: {is_equivalent}
         results = []
 
         for asp_example in asp_examples:
-            result = self.test_roundtrip_fidelity(
-                asp_example, asp_to_nl_fn, nl_to_asp_fn
-            )
+            result = self.test_roundtrip_fidelity(asp_example, asp_to_nl_fn, nl_to_asp_fn)
             results.append(result)
 
         fidelity_scores = [r.fidelity_score for r in results]
@@ -300,9 +285,7 @@ Semantically Equivalent: {is_equivalent}
             "total": len(results),
             "passed": passed,
             "average_fidelity": (
-                sum(fidelity_scores) / len(fidelity_scores)
-                if fidelity_scores
-                else 0.0
+                sum(fidelity_scores) / len(fidelity_scores) if fidelity_scores else 0.0
             ),
             "min_fidelity": min(fidelity_scores) if fidelity_scores else 0.0,
             "max_fidelity": max(fidelity_scores) if fidelity_scores else 0.0,
@@ -342,7 +325,5 @@ def compute_translation_fidelity(
         >>> assert 0 <= fidelity <= 1
     """
     validator = FidelityValidator()
-    result = validator.test_roundtrip_fidelity(
-        asp_program, asp_to_nl_fn, nl_to_asp_fn
-    )
+    result = validator.test_roundtrip_fidelity(asp_program, asp_to_nl_fn, nl_to_asp_fn)
     return result.fidelity_score

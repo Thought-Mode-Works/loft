@@ -128,8 +128,10 @@ class MetricsTracker:
             metrics: ValidationMetrics instance to record
         """
         self.metrics_history.append(metrics)
-        logger.info(f"Recorded metrics: accuracy={metrics.prediction_accuracy:.2%}, "
-                   f"consistency={metrics.logical_consistency:.2f}")
+        logger.info(
+            f"Recorded metrics: accuracy={metrics.prediction_accuracy:.2%}, "
+            f"consistency={metrics.logical_consistency:.2f}"
+        )
 
     def get_latest_metrics(self) -> Optional[ValidationMetrics]:
         """
@@ -201,9 +203,7 @@ class MetricsTracker:
 
         return deltas
 
-    def check_regression(
-        self, current: Optional[ValidationMetrics] = None
-    ) -> List[str]:
+    def check_regression(self, current: Optional[ValidationMetrics] = None) -> List[str]:
         """
         Check if metrics have regressed from previous measurement.
 
@@ -306,9 +306,7 @@ class MetricsTracker:
         return [m.to_dict() for m in self.metrics_history]
 
 
-def compute_accuracy(
-    correct_count: int, total_count: int
-) -> float:
+def compute_accuracy(correct_count: int, total_count: int) -> float:
     """
     Compute prediction accuracy metric.
 
