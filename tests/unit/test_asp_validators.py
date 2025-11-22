@@ -4,7 +4,6 @@ Unit tests for ASP validators.
 Tests syntax and semantic validation of ASP programs.
 """
 
-import pytest
 from loft.validation import (
     ASPSyntaxValidator,
     ASPSemanticValidator,

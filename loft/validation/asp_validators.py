@@ -270,17 +270,20 @@ class ASPSemanticValidator:
             >>> assert count > 1
         """
         try:
-            ctl = clingo.Control()
+            # Configure clingo to enumerate all models (0 = all)
+            ctl = clingo.Control(["0"])
             ctl.add("base", [], asp_program)
             ctl.ground([("base", [])])
 
             count = 0
 
-            def on_model(model: clingo.Model) -> None:
+            def on_model(model: clingo.Model) -> bool:
                 nonlocal count
                 count += 1
+                # Return False to stop solving after max_count models
+                return count < max_count
 
-            ctl.solve(on_model=on_model, yield_=True, models=max_count)
+            ctl.solve(on_model=on_model)
 
             logger.debug(f"ASP program has {count} answer set(s)")
             return count
@@ -289,9 +292,7 @@ class ASPSemanticValidator:
             logger.error(f"Error counting answer sets: {str(e)}")
             return 0
 
-    def get_answer_sets(
-        self, asp_program: str, max_sets: int = 10
-    ) -> List[List[clingo.Symbol]]:
+    def get_answer_sets(self, asp_program: str, max_sets: int = 10) -> List[List[clingo.Symbol]]:
         """
         Get all answer sets (up to max_sets) for inspection.
 
@@ -311,16 +312,19 @@ class ASPSemanticValidator:
         answer_sets = []
 
         try:
-            ctl = clingo.Control()
+            # Configure clingo to enumerate all models (0 = all)
+            ctl = clingo.Control(["0"])
             ctl.add("base", [], asp_program)
             ctl.ground([("base", [])])
 
-            def on_model(model: clingo.Model) -> None:
+            def on_model(model: clingo.Model) -> bool:
                 # Get all symbols in the answer set
                 symbols = [atom for atom in model.symbols(shown=True)]
                 answer_sets.append(symbols)
+                # Return False to stop solving after max_sets models
+                return len(answer_sets) < max_sets
 
-            ctl.solve(on_model=on_model, yield_=True, models=max_sets)
+            ctl.solve(on_model=on_model)
 
             logger.debug(f"Retrieved {len(answer_sets)} answer set(s)")
             return answer_sets

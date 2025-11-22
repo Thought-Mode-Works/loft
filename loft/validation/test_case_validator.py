@@ -4,7 +4,7 @@ Empirical validation through test case execution.
 This module runs ASP programs against test cases and measures accuracy.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Any, Optional, Tuple
 import clingo
 from loguru import logger
@@ -28,13 +28,10 @@ class TestCase:
     description: str
     asp_facts: str  # Facts to add for this test case
     expected_results: Dict[str, bool]  # predicate_name -> expected truth value
-    reasoning_chain: List[str] = None  # Expected inference steps (optional)
+    reasoning_chain: List[str] = field(
+        default_factory=list
+    )  # Expected inference steps (optional)
     confidence_level: str = "high"  # "high", "medium", "low"
-
-    def __post_init__(self) -> None:
-        """Initialize optional fields."""
-        if self.reasoning_chain is None:
-            self.reasoning_chain = []
 
 
 @dataclass
@@ -52,9 +49,7 @@ class TestResult:
 class TestCaseValidator:
     """Validates ASP programs against test cases."""
 
-    def validate_test_case(
-        self, asp_program: str, test_case: TestCase
-    ) -> TestResult:
+    def validate_test_case(self, asp_program: str, test_case: TestCase) -> TestResult:
         """
         Run ASP program with test case facts and check results.
 
@@ -96,11 +91,7 @@ class TestCaseValidator:
                 # For each expected predicate, check if it appears in answer set
                 for pred_name in test_case.expected_results.keys():
                     # Check if any atom with this predicate name exists
-                    atoms = [
-                        atom
-                        for atom in model.symbols(shown=True)
-                        if atom.name == pred_name
-                    ]
+                    atoms = [atom for atom in model.symbols(shown=True) if atom.name == pred_name]
                     actual_results[pred_name] = len(atoms) > 0
 
             # Solve
@@ -120,13 +111,9 @@ class TestCaseValidator:
 
             passed = len(mismatches) == 0
 
-            explanation = self._generate_explanation(
-                test_case, actual_results, passed
-            )
+            explanation = self._generate_explanation(test_case, actual_results, passed)
 
-            logger.debug(
-                f"Test {test_case.case_id}: {'PASS' if passed else 'FAIL'}"
-            )
+            logger.debug(f"Test {test_case.case_id}: {'PASS' if passed else 'FAIL'}")
 
             return TestResult(
                 test_case=test_case,
@@ -166,15 +153,11 @@ class TestCaseValidator:
         for pred, expected in test_case.expected_results.items():
             actual = actual_results.get(pred, False)
             match = "✓" if actual == expected else "✗"
-            lines.append(
-                f"  {match} {pred}: expected={expected}, actual={actual}"
-            )
+            lines.append(f"  {match} {pred}: expected={expected}, actual={actual}")
 
         return "\n".join(lines)
 
-    def batch_validate(
-        self, asp_program: str, test_cases: List[TestCase]
-    ) -> Dict[str, Any]:
+    def batch_validate(self, asp_program: str, test_cases: List[TestCase]) -> Dict[str, Any]:
         """
         Run all test cases and compute metrics.
 
@@ -213,9 +196,7 @@ class TestCaseValidator:
         failed_count = len(results) - passed_count
         accuracy = passed_count / len(results) if results else 0.0
 
-        failed_cases = [
-            (r.test_case.case_id, r) for r in results if not r.passed
-        ]
+        failed_cases = [(r.test_case.case_id, r) for r in results if not r.passed]
 
         stats = {
             "accuracy": accuracy,
@@ -227,8 +208,7 @@ class TestCaseValidator:
         }
 
         logger.info(
-            f"Batch validation: {passed_count}/{len(results)} passed "
-            f"(accuracy={accuracy:.2%})"
+            f"Batch validation: {passed_count}/{len(results)} passed " f"(accuracy={accuracy:.2%})"
         )
 
         if failed_cases:

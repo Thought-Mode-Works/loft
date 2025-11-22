@@ -5,7 +5,7 @@ Tests ValidationMetrics, MetricsTracker, and metric computation functions.
 """
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime
 from loft.validation import (
     ValidationMetrics,
     MetricsTracker,
@@ -78,9 +78,7 @@ class TestValidationMetrics:
 
     def test_to_dict(self) -> None:
         """Test metrics conversion to dictionary."""
-        metrics = ValidationMetrics(
-            prediction_accuracy=0.85, logical_consistency=1.0
-        )
+        metrics = ValidationMetrics(prediction_accuracy=0.85, logical_consistency=1.0)
         d = metrics.to_dict()
 
         assert isinstance(d, dict)
@@ -225,18 +223,14 @@ class TestMetricComputationFunctions:
     def test_compute_confidence_calibration_error_perfect(self) -> None:
         """Test calibration error with perfect calibration."""
         # All confident predictions are correct
-        error = compute_confidence_calibration_error(
-            [0.9, 0.9, 0.9], [True, True, True]
-        )
+        error = compute_confidence_calibration_error([0.9, 0.9, 0.9], [True, True, True])
         # Avg confidence = 0.9, accuracy = 1.0, error = 0.1
         assert 0.0 <= error <= 0.2
 
     def test_compute_confidence_calibration_error_poor(self) -> None:
         """Test calibration error with poor calibration."""
         # Confident predictions but all wrong
-        error = compute_confidence_calibration_error(
-            [0.9, 0.9, 0.9], [False, False, False]
-        )
+        error = compute_confidence_calibration_error([0.9, 0.9, 0.9], [False, False, False])
         # Avg confidence = 0.9, accuracy = 0.0, error = 0.9
         assert error > 0.8
 
@@ -264,17 +258,15 @@ class TestMetricsTrackerAdvanced:
         deltas = tracker.compute_deltas(metrics2, metrics1)
 
         # Find accuracy delta
-        accuracy_delta = next(
-            d for d in deltas if d.metric_name == "prediction_accuracy"
-        )
-        assert accuracy_delta.previous_value == 0.80
-        assert accuracy_delta.current_value == 0.90
-        assert accuracy_delta.delta == 0.10
+        accuracy_delta = next(d for d in deltas if d.metric_name == "prediction_accuracy")
+        assert accuracy_delta.previous_value == pytest.approx(0.80)
+        assert accuracy_delta.current_value == pytest.approx(0.90)
+        assert accuracy_delta.delta == pytest.approx(0.10)
         assert accuracy_delta.is_improvement()
 
         # Find coverage delta
         coverage_delta = next(d for d in deltas if d.metric_name == "coverage")
-        assert coverage_delta.delta == 0.10
+        assert coverage_delta.delta == pytest.approx(0.10)
 
     def test_multiple_recordings(self) -> None:
         """Test tracker with multiple metric recordings."""
