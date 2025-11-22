@@ -212,7 +212,9 @@ Key papers and resources documented in [thoughts.md](thoughts.md).
 
 ## License
 
-*To be determined*
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
+
+Copyright 2025 LOFT Contributors
 
 ## Acknowledgments
 
