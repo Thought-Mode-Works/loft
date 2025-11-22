@@ -98,9 +98,7 @@ class LogConfig(BaseModel):
     rotation: str = Field(default="100 MB", description="Log file rotation size")
     retention: str = Field(default="1 month", description="Log file retention period")
     log_dir: str = Field(default="logs", description="Directory for log files")
-    enable_file_logging: bool = Field(
-        default=True, description="Whether to enable file logging"
-    )
+    enable_file_logging: bool = Field(default=True, description="Whether to enable file logging")
     enable_console_logging: bool = Field(
         default=True, description="Whether to enable console logging"
     )
