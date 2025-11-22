@@ -392,9 +392,7 @@ class TestConsistencyHistory:
         # Add improving trend
         for i in range(10):
             score = 0.5 + (i * 0.05)  # Improving
-            ConsistencyReport(
-                passed=True, inconsistencies=[], warnings=0, errors=0, info=0
-            )
+            ConsistencyReport(passed=True, inconsistencies=[], warnings=0, errors=0, info=0)
             metrics = ConsistencyMetrics(
                 timestamp=datetime.utcnow().isoformat(),
                 total_rules=5,
