@@ -28,9 +28,7 @@ class TestCase:
     description: str
     asp_facts: str  # Facts to add for this test case
     expected_results: Dict[str, bool]  # predicate_name -> expected truth value
-    reasoning_chain: List[str] = field(
-        default_factory=list
-    )  # Expected inference steps (optional)
+    reasoning_chain: List[str] = field(default_factory=list)  # Expected inference steps (optional)
     confidence_level: str = "high"  # "high", "medium", "low"
 
 
