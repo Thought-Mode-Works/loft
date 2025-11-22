@@ -1,0 +1,79 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "loft"
+version = "0.1.0"
+description = "Reflexive Neuro-Symbolic AI with ASP and LLMs"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "LOFT Contributors"}
+]
+dependencies = [
+    # Symbolic reasoning (ASP)
+    "clingo>=5.7.1",
+
+    # LLM interfaces
+    "anthropic>=0.18.0",
+    "openai>=1.12.0",
+
+    # Structured output
+    "pydantic>=2.6.0",
+    "instructor>=0.6.0",
+
+    # Validation and testing
+    "pytest>=8.0.0",
+    "hypothesis>=6.98.0",
+    "pytest-asyncio>=0.23.0",
+
+    # Logging
+    "loguru>=0.7.2",
+
+    # Version control for symbolic core
+    "gitpython>=3.1.41",
+
+    # Utilities
+    "python-dotenv>=1.0.0",
+    "pyyaml>=6.0",
+    "rich>=13.7.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=24.1.0",
+    "ruff>=0.2.0",
+    "mypy>=1.8.0",
+    "ipython>=8.20.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/justin4957/loft"
+Repository = "https://github.com/justin4957/loft"
+Issues = "https://github.com/justin4957/loft/issues"
+
+[tool.setuptools]
+packages = ["loft"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_functions = "test_*"
+asyncio_mode = "auto"
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+include = '\.pyi?$'
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
