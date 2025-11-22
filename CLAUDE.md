@@ -434,3 +434,4 @@ This project sits at cutting edge of neuro-symbolic AI. Stay connected to resear
 **Remember:**
 
 The goal is not just to build a system that works, but to build a system that understands and improves itself - a genuine ontological bridge between symbolic and neural reasoning. Every line of code should serve that vision.
+- make sure all pr request examples for testing include all commands for repeating the tests that validated the code during implemtation testing
