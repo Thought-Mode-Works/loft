@@ -5,7 +5,6 @@ These tests verify that the configuration system works correctly
 and can load settings from environment variables.
 """
 
-import os
 import pytest
 from loft.config import Config, LLMConfig, ValidationConfig, ASPConfig, LogConfig
 

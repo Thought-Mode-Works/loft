@@ -10,7 +10,7 @@ This module provides centralized configuration for all system components:
 
 import os
 from pathlib import Path
-from typing import Literal
+from typing import Literal, cast
 
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
@@ -71,9 +71,7 @@ class ASPConfig(BaseModel):
     max_answer_sets: int = Field(
         default=10, gt=0, description="Maximum number of answer sets to compute"
     )
-    optimization: bool = Field(
-        default=True, description="Enable optimization in ASP solving"
-    )
+    optimization: bool = Field(default=True, description="Enable optimization in ASP solving")
     stats: bool = Field(
         default=False, description="Enable statistics output from Clingo (for debugging)"
     )
@@ -114,7 +112,10 @@ class Config(BaseModel):
         """Create configuration from environment variables."""
         return cls(
             llm=LLMConfig(
-                provider=os.getenv("LLM_PROVIDER", "anthropic"),
+                provider=cast(
+                    Literal["anthropic", "openai"],
+                    os.getenv("LLM_PROVIDER", "anthropic"),
+                ),
                 model=os.getenv("LLM_MODEL", "claude-3-5-sonnet-20241022"),
                 api_key=os.getenv("ANTHROPIC_API_KEY", ""),
                 temperature=float(os.getenv("LLM_TEMPERATURE", "0.7")),
@@ -135,7 +136,12 @@ class Config(BaseModel):
                 programs_dir=os.getenv("ASP_PROGRAMS_DIR", "programs"),
                 max_answer_sets=int(os.getenv("ASP_MAX_ANSWER_SETS", "10")),
             ),
-            logging=LogConfig(level=os.getenv("LOG_LEVEL", "INFO")),
+            logging=LogConfig(
+                level=cast(
+                    Literal["TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+                    os.getenv("LOG_LEVEL", "INFO"),
+                )
+            ),
         )
 
 
