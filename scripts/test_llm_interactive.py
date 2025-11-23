@@ -25,12 +25,12 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from typing import Optional
+# ruff: noqa: E402
 from pydantic import BaseModel
+from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-from rich import print as rprint
 
 from loft.neural import (
     LLMInterface,
@@ -86,8 +86,10 @@ def print_response(response, show_metadata: bool = True) -> None:
         console.print("\n[bold blue]Metadata:[/bold blue]")
         console.print(f"  Provider: {response.metadata.provider}")
         console.print(f"  Model: {response.metadata.model}")
-        console.print(f"  Tokens: {response.metadata.tokens_total} "
-                     f"({response.metadata.tokens_input} in / {response.metadata.tokens_output} out)")
+        console.print(
+            f"  Tokens: {response.metadata.tokens_total} "
+            f"({response.metadata.tokens_input} in / {response.metadata.tokens_output} out)"
+        )
         console.print(f"  Cost: ${response.metadata.cost_usd:.6f}")
         console.print(f"  Latency: {response.metadata.latency_ms:.0f}ms")
         console.print(f"  Confidence: {response.confidence:.2f}")
@@ -119,11 +121,7 @@ def test_structured_output(interface: LLMInterface) -> None:
     console.print(f"\n[bold]Question:[/bold] {question.strip()}")
     console.print(f"\n[bold]Output Schema:[/bold] {LegalAnalysis.__name__}")
 
-    response = interface.query(
-        question=question,
-        output_schema=LegalAnalysis,
-        temperature=0.3
-    )
+    response = interface.query(question=question, output_schema=LegalAnalysis, temperature=0.3)
 
     print_response(response)
 
@@ -142,17 +140,17 @@ def test_prompt_template(interface: LLMInterface) -> None:
     console.print(f"\n[bold]Using Template:[/bold] {template.name} v{template.version}")
     console.print(f"[italic]{template.description}[/italic]")
 
-    prompt = template.render({
-        "question": "Is the contract enforceable?",
-        "context": "Oral agreement for sale of goods worth $1,000. No written contract exists."
-    })
+    prompt = template.render(
+        {
+            "question": "Is the contract enforceable?",
+            "context": "Oral agreement for sale of goods worth $1,000. No written contract exists.",
+        }
+    )
 
     console.print(f"\n[bold]Rendered Prompt:[/bold]\n{prompt[:200]}...")
 
     response = interface.query(
-        question=prompt,
-        system_prompt=template.system_prompt,
-        temperature=0.5
+        question=prompt, system_prompt=template.system_prompt, temperature=0.5
     )
 
     print_response(response)
@@ -185,8 +183,10 @@ def test_caching(interface: LLMInterface) -> None:
     # Show savings
     total_cost = interface.get_total_cost()
     console.print(f"\n[bold green]Total Cost:[/bold green] ${total_cost:.6f}")
-    console.print(f"[bold green]Savings from cache:[/bold green] ${cost1:.6f} "
-                 f"(would be ${cost1 + cost2:.6f} without caching)")
+    console.print(
+        f"[bold green]Savings from cache:[/bold green] ${cost1:.6f} "
+        f"(would be ${cost1 + cost2:.6f} without caching)"
+    )
 
 
 def test_cost_tracking(interface: LLMInterface) -> None:
@@ -216,22 +216,22 @@ def test_element_extraction(interface: LLMInterface) -> None:
 
     template = get_template("element_extraction")
 
-    prompt = template.render({
-        "fact_pattern": """
+    prompt = template.render(
+        {
+            "fact_pattern": """
         On June 1, 2024, Alice (age 25) and Bob (age 30) signed a written agreement.
         Alice agreed to sell her car to Bob for $15,000. Bob paid a $500 deposit.
         The car was to be delivered on July 1, 2024.
         """,
-        "doctrine": "Contract Formation"
-    })
+            "doctrine": "Contract Formation",
+        }
+    )
 
     console.print(f"\n[bold]Template:[/bold] {template.name}")
     console.print(f"\n[bold]Rendered Prompt (excerpt):[/bold]\n{prompt[:300]}...")
 
     response = interface.query(
-        question=prompt,
-        system_prompt=template.system_prompt,
-        temperature=0.3
+        question=prompt, system_prompt=template.system_prompt, temperature=0.3
     )
 
     print_response(response)
@@ -243,26 +243,25 @@ def test_chain_of_thought(interface: LLMInterface) -> None:
 
     template = get_template("cot_legal_reasoning")
 
-    prompt = template.render({
-        "question": "Is the contract enforceable against Bob?",
-        "facts": """
+    prompt = template.render(
+        {
+            "question": "Is the contract enforceable against Bob?",
+            "facts": """
         Bob (age 17) entered into a contract with Seller to purchase a motorcycle
         for $5,000. Bob signed the contract and paid $1,000 deposit. Before delivery,
         Bob changed his mind and wants a refund.
         """,
-        "law": """
+            "law": """
         Minors (under 18) lack legal capacity to enter binding contracts.
         Contracts with minors are voidable at the minor's option.
-        """
-    })
+        """,
+        }
+    )
 
     console.print(f"\n[bold]Template:[/bold] {template.name}")
 
     response = interface.query(
-        question=prompt,
-        system_prompt=template.system_prompt,
-        temperature=0.5,
-        cot_enabled=True
+        question=prompt, system_prompt=template.system_prompt, temperature=0.5, cot_enabled=True
     )
 
     print_response(response)
@@ -279,30 +278,26 @@ def test_multiple_providers() -> None:
     # Anthropic
     anthropic_key = os.getenv("ANTHROPIC_API_KEY")
     if anthropic_key:
-        providers_to_test.append(("Anthropic", AnthropicProvider(
-            api_key=anthropic_key,
-            model="claude-3-5-haiku-20241022"  # Use Haiku for cost savings
-        )))
+        anthropic_model = os.getenv("LLM_MODEL", "claude-3-5-haiku-20241022")
+        providers_to_test.append(
+            ("Anthropic", AnthropicProvider(api_key=anthropic_key, model=anthropic_model))
+        )
 
     # OpenAI
     openai_key = os.getenv("OPENAI_API_KEY")
     if openai_key:
-        providers_to_test.append(("OpenAI", OpenAIProvider(
-            api_key=openai_key,
-            model="gpt-3.5-turbo"  # Use 3.5 for cost savings
-        )))
+        openai_model = os.getenv("LLM_MODEL", "gpt-3.5-turbo")
+        providers_to_test.append(("OpenAI", OpenAIProvider(api_key=openai_key, model=openai_model)))
 
     # Local (if available)
     try:
         import requests
+
         # Check if Ollama is running
         response = requests.get("http://localhost:11434/api/tags", timeout=2)
         if response.status_code == 200:
-            providers_to_test.append(("Local (Ollama)", LocalProvider(
-                api_key="",
-                model="llama2"
-            )))
-    except:
+            providers_to_test.append(("Local (Ollama)", LocalProvider(api_key="", model="llama2")))
+    except Exception:
         pass
 
     if not providers_to_test:
@@ -316,14 +311,18 @@ def test_multiple_providers() -> None:
         interface = LLMInterface(provider, enable_cache=False)
         try:
             response = interface.query(question, temperature=0.7, max_tokens=100)
-            results.append({
-                "provider": name,
-                "model": response.metadata.model,
-                "response": response.raw_text[:100] + "..." if len(response.raw_text) > 100 else response.raw_text,
-                "cost": response.metadata.cost_usd,
-                "tokens": response.metadata.tokens_total,
-                "latency": response.metadata.latency_ms
-            })
+            results.append(
+                {
+                    "provider": name,
+                    "model": response.metadata.model,
+                    "response": response.raw_text[:100] + "..."
+                    if len(response.raw_text) > 100
+                    else response.raw_text,
+                    "cost": response.metadata.cost_usd,
+                    "tokens": response.metadata.tokens_total,
+                    "latency": response.metadata.latency_ms,
+                }
+            )
         except Exception as e:
             console.print(f"  [red]Error: {e}[/red]")
 
@@ -343,7 +342,7 @@ def test_multiple_providers() -> None:
                 result["model"],
                 f"${result['cost']:.6f}",
                 str(result["tokens"]),
-                f"{result['latency']:.0f}ms"
+                f"{result['latency']:.0f}ms",
             )
 
         console.print(table)
@@ -351,11 +350,13 @@ def test_multiple_providers() -> None:
 
 def run_all_tests(provider_name: str = "anthropic") -> None:
     """Run all interactive tests."""
-    console.print(Panel.fit(
-        "[bold cyan]LOFT LLM Interface - Interactive Test Suite[/bold cyan]\n"
-        "Testing neural interface with real API keys",
-        border_style="cyan"
-    ))
+    console.print(
+        Panel.fit(
+            "[bold cyan]LOFT LLM Interface - Interactive Test Suite[/bold cyan]\n"
+            "Testing neural interface with real API keys",
+            border_style="cyan",
+        )
+    )
 
     # Get API key from environment
     if provider_name == "anthropic":
@@ -365,10 +366,8 @@ def run_all_tests(provider_name: str = "anthropic") -> None:
             console.print("Set it with: export ANTHROPIC_API_KEY='your-key'")
             sys.exit(1)
 
-        provider = AnthropicProvider(
-            api_key=api_key,
-            model="claude-3-5-sonnet-20241022"
-        )
+        model = os.getenv("LLM_MODEL", "claude-3-5-sonnet-20241022")
+        provider = AnthropicProvider(api_key=api_key, model=model)
     elif provider_name == "openai":
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
@@ -376,10 +375,8 @@ def run_all_tests(provider_name: str = "anthropic") -> None:
             console.print("Set it with: export OPENAI_API_KEY='your-key'")
             sys.exit(1)
 
-        provider = OpenAIProvider(
-            api_key=api_key,
-            model="gpt-4"
-        )
+        model = os.getenv("LLM_MODEL", "gpt-4")
+        provider = OpenAIProvider(api_key=api_key, model=model)
     else:
         console.print(f"[red]Unknown provider: {provider_name}[/red]")
         sys.exit(1)
@@ -389,7 +386,7 @@ def run_all_tests(provider_name: str = "anthropic") -> None:
 
     console.print(f"\n[bold]Provider:[/bold] {provider.get_provider_name()}")
     console.print(f"[bold]Model:[/bold] {provider.model}")
-    console.print(f"[bold]Caching:[/bold] Enabled")
+    console.print("[bold]Caching:[/bold] Enabled")
 
     # Run tests
     try:
@@ -415,6 +412,7 @@ def run_all_tests(provider_name: str = "anthropic") -> None:
     except Exception as e:
         console.print(f"\n\n[red]Error during tests: {e}[/red]")
         import traceback
+
         traceback.print_exc()
 
     # Final summary
@@ -430,18 +428,31 @@ def main():
     """Main entry point."""
     import argparse
 
+    # Load environment variables from .env file
+    load_dotenv()
+
     parser = argparse.ArgumentParser(description="Interactive LLM interface tests")
     parser.add_argument(
         "--provider",
         choices=["anthropic", "openai"],
         default="anthropic",
-        help="LLM provider to use (default: anthropic)"
+        help="LLM provider to use (default: anthropic)",
     )
     parser.add_argument(
         "--test",
-        choices=["basic", "structured", "template", "cache", "cost", "extraction", "cot", "multi", "all"],
+        choices=[
+            "basic",
+            "structured",
+            "template",
+            "cache",
+            "cost",
+            "extraction",
+            "cot",
+            "multi",
+            "all",
+        ],
         default="all",
-        help="Specific test to run (default: all)"
+        help="Specific test to run (default: all)",
     )
 
     args = parser.parse_args()
@@ -452,15 +463,20 @@ def main():
         test_multiple_providers()
     else:
         # Run single test
-        api_key = os.getenv("ANTHROPIC_API_KEY" if args.provider == "anthropic" else "OPENAI_API_KEY")
+        api_key = os.getenv(
+            "ANTHROPIC_API_KEY" if args.provider == "anthropic" else "OPENAI_API_KEY"
+        )
         if not api_key:
             console.print(f"[red]Error: API key not set for {args.provider}[/red]")
             sys.exit(1)
 
+        model = os.getenv(
+            "LLM_MODEL", "claude-3-5-sonnet-20241022" if args.provider == "anthropic" else "gpt-4"
+        )
         if args.provider == "anthropic":
-            provider = AnthropicProvider(api_key=api_key, model="claude-3-5-sonnet-20241022")
+            provider = AnthropicProvider(api_key=api_key, model=model)
         else:
-            provider = OpenAIProvider(api_key=api_key, model="gpt-4")
+            provider = OpenAIProvider(api_key=api_key, model=model)
 
         interface = LLMInterface(provider, enable_cache=True)
 
