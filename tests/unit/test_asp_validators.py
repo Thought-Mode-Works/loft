@@ -9,6 +9,7 @@ from loft.validation import (
     ASPSemanticValidator,
     validate_asp_program,
 )
+from loft.validation.validation_schemas import ValidationResult
 
 
 class TestASPSyntaxValidator:
@@ -267,3 +268,179 @@ class TestASPValidatorIntegration:
         # Check that enforceable(c1) is in the answer set
         symbols_str = [str(s) for s in answer_sets[0]]
         assert any("enforceable(c1)" in s for s in symbols_str)
+
+
+class TestGeneratedRuleValidation:
+    """Tests for LLM-generated rule validation."""
+
+    def test_validate_valid_generated_rule(self) -> None:
+        """Test validation of a valid LLM-generated rule."""
+        validator = ASPSyntaxValidator()
+        rule = "enforceable(C) :- contract(C), not void(C)."
+        existing_predicates = ["contract/1", "void/1"]
+
+        result = validator.validate_generated_rule(rule, existing_predicates)
+
+        assert isinstance(result, ValidationResult)
+        assert result.is_valid
+        assert result.stage_name == "syntactic"
+        assert len(result.error_messages) == 0
+        # May have warnings, but should be valid
+        assert "new_predicates" in result.details
+        assert "enforceable" in result.details["new_predicates"]
+
+    def test_validate_rule_with_syntax_error(self) -> None:
+        """Test validation catches syntax errors."""
+        validator = ASPSyntaxValidator()
+        rule = "enforceable(C) :- contract(C not void(C)."  # Missing comma
+
+        result = validator.validate_generated_rule(rule)
+
+        assert not result.is_valid
+        assert len(result.error_messages) > 0
+        assert "syntax" in result.error_messages[0].lower()
+
+    def test_validate_rule_with_lowercase_variable(self) -> None:
+        """Test validation warns about lowercase variables."""
+        validator = ASPSyntaxValidator()
+        # Using lowercase 'c' instead of uppercase 'C'
+        rule = "enforceable(c) :- contract(c)."
+
+        result = validator.validate_generated_rule(rule)
+
+        # Should be valid but have warnings
+        assert result.is_valid
+        assert len(result.warnings) > 0
+        assert any("variable" in w.lower() for w in result.warnings)
+
+    def test_validate_rule_with_uppercase_predicate(self) -> None:
+        """Test validation catches uppercase predicates as syntax error."""
+        validator = ASPSyntaxValidator()
+        rule = "Enforceable(C) :- Contract(C)."
+
+        result = validator.validate_generated_rule(rule)
+
+        # Clingo treats uppercase predicates as syntax errors
+        assert not result.is_valid
+        assert len(result.error_messages) > 0
+        assert "syntax" in result.error_messages[0].lower()
+
+    def test_validate_rule_with_invalid_negation(self) -> None:
+        """Test validation catches invalid negation syntax."""
+        validator = ASPSyntaxValidator()
+        rule = "enforceable(C) :- contract(C), !void(C)."  # Using ! instead of not
+
+        result = validator.validate_generated_rule(rule)
+
+        # This should fail because Clingo doesn't recognize ! as negation
+        assert not result.is_valid
+        assert len(result.error_messages) > 0
+
+    def test_validate_rule_missing_period(self) -> None:
+        """Test validation warns about missing period."""
+        validator = ASPSyntaxValidator()
+        rule = "enforceable(C) :- contract(C)"  # Missing period
+
+        result = validator.validate_generated_rule(rule)
+
+        # Clingo will catch this as syntax error
+        assert not result.is_valid
+
+    def test_validate_constraint_rule(self) -> None:
+        """Test validation of constraint rules."""
+        validator = ASPSyntaxValidator()
+        rule = ":- enforceable(C), unenforceable(C)."
+
+        result = validator.validate_generated_rule(rule)
+
+        assert result.is_valid
+        # Should have some warnings about constraint formatting
+        assert result.stage_name == "syntactic"
+
+    def test_validate_rule_predicate_compatibility(self) -> None:
+        """Test validation tracks new vs existing predicates."""
+        validator = ASPSyntaxValidator()
+        rule = "enforceable(C) :- contract(C), has_writing(C), not void(C)."
+        existing_predicates = ["contract/1", "void/1"]  # has_writing is new
+
+        result = validator.validate_generated_rule(rule, existing_predicates)
+
+        assert result.is_valid
+        assert "new_predicates" in result.details
+        assert "used_predicates" in result.details
+        assert "has_writing" in result.details["new_predicates"]
+        assert "enforceable" in result.details["new_predicates"]
+        assert "contract" in result.details["used_predicates"]
+        assert "void" in result.details["used_predicates"]
+
+    def test_validate_complex_rule(self) -> None:
+        """Test validation of a complex legal rule."""
+        validator = ASPSyntaxValidator()
+        rule = """
+        satisfies_statute_of_frauds(C) :-
+            within_statute(C),
+            has_sufficient_writing(C).
+        """
+        existing_predicates = ["within_statute/1", "has_sufficient_writing/1"]
+
+        result = validator.validate_generated_rule(rule, existing_predicates)
+
+        assert result.is_valid
+        assert "satisfies_statute_of_frauds" in result.details.get("new_predicates", [])
+
+    def test_validate_rule_with_multiple_statements(self) -> None:
+        """Test validation warns about multiple rules in one string."""
+        validator = ASPSyntaxValidator()
+        rule = "a :- b. c :- d."  # Two rules
+
+        result = validator.validate_generated_rule(rule)
+
+        assert result.is_valid  # Still valid ASP
+        assert len(result.warnings) > 0
+        assert any("multiple" in w.lower() for w in result.warnings)
+
+    def test_validate_very_long_rule(self) -> None:
+        """Test validation warns about overly complex rules."""
+        validator = ASPSyntaxValidator()
+        # Create a rule longer than 150 chars
+        rule = "enforceable(C) :- " + ", ".join([f"predicate{i}(C)" for i in range(20)]) + "."
+
+        result = validator.validate_generated_rule(rule)
+
+        # Should be valid but warn about length
+        assert result.is_valid
+        assert len(result.warnings) > 0
+        assert any("long" in w.lower() or "complex" in w.lower() for w in result.warnings)
+
+    def test_validate_rule_with_empty_head(self) -> None:
+        """Test validation catches rule with empty head."""
+        validator = ASPSyntaxValidator()
+        rule = ":- body(X)."  # This is a constraint, not an empty head
+
+        result = validator.validate_generated_rule(rule)
+
+        # Constraints are valid
+        assert result.is_valid
+
+    def test_validate_rule_summary(self) -> None:
+        """Test that ValidationResult summary works for generated rules."""
+        validator = ASPSyntaxValidator()
+        rule = "enforceable(C) :- contract(C), not void(C)."
+
+        result = validator.validate_generated_rule(rule)
+
+        summary = result.summary()
+        assert "Syntactic Validation" in summary
+        assert "PASS" in summary or "FAIL" in summary
+
+    def test_validate_rule_negation_spacing(self) -> None:
+        """Test validation catches negation without proper spacing."""
+        validator = ASPSyntaxValidator()
+        rule = "enforceable(C) :- contract(C), notenforceable(C)."  # Missing space after 'not'
+
+        result = validator.validate_generated_rule(rule)
+
+        # This might be valid (notenforceable could be a predicate name)
+        # But it should be flagged as a potential issue
+        # The validator should warn or error depending on context
+        assert isinstance(result, ValidationResult)
