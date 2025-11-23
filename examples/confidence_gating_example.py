@@ -144,7 +144,7 @@ for i, decision in enumerate(decisions, 1):
 
 # Get statistics
 stats = gate.get_statistics(decisions)
-print(f"\nStatistics:")
+print("\nStatistics:")
 print(f"  Acceptance rate: {stats['acceptance_rate']:.1%}")
 print(f"  Rejection rate:  {stats['rejection_rate']:.1%}")
 print(f"  Flag rate:       {stats['flag_rate']:.1%}")

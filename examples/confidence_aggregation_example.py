@@ -79,6 +79,6 @@ confidence4 = custom_aggregator.aggregate(
     consensus_strength=0.85,
 )
 
-print(f"With custom weights (empirical=70%):")
+print("With custom weights (empirical=70%):")
 print(f"  Overall confidence: {confidence4.score:.2f}")
 print(f"  Empirical contribution: {0.70 * 0.75:.2f}")
