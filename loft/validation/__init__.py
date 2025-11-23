@@ -28,6 +28,20 @@ from loft.validation.test_case_validator import (
     create_test_suite,
 )
 
+# Phase 2.2: Multi-Stage Validation Pipeline
+from loft.validation.validation_schemas import (
+    ValidationResult,
+    TestCase as EmpiricalTestCase,
+    FailureCase,
+    EmpiricalValidationResult,
+    ConsensusValidationResult,
+    ValidationReport,
+)
+from loft.validation.semantic_validator import SemanticValidator
+from loft.validation.empirical_validator import EmpiricalValidator
+from loft.validation.consensus_validator import ConsensusValidator
+from loft.validation.validation_pipeline import ValidationPipeline
+
 __all__ = [
     # ASP Validators
     "ASPSyntaxValidator",
@@ -48,11 +62,15 @@ __all__ = [
     "TestResult",
     "TestCaseValidator",
     "create_test_suite",
+    # Phase 2.2: Validation Pipeline
+    "ValidationResult",
+    "EmpiricalTestCase",
+    "FailureCase",
+    "EmpiricalValidationResult",
+    "ConsensusValidationResult",
+    "ValidationReport",
+    "SemanticValidator",
+    "EmpiricalValidator",
+    "ConsensusValidator",
+    "ValidationPipeline",
 ]
-
-# Components will be imported here as they are implemented
-# Example (for future):
-# from loft.validation.asp_validators import ASPSyntaxValidator, ASPSemanticValidator
-# from loft.validation.metrics import MetricsTracker
-
-__all__ = []
