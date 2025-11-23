@@ -32,9 +32,7 @@ class ConfidenceCalibrator:
 
         logger.debug(f"Initialized ConfidenceCalibrator (min_points={min_calibration_points})")
 
-    def record(
-        self, predicted_confidence: float, actual_accuracy: float, rule_id: str
-    ) -> None:
+    def record(self, predicted_confidence: float, actual_accuracy: float, rule_id: str) -> None:
         """
         Record a calibration data point.
 

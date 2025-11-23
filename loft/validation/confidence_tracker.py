@@ -40,9 +40,7 @@ class ConfidenceTracker:
 
         logger.debug(f"Initialized ConfidenceTracker (history_limit={history_limit})")
 
-    def record(
-        self, confidence: AggregatedConfidence, category: Optional[str] = None
-    ) -> None:
+    def record(self, confidence: AggregatedConfidence, category: Optional[str] = None) -> None:
         """
         Record a confidence score.
 
