@@ -9,12 +9,36 @@ This module validates the semantic properties of generated rules, including:
 """
 
 from typing import List, Optional, Dict, Any
+from contextlib import contextmanager
+import sys
+import os
 from loguru import logger
 import clingo
 
 from loft.validation.validation_schemas import ValidationResult
 from loft.validation.asp_validators import ASPSemanticValidator
 from loft.symbolic.asp_core import ASPCore
+
+
+@contextmanager
+def suppress_clingo_warnings():
+    """
+    Context manager to suppress Clingo informational warnings.
+
+    Clingo outputs warnings like "atom does not occur in any rule head"
+    when validating individual rules without full context. These are
+    expected and not meaningful for our validation purposes.
+    """
+    # Save original stderr
+    old_stderr = sys.stderr
+    try:
+        # Redirect stderr to devnull
+        sys.stderr = open(os.devnull, "w")
+        yield
+    finally:
+        # Restore stderr
+        sys.stderr.close()
+        sys.stderr = old_stderr
 
 
 class SemanticValidator:
@@ -225,11 +249,12 @@ class SemanticValidator:
         else:
             combined = rule_text
 
-        # Use Clingo's grounding to detect issues
+        # Use Clingo's grounding to detect issues (suppress informational warnings)
         try:
-            ctl = clingo.Control()
-            ctl.add("base", [], combined)
-            ctl.ground([("base", [])])
+            with suppress_clingo_warnings():
+                ctl = clingo.Control()
+                ctl.add("base", [], combined)
+                ctl.ground([("base", [])])
 
             # If grounding succeeds without issues, likely no problematic cycles
             return {

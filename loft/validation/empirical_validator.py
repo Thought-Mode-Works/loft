@@ -6,6 +6,9 @@ measuring accuracy and performance improvement/degradation.
 """
 
 from typing import List, Optional, Dict, Any
+from contextlib import contextmanager
+import sys
+import os
 from loguru import logger
 import clingo
 
@@ -14,6 +17,27 @@ from loft.validation.validation_schemas import (
     FailureCase,
     EmpiricalValidationResult,
 )
+
+
+@contextmanager
+def suppress_clingo_warnings():
+    """
+    Context manager to suppress Clingo informational warnings.
+
+    Clingo outputs warnings like "atom does not occur in any rule head"
+    when validating individual rules without full context. These are
+    expected and not meaningful for our validation purposes.
+    """
+    # Save original stderr
+    old_stderr = sys.stderr
+    try:
+        # Redirect stderr to devnull
+        sys.stderr = open(os.devnull, "w")
+        yield
+    finally:
+        # Restore stderr
+        sys.stderr.close()
+        sys.stderr = old_stderr
 
 
 class EmpiricalValidator:
@@ -220,21 +244,22 @@ class EmpiricalValidator:
 
         program = "\n".join(program_parts)
 
-        # Run and query
+        # Run and query (suppress Clingo informational warnings)
         try:
-            ctl = clingo.Control()
-            ctl.add("base", [], program)
-            ctl.ground([("base", [])])
+            with suppress_clingo_warnings():
+                ctl = clingo.Control()
+                ctl.add("base", [], program)
+                ctl.ground([("base", [])])
 
-            # Query for the predicate
-            results = []
+                # Query for the predicate
+                results = []
 
-            def on_model(model):
-                for atom in model.symbols(shown=True):
-                    if atom.name == test_case.query:
-                        results.append(atom)
+                def on_model(model):
+                    for atom in model.symbols(shown=True):
+                        if atom.name == test_case.query:
+                            results.append(atom)
 
-            ctl.solve(on_model=on_model)
+                ctl.solve(on_model=on_model)
 
             # Interpret result based on expected type
             if isinstance(test_case.expected, bool):
