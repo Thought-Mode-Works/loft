@@ -66,6 +66,17 @@ from .errors import (
     LLMTimeoutError,
     LLMValidationError,
 )
+from .rule_generator import RuleGenerator
+from .rule_schemas import (
+    GeneratedRule,
+    RuleCandidate,
+    GapFillingResponse,
+    ConsensusVote,
+    PrincipleToRuleRequest,
+    CaseToRuleRequest,
+)
+from .prompt_registry import PromptRegistry, PromptTemplate as PromptTemplateV2
+from .rule_prompts import get_prompt, list_templates as list_rule_templates
 
 __all__ = [
     # Core interfaces
@@ -99,4 +110,16 @@ __all__ = [
     "LLMRateLimitError",
     "LLMTimeoutError",
     "LLMValidationError",
+    # Rule Generation (Phase 2.1)
+    "RuleGenerator",
+    "GeneratedRule",
+    "RuleCandidate",
+    "GapFillingResponse",
+    "ConsensusVote",
+    "PrincipleToRuleRequest",
+    "CaseToRuleRequest",
+    "PromptRegistry",
+    "PromptTemplateV2",
+    "get_prompt",
+    "list_rule_templates",
 ]
