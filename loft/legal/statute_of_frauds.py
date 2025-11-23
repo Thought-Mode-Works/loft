@@ -67,9 +67,27 @@ class StatuteOfFraudsSystem:
 
     def _reset_control(self):
         """Reset the Clingo control object."""
-        self.control = clingo.Control()
-        self.control.add("base", [], self.base_program)
-        self.additional_facts = ""
+        import sys
+        import os
+
+        # Suppress Clingo warnings by passing a silent message handler
+        def silent_logger(code, message):
+            pass  # Ignore all messages
+
+        # Suppress warnings by redirecting both stdout and stderr
+        old_stdout = sys.stdout
+        old_stderr = sys.stderr
+        try:
+            sys.stdout = open(os.devnull, "w")
+            sys.stderr = open(os.devnull, "w")
+            self.control = clingo.Control(["0", "--warn=none"], logger=silent_logger)
+            self.control.add("base", [], self.base_program)
+            self.additional_facts = ""
+        finally:
+            sys.stdout.close()
+            sys.stderr.close()
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
 
     def reset(self):
         """Reset the system, clearing all facts but keeping rules."""
@@ -82,8 +100,23 @@ class StatuteOfFraudsSystem:
         Args:
             facts: ASP facts as a string
         """
+        import sys
+        import os
+
         self.additional_facts += "\n" + facts
-        self.control.add("base", [], facts)
+
+        # Suppress Clingo warnings by redirecting both stdout and stderr
+        old_stdout = sys.stdout
+        old_stderr = sys.stderr
+        try:
+            sys.stdout = open(os.devnull, "w")
+            sys.stderr = open(os.devnull, "w")
+            self.control.add("base", [], facts)
+        finally:
+            sys.stdout.close()
+            sys.stderr.close()
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
 
     def query(self, predicate: str) -> List[Dict[str, Any]]:
         """
@@ -95,28 +128,45 @@ class StatuteOfFraudsSystem:
         Returns:
             List of bindings for the predicate
         """
-        # Ground and solve
-        self.control.ground([("base", [])])
+        import sys
+        import os
 
-        # Collect results
-        results = []
+        # Suppress Clingo warnings by redirecting both stdout and stderr
+        old_stdout = sys.stdout
+        old_stderr = sys.stderr
+        try:
+            sys.stdout = open(os.devnull, "w")
+            sys.stderr = open(os.devnull, "w")
 
-        def on_model(model):
-            for atom in model.symbols(shown=True):
-                if atom.name == predicate:
-                    # Extract arguments
-                    args = {}
-                    if len(atom.arguments) > 0:
-                        # Use positional argument names
-                        arg_names = ["C", "W", "P", "D", "Amount", "Exception"]
-                        for i, arg in enumerate(atom.arguments):
-                            arg_name = arg_names[i] if i < len(arg_names) else f"arg{i}"
-                            args[arg_name] = str(arg)
-                    results.append(args if args else {predicate: True})
+            # Ground and solve
+            self.control.ground([("base", [])])
 
-        self.control.solve(on_model=on_model)
+            # Collect results
+            results = []
 
-        return results
+            def on_model(model):
+                for atom in model.symbols(shown=True):
+                    if atom.name == predicate:
+                        # Extract arguments
+                        args = {}
+                        if len(atom.arguments) > 0:
+                            # Use positional argument names
+                            arg_names = ["C", "W", "P", "D", "Amount", "Exception"]
+                            for i, arg in enumerate(atom.arguments):
+                                arg_name = arg_names[i] if i < len(arg_names) else f"arg{i}"
+                                args[arg_name] = str(arg)
+                        results.append(args if args else {predicate: True})
+
+            self.control.solve(on_model=on_model)
+
+            return results
+
+        finally:
+            # Restore stdout and stderr
+            sys.stdout.close()
+            sys.stderr.close()
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
 
     def is_enforceable(self, contract_id: str) -> Optional[bool]:
         """
