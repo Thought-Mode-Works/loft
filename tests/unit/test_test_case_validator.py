@@ -4,7 +4,7 @@ Unit tests for test case validator.
 Tests empirical validation through test case execution.
 """
 
-from loft.validation import TestCase, TestCaseValidator, create_test_suite
+from loft.validation import TestCaseData, TestCaseValidator, create_test_suite
 
 
 class TestTestCase:
@@ -12,7 +12,7 @@ class TestTestCase:
 
     def test_create_test_case(self) -> None:
         """Test creating a test case."""
-        test = TestCase(
+        test = TestCaseData(
             case_id="test_1",
             description="Simple test",
             asp_facts="fact(a).",
@@ -28,7 +28,7 @@ class TestTestCase:
 
     def test_test_case_with_reasoning(self) -> None:
         """Test case with reasoning chain."""
-        test = TestCase(
+        test = TestCaseData(
             case_id="test_2",
             description="Test with reasoning",
             asp_facts="a. b.",
@@ -47,7 +47,7 @@ class TestTestCaseValidator:
         validator = TestCaseValidator()
 
         program = "result(X) :- fact(X)."
-        test = TestCase(
+        test = TestCaseData(
             case_id="test_pass",
             description="Should pass",
             asp_facts="fact(a).",
@@ -66,7 +66,7 @@ class TestTestCaseValidator:
         validator = TestCaseValidator()
 
         program = "result(X) :- fact(X)."
-        test = TestCase(
+        test = TestCaseData(
             case_id="test_fail",
             description="Should fail",
             asp_facts="other(a).",  # No fact(a)
@@ -89,7 +89,7 @@ class TestTestCaseValidator:
         c :- a, b.
         """
 
-        test = TestCase(
+        test = TestCaseData(
             case_id="test_multi",
             description="Multiple predicates",
             asp_facts="input.",
@@ -111,7 +111,7 @@ class TestTestCaseValidator:
         enforceable(C) :- contract(C), has_writing(C).
         """
 
-        test = TestCase(
+        test = TestCaseData(
             case_id="contract_test",
             description="Enforceable contract with writing",
             asp_facts="contract_fact(c1). writing_fact(c1).",
@@ -130,9 +130,9 @@ class TestTestCaseValidator:
         program = "result(X) :- input(X)."
 
         tests = [
-            TestCase("t1", "Test 1", "input(a).", {"result": True}),
-            TestCase("t2", "Test 2", "input(b).", {"result": True}),
-            TestCase("t3", "Test 3", "other(c).", {"result": False}),
+            TestCaseData("t1", "Test 1", "input(a).", {"result": True}),
+            TestCaseData("t2", "Test 2", "input(b).", {"result": True}),
+            TestCaseData("t3", "Test 3", "other(c).", {"result": False}),
         ]
 
         stats = validator.batch_validate(program, tests)
@@ -149,8 +149,8 @@ class TestTestCaseValidator:
         program = "result(a)."  # Only result(a) is true
 
         tests = [
-            TestCase("t1", "Test 1", "", {"result": True}),  # Should pass
-            TestCase(
+            TestCaseData("t1", "Test 1", "", {"result": True}),  # Should pass
+            TestCaseData(
                 "t2", "Test 2", "", {"result": False}
             ),  # Should fail - expects false but gets true
         ]
@@ -168,7 +168,7 @@ class TestTestCaseValidator:
         validator = TestCaseValidator()
 
         program = "a :- b."
-        test = TestCase(
+        test = TestCaseData(
             case_id="explain_test",
             description="Test with explanation",
             asp_facts="b.",
@@ -189,7 +189,7 @@ class TestTestCaseValidator:
 
         # Invalid ASP program
         program = "this is invalid"
-        test = TestCase("error_test", "Error test", "a.", {"result": True})
+        test = TestCaseData("error_test", "Error test", "a.", {"result": True})
 
         result = validator.validate_test_case(program, test)
 
@@ -222,7 +222,7 @@ class TestCreateTestSuite:
         suite = create_test_suite(data)
 
         assert len(suite) == 2
-        assert all(isinstance(test, TestCase) for test in suite)
+        assert all(isinstance(test, TestCaseData) for test in suite)
         assert suite[0].case_id == "test_1"
         assert suite[1].confidence_level == "medium"
         assert len(suite[1].reasoning_chain) == 1
@@ -252,13 +252,13 @@ class TestTestCaseValidatorIntegration:
         """
 
         test_cases = [
-            TestCase(
+            TestCaseData(
                 case_id="sof_pass",
                 description="Land sale with writing - enforceable",
                 asp_facts="contract_fact(c1). land_sale_fact(c1). writing_fact(c1).",
                 expected_results={"enforceable": True},
             ),
-            TestCase(
+            TestCaseData(
                 case_id="sof_fail",
                 description="Land sale without writing - not enforceable",
                 asp_facts="contract_fact(c2). land_sale_fact(c2).",
@@ -282,13 +282,13 @@ class TestTestCaseValidatorIntegration:
         """
 
         tests = [
-            TestCase(
+            TestCaseData(
                 "naf_1",
                 "Enforceable by default",
                 "contract(c1).",
                 {"enforceable": True},
             ),
-            TestCase(
+            TestCaseData(
                 "naf_2",
                 "Unenforceable due to missing requirement",
                 "contract(c2). missing_requirement(c2).",

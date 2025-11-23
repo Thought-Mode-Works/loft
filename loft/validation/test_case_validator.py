@@ -11,12 +11,12 @@ from loguru import logger
 
 
 @dataclass
-class TestCase:
+class TestCaseData:
     """
     A test case for validating ASP programs.
 
     Example:
-        >>> test = TestCase(
+        >>> test = TestCaseData(
         ...     case_id="test_1",
         ...     description="Contract with writing",
         ...     asp_facts="contract(c1). has_writing(c1).",
@@ -36,7 +36,7 @@ class TestCase:
 class TestResult:
     """Result from running a single test case."""
 
-    test_case: TestCase
+    test_case: TestCaseData
     passed: bool
     actual_results: Dict[str, bool]
     mismatches: List[str]
@@ -47,13 +47,13 @@ class TestResult:
 class TestCaseValidator:
     """Validates ASP programs against test cases."""
 
-    def validate_test_case(self, asp_program: str, test_case: TestCase) -> TestResult:
+    def validate_test_case(self, asp_program: str, test_case: TestCaseData) -> TestResult:
         """
         Run ASP program with test case facts and check results.
 
         Args:
             asp_program: ASP program text (rules)
-            test_case: TestCase with facts and expected results
+            test_case: TestCaseData with facts and expected results
 
         Returns:
             TestResult with pass/fail and details
@@ -61,7 +61,7 @@ class TestCaseValidator:
         Example:
             >>> validator = TestCaseValidator()
             >>> program = "enforceable(C) :- contract(C), has_writing(C)."
-            >>> test = TestCase(
+            >>> test = TestCaseData(
             ...     case_id="test_1",
             ...     description="Contract with writing",
             ...     asp_facts="contract(c1). has_writing(c1).",
@@ -136,7 +136,7 @@ class TestCaseValidator:
 
     def _generate_explanation(
         self,
-        test_case: TestCase,
+        test_case: TestCaseData,
         actual_results: Dict[str, bool],
         passed: bool,
     ) -> str:
@@ -155,13 +155,13 @@ class TestCaseValidator:
 
         return "\n".join(lines)
 
-    def batch_validate(self, asp_program: str, test_cases: List[TestCase]) -> Dict[str, Any]:
+    def batch_validate(self, asp_program: str, test_cases: List[TestCaseData]) -> Dict[str, Any]:
         """
         Run all test cases and compute metrics.
 
         Args:
             asp_program: ASP program to test
-            test_cases: List of TestCase instances
+            test_cases: List of TestCaseData instances
 
         Returns:
             Dictionary with validation statistics:
@@ -178,8 +178,8 @@ class TestCaseValidator:
             >>> validator = TestCaseValidator()
             >>> program = "a :- b."
             >>> tests = [
-            ...     TestCase("t1", "test 1", "b.", {"a": True}),
-            ...     TestCase("t2", "test 2", "c.", {"a": False})
+            ...     TestCaseData("t1", "test 1", "b.", {"a": True}),
+            ...     TestCaseData("t2", "test 2", "c.", {"a": False})
             ... ]
             >>> stats = validator.batch_validate(program, tests)
             >>> assert stats["accuracy"] == 1.0  # Both tests pass
@@ -215,7 +215,7 @@ class TestCaseValidator:
         return stats
 
     def validate_with_explanation(
-        self, asp_program: str, test_case: TestCase
+        self, asp_program: str, test_case: TestCaseData
     ) -> Tuple[TestResult, str]:
         """
         Validate test case and return detailed explanation.
@@ -245,7 +245,7 @@ Actual Results:
         return (result, detailed_explanation)
 
 
-def create_test_suite(test_cases_data: List[Dict[str, Any]]) -> List[TestCase]:
+def create_test_suite(test_cases_data: List[Dict[str, Any]]) -> List[TestCaseData]:
     """
     Create a test suite from dictionary data.
 
@@ -253,7 +253,7 @@ def create_test_suite(test_cases_data: List[Dict[str, Any]]) -> List[TestCase]:
         test_cases_data: List of test case dictionaries
 
     Returns:
-        List of TestCase instances
+        List of TestCaseData instances
 
     Example:
         >>> suite = create_test_suite([
@@ -269,7 +269,7 @@ def create_test_suite(test_cases_data: List[Dict[str, Any]]) -> List[TestCase]:
     test_suite = []
 
     for data in test_cases_data:
-        test_case = TestCase(
+        test_case = TestCaseData(
             case_id=data["case_id"],
             description=data["description"],
             asp_facts=data["asp_facts"],

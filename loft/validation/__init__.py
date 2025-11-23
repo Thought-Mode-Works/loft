@@ -22,7 +22,7 @@ from loft.validation.fidelity import (
     compute_translation_fidelity,
 )
 from loft.validation.test_case_validator import (
-    TestCase,
+    TestCaseData,
     TestResult,
     TestCaseValidator,
     create_test_suite,
@@ -44,7 +44,7 @@ __all__ = [
     "FidelityTestResult",
     "compute_translation_fidelity",
     # Test Cases
-    "TestCase",
+    "TestCaseData",
     "TestResult",
     "TestCaseValidator",
     "create_test_suite",
