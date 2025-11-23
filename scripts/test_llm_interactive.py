@@ -429,8 +429,9 @@ def main():
     import argparse
 
     # Load environment variables from .env file in project root
+    # Use override=True to ensure .env file takes precedence over shell env vars
     dotenv_path = project_root / ".env"
-    load_dotenv(dotenv_path=dotenv_path)
+    load_dotenv(dotenv_path=dotenv_path, override=True)
 
     # Debug: Show which model will be used
     llm_model = os.getenv("LLM_MODEL")
