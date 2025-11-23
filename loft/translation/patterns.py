@@ -33,6 +33,11 @@ def is_a_pattern(match: Match) -> str:
     """Convert 'X is a Y' to Y(X)."""
     x = normalize_identifier(match.group(1))
     y = normalize_identifier(match.group(2))
+
+    # Skip common sentence starters that aren't entities
+    if x.lower() in ("this", "that", "it", "there", "here"):
+        return ""
+
     return f"{y}({x})."
 
 
@@ -75,25 +80,25 @@ def between_pattern(match: Match) -> str:
 
 def sale_amount_pattern(match: Match) -> str:
     """Convert 'for $X' or 'sale price of $X' to sale_amount."""
-    contract = normalize_identifier(match.group(1) or "contract_1")
-    amount = extract_dollar_amount(match.group(2))
-    return f"sale_amount({contract}, {amount})."
+    amount = extract_dollar_amount(match.group(1))
+    return f"sale_amount(contract_1, {amount})."
 
 
 # Pattern registry: maps regex patterns to converter functions
+# Order matters! More specific patterns should come first
 NL_TO_ASP_PATTERNS: Dict[str, Callable[[Match], str]] = {
-    # "X is a Y" → Y(X).
-    r"(\w+(?:\s+\w+)*)\s+is\s+an?\s+(\w+(?:\s+\w+)*)": is_a_pattern,
-    # "X has Y" → has_Y(X).
-    r"(\w+(?:\s+\w+)*)\s+has\s+(?:a\s+)?(\w+(?:\s+\w+)*)": has_pattern,
-    # "X is/was signed by Y" → signed_by(X, Y).
+    # "contract between X and Y" → party relationships (must come before "is a")
+    r"(?:(\w+)\s+)?(?:contract|agreement)\s+between\s+(\w+(?:\s+\w+)*)\s+and\s+(\w+(?:\s+\w+)*)": between_pattern,
+    # "X is/was signed by Y" → signed_by(X, Y). (must come before "is a")
     r"(\w+(?:\s+\w+)*)\s+(?:is|was)\s+signed\s+by\s+(\w+(?:\s+\w+)*)": signed_by_pattern,
+    # "X is a Y" → Y(X). (use non-greedy and limit to avoid matching too much)
+    r"(\w+)\s+is\s+an?\s+(\w+(?:\s+\w+){0,3}?)(?:\s|$|\.|\,)": is_a_pattern,
+    # "X has Y" → has_Y(X). (limit to avoid matching too much)
+    r"(\w+)\s+has\s+(?:a\s+)?(\w+(?:\s+\w+){0,2}?)(?:\s|$|\.|\,)": has_pattern,
     # "X includes/contains Y" → contains(X, Y).
     r"(\w+(?:\s+\w+)*)\s+(?:includes|contains)\s+(\w+(?:\s+\w+)*)": includes_pattern,
-    # "contract between X and Y" → party relationships
-    r"(?:(\w+)\s+)?(?:contract|agreement)\s+between\s+(\w+(?:\s+\w+)*)\s+and\s+(\w+(?:\s+\w+)*)": between_pattern,
-    # "for $X" or "sale price of $X" → sale_amount
-    r"(?:(\w+)\s+)?(?:for|sale\s+price\s+of)\s+\$?([\d,]+(?:\.\d{2})?)": sale_amount_pattern,
+    # "for $X" or "sale price of $X" → sale_amount (use word boundary to avoid partial matches)
+    r"\b(?:for|sale\s+price\s+of)\s+\$?([\d,]+(?:\.\d{2})?)": sale_amount_pattern,
 }
 
 
@@ -113,6 +118,9 @@ def pattern_based_extraction(nl_text: str) -> List[str]:
         for match in re.finditer(pattern, nl_text, re.IGNORECASE):
             try:
                 asp_fact = converter(match)
+                # Skip empty results (e.g., filtered out by converter)
+                if not asp_fact:
+                    continue
                 # Handle multi-line facts (e.g., from between_pattern)
                 if "\n" in asp_fact:
                     asp_facts.extend(asp_fact.split("\n"))
