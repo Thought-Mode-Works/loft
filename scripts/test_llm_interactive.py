@@ -428,8 +428,16 @@ def main():
     """Main entry point."""
     import argparse
 
-    # Load environment variables from .env file
-    load_dotenv()
+    # Load environment variables from .env file in project root
+    dotenv_path = project_root / ".env"
+    load_dotenv(dotenv_path=dotenv_path)
+
+    # Debug: Show which model will be used
+    llm_model = os.getenv("LLM_MODEL")
+    if llm_model:
+        console.print(f"[dim]Using LLM_MODEL from environment: {llm_model}[/dim]")
+    else:
+        console.print("[dim]LLM_MODEL not set, will use provider defaults[/dim]")
 
     parser = argparse.ArgumentParser(description="Interactive LLM interface tests")
     parser.add_argument(
