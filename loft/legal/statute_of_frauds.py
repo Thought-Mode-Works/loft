@@ -207,7 +207,7 @@ class StatuteOfFraudsSystem:
         missing_writing = self.query("missing_writing_info")
         for result in missing_writing:
             if result.get("C") == contract_id:
-                gaps.append(f"Contract requires writing but no writing information provided")
+                gaps.append("Contract requires writing but no writing information provided")
 
         # Check for uncertain writing sufficiency
         uncertain_writing = self.query("uncertain_writing_sufficiency")
@@ -398,4 +398,9 @@ class StatuteOfFraudsDemo:
 
         accuracy = correct / total if total > 0 else 0.0
 
-        return {"results": results, "accuracy": accuracy, "correct": correct, "total": total}
+        return {
+            "results": results,
+            "accuracy": accuracy,
+            "correct": correct,
+            "total": total,
+        }
