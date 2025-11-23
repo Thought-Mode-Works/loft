@@ -206,7 +206,7 @@ class TestCaseValidator:
         }
 
         logger.info(
-            f"Batch validation: {passed_count}/{len(results)} passed " f"(accuracy={accuracy:.2%})"
+            f"Batch validation: {passed_count}/{len(results)} passed (accuracy={accuracy:.2%})"
         )
 
         if failed_cases:
@@ -236,10 +236,10 @@ Test Case Facts:
 {test_case.asp_facts}
 
 Expected Reasoning:
-{chr(10).join('  - ' + step for step in test_case.reasoning_chain) if test_case.reasoning_chain else '  (not specified)'}
+{chr(10).join("  - " + step for step in test_case.reasoning_chain) if test_case.reasoning_chain else "  (not specified)"}
 
 Actual Results:
-{chr(10).join(f'  {pred}: {value}' for pred, value in result.actual_results.items())}
+{chr(10).join(f"  {pred}: {value}" for pred, value in result.actual_results.items())}
         """.strip()
 
         return (result, detailed_explanation)

@@ -219,7 +219,7 @@ class TestPerformanceBenchmarks:
             rules.append(
                 Rule(
                     f"rule_{i}",
-                    f"pred_{i}(X) :- pred_{i-1}(X)." if i > 0 else f"pred_{i}(a).",
+                    f"pred_{i}(X) :- pred_{i - 1}(X)." if i > 0 else f"pred_{i}(a).",
                     StratificationLevel.TACTICAL,
                     0.9,
                     "llm",
