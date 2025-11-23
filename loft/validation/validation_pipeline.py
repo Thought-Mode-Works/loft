@@ -54,9 +54,7 @@ class ValidationPipeline:
         self.consensus_validator = consensus_validator
         self.min_confidence = min_confidence
 
-        logger.info(
-            f"Initialized ValidationPipeline with min_confidence={min_confidence}"
-        )
+        logger.info(f"Initialized ValidationPipeline with min_confidence={min_confidence}")
 
     def validate_rule(
         self,
@@ -103,9 +101,7 @@ class ValidationPipeline:
 
         # Stage 1: Syntactic Validation
         logger.info(f"Running syntactic validation for rule: {rule_id or 'unknown'}")
-        syntax_result = self.syntax_validator.validate_generated_rule(
-            rule_asp, existing_predicates
-        )
+        syntax_result = self.syntax_validator.validate_generated_rule(rule_asp, existing_predicates)
         report.add_stage("syntactic", syntax_result)
 
         if not syntax_result.is_valid:
@@ -144,7 +140,10 @@ class ValidationPipeline:
             if not empirical_result.is_valid:
                 report.final_decision = "revise"
                 report.suggested_revisions.extend(
-                    [f"Failed test case: {f.test_case.description}" for f in empirical_result.failures[:3]]
+                    [
+                        f"Failed test case: {f.test_case.description}"
+                        for f in empirical_result.failures[:3]
+                    ]
                 )
                 report.aggregate_confidence = 0.4
                 logger.info(f"Rule {rule_id} needs revision due to empirical failures")
@@ -208,9 +207,7 @@ class ValidationPipeline:
             )
         else:
             report.final_decision = "flag_for_review"
-            report.flag_reason = (
-                f"Confidence {report.aggregate_confidence:.2f} below threshold {self.min_confidence}"
-            )
+            report.flag_reason = f"Confidence {report.aggregate_confidence:.2f} below threshold {self.min_confidence}"
             logger.info(f"Rule {rule_id} flagged for review")
 
         return report

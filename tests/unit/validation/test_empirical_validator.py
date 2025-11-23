@@ -110,8 +110,20 @@ class TestEmpiricalValidator:
         rule = "enforceable(C) :- contract(C)."
 
         test_cases = [
-            TestCase(case_id="tc1", description="desc", facts="contract(c1).", query="enforceable", expected=True),
-            TestCase(case_id="tc2", description="desc", facts="contract(c2).", query="enforceable", expected=True),
+            TestCase(
+                case_id="tc1",
+                description="desc",
+                facts="contract(c1).",
+                query="enforceable",
+                expected=True,
+            ),
+            TestCase(
+                case_id="tc2",
+                description="desc",
+                facts="contract(c2).",
+                query="enforceable",
+                expected=True,
+            ),
         ]
 
         result = validator.validate_rule(rule, test_cases, baseline)
@@ -132,7 +144,7 @@ class TestEmpiricalValidator:
                 description="desc",
                 facts="contract_fact(c1).",
                 query="enforceable",
-                expected=True
+                expected=True,
             ),
         ]
 

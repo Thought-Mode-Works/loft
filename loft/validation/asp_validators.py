@@ -115,7 +115,7 @@ class ASPSyntaxValidator:
 
         # Find potential variables (words in rule that start with lowercase in head/body positions)
         # This is a heuristic check - proper parsing would use Clingo AST
-        var_pattern = r'\b([a-z][a-zA-Z0-9_]*)\b'
+        var_pattern = r"\b([a-z][a-zA-Z0-9_]*)\b"
         matches = re.finditer(var_pattern, rule_text)
 
         lowercase_in_args = []
@@ -123,9 +123,9 @@ class ASPSyntaxValidator:
             var = match.group(1)
             # Check if it appears in argument position (after '(' or ',')
             pos = match.start()
-            if pos > 0 and rule_text[pos - 1] in '(,':
+            if pos > 0 and rule_text[pos - 1] in "(,":
                 # Exclude predicate names (those followed by '(')
-                if match.end() < len(rule_text) and rule_text[match.end()] != '(':
+                if match.end() < len(rule_text) and rule_text[match.end()] != "(":
                     lowercase_in_args.append(var)
 
         if lowercase_in_args:
@@ -141,7 +141,7 @@ class ASPSyntaxValidator:
         issues = []
 
         # Find predicate names (words followed by '(')
-        pred_pattern = r'([A-Z][a-zA-Z0-9_]*)\s*\('
+        pred_pattern = r"([A-Z][a-zA-Z0-9_]*)\s*\("
         matches = re.finditer(pred_pattern, rule_text)
 
         uppercase_predicates = [m.group(1) for m in matches]
@@ -162,11 +162,11 @@ class ASPSyntaxValidator:
         # ASP uses 'not' for default negation, '-' for classical negation
 
         # Look for common mistakes like '!' instead of 'not'
-        if '!' in rule_text and 'not' not in rule_text:
+        if "!" in rule_text and "not" not in rule_text:
             errors.append("Invalid negation syntax: use 'not' instead of '!'")
 
         # Check for negation with missing space
-        if re.search(r'not[a-zA-Z]', rule_text):
+        if re.search(r"not[a-zA-Z]", rule_text):
             errors.append("Negation syntax: 'not' should be followed by a space")
 
         return errors
@@ -176,12 +176,10 @@ class ASPSyntaxValidator:
         issues = []
 
         # Check if this is a constraint (starts with ':-')
-        if rule_text.strip().startswith(':-'):
+        if rule_text.strip().startswith(":-"):
             # Good practice: constraints should have clear variable usage
-            if not any(var in rule_text for var in ['(X)', '(Y)', '(C)', '(P)']):
-                issues.append(
-                    "Constraint may need explicit variables for clarity"
-                )
+            if not any(var in rule_text for var in ["(X)", "(Y)", "(C)", "(P)"]):
+                issues.append("Constraint may need explicit variables for clarity")
 
         return issues
 
@@ -201,12 +199,12 @@ class ASPSyntaxValidator:
         # Parse existing predicates into a dict
         existing_dict = {}
         for pred_spec in existing_predicates:
-            if '/' in pred_spec:
-                name, arity = pred_spec.split('/')
+            if "/" in pred_spec:
+                name, arity = pred_spec.split("/")
                 existing_dict[name] = int(arity)
 
         # Extract predicates from rule (simplified heuristic)
-        pred_pattern = r'([a-z][a-z0-9_]*)\s*\('
+        pred_pattern = r"([a-z][a-z0-9_]*)\s*\("
         found_predicates = set(re.findall(pred_pattern, rule_text))
 
         new_predicates = []
@@ -228,23 +226,21 @@ class ASPSyntaxValidator:
         issues = []
 
         # Check for missing period at end
-        if not rule_text.strip().endswith('.'):
+        if not rule_text.strip().endswith("."):
             issues.append("Rule should end with a period (.)")
 
         # Check for multiple rules in one string (should be split)
-        if rule_text.count('.') > 1:
-            issues.append(
-                "Multiple rules detected - consider validating separately"
-            )
+        if rule_text.count(".") > 1:
+            issues.append("Multiple rules detected - consider validating separately")
 
         # Check for incomplete rules (empty body or head)
-        if ':-' in rule_text:
-            parts = rule_text.split(':-')
+        if ":-" in rule_text:
+            parts = rule_text.split(":-")
             if len(parts) == 2:
                 head, body = parts
                 if not head.strip():
                     issues.append("Rule has empty head")
-                if not body.strip().rstrip('.'):
+                if not body.strip().rstrip("."):
                     issues.append("Rule has empty body")
 
         # Check for overly complex rules (heuristic: > 100 chars)

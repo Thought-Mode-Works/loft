@@ -22,9 +22,7 @@ class ValidationResult(BaseModel):
     error_messages: List[str] = Field(
         default_factory=list, description="List of error messages if invalid"
     )
-    warnings: List[str] = Field(
-        default_factory=list, description="Non-fatal warnings"
-    )
+    warnings: List[str] = Field(default_factory=list, description="Non-fatal warnings")
     details: Dict[str, Any] = Field(
         default_factory=dict, description="Additional validation details"
     )
@@ -73,9 +71,7 @@ class FailureCase(BaseModel):
     test_case: TestCase = Field(description="The test case that failed")
     expected: Any = Field(description="Expected result")
     actual: Any = Field(description="Actual result from rule")
-    baseline: Any = Field(
-        default=None, description="Baseline result without new rule"
-    )
+    baseline: Any = Field(default=None, description="Baseline result without new rule")
     failure_type: str = Field(
         default="incorrect", description="Type of failure (incorrect, regression, etc.)"
     )
@@ -88,15 +84,11 @@ class EmpiricalValidationResult(BaseModel):
     Measures actual performance improvement/degradation from adding a rule.
     """
 
-    accuracy: float = Field(
-        ge=0.0, le=1.0, description="Accuracy with new rule (0.0-1.0)"
-    )
+    accuracy: float = Field(ge=0.0, le=1.0, description="Accuracy with new rule (0.0-1.0)")
     baseline_accuracy: float = Field(
         ge=0.0, le=1.0, description="Accuracy without new rule (0.0-1.0)"
     )
-    improvement: float = Field(
-        description="Change from baseline (positive = improvement)"
-    )
+    improvement: float = Field(description="Change from baseline (positive = improvement)")
     test_cases_passed: int = Field(description="Number of test cases passed")
     test_cases_failed: int = Field(description="Number of test cases failed")
     total_test_cases: int = Field(description="Total test cases evaluated")
@@ -107,9 +99,7 @@ class EmpiricalValidationResult(BaseModel):
         default_factory=list,
         description="Cases that improved from baseline",
     )
-    is_valid: bool = Field(
-        description="Whether rule passes empirical validation"
-    )
+    is_valid: bool = Field(description="Whether rule passes empirical validation")
     stage_name: str = Field(default="empirical", description="Validation stage name")
 
     def summary(self) -> str:
@@ -142,21 +132,13 @@ class ConsensusValidationResult(BaseModel):
     Aggregates votes from multiple LLMs to determine acceptance.
     """
 
-    decision: Literal["accept", "reject", "revise"] = Field(
-        description="Consensus decision"
-    )
+    decision: Literal["accept", "reject", "revise"] = Field(description="Consensus decision")
     votes: List[Any] = Field(
         description="Individual votes from each LLM"
     )  # List[ConsensusVote] but avoid circular import
-    accept_weight: float = Field(
-        ge=0.0, description="Weighted votes for acceptance"
-    )
-    reject_weight: float = Field(
-        ge=0.0, description="Weighted votes for rejection"
-    )
-    revise_weight: float = Field(
-        ge=0.0, description="Weighted votes for revision"
-    )
+    accept_weight: float = Field(ge=0.0, description="Weighted votes for acceptance")
+    reject_weight: float = Field(ge=0.0, description="Weighted votes for rejection")
+    revise_weight: float = Field(ge=0.0, description="Weighted votes for revision")
     consensus_strength: float = Field(
         ge=0.0,
         le=1.0,
@@ -166,9 +148,7 @@ class ConsensusValidationResult(BaseModel):
         default_factory=list,
         description="Revision suggestions from voters",
     )
-    is_valid: bool = Field(
-        description="Whether consensus approves the rule"
-    )
+    is_valid: bool = Field(description="Whether consensus approves the rule")
     stage_name: str = Field(default="consensus", description="Validation stage name")
 
     def summary(self) -> str:
@@ -182,9 +162,15 @@ class ConsensusValidationResult(BaseModel):
             f"Consensus Strength: {self.consensus_strength:.2%}",
             "",
             "Vote Distribution:",
-            f"  Accept:  {self.accept_weight / total_weight:.1%}" if total_weight > 0 else "  Accept:  0.0%",
-            f"  Reject:  {self.reject_weight / total_weight:.1%}" if total_weight > 0 else "  Reject:  0.0%",
-            f"  Revise:  {self.revise_weight / total_weight:.1%}" if total_weight > 0 else "  Revise:  0.0%",
+            f"  Accept:  {self.accept_weight / total_weight:.1%}"
+            if total_weight > 0
+            else "  Accept:  0.0%",
+            f"  Reject:  {self.reject_weight / total_weight:.1%}"
+            if total_weight > 0
+            else "  Reject:  0.0%",
+            f"  Revise:  {self.revise_weight / total_weight:.1%}"
+            if total_weight > 0
+            else "  Revise:  0.0%",
         ]
 
         if self.suggested_revisions:
@@ -204,9 +190,7 @@ class ValidationReport(BaseModel):
     """
 
     rule_asp: str = Field(description="The ASP rule being validated")
-    rule_id: Optional[str] = Field(
-        default=None, description="Identifier for the rule"
-    )
+    rule_id: Optional[str] = Field(default=None, description="Identifier for the rule")
     target_layer: Literal["operational", "tactical", "strategic"] = Field(
         default="tactical",
         description="Target stratification layer",
