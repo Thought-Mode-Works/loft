@@ -275,8 +275,7 @@ def detect_conflicts(state1: CoreState, state2: CoreState) -> List[str]:
 
     if len(const_rules1) != len(const_rules2):
         conflicts.append(
-            f"Different number of constitutional rules: "
-            f"{len(const_rules1)} vs {len(const_rules2)}"
+            f"Different number of constitutional rules: {len(const_rules1)} vs {len(const_rules2)}"
         )
 
     return conflicts

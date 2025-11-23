@@ -385,9 +385,7 @@ class OpenAIProvider(LLMProvider):
             tokens_output=usage.completion_tokens,
             tokens_total=usage.total_tokens,
             latency_ms=0.0,
-            cost_usd=self.estimate_cost(
-                usage.prompt_tokens, usage.completion_tokens
-            ),
+            cost_usd=self.estimate_cost(usage.prompt_tokens, usage.completion_tokens),
             timestamp=datetime.utcnow().isoformat(),
             provider="openai",
         )
