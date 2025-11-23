@@ -215,3 +215,146 @@ def compute_quality_metrics(
         fidelity=fidelity,
         overall=overall,
     )
+
+
+def roundtrip_fidelity_test(
+    asp_original: str,
+    asp_to_nl_translator: Any,
+    nl_to_asp_translator: Any,
+) -> tuple[float, str]:
+    """
+    Test roundtrip translation: ASP → NL → ASP preserves meaning.
+
+    Args:
+        asp_original: Original ASP text
+        asp_to_nl_translator: Translator for ASP → NL
+        nl_to_asp_translator: Translator for NL → ASP
+
+    Returns:
+        Tuple of (fidelity_score, explanation)
+
+    Example:
+        >>> from loft.translation import ASPToNLTranslator, NLToASPTranslator
+        >>> asp_orig = "contract(c1)."
+        >>> asp_to_nl = ASPToNLTranslator()
+        >>> nl_to_asp = NLToASPTranslator()
+        >>> fidelity, explanation = roundtrip_fidelity_test(asp_orig, asp_to_nl, nl_to_asp)
+        >>> print(f"Fidelity: {fidelity:.2%}")
+        Fidelity: 95%
+    """
+    # ASP to NL
+    nl_result = asp_to_nl_translator.translate_query(asp_original)
+    nl_text = nl_result.natural_language
+
+    # NL back to ASP
+    asp_result = nl_to_asp_translator.translate_to_facts(nl_text)
+    asp_reconstructed = asp_result.asp_facts[0] if asp_result.asp_facts else ""
+
+    # Compute fidelity
+    fidelity = compute_fidelity(asp_original, asp_reconstructed)
+
+    explanation = f"""
+Roundtrip Translation Test
+==========================
+Original ASP: {asp_original}
+Natural Language: {nl_text}
+Reconstructed ASP: {asp_reconstructed}
+Fidelity: {fidelity:.2%}
+"""
+
+    return (fidelity, explanation)
+
+
+def compute_asp_equivalence(
+    asp1: str,
+    asp2: str,
+    asp_core: Optional[Any] = None,
+) -> float:
+    """
+    Measure semantic equivalence of two ASP expressions.
+
+    Uses ASP solving to test logical equivalence if asp_core is provided.
+    Falls back to syntactic similarity otherwise.
+
+    Args:
+        asp1: First ASP expression
+        asp2: Second ASP expression
+        asp_core: Optional ASP core for semantic reasoning
+
+    Returns:
+        Equivalence score (0-1), where 1.0 means identical answer sets
+
+    Example:
+        >>> compute_asp_equivalence("contract(c1).", "contract(c1).")
+        1.0
+        >>> compute_asp_equivalence("contract(c1).", "void(c1).")
+        0.0
+    """
+    if asp_core is not None:
+        # Try to use ASP reasoning for semantic equivalence
+        try:
+            return _compute_semantic_equivalence_with_solver(asp1, asp2, asp_core)
+        except Exception as e:
+            logger.warning(f"Could not compute semantic equivalence: {e}")
+            # Fall through to syntactic comparison
+
+    # Fall back to syntactic comparison using compute_fidelity
+    return compute_fidelity(asp1, asp2, asp_core)
+
+
+def _compute_semantic_equivalence_with_solver(
+    asp1: str,
+    asp2: str,
+    asp_core: Any,
+) -> float:
+    """
+    Use ASP solver to check semantic equivalence.
+
+    Tests if asp1 and asp2 produce the same answer sets.
+
+    Returns:
+        1.0 if semantically equivalent, 0.0-0.99 based on overlap
+    """
+    try:
+        from clingo import Control
+    except ImportError:
+        logger.warning("Clingo not available, falling back to syntactic comparison")
+        return compute_fidelity(asp1, asp2)
+
+    # Create two programs and compare answer sets
+    ctl1 = Control()
+    ctl1.add("base", [], asp1)
+    ctl1.ground([("base", [])])
+
+    ctl2 = Control()
+    ctl2.add("base", [], asp2)
+    ctl2.ground([("base", [])])
+
+    # Collect answer sets
+    answers1 = []
+    ctl1.solve(on_model=lambda m: answers1.append(str(m)))
+
+    answers2 = []
+    ctl2.solve(on_model=lambda m: answers2.append(str(m)))
+
+    # Compare answer sets
+    if not answers1 and not answers2:
+        # Both have no models - equivalent
+        return 1.0
+
+    if not answers1 or not answers2:
+        # One has models, other doesn't - not equivalent
+        return 0.0
+
+    # Check if answer sets are identical
+    set1 = set(answers1)
+    set2 = set(answers2)
+
+    if set1 == set2:
+        return 1.0
+
+    # Compute overlap
+    intersection = set1 & set2
+    union = set1 | set2
+
+    return len(intersection) / len(union) if union else 0.0
