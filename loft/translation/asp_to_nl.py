@@ -234,10 +234,34 @@ def asp_to_nl(query: str, context: Optional[ASPCore] = None) -> str:
             # Determine question type
             if len(args[0]) == 1 and args[0].isupper():
                 # Variable query - asking "which" or "what"
-                question = f"Which entities {nl_text.replace(humanized_arg, '').strip()}?"
+                # Extract the predicate part and pluralize
+                pred_part = nl_text.replace(humanized_arg, "").strip()
+                # Handle "is a X" -> "are Xs" pattern
+                if pred_part.startswith("is a "):
+                    pred_type = pred_part[5:]  # Remove "is a "
+                    question = f"Which entities are {pred_type}s?"
+                elif pred_part.startswith("is "):
+                    pred_type = pred_part[3:]  # Remove "is "
+                    question = f"Which entities are {pred_type}?"
+                else:
+                    question = f"Which entities {pred_part}?"
             else:
-                # Constant query - yes/no question
-                question = f"Does {nl_text}?"
+                # Constant query - yes/no question with "Is" for better grammar
+                # Convert "X is Y" to "Is X Y?"
+                if " is a " in nl_text:
+                    parts = nl_text.split(" is a ", 1)
+                    question = f"Is {parts[0]} a {parts[1]}?"
+                elif " is " in nl_text:
+                    parts = nl_text.split(" is ", 1)
+                    question = f"Is {parts[0]} {parts[1]}?"
+                elif " has " in nl_text:
+                    parts = nl_text.split(" has ", 1)
+                    question = f"Does {parts[0]} have {parts[1]}?"
+                elif " satisfies " in nl_text:
+                    parts = nl_text.split(" satisfies ", 1)
+                    question = f"Does {parts[0]} satisfy {parts[1]}?"
+                else:
+                    question = f"Does {nl_text}?"
 
         elif len(args) == 2:
             arg1_human = humanize_variable(args[0])
@@ -249,7 +273,18 @@ def asp_to_nl(query: str, context: Optional[ASPCore] = None) -> str:
                 question = f"For which values does {nl_text}?"
             else:
                 # All constants - yes/no question
-                question = f"Does {nl_text}?"
+                # Apply same grammar improvements as single-arg
+                if " is " in nl_text:
+                    parts = nl_text.split(" is ", 1)
+                    question = f"Is {parts[0]} {parts[1]}?"
+                elif " has a " in nl_text:
+                    parts = nl_text.split(" has a ", 1)
+                    question = f"Does {parts[0]} have a {parts[1]}?"
+                elif " has " in nl_text:
+                    parts = nl_text.split(" has ", 1)
+                    question = f"Does {parts[0]} have {parts[1]}?"
+                else:
+                    question = f"Does {nl_text}?"
         else:
             # Fallback for multiple arguments
             args_human = ", ".join(humanize_variable(arg) for arg in args)

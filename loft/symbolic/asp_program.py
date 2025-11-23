@@ -183,6 +183,22 @@ class StratifiedASPCore:
         """Count total number of rules across all layers."""
         return len(self.get_all_rules())
 
+    def find_rules_mentioning(self, predicate: str) -> List[ASPRule]:
+        """
+        Find all rules that mention a specific predicate.
+
+        Args:
+            predicate: Predicate name to search for
+
+        Returns:
+            List of rules that contain the predicate
+        """
+        matching_rules = []
+        for rule in self.get_all_rules():
+            if predicate in rule.extract_predicates():
+                matching_rules.append(rule)
+        return matching_rules
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert stratified core to dictionary."""
         return {

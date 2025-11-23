@@ -50,7 +50,10 @@ class TestAspToNl:
     def test_simple_constant_query(self) -> None:
         """Test translating query with constant."""
         nl = asp_to_nl("contract(c1)?")
-        assert "c1 is a contract" in nl.lower()
+        # Should produce proper question format: "Is contract c1 a contract?"
+        assert "is" in nl.lower()
+        assert "contract c1" in nl.lower()
+        assert "contract" in nl.lower()
         assert nl.endswith("?")
 
     def test_variable_query(self) -> None:
