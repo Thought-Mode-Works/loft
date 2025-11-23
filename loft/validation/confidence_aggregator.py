@@ -136,9 +136,7 @@ class ConfidenceAggregator:
             is_reliable=is_reliable,
         )
 
-    def aggregate_from_report(
-        self, validation_report: "ValidationReport"
-    ) -> AggregatedConfidence:
+    def aggregate_from_report(self, validation_report: "ValidationReport") -> AggregatedConfidence:
         """
         Aggregate confidence from a ValidationReport.
 
