@@ -341,6 +341,96 @@ The ontological bridge is validated when:
 
 ---
 
+---
+
+## Tangential Route: LinkedASP Maintainability Layer (Phase 1.5+)
+
+**Status**: Optional enhancement, triggered by complexity thresholds
+
+**Goal**: Prevent ASP code complexity from becoming unmaintainable as system scales to multiple legal domains.
+
+### Trigger Conditions (Implement when ANY met)
+
+- ASP codebase exceeds **500 lines** across all domains
+- **3+ legal domains** implemented (Phase 8+)
+- Circular dependency or stratification violation detected
+- Manual ASP maintenance becomes time-consuming
+
+### Rationale
+
+**Current Mitigation (ROADMAP Risk Section)**:
+> Risk: ASP program complexity may be hard to maintain
+> Mitigation: Comprehensive documentation, clear stratification, extensive comments
+
+**Enhanced Mitigation**: LinkedASP + Genre-Based Generation (see `docs/MAINTAINABILITY.md`)
+
+This tangential route applies creative solutions inspired by:
+- **G-Lisp**: Genre-based abstraction with meta-programming expansion
+- **GraphFS**: RDF metadata for queryable code structure
+
+### Implementation Phases
+
+**Phase 1.5a: RDF Ontology Design (1 week)**
+- Define legal reasoning genre ontology (`loft/ontology/legal_reasoning.ttl`)
+- Document genre patterns (Requirement, Exception, BalancingTest, Presumption)
+- Create LinkedASP specification
+
+**Phase 1.5b: Genre-Based Code Generation (1.5 weeks)**
+- Implement genre pattern classes (`loft/symbolic/genre_based_asp.py`)
+- Build ASP code generators from high-level patterns
+- Create LinkedASP parser for RDF metadata extraction
+
+**Phase 1.5c: Query and Analysis Tools (1.5 weeks)**
+- SPARQL query engine for ASP structure (`loft/symbolic/linkedasp_queries.py`)
+- Impact analysis tools (dependency graphs, stratification validation)
+- CLI commands for querying ASP metadata
+
+**Phase 1.5d: Refactoring and Integration (1 week)**
+- Refactor existing legal domains to use genre patterns
+- Integrate with meta-reasoning layer (self-querying symbolic core)
+- Add automated validation to CI/CD pipeline
+
+### MVP Validation Criteria
+
+- ✓ All existing legal domains successfully converted to genre patterns
+- ✓ SPARQL queries correctly identify dependencies and violations
+- ✓ Impact analysis accurately predicts affected rules before modifications
+- ✓ Meta-reasoning layer can query its own structure via RDF
+- ✓ Generated ASP code maintains 100% functional equivalence to hand-written
+- ✓ Stratification violations detected automatically in CI
+
+### Benefits for LOFT's Core Principles
+
+1. **Self-Reflexivity**: Symbolic core can query its own structure using SPARQL
+2. **Validation Oversight**: Automated detection of stratification/dependency violations
+3. **Ontological Bridge**: RDF provides semantic grounding for LLM context
+4. **Composability**: Genre patterns reused across legal domains
+5. **Maintainability**: Scales to 5,000+ lines without complexity explosion
+
+### Integration Points
+
+- **Phase 2 (LLM Logic Generation)**: RDF metadata provides rich context for LLM queries
+- **Phase 5 (Meta-Reasoning)**: Core queries its own structure to identify gaps
+- **Phase 8 (Multi-Domain)**: Genre patterns enable cross-domain composition
+
+### Documentation
+
+Full design specification in `docs/MAINTAINABILITY.md`:
+- Complete RDF ontology for legal reasoning patterns
+- Genre-based ASP code generation architecture
+- LinkedASP parser and query system
+- Self-reflexive integration examples
+
+### Decision Point
+
+**Recommended Timing**: After Phase 2 (LLM Logic Generation), before Phase 8 becomes unwieldy
+
+**Go/No-Go Criteria**:
+- **GO**: Complexity threshold reached OR Phase 8 starting
+- **DEFER**: Core ASP still manageable, focus on main roadmap phases
+
+---
+
 ## Risk Mitigation
 
 ### Technical Risks
@@ -348,6 +438,7 @@ The ontological bridge is validated when:
 - **Infinite Reflection Loops**: Depth limits, termination conditions
 - **Scalability**: Hierarchical abstraction, caching, incremental updates
 - **Representation Mismatch**: Intermediate formats, controlled natural language
+- **ASP Complexity** *(Enhanced)*: LinkedASP+RDF metadata, genre-based generation (see Tangential Route)
 
 ### Philosophical Risks
 - **Pseudo-Reflexivity**: Rigorous testing of genuine vs. simulated self-awareness
