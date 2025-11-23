@@ -203,6 +203,12 @@ class StatuteOfFraudsSystem:
         """
         gaps = []
 
+        # Check for missing writing information
+        missing_writing = self.query("missing_writing_info")
+        for result in missing_writing:
+            if result.get("C") == contract_id:
+                gaps.append(f"Contract requires writing but no writing information provided")
+
         # Check for uncertain writing sufficiency
         uncertain_writing = self.query("uncertain_writing_sufficiency")
         for result in uncertain_writing:

@@ -161,6 +161,19 @@ uncertain_exception(C, Exception) :-
     potential_exception(C, Exception),
     not exception_applies(C).
 
+% Detect when a contract within statute has no writing information at all
+missing_writing_info(C) :-
+    contract(C),
+    within_statute(C),
+    not has_sufficient_writing(C),
+    not exception_applies(C),
+    not writing_referenced(C).
+
+% Helper: check if any writing references this contract
+writing_referenced(C) :-
+    writing(W),
+    references_contract(W, C).
+
 % Track confidence based on clarity of facts
 high_confidence_determination(C) :-
     contract(C),
@@ -193,3 +206,4 @@ low_confidence_determination(C) :-
 #show exception_applies/1.
 #show uncertain_writing_sufficiency/2.
 #show uncertain_exception/2.
+#show missing_writing_info/1.
