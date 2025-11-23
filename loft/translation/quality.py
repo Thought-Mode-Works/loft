@@ -217,6 +217,63 @@ def compute_quality_metrics(
     )
 
 
+def _question_to_statement(question: str) -> str:
+    """
+    Convert a question format to statement format for pattern matching.
+
+    The ASP→NL translator produces questions like "Is contract c1 a contract?"
+    but NL→ASP pattern matching expects statements like "contract c1 is a contract"
+    or "c1 is a contract".
+
+    Args:
+        question: Natural language question
+
+    Returns:
+        Statement format suitable for NL→ASP pattern matching
+    """
+    import re
+
+    # Handle "Is X a Y?" → "X is a Y"
+    match = re.match(r"^Is\s+(.+?)\s+an?\s+(.+?)\?$", question, re.IGNORECASE)
+    if match:
+        return f"{match.group(1)} is a {match.group(2)}"
+
+    # Handle "Is X signed by Y?" → "X was signed by Y"
+    match = re.match(r"^Is\s+(.+?)\s+signed\s+by\s+(.+?)\?$", question, re.IGNORECASE)
+    if match:
+        return f"{match.group(1)} was signed by {match.group(2)}"
+
+    # Handle "Does X hold for Y?" → "Y is a X" (common for unary predicates)
+    match = re.match(r"^Does\s+(\w+)\s+hold\s+for\s+(.+?)\?$", question, re.IGNORECASE)
+    if match:
+        predicate = match.group(1)
+        entity = match.group(2)
+        # Extract entity name after the predicate word (e.g., "writing w1" → "w1")
+        entity_match = re.search(rf"{predicate}\s+(\w+)", entity, re.IGNORECASE)
+        if entity_match:
+            entity_id = entity_match.group(1)
+            return f"{entity_id} is a {predicate}"
+        return f"{entity} is a {predicate}"
+
+    # Handle "Does X have Y?" → "X has Y"
+    match = re.match(r"^Does\s+(.+?)\s+have\s+(.+?)\?$", question, re.IGNORECASE)
+    if match:
+        return f"{match.group(1)} has {match.group(2)}"
+
+    # Handle "Was X signed by Y?" → "X was signed by Y"
+    match = re.match(r"^Was\s+(.+?)\s+signed\s+by\s+(.+?)\?$", question, re.IGNORECASE)
+    if match:
+        return f"{match.group(1)} was signed by {match.group(2)}"
+
+    # Handle "Is X Y?" (adjective) → "X is Y"
+    match = re.match(r"^Is\s+(.+?)\s+(\w+)\?$", question, re.IGNORECASE)
+    if match:
+        return f"{match.group(1)} is {match.group(2)}"
+
+    # If not a recognized pattern, return as-is
+    return question
+
+
 def roundtrip_fidelity_test(
     asp_original: str,
     asp_to_nl_translator: Any,
@@ -246,8 +303,12 @@ def roundtrip_fidelity_test(
     nl_result = asp_to_nl_translator.translate_query(asp_original)
     nl_text = nl_result.natural_language
 
+    # Convert question format to statement format for NL→ASP
+    # ASP→NL produces "Is X a Y?" but NL→ASP expects "X is a Y"
+    nl_statement = _question_to_statement(nl_text)
+
     # NL back to ASP
-    asp_result = nl_to_asp_translator.translate_to_facts(nl_text)
+    asp_result = nl_to_asp_translator.translate_to_facts(nl_statement)
     asp_reconstructed = asp_result.asp_facts[0] if asp_result.asp_facts else ""
 
     # Compute fidelity
@@ -257,7 +318,8 @@ def roundtrip_fidelity_test(
 Roundtrip Translation Test
 ==========================
 Original ASP: {asp_original}
-Natural Language: {nl_text}
+Natural Language (question): {nl_text}
+Natural Language (statement): {nl_statement}
 Reconstructed ASP: {asp_reconstructed}
 Fidelity: {fidelity:.2%}
 """
