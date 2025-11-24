@@ -16,11 +16,13 @@ from enum import Enum
 from typing import Dict, Set
 
 
-class StratificationLevel(Enum):
+class StratificationLevel(str, Enum):
     """
     Stratification levels with modification authority.
 
     Ordered from most stable/important (constitutional) to most dynamic (operational).
+
+    Uses str mixin for better JSON serialization and string compatibility.
     """
 
     CONSTITUTIONAL = "constitutional"  # Immutable, human-only
