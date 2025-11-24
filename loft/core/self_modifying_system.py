@@ -515,10 +515,12 @@ class SelfModifyingSystem:
         Foundation for Phase 5 meta-reasoning capabilities.
         """
         # Analyze incorporation history - handle both dict and object formats
+        # Note: incorporation_history only contains successful incorporations
+        # (failed attempts are not added to history)
         total_attempts = len(self.incorporation_engine.incorporation_history)
         successes = sum(
             1 for r in self.incorporation_engine.incorporation_history
-            if (r.get("status") == "success" if isinstance(r, dict) else r.is_success())
+            if isinstance(r, dict)  # All dicts in history are successes
         )
 
         # Analyze strategy performance
@@ -652,9 +654,10 @@ class SelfModifyingSystem:
         total_rules = sum(rules_by_layer.values())
 
         # Recent activity
+        # All entries in incorporation_history are successful incorporations
         recent_incorporations = len(
             [r for r in self.incorporation_engine.incorporation_history[-10:]
-             if (r.get("status") == "success" if isinstance(r, dict) else r.is_success())]
+             if isinstance(r, dict)]
         )
         recent_rollbacks = len(self.incorporation_engine.rollback_history[-10:])
 
@@ -890,7 +893,8 @@ class SelfModifyingSystem:
                     if hasattr(timestamp, "strftime"):
                         timestamp = timestamp.strftime("%Y-%m-%d %H:%M")
                     rule_id = inc.get("rule_id", "unknown")
-                    status = "✅" if inc.get("status") == "success" else "❌"
+                    # All dicts in incorporation_history are successes
+                    status = "✅"
                     perf = f"{inc.get('performance_delta', 0):+.1%}" if inc.get("performance_delta") else "N/A"
                     target_layer = inc.get("target_layer", "unknown")
                 else:

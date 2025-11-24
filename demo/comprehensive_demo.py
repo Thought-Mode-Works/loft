@@ -91,7 +91,8 @@ def demonstrate_comprehensive_system():
     # === SCENARIO 5: Living Document ===
     print("\nSCENARIO 5: Living Document Generation")
     print("-" * 80)
-    doc = system2.generate_living_document()
+    # Use original system instance which has the complete cycle history
+    doc = system.generate_living_document()
     doc_file = Path(persistence_dir) / "LIVING_DOCUMENT.md"
 
     print(f"Generated living document: {doc_file}")
@@ -108,7 +109,8 @@ def demonstrate_comprehensive_system():
     # === SCENARIO 6: Self-Analysis ===
     print("\nSCENARIO 6: System Self-Analysis")
     print("-" * 80)
-    report = system2.get_self_report()
+    # Use original system instance (system) which has the incorporation history
+    report = system.get_self_report()
 
     print(f"Incorporation Success Rate: {report.incorporation_success_rate:.1%}")
     print(f"Self-Confidence: {report.confidence_in_self:.1%}")
