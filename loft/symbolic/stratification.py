@@ -11,9 +11,9 @@ From CLAUDE.md:
     - Operational layer: autonomous modification allowed
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict
+from typing import Dict, Set
 
 
 class StratificationLevel(Enum):
@@ -57,6 +57,8 @@ class ModificationPolicy:
     max_modifications_per_session: int
     regression_test_required: bool
     description: str = ""
+    can_depend_on: Set[StratificationLevel] = field(default_factory=set)
+    modification_cooldown_hours: float = 0.0
 
     def allows_modification(self, confidence: float, is_autonomous: bool) -> bool:
         """
@@ -99,6 +101,8 @@ MODIFICATION_POLICIES: Dict[StratificationLevel, ModificationPolicy] = {
         max_modifications_per_session=0,
         regression_test_required=True,
         description="Fundamental principles that define system behavior. Immutable without human review.",
+        can_depend_on={StratificationLevel.CONSTITUTIONAL},  # Only self
+        modification_cooldown_hours=float("inf"),  # Never
     ),
     StratificationLevel.STRATEGIC: ModificationPolicy(
         level=StratificationLevel.STRATEGIC,
@@ -108,6 +112,11 @@ MODIFICATION_POLICIES: Dict[StratificationLevel, ModificationPolicy] = {
         max_modifications_per_session=3,
         regression_test_required=True,
         description="High-level rules guiding domain reasoning. Slow to change, high confidence required.",
+        can_depend_on={
+            StratificationLevel.CONSTITUTIONAL,
+            StratificationLevel.STRATEGIC,
+        },
+        modification_cooldown_hours=24.0,  # Once per day max
     ),
     StratificationLevel.TACTICAL: ModificationPolicy(
         level=StratificationLevel.TACTICAL,
@@ -117,6 +126,12 @@ MODIFICATION_POLICIES: Dict[StratificationLevel, ModificationPolicy] = {
         max_modifications_per_session=10,
         regression_test_required=True,
         description="Domain-specific rules handling common cases. Frequent updates allowed.",
+        can_depend_on={
+            StratificationLevel.CONSTITUTIONAL,
+            StratificationLevel.STRATEGIC,
+            StratificationLevel.TACTICAL,
+        },
+        modification_cooldown_hours=1.0,  # Once per hour
     ),
     StratificationLevel.OPERATIONAL: ModificationPolicy(
         level=StratificationLevel.OPERATIONAL,
@@ -126,6 +141,8 @@ MODIFICATION_POLICIES: Dict[StratificationLevel, ModificationPolicy] = {
         max_modifications_per_session=25,
         regression_test_required=False,  # Optional for performance
         description="Implementation details and optimizations. Rapid adaptation encouraged.",
+        can_depend_on=set(StratificationLevel),  # Can depend on any layer
+        modification_cooldown_hours=0.0,  # No cooldown
     ),
 }
 
