@@ -140,7 +140,20 @@ def get_policy(level: StratificationLevel) -> ModificationPolicy:
     Returns:
         Modification policy for that level
     """
-    return MODIFICATION_POLICIES[level]
+    # Try direct lookup first
+    if level in MODIFICATION_POLICIES:
+        return MODIFICATION_POLICIES[level]
+
+    # Fallback: lookup by value (in case of enum instance mismatch from module reload)
+    for key, policy in MODIFICATION_POLICIES.items():
+        if key.value == level.value:
+            return policy
+
+    # If still not found, raise a helpful error
+    raise KeyError(
+        f"No policy found for stratification level: {level} (value: {level.value}). "
+        f"Available levels: {[k.value for k in MODIFICATION_POLICIES.keys()]}"
+    )
 
 
 def infer_stratification_level(rule_text: str) -> StratificationLevel:
