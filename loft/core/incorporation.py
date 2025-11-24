@@ -34,6 +34,7 @@ class IncorporationResult:
     accuracy_before: float = 0.0
     accuracy_after: float = 0.0
     regression_failures: List[str] = None
+    regression_detected: bool = False
 
     def __post_init__(self):
         if self.regression_failures is None:
@@ -60,6 +61,17 @@ class IncorporationResult:
             return f"⏸️  DEFERRED: {self.reason}"
         else:
             return f"⚠️  ERROR: {self.reason}"
+
+
+@dataclass
+class RollbackEvent:
+    """Record of a rollback event."""
+
+    timestamp: datetime
+    reason: str
+    snapshot_id: str  # Rolled back to this snapshot
+    failed_rule_text: str
+    regression_details: Optional[Dict[str, Any]] = None
 
 
 class SimpleVersionControl:
@@ -206,6 +218,7 @@ class RuleIncorporationEngine:
         version_control: Optional[SimpleVersionControl] = None,
         test_suite: Optional[SimpleTestSuite] = None,
         policies: Optional[Dict[StratificationLevel, ModificationPolicy]] = None,
+        regression_threshold: float = 0.02,  # 2% accuracy drop triggers rollback
     ):
         """
         Initialize incorporation engine.
@@ -215,10 +228,12 @@ class RuleIncorporationEngine:
             version_control: Version control system (uses SimpleVersionControl if None)
             test_suite: Test suite for regression testing (uses SimpleTestSuite if None)
             policies: Modification policies (uses defaults if None)
+            regression_threshold: Maximum allowed accuracy drop (default 0.02 = 2%)
         """
         self.asp_core = asp_core or SimpleASPCore()
         self.version_control = version_control or SimpleVersionControl()
         self.test_suite = test_suite or SimpleTestSuite()
+        self.regression_threshold = regression_threshold
 
         if policies is None:
             from loft.symbolic.stratification import MODIFICATION_POLICIES
@@ -233,8 +248,11 @@ class RuleIncorporationEngine:
         self.modification_count: Dict[str, int] = {level.value: 0 for level in StratificationLevel}
 
         self.incorporation_history: List[Dict[str, Any]] = []
+        self.rollback_history: List[RollbackEvent] = []
 
-        logger.info("Initialized RuleIncorporationEngine")
+        logger.info(
+            f"Initialized RuleIncorporationEngine (regression_threshold={regression_threshold})"
+        )
 
     def incorporate(
         self,
@@ -333,17 +351,56 @@ class RuleIncorporationEngine:
             if policy.regression_test_required:
                 logger.debug("Running regression tests...")
                 regression_result = self.test_suite.run_all()
+                accuracy_after = regression_result["accuracy"]
 
+                # Check for regression via test failures
                 if not regression_result["passed"]:
                     # Rollback!
                     logger.warning("Regression test failed, rolling back")
-                    self.asp_core.restore_state(current_state)
+                    self._rollback(
+                        current_state=current_state,
+                        snapshot_id=snapshot_id,
+                        reason="Regression test failures after incorporation",
+                        failed_rule=rule,
+                        regression_details={"failures": regression_result["failures"]},
+                    )
 
                     return IncorporationResult(
                         status="rejected",
                         reason="Regression test failures after incorporation",
                         regression_failures=regression_result["failures"],
                         requires_human_review=True,
+                        regression_detected=True,
+                    )
+
+                # Check for accuracy regression via threshold
+                accuracy_drop = accuracy_before - accuracy_after
+                if accuracy_drop > self.regression_threshold:
+                    # Rollback due to accuracy regression!
+                    logger.warning(
+                        f"Accuracy regression detected: {accuracy_drop:.2%} drop "
+                        f"(threshold: {self.regression_threshold:.2%})"
+                    )
+                    self._rollback(
+                        current_state=current_state,
+                        snapshot_id=snapshot_id,
+                        reason=f"Accuracy regression: {accuracy_drop:.2%} drop",
+                        failed_rule=rule,
+                        regression_details={
+                            "accuracy_before": accuracy_before,
+                            "accuracy_after": accuracy_after,
+                            "drop": accuracy_drop,
+                            "threshold": self.regression_threshold,
+                        },
+                    )
+
+                    return IncorporationResult(
+                        status="rejected",
+                        reason=f"Accuracy regression: {accuracy_drop:.2%} drop (threshold: {self.regression_threshold:.2%})",
+                        accuracy_before=accuracy_before,
+                        accuracy_after=accuracy_after,
+                        requires_human_review=True,
+                        regression_detected=True,
                     )
 
             # 7. Success!
@@ -380,9 +437,52 @@ class RuleIncorporationEngine:
         except Exception as e:
             # Rollback on any error
             logger.error(f"Error during incorporation: {e}")
-            self.asp_core.restore_state(current_state)
+            self._rollback(
+                current_state=current_state,
+                snapshot_id=snapshot_id,
+                reason=f"Exception during incorporation: {str(e)}",
+                failed_rule=rule,
+                regression_details={"exception": str(e)},
+            )
 
             return IncorporationResult(status="error", reason=str(e), requires_human_review=True)
+
+    def _rollback(
+        self,
+        current_state: Dict[str, Any],
+        snapshot_id: str,
+        reason: str,
+        failed_rule: GeneratedRule,
+        regression_details: Optional[Dict[str, Any]] = None,
+    ):
+        """
+        Rollback to previous state and record the event.
+
+        Args:
+            current_state: State to restore
+            snapshot_id: Snapshot ID for reference
+            reason: Reason for rollback
+            failed_rule: Rule that caused the rollback
+            regression_details: Details about the regression
+        """
+        self.asp_core.restore_state(current_state)
+
+        # Record rollback event
+        rollback_event = RollbackEvent(
+            timestamp=datetime.now(),
+            reason=reason,
+            snapshot_id=snapshot_id,
+            failed_rule_text=failed_rule.asp_rule,
+            regression_details=regression_details,
+        )
+
+        self.rollback_history.append(rollback_event)
+
+        logger.warning(
+            f"Rollback complete: {reason}",
+            snapshot_id=snapshot_id,
+            rollback_count=len(self.rollback_history),
+        )
 
     def reset_session(self):
         """Reset modification counters (e.g., start of new session)."""
@@ -392,6 +492,13 @@ class RuleIncorporationEngine:
     def get_statistics(self) -> Dict[str, Any]:
         """Get incorporation statistics."""
         total_modifications = sum(self.modification_count.values())
+        total_rollbacks = len(self.rollback_history)
+
+        # Calculate success rate
+        total_attempts = len(self.incorporation_history) + total_rollbacks
+        success_rate = (
+            len(self.incorporation_history) / total_attempts if total_attempts > 0 else 0.0
+        )
 
         # modification_count already uses string keys (layer.value)
         by_layer = dict(self.modification_count)
@@ -400,7 +507,10 @@ class RuleIncorporationEngine:
             "total_modifications": total_modifications,
             "by_layer": by_layer,
             "incorporation_history_count": len(self.incorporation_history),
+            "rollback_count": total_rollbacks,
+            "success_rate": success_rate,
             "current_accuracy": self.test_suite.measure_accuracy(),
+            "regression_threshold": self.regression_threshold,
         }
 
     def get_history(self, layer: Optional[StratificationLevel] = None) -> List[Dict]:
@@ -417,6 +527,15 @@ class RuleIncorporationEngine:
             return self.incorporation_history.copy()
 
         return [h for h in self.incorporation_history if h["layer"] == layer.value]
+
+    def get_rollback_history(self) -> List[RollbackEvent]:
+        """
+        Get rollback history.
+
+        Returns:
+            List of rollback events
+        """
+        return self.rollback_history.copy()
 
     def rollback_to_snapshot(self, snapshot_id: str) -> bool:
         """
