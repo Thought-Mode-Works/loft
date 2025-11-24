@@ -59,6 +59,7 @@ class SelfModifyingSystem:
         performance_monitor: Optional[PerformanceMonitor] = None,
         review_queue: Optional[ReviewQueue] = None,
         enable_llm: bool = False,
+        enable_dialectical: bool = False,
         persistence_dir: Optional[str] = None,
     ):
         """
@@ -73,6 +74,7 @@ class SelfModifyingSystem:
             performance_monitor: Performance monitor
             review_queue: Human review queue
             enable_llm: Whether to enable LLM integration
+            enable_dialectical: Whether to enable Phase 4.1 dialectical validation
             persistence_dir: Directory for persisting ASP rules (default: ./asp_rules)
         """
         # Initialize components (with defaults for testing)
@@ -84,7 +86,26 @@ class SelfModifyingSystem:
         else:
             self.rule_generator = rule_generator
 
-        self.validation_pipeline = validation_pipeline or ValidationPipeline()
+        # Initialize validation pipeline with dialectical support if enabled
+        if validation_pipeline is None:
+            if enable_dialectical:
+                try:
+                    from loft.dialectical.critic import CriticSystem
+
+                    critic = CriticSystem(mock_mode=not enable_llm)
+                    self.validation_pipeline = ValidationPipeline(
+                        critic_system=critic, enable_dialectical=True
+                    )
+                    logger.info("Dialectical validation enabled with CriticSystem")
+                except ImportError:
+                    logger.warning(
+                        "Dialectical validation requested but Phase 4.1 components not available"
+                    )
+                    self.validation_pipeline = ValidationPipeline()
+            else:
+                self.validation_pipeline = ValidationPipeline()
+        else:
+            self.validation_pipeline = validation_pipeline
         self.incorporation_engine = incorporation_engine or RuleIncorporationEngine()
         self.ab_testing = ab_testing or ABTestingFramework(
             base_core=self.asp_core,

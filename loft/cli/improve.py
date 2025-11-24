@@ -28,8 +28,13 @@ def improve():
     help="Target stratification layer for new rules",
 )
 @click.option("--enable-llm", is_flag=True, help="Enable LLM integration for real rule generation")
+@click.option(
+    "--enable-dialectical",
+    is_flag=True,
+    help="Enable Phase 4.1 dialectical validation (critique system)",
+)
 @click.option("--persistence-dir", default="./asp_rules", help="Directory for persisting ASP rules")
-def run(max_gaps, target_layer, enable_llm, persistence_dir):
+def run(max_gaps, target_layer, enable_llm, enable_dialectical, persistence_dir):
     """Run self-improvement cycle."""
     click.echo("=" * 80)
     click.echo("STARTING SELF-IMPROVEMENT CYCLE")
@@ -46,8 +51,13 @@ def run(max_gaps, target_layer, enable_llm, persistence_dir):
     # Initialize system
     click.echo("\nInitializing self-modifying system...")
     click.echo(f"  LLM Integration: {'Enabled' if enable_llm else 'Disabled (Mock Mode)'}")
+    click.echo(f"  Dialectical Validation: {'Enabled' if enable_dialectical else 'Disabled'}")
     click.echo(f"  Persistence: {persistence_dir}")
-    system = SelfModifyingSystem(enable_llm=enable_llm, persistence_dir=persistence_dir)
+    system = SelfModifyingSystem(
+        enable_llm=enable_llm,
+        enable_dialectical=enable_dialectical,
+        persistence_dir=persistence_dir,
+    )
 
     # Run cycle
     click.echo(f"\nRunning improvement cycle (max_gaps={max_gaps}, layer={target_layer})...")
