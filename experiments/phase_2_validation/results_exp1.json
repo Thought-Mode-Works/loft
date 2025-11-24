@@ -1,0 +1,475 @@
+{
+  "experiment": "Generate 50 Candidate Rules",
+  "rules": [
+    {
+      "asp_rule": "merchant_confirmation_satisfies(C) :- goods_sale_contract(C), between_merchants(C), confirmation_sent(C, P1, P2), not objection_within_10_days(P2).",
+      "confidence": 0.9244421851525049,
+      "reasoning": "UCC \u00a72-201(2) merchant confirmation exception (variant 1)",
+      "source_type": "principle",
+      "predicates_used": [
+        "merchant_confirmation_satisfies",
+        "goods_sale_contract"
+      ]
+    },
+    {
+      "asp_rule": "specially_manufactured_satisfies(C) :- goods_sale_contract(C), specially_manufactured_goods(C), substantial_beginning_made(C).",
+      "confidence": 0.8334364244112401,
+      "reasoning": "UCC \u00a72-201(3)(a) specially manufactured goods exception (variant 1)",
+      "source_type": "principle",
+      "predicates_used": [
+        "specially_manufactured_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "part_performance_satisfies(C) :- land_sale_contract(C), possession_taken(C), improvements_made(C), unequivocally_referable(C).",
+      "confidence": 0.8856034271889249,
+      "reasoning": "Part performance doctrine from Restatement \u00a7129 (variant 1)",
+      "source_type": "case",
+      "predicates_used": [
+        "part_performance_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "admission_satisfies(C) :- contract_fact(C), admission_in_pleadings(C, Party), party_to_contract(C, Party).",
+      "confidence": 0.7937964627091891,
+      "reasoning": "Admission in judicial proceedings exception (variant 1)",
+      "source_type": "gap_fill",
+      "predicates_used": [
+        "admission_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "sufficient_writing(C) :- writing_fact(W), references_contract(W, C), signed_by(W, P), party_to_contract(C, P), essential_terms_stated(W).",
+      "confidence": 0.8836048089737435,
+      "reasoning": "Refinement of writing requirement with essential terms (variant 1)",
+      "source_type": "refinement",
+      "predicates_used": [
+        "sufficient_writing",
+        "essential_terms_stated"
+      ]
+    },
+    {
+      "asp_rule": "merchant_confirmation_satisfies(C) :- goods_sale_contract(C), between_merchants(C), confirmation_sent(C, P1, P2), not objection_within_10_days(P2).",
+      "confidence": 0.9022901694889702,
+      "reasoning": "UCC \u00a72-201(2) merchant confirmation exception (variant 2)",
+      "source_type": "principle",
+      "predicates_used": [
+        "merchant_confirmation_satisfies",
+        "goods_sale_contract"
+      ]
+    },
+    {
+      "asp_rule": "specially_manufactured_satisfies(C) :- goods_sale_contract(C), specially_manufactured_goods(C), substantial_beginning_made(C).",
+      "confidence": 0.8993340083761663,
+      "reasoning": "UCC \u00a72-201(3)(a) specially manufactured goods exception (variant 2)",
+      "source_type": "principle",
+      "predicates_used": [
+        "specially_manufactured_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "part_performance_satisfies(C) :- land_sale_contract(C), possession_taken(C), improvements_made(C), unequivocally_referable(C).",
+      "confidence": 0.8223832764833162,
+      "reasoning": "Part performance doctrine from Restatement \u00a7129 (variant 2)",
+      "source_type": "case",
+      "predicates_used": [
+        "part_performance_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "admission_satisfies(C) :- contract_fact(C), admission_in_pleadings(C, Party), party_to_contract(C, Party).",
+      "confidence": 0.7926705859381048,
+      "reasoning": "Admission in judicial proceedings exception (variant 2)",
+      "source_type": "gap_fill",
+      "predicates_used": [
+        "admission_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "sufficient_writing(C) :- writing_fact(W), references_contract(W, C), signed_by(W, P), party_to_contract(C, P), essential_terms_stated(W).",
+      "confidence": 0.9063007357815022,
+      "reasoning": "Refinement of writing requirement with essential terms (variant 2)",
+      "source_type": "refinement",
+      "predicates_used": [
+        "sufficient_writing",
+        "essential_terms_stated"
+      ]
+    },
+    {
+      "asp_rule": "merchant_confirmation_satisfies(C) :- goods_sale_contract(C), between_merchants(C), confirmation_sent(C, P1, P2), not objection_within_10_days(P2).",
+      "confidence": 0.8971402594689913,
+      "reasoning": "UCC \u00a72-201(2) merchant confirmation exception (variant 3)",
+      "source_type": "principle",
+      "predicates_used": [
+        "merchant_confirmation_satisfies",
+        "goods_sale_contract"
+      ]
+    },
+    {
+      "asp_rule": "specially_manufactured_satisfies(C) :- goods_sale_contract(C), specially_manufactured_goods(C), substantial_beginning_made(C).",
+      "confidence": 0.8652379553509819,
+      "reasoning": "UCC \u00a72-201(3)(a) specially manufactured goods exception (variant 3)",
+      "source_type": "principle",
+      "predicates_used": [
+        "specially_manufactured_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "part_performance_satisfies(C) :- land_sale_contract(C), possession_taken(C), improvements_made(C), unequivocally_referable(C).",
+      "confidence": 0.8374570678688548,
+      "reasoning": "Part performance doctrine from Restatement \u00a7129 (variant 3)",
+      "source_type": "case",
+      "predicates_used": [
+        "part_performance_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "admission_satisfies(C) :- contract_fact(C), admission_in_pleadings(C, Party), party_to_contract(C, Party).",
+      "confidence": 0.7959008491715474,
+      "reasoning": "Admission in judicial proceedings exception (variant 3)",
+      "source_type": "gap_fill",
+      "predicates_used": [
+        "admission_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "sufficient_writing(C) :- writing_fact(W), references_contract(W, C), signed_by(W, P), party_to_contract(C, P), essential_terms_stated(W).",
+      "confidence": 0.8706828537701656,
+      "reasoning": "Refinement of writing requirement with essential terms (variant 3)",
+      "source_type": "refinement",
+      "predicates_used": [
+        "sufficient_writing",
+        "essential_terms_stated"
+      ]
+    },
+    {
+      "asp_rule": "merchant_confirmation_satisfies(C) :- goods_sale_contract(C), between_merchants(C), confirmation_sent(C, P1, P2), not objection_within_10_days(P2).",
+      "confidence": 0.9365242141552124,
+      "reasoning": "UCC \u00a72-201(2) merchant confirmation exception (variant 4)",
+      "source_type": "principle",
+      "predicates_used": [
+        "merchant_confirmation_satisfies",
+        "goods_sale_contract"
+      ]
+    },
+    {
+      "asp_rule": "specially_manufactured_satisfies(C) :- goods_sale_contract(C), specially_manufactured_goods(C), substantial_beginning_made(C).",
+      "confidence": 0.8561522774914075,
+      "reasoning": "UCC \u00a72-201(3)(a) specially manufactured goods exception (variant 4)",
+      "source_type": "principle",
+      "predicates_used": [
+        "specially_manufactured_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "part_performance_satisfies(C) :- land_sale_contract(C), possession_taken(C), improvements_made(C), unequivocally_referable(C).",
+      "confidence": 0.8421983909712493,
+      "reasoning": "Part performance doctrine from Restatement \u00a7129 (variant 4)",
+      "source_type": "case",
+      "predicates_used": [
+        "part_performance_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "admission_satisfies(C) :- contract_fact(C), admission_in_pleadings(C, Party), party_to_contract(C, Party).",
+      "confidence": 0.788126486333322,
+      "reasoning": "Admission in judicial proceedings exception (variant 4)",
+      "source_type": "gap_fill",
+      "predicates_used": [
+        "admission_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "sufficient_writing(C) :- writing_fact(W), references_contract(W, C), signed_by(W, P), party_to_contract(C, P), essential_terms_stated(W).",
+      "confidence": 0.9277125826800271,
+      "reasoning": "Refinement of writing requirement with essential terms (variant 4)",
+      "source_type": "refinement",
+      "predicates_used": [
+        "sufficient_writing",
+        "essential_terms_stated"
+      ]
+    },
+    {
+      "asp_rule": "merchant_confirmation_satisfies(C) :- goods_sale_contract(C), between_merchants(C), confirmation_sent(C, P1, P2), not objection_within_10_days(P2).",
+      "confidence": 0.9305639676174521,
+      "reasoning": "UCC \u00a72-201(2) merchant confirmation exception (variant 5)",
+      "source_type": "principle",
+      "predicates_used": [
+        "merchant_confirmation_satisfies",
+        "goods_sale_contract"
+      ]
+    },
+    {
+      "asp_rule": "specially_manufactured_satisfies(C) :- goods_sale_contract(C), specially_manufactured_goods(C), substantial_beginning_made(C).",
+      "confidence": 0.8364949479833198,
+      "reasoning": "UCC \u00a72-201(3)(a) specially manufactured goods exception (variant 5)",
+      "source_type": "principle",
+      "predicates_used": [
+        "specially_manufactured_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "part_performance_satisfies(C) :- land_sale_contract(C), possession_taken(C), improvements_made(C), unequivocally_referable(C).",
+      "confidence": 0.8858209379817272,
+      "reasoning": "Part performance doctrine from Restatement \u00a7129 (variant 5)",
+      "source_type": "case",
+      "predicates_used": [
+        "part_performance_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "admission_satisfies(C) :- contract_fact(C), admission_in_pleadings(C, Party), party_to_contract(C, Party).",
+      "confidence": 0.8624865251625945,
+      "reasoning": "Admission in judicial proceedings exception (variant 5)",
+      "source_type": "gap_fill",
+      "predicates_used": [
+        "admission_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "sufficient_writing(C) :- writing_fact(W), references_contract(W, C), signed_by(W, P), party_to_contract(C, P), essential_terms_stated(W).",
+      "confidence": 0.9312342987826919,
+      "reasoning": "Refinement of writing requirement with essential terms (variant 5)",
+      "source_type": "refinement",
+      "predicates_used": [
+        "sufficient_writing",
+        "essential_terms_stated"
+      ]
+    },
+    {
+      "asp_rule": "merchant_confirmation_satisfies(C) :- goods_sale_contract(C), between_merchants(C), confirmation_sent(C, P1, P2), not objection_within_10_days(P2).",
+      "confidence": 0.8776962302390386,
+      "reasoning": "UCC \u00a72-201(2) merchant confirmation exception (variant 6)",
+      "source_type": "principle",
+      "predicates_used": [
+        "merchant_confirmation_satisfies",
+        "goods_sale_contract"
+      ]
+    },
+    {
+      "asp_rule": "specially_manufactured_satisfies(C) :- goods_sale_contract(C), specially_manufactured_goods(C), substantial_beginning_made(C).",
+      "confidence": 0.8947291266223284,
+      "reasoning": "UCC \u00a72-201(3)(a) specially manufactured goods exception (variant 6)",
+      "source_type": "principle",
+      "predicates_used": [
+        "specially_manufactured_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "part_performance_satisfies(C) :- land_sale_contract(C), possession_taken(C), improvements_made(C), unequivocally_referable(C).",
+      "confidence": 0.8548497219978883,
+      "reasoning": "Part performance doctrine from Restatement \u00a7129 (variant 6)",
+      "source_type": "case",
+      "predicates_used": [
+        "part_performance_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "admission_satisfies(C) :- contract_fact(C), admission_in_pleadings(C, Party), party_to_contract(C, Party).",
+      "confidence": 0.7812957170176162,
+      "reasoning": "Admission in judicial proceedings exception (variant 6)",
+      "source_type": "gap_fill",
+      "predicates_used": [
+        "admission_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "sufficient_writing(C) :- writing_fact(W), references_contract(W, C), signed_by(W, P), party_to_contract(C, P), essential_terms_stated(W).",
+      "confidence": 0.91481190538117,
+      "reasoning": "Refinement of writing requirement with essential terms (variant 6)",
+      "source_type": "refinement",
+      "predicates_used": [
+        "sufficient_writing",
+        "essential_terms_stated"
+      ]
+    },
+    {
+      "asp_rule": "merchant_confirmation_satisfies(C) :- goods_sale_contract(C), between_merchants(C), confirmation_sent(C, P1, P2), not objection_within_10_days(P2).",
+      "confidence": 0.8939081564605811,
+      "reasoning": "UCC \u00a72-201(2) merchant confirmation exception (variant 7)",
+      "source_type": "principle",
+      "predicates_used": [
+        "merchant_confirmation_satisfies",
+        "goods_sale_contract"
+      ]
+    },
+    {
+      "asp_rule": "specially_manufactured_satisfies(C) :- goods_sale_contract(C), specially_manufactured_goods(C), substantial_beginning_made(C).",
+      "confidence": 0.8212278247397975,
+      "reasoning": "UCC \u00a72-201(3)(a) specially manufactured goods exception (variant 7)",
+      "source_type": "principle",
+      "predicates_used": [
+        "specially_manufactured_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "part_performance_satisfies(C) :- land_sale_contract(C), possession_taken(C), improvements_made(C), unequivocally_referable(C).",
+      "confidence": 0.7977421783853303,
+      "reasoning": "Part performance doctrine from Restatement \u00a7129 (variant 7)",
+      "source_type": "case",
+      "predicates_used": [
+        "part_performance_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "admission_satisfies(C) :- contract_fact(C), admission_in_pleadings(C, Party), party_to_contract(C, Party).",
+      "confidence": 0.8270328423136872,
+      "reasoning": "Admission in judicial proceedings exception (variant 7)",
+      "source_type": "gap_fill",
+      "predicates_used": [
+        "admission_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "sufficient_writing(C) :- writing_fact(W), references_contract(W, C), signed_by(W, P), party_to_contract(C, P), essential_terms_stated(W).",
+      "confidence": 0.9128935382940413,
+      "reasoning": "Refinement of writing requirement with essential terms (variant 7)",
+      "source_type": "refinement",
+      "predicates_used": [
+        "sufficient_writing",
+        "essential_terms_stated"
+      ]
+    },
+    {
+      "asp_rule": "merchant_confirmation_satisfies(C) :- goods_sale_contract(C), between_merchants(C), confirmation_sent(C, P1, P2), not objection_within_10_days(P2).",
+      "confidence": 0.8948694605643822,
+      "reasoning": "UCC \u00a72-201(2) merchant confirmation exception (variant 8)",
+      "source_type": "principle",
+      "predicates_used": [
+        "merchant_confirmation_satisfies",
+        "goods_sale_contract"
+      ]
+    },
+    {
+      "asp_rule": "specially_manufactured_satisfies(C) :- goods_sale_contract(C), specially_manufactured_goods(C), substantial_beginning_made(C).",
+      "confidence": 0.8528700520533098,
+      "reasoning": "UCC \u00a72-201(3)(a) specially manufactured goods exception (variant 8)",
+      "source_type": "principle",
+      "predicates_used": [
+        "specially_manufactured_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "part_performance_satisfies(C) :- land_sale_contract(C), possession_taken(C), improvements_made(C), unequivocally_referable(C).",
+      "confidence": 0.8582004560587978,
+      "reasoning": "Part performance doctrine from Restatement \u00a7129 (variant 8)",
+      "source_type": "case",
+      "predicates_used": [
+        "part_performance_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "admission_satisfies(C) :- contract_fact(C), admission_in_pleadings(C, Party), party_to_contract(C, Party).",
+      "confidence": 0.833947369472032,
+      "reasoning": "Admission in judicial proceedings exception (variant 8)",
+      "source_type": "gap_fill",
+      "predicates_used": [
+        "admission_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "sufficient_writing(C) :- writing_fact(W), references_contract(W, C), signed_by(W, P), party_to_contract(C, P), essential_terms_stated(W).",
+      "confidence": 0.8809851244536517,
+      "reasoning": "Refinement of writing requirement with essential terms (variant 8)",
+      "source_type": "refinement",
+      "predicates_used": [
+        "sufficient_writing",
+        "essential_terms_stated"
+      ]
+    },
+    {
+      "asp_rule": "merchant_confirmation_satisfies(C) :- goods_sale_contract(C), between_merchants(C), confirmation_sent(C, P1, P2), not objection_within_10_days(P2).",
+      "confidence": 0.8858606709387061,
+      "reasoning": "UCC \u00a72-201(2) merchant confirmation exception (variant 9)",
+      "source_type": "principle",
+      "predicates_used": [
+        "merchant_confirmation_satisfies",
+        "goods_sale_contract"
+      ]
+    },
+    {
+      "asp_rule": "specially_manufactured_satisfies(C) :- goods_sale_contract(C), specially_manufactured_goods(C), substantial_beginning_made(C).",
+      "confidence": 0.8581020689995771,
+      "reasoning": "UCC \u00a72-201(3)(a) specially manufactured goods exception (variant 9)",
+      "source_type": "principle",
+      "predicates_used": [
+        "specially_manufactured_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "part_performance_satisfies(C) :- land_sale_contract(C), possession_taken(C), improvements_made(C), unequivocally_referable(C).",
+      "confidence": 0.8539426798457883,
+      "reasoning": "Part performance doctrine from Restatement \u00a7129 (variant 9)",
+      "source_type": "case",
+      "predicates_used": [
+        "part_performance_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "admission_satisfies(C) :- contract_fact(C), admission_in_pleadings(C, Party), party_to_contract(C, Party).",
+      "confidence": 0.773855183933738,
+      "reasoning": "Admission in judicial proceedings exception (variant 9)",
+      "source_type": "gap_fill",
+      "predicates_used": [
+        "admission_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "sufficient_writing(C) :- writing_fact(W), references_contract(W, C), signed_by(W, P), party_to_contract(C, P), essential_terms_stated(W).",
+      "confidence": 0.9008535879254495,
+      "reasoning": "Refinement of writing requirement with essential terms (variant 9)",
+      "source_type": "refinement",
+      "predicates_used": [
+        "sufficient_writing",
+        "essential_terms_stated"
+      ]
+    },
+    {
+      "asp_rule": "merchant_confirmation_satisfies(C) :- goods_sale_contract(C), between_merchants(C), confirmation_sent(C, P1, P2), not objection_within_10_days(P2).",
+      "confidence": 0.8671875414384091,
+      "reasoning": "UCC \u00a72-201(2) merchant confirmation exception (variant 10)",
+      "source_type": "principle",
+      "predicates_used": [
+        "merchant_confirmation_satisfies",
+        "goods_sale_contract"
+      ]
+    },
+    {
+      "asp_rule": "specially_manufactured_satisfies(C) :- goods_sale_contract(C), specially_manufactured_goods(C), substantial_beginning_made(C).",
+      "confidence": 0.9088268076452488,
+      "reasoning": "UCC \u00a72-201(3)(a) specially manufactured goods exception (variant 10)",
+      "source_type": "principle",
+      "predicates_used": [
+        "specially_manufactured_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "part_performance_satisfies(C) :- land_sale_contract(C), possession_taken(C), improvements_made(C), unequivocally_referable(C).",
+      "confidence": 0.8251846255827883,
+      "reasoning": "Part performance doctrine from Restatement \u00a7129 (variant 10)",
+      "source_type": "case",
+      "predicates_used": [
+        "part_performance_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "admission_satisfies(C) :- contract_fact(C), admission_in_pleadings(C, Party), party_to_contract(C, Party).",
+      "confidence": 0.8248157828416329,
+      "reasoning": "Admission in judicial proceedings exception (variant 10)",
+      "source_type": "gap_fill",
+      "predicates_used": [
+        "admission_satisfies"
+      ]
+    },
+    {
+      "asp_rule": "sufficient_writing(C) :- writing_fact(W), references_contract(W, C), signed_by(W, P), party_to_contract(C, P), essential_terms_stated(W).",
+      "confidence": 0.8666883976342752,
+      "reasoning": "Refinement of writing requirement with essential terms (variant 10)",
+      "source_type": "refinement",
+      "predicates_used": [
+        "sufficient_writing",
+        "essential_terms_stated"
+      ]
+    }
+  ]
+}
