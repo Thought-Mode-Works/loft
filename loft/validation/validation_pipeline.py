@@ -203,12 +203,21 @@ class ValidationPipeline:
             logger.info(f"Running dialectical validation for rule: {rule_id or 'unknown'}")
 
             # Create GeneratedRule object for critic
+            # Extract predicates from the rule
+            import re
+
+            predicates = []
+            if ":-" in rule_asp:
+                body = rule_asp.split(":-")[1].strip().rstrip(".")
+                predicates = re.findall(r"([a-z_][a-zA-Z0-9_]*)\(", body)
+
             generated_rule = GeneratedRule(
-                rule_id=rule_id or "unknown",
                 asp_rule=rule_asp,
                 confidence=report.aggregate_confidence,
-                strategy="validation",
-                metadata={"validation_stage": "dialectical"},
+                reasoning=f"Rule under validation: {rule_id or 'unknown'}",
+                predicates_used=list(set(predicates)) if predicates else [],
+                source_type="refinement",
+                source_text=f"Validation of {target_layer} rule",
             )
 
             # Get existing rules for context
