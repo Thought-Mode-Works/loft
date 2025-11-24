@@ -23,9 +23,7 @@ class TestCriticValidationIntegration:
     @pytest.fixture
     def pipeline_with_critic(self, critic):
         """Create validation pipeline with critic enabled."""
-        return ValidationPipeline(
-            critic_system=critic, enable_dialectical=True, min_confidence=0.6
-        )
+        return ValidationPipeline(critic_system=critic, enable_dialectical=True, min_confidence=0.6)
 
     def test_dialectical_validation_stage_runs(self, pipeline_with_critic):
         """Test that dialectical validation stage executes."""
@@ -135,9 +133,7 @@ class TestCriticWithRuleAccumulation:
             "valid_offer(O) :- offer(O), definite(O), communicated(O)."
         ]
 
-        cycle_3_rules = cycle_2_rules + [
-            "acceptance(A) :- acceptance(A), mirror_image(A)."
-        ]
+        cycle_3_rules = cycle_2_rules + ["acceptance(A) :- acceptance(A), mirror_image(A)."]
 
         # New rule to critique against accumulated knowledge
         new_rule = GeneratedRule(
@@ -187,9 +183,7 @@ class TestDialecticalRefinement:
             assert improved.asp_rule != original_rule.asp_rule
             assert improved.rule_id == "original_improved"
             # Should address issues
-            assert "metadata" in improved.metadata or improved.metadata.get(
-                "mock_synthesis"
-            )
+            assert "metadata" in improved.metadata or improved.metadata.get("mock_synthesis")
 
     def test_dialectical_loop(self, critic):
         """Test iterative refinement through dialectical process."""

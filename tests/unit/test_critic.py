@@ -110,9 +110,7 @@ class TestCriticSystemMockMode:
 
     def test_critique_rule_basic(self, critic, sample_rule):
         """Test basic rule critique in mock mode."""
-        critique = critic.critique_rule(
-            sample_rule, existing_rules=[], context="Contract law"
-        )
+        critique = critic.critique_rule(sample_rule, existing_rules=[], context="Contract law")
 
         assert isinstance(critique, CritiqueReport)
         assert critique.rule == sample_rule.asp_rule
