@@ -6,23 +6,13 @@ confidence scores, and metadata tracking.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from datetime import datetime
-from enum import Enum
 import hashlib
+import re
 
-
-class StratificationLevel(str, Enum):
-    """
-    Stratification levels for rules in the symbolic core.
-
-    Four-layer architecture from constitutional (immutable) to operational (rapid adaptation).
-    """
-
-    CONSTITUTIONAL = "constitutional"  # Immutable, require code change
-    STRATEGIC = "strategic"  # Slow change, high validation (>0.9 confidence)
-    TACTICAL = "tactical"  # Frequent updates, moderate validation (>0.8 confidence)
-    OPERATIONAL = "operational"  # Rapid adaptation, low validation (>0.6 confidence)
+# Import StratificationLevel from central location
+from loft.symbolic.stratification import StratificationLevel
 
 
 @dataclass
@@ -79,6 +69,10 @@ class ASPRule:
     confidence: float  # Confidence score (0.0-1.0)
     metadata: RuleMetadata  # Provenance and validation info
 
+    # Fields for stratification validation (auto-populated from asp_text)
+    predicates_used: List[str] = field(default_factory=list)
+    new_predicates: List[str] = field(default_factory=list)
+
     def __post_init__(self) -> None:
         """Validate rule after initialization."""
         if not 0.0 <= self.confidence <= 1.0:
@@ -91,6 +85,10 @@ class ASPRule:
                 f"{self.stratification_level.value} level requires confidence >= {min_confidence}, "
                 f"got {self.confidence}"
             )
+
+        # Extract predicates from asp_text if not provided
+        if not self.predicates_used or not self.new_predicates:
+            self._extract_predicates()
 
     @staticmethod
     def get_min_confidence_for_level(level: StratificationLevel) -> float:
@@ -156,6 +154,54 @@ class ASPRule:
     def is_choice_rule(self) -> bool:
         """Check if this rule is a choice rule (contains {})."""
         return "{" in self.asp_text and "}" in self.asp_text
+
+    def _extract_predicates(self) -> None:
+        """
+        Extract predicates from ASP text and populate predicate fields.
+
+        Populates:
+        - new_predicates: Predicates defined in the head
+        - predicates_used: Predicates referenced in the body
+        """
+        # Split on :- to separate head and body
+        if ":-" in self.asp_text:
+            parts = self.asp_text.split(":-", 1)
+            head = parts[0].strip()
+            body = parts[1].strip() if len(parts) > 1 else ""
+        else:
+            # Fact (no body)
+            head = self.asp_text.strip()
+            body = ""
+
+        # Extract predicates from head (new_predicates)
+        self.new_predicates = self._extract_predicate_names(head)
+
+        # Extract predicates from body (predicates_used)
+        if body:
+            self.predicates_used = self._extract_predicate_names(body)
+        else:
+            self.predicates_used = []
+
+    def _extract_predicate_names(self, text: str) -> List[str]:
+        """
+        Extract predicate names from ASP text.
+
+        Args:
+            text: ASP text to extract from
+
+        Returns:
+            List of unique predicate names
+        """
+        # Match predicate_name( or predicate_name.
+        # Excludes operators like not, or keywords
+        pattern = r"\b([a-z][a-z0-9_]*)\s*\("
+        matches = re.findall(pattern, text)
+
+        # Filter out ASP keywords
+        keywords = {"not", "and", "or"}
+        predicates = [m for m in matches if m not in keywords]
+
+        return list(set(predicates))  # Return unique predicates
 
     def extract_predicates(self) -> list[str]:
         """

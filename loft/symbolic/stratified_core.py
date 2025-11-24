@@ -14,8 +14,8 @@ from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
-from loft.symbolic.asp_rule import ASPRule, StratificationLevel
-from loft.symbolic.stratification import ModificationPolicy
+from loft.symbolic.asp_rule import ASPRule
+from loft.symbolic.stratification import ModificationPolicy, StratificationLevel
 
 
 @dataclass
@@ -190,11 +190,11 @@ class StratifiedASPCore:
             )
         )
 
-        logger.info(f"Successfully added rule to {layer_key} layer: {rule.rule_text[:50]}...")
+        logger.info(f"Successfully added rule to {layer_key} layer: {rule.asp_text[:50]}...")
 
         return AddRuleResult(
             success=True,
-            rule_id=rule.id,
+            rule_id=rule.rule_id,
             reason="Rule successfully added",
         )
 
