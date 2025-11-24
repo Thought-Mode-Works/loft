@@ -21,6 +21,16 @@ from loft.validation.semantic_validator import SemanticValidator
 from loft.validation.empirical_validator import EmpiricalValidator
 from loft.validation.consensus_validator import ConsensusValidator
 
+# Phase 4.1: Dialectical validation
+try:
+    from loft.dialectical.critic import CriticSystem
+    from loft.neural.rule_schemas import GeneratedRule
+
+    DIALECTICAL_AVAILABLE = True
+except ImportError:
+    DIALECTICAL_AVAILABLE = False
+    logger.debug("Dialectical validation not available (Phase 4.1 components missing)")
+
 
 class ValidationPipeline:
     """
@@ -36,7 +46,9 @@ class ValidationPipeline:
         semantic_validator: Optional[SemanticValidator] = None,
         empirical_validator: Optional[EmpiricalValidator] = None,
         consensus_validator: Optional[ConsensusValidator] = None,
+        critic_system: Optional["CriticSystem"] = None,
         min_confidence: float = 0.6,
+        enable_dialectical: bool = False,
     ):
         """
         Initialize validation pipeline.
@@ -46,15 +58,27 @@ class ValidationPipeline:
             semantic_validator: Semantic validator (creates default if None)
             empirical_validator: Empirical validator (optional)
             consensus_validator: Consensus validator (optional)
+            critic_system: Dialectical critic system (Phase 4.1, optional)
             min_confidence: Minimum confidence for acceptance (0.0-1.0)
+            enable_dialectical: Enable dialectical validation stage
         """
         self.syntax_validator = syntax_validator or ASPSyntaxValidator()
         self.semantic_validator = semantic_validator or SemanticValidator()
         self.empirical_validator = empirical_validator
         self.consensus_validator = consensus_validator
+        self.critic_system = critic_system
         self.min_confidence = min_confidence
+        self.enable_dialectical = enable_dialectical and DIALECTICAL_AVAILABLE
 
-        logger.info(f"Initialized ValidationPipeline with min_confidence={min_confidence}")
+        if enable_dialectical and not DIALECTICAL_AVAILABLE:
+            logger.warning(
+                "Dialectical validation requested but Phase 4.1 components not available"
+            )
+
+        logger.info(
+            f"Initialized ValidationPipeline with min_confidence={min_confidence}, "
+            f"dialectical={self.enable_dialectical}"
+        )
 
     def validate_rule(
         self,
@@ -174,6 +198,57 @@ class ValidationPipeline:
                 logger.info(f"Rule {rule_id} needs revision per consensus")
                 return report
 
+        # Stage 5: Dialectical Validation (Phase 4.1, if enabled)
+        if self.enable_dialectical and self.critic_system:
+            logger.info(f"Running dialectical validation for rule: {rule_id or 'unknown'}")
+
+            # Create GeneratedRule object for critic
+            generated_rule = GeneratedRule(
+                rule_id=rule_id or "unknown",
+                asp_rule=rule_asp,
+                confidence=report.aggregate_confidence,
+                strategy="validation",
+                metadata={"validation_stage": "dialectical"},
+            )
+
+            # Get existing rules for context
+            existing_rules_list = []
+            if existing_rules:
+                existing_rules_list = [r.strip() for r in existing_rules.split("\n") if r.strip()]
+
+            # Run critique
+            critique_report = self.critic_system.critique_rule(
+                generated_rule, existing_rules_list, context=context
+            )
+
+            report.add_stage("dialectical", critique_report)
+
+            # Handle critique results
+            if critique_report.should_reject():
+                report.final_decision = "reject"
+                report.rejection_reason = f"Critical issues identified: {critique_report.issues[0].description if critique_report.issues else 'Multiple issues'}"
+                report.aggregate_confidence = 0.2
+                logger.warning(f"Rule {rule_id} rejected by dialectical critique")
+                return report
+
+            if critique_report.should_revise():
+                report.final_decision = "revise"
+                if critique_report.suggested_revision:
+                    report.suggested_revisions.append(
+                        f"Suggested revision: {critique_report.suggested_revision}"
+                    )
+                for issue in critique_report.issues[:3]:
+                    report.suggested_revisions.append(issue.description)
+                report.aggregate_confidence = 0.6
+                report.metadata["critique_confidence"] = critique_report.confidence
+                logger.info(f"Rule {rule_id} needs revision per dialectical critique")
+                return report
+
+            # If critique passed, factor into confidence
+            logger.info(
+                f"Dialectical critique passed with {len(critique_report.issues)} minor issues"
+            )
+
         # Calculate aggregate confidence
         confidence_scores = []
 
@@ -194,6 +269,13 @@ class ValidationPipeline:
         if "consensus" in report.stage_results:
             consensus = report.stage_results["consensus"]
             confidence_scores.append(consensus.consensus_strength)
+
+        # Dialectical: use critique confidence if available
+        if "dialectical" in report.stage_results:
+            critique = report.stage_results["dialectical"]
+            # If critique passed without major issues, add confidence
+            if not critique.should_reject() and not critique.should_revise():
+                confidence_scores.append(critique.confidence)
 
         report.aggregate_confidence = (
             sum(confidence_scores) / len(confidence_scores) if confidence_scores else 0.5
