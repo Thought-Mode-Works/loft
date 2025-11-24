@@ -269,6 +269,88 @@ loft:expansionTemplate a owl:DatatypeProperty ;
     rdfs:comment "Template string for generating ASP code from this genre" .
 
 # ============================================
+# Provenance Tracking Properties
+# ============================================
+
+loft:sourceType a owl:DatatypeProperty ;
+    rdfs:domain asp:ASPRule ;
+    rdfs:range xsd:string ;
+    rdfs:label "source type" ;
+    rdfs:comment "Type of source that generated this rule: manual, llm_generated, gap_fill, case_law, principle, human_revision" .
+
+loft:sourceText a owl:DatatypeProperty ;
+    rdfs:domain asp:ASPRule ;
+    rdfs:range xsd:string ;
+    rdfs:label "source text" ;
+    rdfs:comment "Original text (natural language) that was used to generate this rule" .
+
+loft:sourceLLM a owl:ObjectProperty ;
+    rdfs:domain asp:ASPRule ;
+    rdfs:range loft:LLMProvider ;
+    rdfs:label "source LLM" ;
+    rdfs:comment "LLM provider and model that generated this rule" .
+
+loft:sourcePromptVersion a owl:DatatypeProperty ;
+    rdfs:domain asp:ASPRule ;
+    rdfs:range xsd:string ;
+    rdfs:label "source prompt version" ;
+    rdfs:comment "Version of prompt template used (e.g., 'gap_fill_v1.1')" .
+
+loft:generationTimestamp a owl:DatatypeProperty ;
+    rdfs:domain asp:ASPRule ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "generation timestamp" ;
+    rdfs:comment "When this rule was generated" .
+
+loft:incorporationTimestamp a owl:DatatypeProperty ;
+    rdfs:domain asp:ASPRule ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "incorporation timestamp" ;
+    rdfs:comment "When this rule was incorporated into the ASP core" .
+
+loft:incorporatedBy a owl:DatatypeProperty ;
+    rdfs:domain asp:ASPRule ;
+    rdfs:range xsd:string ;
+    rdfs:label "incorporated by" ;
+    rdfs:comment "Agent that incorporated this rule: human, autonomous_system, reviewed_by_human" .
+
+loft:validationReportId a owl:DatatypeProperty ;
+    rdfs:domain asp:ASPRule ;
+    rdfs:range xsd:string ;
+    rdfs:label "validation report ID" ;
+    rdfs:comment "ID of validation report that approved this rule" .
+
+loft:snapshotId a owl:DatatypeProperty ;
+    rdfs:domain asp:ASPRule ;
+    rdfs:range xsd:string ;
+    rdfs:label "snapshot ID" ;
+    rdfs:comment "Version control snapshot ID created before incorporating this rule (enables rollback)" .
+
+loft:replacedRule a owl:ObjectProperty ;
+    rdfs:domain asp:ASPRule ;
+    rdfs:range asp:ASPRule ;
+    rdfs:label "replaced rule" ;
+    rdfs:comment "Previous rule that this rule replaces (if any)" .
+
+loft:replacedBy a owl:ObjectProperty ;
+    rdfs:domain asp:ASPRule ;
+    rdfs:range asp:ASPRule ;
+    rdfs:label "replaced by" ;
+    rdfs:comment "Rule that replaced this one (if deprecated)" .
+
+loft:derivedFromTestCase a owl:ObjectProperty ;
+    rdfs:domain asp:ASPRule ;
+    rdfs:range loft:TestCase ;
+    rdfs:label "derived from test case" ;
+    rdfs:comment "Test case failure that prompted generation of this rule" .
+
+loft:modificationChain a owl:ObjectProperty ;
+    rdfs:domain asp:ASPRule ;
+    rdfs:range rdf:List ;
+    rdfs:label "modification chain" ;
+    rdfs:comment "Ordered list of modifications to this rule (lineage)" .
+
+# ============================================
 # Supporting Classes
 # ============================================
 
