@@ -223,7 +223,8 @@ class RuleIncorporationEngine:
         if policies is None:
             from loft.symbolic.stratification import MODIFICATION_POLICIES
 
-            self.policies = MODIFICATION_POLICIES
+            # Make a copy to avoid any reference issues
+            self.policies = dict(MODIFICATION_POLICIES)
         else:
             self.policies = policies
 
@@ -259,7 +260,16 @@ class RuleIncorporationEngine:
         )
 
         # 1. Check policy
-        policy = self.policies[target_layer]
+        if target_layer not in self.policies:
+            # Fallback: if policies not properly initialized, get from stratification module
+            from loft.symbolic.stratification import get_policy
+
+            policy = get_policy(target_layer)
+            logger.warning(
+                f"Policy for {target_layer.value} not found in engine policies, using default"
+            )
+        else:
+            policy = self.policies[target_layer]
 
         if not policy.autonomous_allowed and is_autonomous:
             logger.warning(f"Autonomous modification not allowed for {target_layer.value} layer")
