@@ -155,8 +155,12 @@ class SelfModifyingSystem:
             )
 
             # Validate winner through full pipeline
-            validation_report = self.validation_pipeline.validate(
-                rule=winner.rule, target_layer=target_layer.value
+            validation_report = self.validation_pipeline.validate_rule(
+                rule_asp=winner.rule.asp_rule,
+                rule_id=winner.variant_id,
+                target_layer=target_layer.value,
+                proposer_reasoning=winner.rule.reasoning,
+                source_type=winner.rule.source_type,
             )
 
             # Handle validation result
@@ -187,7 +191,7 @@ class SelfModifyingSystem:
                 )
 
             else:
-                logger.info(f"✗ Validation rejected: {validation_report.rejection_reasons}")
+                logger.info(f"✗ Validation rejected: {validation_report.rejection_reason}")
 
         # 3. Capture final performance
         final_snapshot = self._capture_final_snapshot()
@@ -221,8 +225,11 @@ class SelfModifyingSystem:
     def _capture_baseline_snapshot(self):
         """Capture baseline performance snapshot."""
         try:
-            # Get current state
-            rules_by_layer = self.asp_core.get_rules_count_by_layer()
+            # Get current state - count rules by layer
+            rules_by_layer = {}
+            for layer in StratificationLevel:
+                rules = self.asp_core.get_rules_by_layer(layer)
+                rules_by_layer[layer.value] = len(rules)
             total_rules = sum(rules_by_layer.values())
 
             snapshot = self.performance_monitor.capture_snapshot(
@@ -243,7 +250,11 @@ class SelfModifyingSystem:
     def _capture_final_snapshot(self):
         """Capture final performance snapshot."""
         try:
-            rules_by_layer = self.asp_core.get_rules_count_by_layer()
+            # Count rules by layer
+            rules_by_layer = {}
+            for layer in StratificationLevel:
+                rules = self.asp_core.get_rules_by_layer(layer)
+                rules_by_layer[layer.value] = len(rules)
             total_rules = sum(rules_by_layer.values())
 
             snapshot = self.performance_monitor.capture_snapshot(
@@ -524,8 +535,11 @@ class SelfModifyingSystem:
             "Review Queue": "healthy",
         }
 
-        # Get system metrics
-        rules_by_layer = self.asp_core.get_rules_count_by_layer()
+        # Get system metrics - count rules by layer
+        rules_by_layer = {}
+        for layer in StratificationLevel:
+            rules = self.asp_core.get_rules_by_layer(layer)
+            rules_by_layer[layer.value] = len(rules)
         total_rules = sum(rules_by_layer.values())
 
         # Recent activity
