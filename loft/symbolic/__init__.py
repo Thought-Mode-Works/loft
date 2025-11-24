@@ -80,6 +80,14 @@ from .legal_primitives import (
     create_meta_reasoning_rules,
 )
 
+from .stratification import (
+    MODIFICATION_POLICIES,
+    ModificationPolicy,
+    get_policy,
+    infer_stratification_level,
+    print_all_policies,
+)
+
 __all__ = [
     # Core classes
     "ASPRule",
@@ -96,4 +104,10 @@ __all__ = [
     "create_statute_of_frauds_rules",
     "create_contract_basics_rules",
     "create_meta_reasoning_rules",
+    # Stratification and policies
+    "MODIFICATION_POLICIES",
+    "ModificationPolicy",
+    "get_policy",
+    "infer_stratification_level",
+    "print_all_policies",
 ]
