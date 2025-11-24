@@ -9,8 +9,6 @@ Tests complete self-modification system against ROADMAP MVP criteria:
 - All modifications are explainable and traceable
 """
 
-import pytest
-
 from loft.core.self_modifying_system import SelfModifyingSystem
 from loft.symbolic.stratification import StratificationLevel
 
@@ -113,7 +111,7 @@ class TestPhase3MVP:
         initial_count = len(initial_constitutional)
 
         # Run improvement cycle targeting tactical layer
-        result = system.run_improvement_cycle(max_gaps=5, target_layer=StratificationLevel.TACTICAL)
+        system.run_improvement_cycle(max_gaps=5, target_layer=StratificationLevel.TACTICAL)
 
         # Get final constitutional rules
         final_constitutional = system.asp_core.get_rules_by_layer(
@@ -407,7 +405,7 @@ class TestIntegrationOfPhase3Components:
         system = SelfModifyingSystem()
 
         # Run cycle that may incorporate rules
-        result = system.run_improvement_cycle(max_gaps=2)
+        system.run_improvement_cycle(max_gaps=2)
 
         # Verify incorporation engine is used
         assert system.incorporation_engine is not None
