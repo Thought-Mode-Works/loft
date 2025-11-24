@@ -1,0 +1,174 @@
+{
+  "config": {
+    "max_gaps": 3,
+    "candidates_per_gap": 2,
+    "validation_threshold": 0.75,
+    "experiment_date": "2025-11-23T19:34:00.173609"
+  },
+  "gaps": [
+    {
+      "test_case_id": "synthetic_merchant_confirmation",
+      "description": "Merchant confirmation exception under UCC \u00a72-201(2)",
+      "query": "enforceable",
+      "expected": true,
+      "actual": false,
+      "facts": "contract_fact(c_merchant). goods_sale_contract(c_merchant). between_merchants(c_merchant). confirmation_sent(c_merchant, m1, m2).",
+      "missing_reasoning": "Expected reasoning: UCC \u00a72-201(2) merchant confirmation exception | Missing rule to prove enforceable is true in this scenario"
+    },
+    {
+      "test_case_id": "synthetic_part_performance",
+      "description": "Part performance exception with possession and improvements",
+      "query": "enforceable",
+      "expected": true,
+      "actual": false,
+      "facts": "contract_fact(c_perf). land_sale_contract(c_perf). possession_taken(c_perf). improvements_made(c_perf).",
+      "missing_reasoning": "Expected reasoning: Part performance doctrine | Missing rule to prove enforceable is true in this scenario"
+    },
+    {
+      "test_case_id": "synthetic_admission_exception",
+      "description": "Admission in pleadings exception",
+      "query": "enforceable",
+      "expected": true,
+      "actual": false,
+      "facts": "contract_fact(c_admit). goods_sale_contract(c_admit). admission_in_pleadings(c_admit, defendant).",
+      "missing_reasoning": "Expected reasoning: Admission exception to statute of frauds | Missing rule to prove enforceable is true in this scenario"
+    }
+  ],
+  "candidates": [
+    {
+      "rule": "merchant_confirmation_satisfies(C) :-\n    goods_sale_contract(C),\n    between_merchants(C),\n    confirmation_sent(C, P1, P2),\n    not objection_within_10_days(P2).",
+      "confidence": 0.85,
+      "gap_id": "synthetic_merchant_confirmation"
+    },
+    {
+      "rule": "% Rule to address: Merchant confirmation exception under UCC \u00a72-201(2...\nsatisfies_statute(C) :- custom_exception(C).",
+      "confidence": 0.78,
+      "gap_id": "synthetic_merchant_confirmation"
+    },
+    {
+      "rule": "% Rule to address: Part performance exception with possession and imp...\nsatisfies_statute(C) :- custom_exception(C).",
+      "confidence": 0.85,
+      "gap_id": "synthetic_part_performance"
+    },
+    {
+      "rule": "% Rule to address: Part performance exception with possession and imp...\nsatisfies_statute(C) :- custom_exception(C).",
+      "confidence": 0.78,
+      "gap_id": "synthetic_part_performance"
+    },
+    {
+      "rule": "% Rule to address: Admission in pleadings exception...\nsatisfies_statute(C) :- custom_exception(C).",
+      "confidence": 0.85,
+      "gap_id": "synthetic_admission_exception"
+    },
+    {
+      "rule": "% Rule to address: Admission in pleadings exception...\nsatisfies_statute(C) :- custom_exception(C).",
+      "confidence": 0.78,
+      "gap_id": "synthetic_admission_exception"
+    }
+  ],
+  "validation_results": [
+    {
+      "rule": "merchant_confirmation_satisfies(C) :-\n    goods_sale_contract(C),\n    between_merchants(C),\n    confirmation_sent(C, P1, P2),\n    not objection_within_10_days(P2).",
+      "decision": "accept",
+      "confidence": 0.85,
+      "gap_id": "synthetic_merchant_confirmation"
+    },
+    {
+      "rule": "% Rule to address: Merchant confirmation exception under UCC \u00a72-201(2...\nsatisfies_statute(C) :- custom_exception(C).",
+      "decision": "accept",
+      "confidence": 0.78,
+      "gap_id": "synthetic_merchant_confirmation"
+    },
+    {
+      "rule": "% Rule to address: Part performance exception with possession and imp...\nsatisfies_statute(C) :- custom_exception(C).",
+      "decision": "accept",
+      "confidence": 0.85,
+      "gap_id": "synthetic_part_performance"
+    },
+    {
+      "rule": "% Rule to address: Part performance exception with possession and imp...\nsatisfies_statute(C) :- custom_exception(C).",
+      "decision": "accept",
+      "confidence": 0.78,
+      "gap_id": "synthetic_part_performance"
+    },
+    {
+      "rule": "% Rule to address: Admission in pleadings exception...\nsatisfies_statute(C) :- custom_exception(C).",
+      "decision": "accept",
+      "confidence": 0.85,
+      "gap_id": "synthetic_admission_exception"
+    },
+    {
+      "rule": "% Rule to address: Admission in pleadings exception...\nsatisfies_statute(C) :- custom_exception(C).",
+      "decision": "accept",
+      "confidence": 0.78,
+      "gap_id": "synthetic_admission_exception"
+    }
+  ],
+  "performance_results": [
+    {
+      "total_tests": 21,
+      "passed": 22,
+      "failed": -1,
+      "accuracy": 1.0476190476190477,
+      "improvement": 0.04761904761904767,
+      "rule": "merchant_confirmation_satisfies(C) :-\n    goods_sale_contract(C),\n    between_merchants(C),\n    confirmation_sent(C, P1, P2),\n    not objection_within_10_days(P2).",
+      "gap_addressed": "Merchant confirmation exception under UCC \u00a72-201(2)"
+    },
+    {
+      "total_tests": 21,
+      "passed": 22,
+      "failed": -1,
+      "accuracy": 1.0476190476190477,
+      "improvement": 0.04761904761904767,
+      "rule": "% Rule to address: Merchant confirmation exception under UCC \u00a72-201(2...\nsatisfies_statute(C) :- custom_exception(C).",
+      "gap_addressed": "Merchant confirmation exception under UCC \u00a72-201(2)"
+    },
+    {
+      "total_tests": 21,
+      "passed": 22,
+      "failed": -1,
+      "accuracy": 1.0476190476190477,
+      "improvement": 0.04761904761904767,
+      "rule": "% Rule to address: Part performance exception with possession and imp...\nsatisfies_statute(C) :- custom_exception(C).",
+      "gap_addressed": "Part performance exception with possession and improvements"
+    },
+    {
+      "total_tests": 21,
+      "passed": 22,
+      "failed": -1,
+      "accuracy": 1.0476190476190477,
+      "improvement": 0.04761904761904767,
+      "rule": "% Rule to address: Part performance exception with possession and imp...\nsatisfies_statute(C) :- custom_exception(C).",
+      "gap_addressed": "Part performance exception with possession and improvements"
+    },
+    {
+      "total_tests": 21,
+      "passed": 22,
+      "failed": -1,
+      "accuracy": 1.0476190476190477,
+      "improvement": 0.04761904761904767,
+      "rule": "% Rule to address: Admission in pleadings exception...\nsatisfies_statute(C) :- custom_exception(C).",
+      "gap_addressed": "Admission in pleadings exception"
+    },
+    {
+      "total_tests": 21,
+      "passed": 22,
+      "failed": -1,
+      "accuracy": 1.0476190476190477,
+      "improvement": 0.04761904761904767,
+      "rule": "% Rule to address: Admission in pleadings exception...\nsatisfies_statute(C) :- custom_exception(C).",
+      "gap_addressed": "Admission in pleadings exception"
+    }
+  ],
+  "summary": {
+    "gaps_identified": 3,
+    "candidates_generated": 6,
+    "accepted_count": 6,
+    "rejected_count": 0,
+    "acceptance_rate": 1.0,
+    "baseline_accuracy": 1.0,
+    "best_improvement": 0.04761904761904767,
+    "best_rule": "merchant_confirmation_satisfies(C) :-\n    goods_sale_contract(C),\n    between_merchants(C),\n    confirmation_sent(C, P1, P2),\n    not objection_within_10_days(P2).",
+    "success": true
+  }
+}
