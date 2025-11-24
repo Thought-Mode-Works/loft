@@ -8,8 +8,20 @@ rule generation, and the self-modifying system.
 import pytest
 
 from loft.dialectical.critic import CriticSystem
-from loft.neural.rule_generator import GeneratedRule
+from loft.neural.rule_schemas import GeneratedRule
 from loft.validation.validation_pipeline import ValidationPipeline
+
+
+def make_test_rule(asp_rule: str, confidence: float = 0.8, **kwargs) -> GeneratedRule:
+    """Helper to create GeneratedRule with all required fields for testing."""
+    return GeneratedRule(
+        asp_rule=asp_rule,
+        confidence=confidence,
+        reasoning=kwargs.get("reasoning", f"Test rule: {asp_rule[:50]}"),
+        predicates_used=kwargs.get("predicates_used", []),
+        source_type=kwargs.get("source_type", "principle"),
+        source_text=kwargs.get("source_text", "Test rule"),
+    )
 
 
 class TestCriticValidationIntegration:
@@ -108,11 +120,10 @@ class TestCriticWithRuleAccumulation:
             "void(C) :- contract(C), illegal_purpose(C).",
         ]
 
-        new_rule = GeneratedRule(
-            rule_id="new_rule",
+        new_rule = make_test_rule(
             asp_rule="enforceable(C) :- contract(C), signed(C).",
             confidence=0.7,
-            strategy="balanced",
+            predicates_used=["contract", "signed"],
         )
 
         critique = critic.critique_rule(new_rule, existing_rules, context="Contract law")
@@ -136,11 +147,10 @@ class TestCriticWithRuleAccumulation:
         cycle_3_rules = cycle_2_rules + ["acceptance(A) :- acceptance(A), mirror_image(A)."]
 
         # New rule to critique against accumulated knowledge
-        new_rule = GeneratedRule(
-            rule_id="cycle_4_rule",
+        new_rule = make_test_rule(
             asp_rule="enforceable(C) :- contract(C), signed(C).",
             confidence=0.8,
-            strategy="conservative",
+            predicates_used=["contract", "signed"],
         )
 
         # Critique against different stages of accumulation
@@ -165,11 +175,10 @@ class TestDialecticalRefinement:
 
     def test_synthesis_improves_rule(self, critic):
         """Test that synthesis can improve a rule based on critique."""
-        original_rule = GeneratedRule(
-            rule_id="original",
+        original_rule = make_test_rule(
             asp_rule="enforceable(C) :- contract(C).",
             confidence=0.6,
-            strategy="permissive",
+            predicates_used=["contract"],
         )
 
         # Generate critique
@@ -181,17 +190,18 @@ class TestDialecticalRefinement:
         if improved:  # Mock may or may not synthesize
             # Should be different from original
             assert improved.asp_rule != original_rule.asp_rule
-            assert improved.rule_id == "original_improved"
-            # Should address issues
-            assert "metadata" in improved.metadata or improved.metadata.get("mock_synthesis")
+            # Should indicate it's a synthesized improvement
+            assert (
+                "synthesis" in improved.reasoning.lower()
+                or "synthesized" in improved.reasoning.lower()
+            )
 
     def test_dialectical_loop(self, critic):
         """Test iterative refinement through dialectical process."""
-        rule = GeneratedRule(
-            rule_id="v1",
+        rule = make_test_rule(
             asp_rule="enforceable(C) :- contract(C).",
             confidence=0.5,
-            strategy="permissive",
+            predicates_used=["contract"],
         )
 
         # Iteration 1: Critique and improve
@@ -268,11 +278,10 @@ class TestCriticPerformance:
         import time
 
         critic = CriticSystem(mock_mode=True)
-        rule = GeneratedRule(
-            rule_id="perf_test",
+        rule = make_test_rule(
             asp_rule="enforceable(C) :- contract(C), signed(C), consideration(C).",
             confidence=0.8,
-            strategy="balanced",
+            predicates_used=["contract", "signed", "consideration"],
         )
 
         start = time.time()
@@ -289,11 +298,10 @@ class TestCriticPerformance:
 
         critic = CriticSystem(mock_mode=True)
         rules = [
-            GeneratedRule(
-                rule_id=f"perf_{i}",
+            make_test_rule(
                 asp_rule=f"rule_{i}(X) :- condition_{i}(X).",
                 confidence=0.7,
-                strategy="balanced",
+                predicates_used=[f"condition_{i}"],
             )
             for i in range(10)
         ]

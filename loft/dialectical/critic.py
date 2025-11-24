@@ -94,7 +94,9 @@ class CriticSystem:
         )
 
         try:
+            logger.debug("Calling LLM for critique generation")
             response = self._call_llm(prompt)
+            logger.debug("Parsing LLM response as JSON")
             critique_data = json.loads(response)
 
             # Parse critique data into structured objects
@@ -177,7 +179,9 @@ class CriticSystem:
         prompt = get_edge_case_prompt(rule.asp_rule, "Contract law domain")
 
         try:
+            logger.debug("Calling LLM for edge case identification")
             response = self._call_llm(prompt)
+            logger.debug("Parsing LLM response as JSON")
             data = json.loads(response)
 
             edge_cases = [
@@ -226,7 +230,9 @@ class CriticSystem:
             return []
 
         try:
+            logger.debug("Calling LLM for contradiction checking")
             response = self._call_llm(prompt)
+            logger.debug("Parsing LLM response as JSON")
             data = json.loads(response)
 
             contradictions = [
@@ -285,20 +291,18 @@ class CriticSystem:
         )
 
         try:
+            logger.debug("Calling LLM for rule synthesis")
             response = self._call_llm(prompt)
+            logger.debug("Parsing LLM response as JSON")
             data = json.loads(response)
 
             improved_rule = GeneratedRule(
-                rule_id=f"{rule.rule_id}_improved",
                 asp_rule=data["improved_rule"],
                 confidence=data.get("confidence", 0.7),
-                strategy=rule.strategy,
-                metadata={
-                    "original_rule": rule.asp_rule,
-                    "changes": data.get("changes"),
-                    "addresses_issues": data.get("addresses_issues", []),
-                    "synthesis_confidence": data.get("confidence"),
-                },
+                reasoning=f"Synthesized improvement: {data.get('changes', 'Multiple improvements')}",
+                predicates_used=rule.predicates_used,
+                source_type="refinement",
+                source_text=f"Original: {rule.asp_rule}",
             )
 
             logger.info("Successfully synthesized improved rule")
@@ -321,9 +325,21 @@ class CriticSystem:
         if not self.llm_client:
             raise ValueError("No LLM client configured")
 
+        logger.debug(
+            f"LLM Request:\n{prompt[:500]}..." if len(prompt) > 500 else f"LLM Request:\n{prompt}"
+        )
+
         # This will be implemented based on the specific LLM client
         # For now, assume it has a .generate() method
-        return self.llm_client.generate(prompt)
+        response = self.llm_client.generate(prompt)
+
+        logger.debug(
+            f"LLM Response:\n{response[:500]}..."
+            if len(response) > 500
+            else f"LLM Response:\n{response}"
+        )
+
+        return response
 
     # Mock implementations for testing without LLM
 
@@ -435,11 +451,12 @@ class CriticSystem:
 
         if improved != rule.asp_rule:
             return GeneratedRule(
-                rule_id=f"{rule.rule_id}_improved",
                 asp_rule=improved,
                 confidence=0.75,
-                strategy=rule.strategy,
-                metadata={"original": rule.asp_rule, "mock_synthesis": True},
+                reasoning=f"Mock synthesis: {rule.reasoning}. Added: consideration check",
+                predicates_used=rule.predicates_used + ["consideration"],
+                source_type="refinement",
+                source_text=f"Synthesized from: {rule.source_text}",
             )
 
         return None
