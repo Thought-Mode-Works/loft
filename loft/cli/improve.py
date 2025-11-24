@@ -27,7 +27,9 @@ def improve():
     default="tactical",
     help="Target stratification layer for new rules",
 )
-def run(max_gaps, target_layer):
+@click.option("--enable-llm", is_flag=True, help="Enable LLM integration for real rule generation")
+@click.option("--persistence-dir", default="./asp_rules", help="Directory for persisting ASP rules")
+def run(max_gaps, target_layer, enable_llm, persistence_dir):
     """Run self-improvement cycle."""
     click.echo("=" * 80)
     click.echo("STARTING SELF-IMPROVEMENT CYCLE")
@@ -43,7 +45,9 @@ def run(max_gaps, target_layer):
 
     # Initialize system
     click.echo("\nInitializing self-modifying system...")
-    system = SelfModifyingSystem()
+    click.echo(f"  LLM Integration: {'Enabled' if enable_llm else 'Disabled (Mock Mode)'}")
+    click.echo(f"  Persistence: {persistence_dir}")
+    system = SelfModifyingSystem(enable_llm=enable_llm, persistence_dir=persistence_dir)
 
     # Run cycle
     click.echo(f"\nRunning improvement cycle (max_gaps={max_gaps}, layer={target_layer})...")
@@ -137,6 +141,35 @@ def history():
         click.echo(f"  Rules incorporated: {cycle.rules_incorporated}")
         click.echo(f"  Improvement: {cycle.overall_improvement:+.2%}")
         click.echo()
+
+
+@improve.command()
+@click.option("--persistence-dir", default="./asp_rules", help="Directory containing persisted rules")
+@click.option("--output", default=None, help="Output path for living document")
+def document(persistence_dir, output):
+    """Generate living document of ASP core evolution."""
+    click.echo("=" * 80)
+    click.echo("GENERATING LIVING DOCUMENT")
+    click.echo("=" * 80)
+
+    # Initialize system
+    click.echo("\nInitializing system...")
+    system = SelfModifyingSystem(persistence_dir=persistence_dir)
+
+    # Run a cycle if no history exists
+    if not system.improvement_cycles:
+        click.echo("\nNo improvement cycles found. Running initial cycle...")
+        system.run_improvement_cycle(max_gaps=3)
+
+    # Generate document
+    click.echo("\nGenerating living document...")
+    doc = system.generate_living_document(output_path=output)
+
+    # Display location
+    output_path = output or f"{persistence_dir}/LIVING_DOCUMENT.md"
+    click.echo(f"\n✓ Living document generated at: {output_path}")
+    click.echo(f"  Total size: {len(doc)} characters")
+    click.echo()
 
 
 if __name__ == "__main__":

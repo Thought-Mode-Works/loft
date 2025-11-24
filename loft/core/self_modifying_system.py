@@ -58,6 +58,8 @@ class SelfModifyingSystem:
         ab_testing: Optional[ABTestingFramework] = None,
         performance_monitor: Optional[PerformanceMonitor] = None,
         review_queue: Optional[ReviewQueue] = None,
+        enable_llm: bool = False,
+        persistence_dir: Optional[str] = None,
     ):
         """
         Initialize self-modifying system.
@@ -70,12 +72,17 @@ class SelfModifyingSystem:
             ab_testing: A/B testing framework
             performance_monitor: Performance monitor
             review_queue: Human review queue
+            enable_llm: Whether to enable LLM integration
+            persistence_dir: Directory for persisting ASP rules (default: ./asp_rules)
         """
         # Initialize components (with defaults for testing)
         self.asp_core = asp_core or StratifiedASPCore()
 
-        # Rule generator needs an LLM, so we make it truly optional
-        self.rule_generator = rule_generator
+        # Initialize rule generator with LLM if enabled
+        if enable_llm and rule_generator is None:
+            self.rule_generator = self._initialize_llm_generator()
+        else:
+            self.rule_generator = rule_generator
 
         self.validation_pipeline = validation_pipeline or ValidationPipeline()
         self.incorporation_engine = incorporation_engine or RuleIncorporationEngine()
@@ -89,7 +96,18 @@ class SelfModifyingSystem:
 
         self.improvement_cycles: List[ImprovementCycleResult] = []
 
-        logger.info("Initialized SelfModifyingSystem with all Phase 3 components")
+        # Setup persistence
+        from pathlib import Path
+        self.persistence_dir = Path(persistence_dir or "./asp_rules")
+        self.persistence_dir.mkdir(parents=True, exist_ok=True)
+
+        # Load existing rules from disk
+        self._load_persisted_rules()
+
+        logger.info(
+            f"Initialized SelfModifyingSystem with all Phase 3 components "
+            f"(LLM: {self.rule_generator is not None}, persistence: {self.persistence_dir})"
+        )
 
     def run_improvement_cycle(
         self,
@@ -165,6 +183,19 @@ class SelfModifyingSystem:
 
             # Handle validation result
             if validation_report.final_decision == "accept":
+                # Check for duplicates in loaded rules and current incorporations
+                if hasattr(self, '_loaded_rules'):
+                    if (winner.rule.asp_rule, target_layer) in self._loaded_rules:
+                        logger.info(f"⊘ Rule already exists in {target_layer.value} layer (from disk), skipping")
+                        continue
+
+                # Also track in this session
+                if not hasattr(self, '_incorporated_this_session'):
+                    self._incorporated_this_session = set()
+                if (winner.rule.asp_rule, target_layer) in self._incorporated_this_session:
+                    logger.info(f"⊘ Rule already incorporated in this session, skipping")
+                    continue
+
                 # Incorporate
                 inc_result = self.incorporation_engine.incorporate(
                     rule=winner.rule,
@@ -172,9 +203,20 @@ class SelfModifyingSystem:
                     target_layer=target_layer,
                 )
 
-                if inc_result.success:
+                if inc_result.is_success():
                     logger.info("✓ Successfully incorporated rule")
                     successful_incorporations.append(inc_result)
+
+                    # Track this rule as incorporated
+                    self._incorporated_this_session.add((winner.rule.asp_rule, target_layer))
+
+                    # Persist the rule to disk with metadata
+                    metadata = {
+                        'timestamp': datetime.now().isoformat(),
+                        'cycle': len(self.improvement_cycles) + 1,
+                        'confidence': winner.rule.confidence,
+                    }
+                    self._persist_rule(winner.rule.asp_rule, target_layer, metadata)
                 else:
                     logger.warning(f"✗ Incorporation failed: {inc_result.reason}")
 
@@ -207,6 +249,13 @@ class SelfModifyingSystem:
         )
 
         self.improvement_cycles.append(result)
+
+        # 5. Generate living document after cycle
+        try:
+            self.generate_living_document()
+            logger.info("Living document updated")
+        except Exception as e:
+            logger.warning(f"Failed to generate living document: {e}")
 
         # Log summary
         logger.info("\n" + "=" * 80)
@@ -320,12 +369,69 @@ class SelfModifyingSystem:
             strategies = ["conservative", "balanced", "permissive"]
 
             for strategy in strategies:
-                # Create a mock GeneratedRule
+                # Create a mock GeneratedRule with valid ASP syntax
                 from loft.neural.rule_schemas import GeneratedRule
 
+                # Generate different rules based on strategy and gap
+                if "enforceability" in gap.description.lower():
+                    if strategy == "conservative":
+                        asp_rule = "enforceable(C) :- contract(C), written(C), signed(C)."
+                        confidence = 0.85
+                    elif strategy == "balanced":
+                        asp_rule = "enforceable(C) :- contract(C), written(C)."
+                        confidence = 0.82
+                    else:  # permissive
+                        asp_rule = "enforceable(C) :- contract(C)."
+                        confidence = 0.75
+                elif "consideration" in gap.description.lower():
+                    if strategy == "conservative":
+                        asp_rule = "valid_consideration(C) :- contract(C), payment(C,P), P > 0."
+                        confidence = 0.88
+                    elif strategy == "balanced":
+                        asp_rule = "valid_consideration(C) :- contract(C), exchange_of_value(C)."
+                        confidence = 0.83
+                    else:
+                        asp_rule = "valid_consideration(C) :- contract(C)."
+                        confidence = 0.70
+                elif "offer" in gap.description.lower() or "acceptance" in gap.description.lower():
+                    if strategy == "conservative":
+                        asp_rule = "valid_acceptance(C) :- offer(C), acceptance(C), same_terms(C)."
+                        confidence = 0.86
+                    elif strategy == "balanced":
+                        asp_rule = "valid_acceptance(C) :- offer(C), acceptance(C)."
+                        confidence = 0.81
+                    else:
+                        asp_rule = "valid_acceptance(C) :- offer(C)."
+                        confidence = 0.72
+                elif "capacity" in gap.description.lower():
+                    if strategy == "conservative":
+                        asp_rule = "has_capacity(P) :- party(P), adult(P), sound_mind(P)."
+                        confidence = 0.90
+                    elif strategy == "balanced":
+                        asp_rule = "has_capacity(P) :- party(P), adult(P)."
+                        confidence = 0.84
+                    else:
+                        asp_rule = "has_capacity(P) :- party(P)."
+                        confidence = 0.73
+                elif "assent" in gap.description.lower() or "mutual" in gap.description.lower():
+                    if strategy == "conservative":
+                        asp_rule = "mutual_assent(C) :- contract(C), meeting_of_minds(C), no_fraud(C)."
+                        confidence = 0.87
+                    elif strategy == "balanced":
+                        asp_rule = "mutual_assent(C) :- contract(C), agreement(C)."
+                        confidence = 0.82
+                    else:
+                        asp_rule = "mutual_assent(C) :- contract(C)."
+                        confidence = 0.74
+                else:
+                    # Generic fallback
+                    pred = gap.missing_predicate or "rule"
+                    asp_rule = f"{pred}(X) :- base_condition(X)."
+                    confidence = 0.80 if strategy == "balanced" else (0.85 if strategy == "conservative" else 0.75)
+
                 mock_rule = GeneratedRule(
-                    asp_rule=f"{gap.missing_predicate or 'test_rule'}.",
-                    confidence=0.80 + (0.05 if strategy == "balanced" else 0.0),
+                    asp_rule=asp_rule,
+                    confidence=confidence,
                     reasoning=f"Mock {strategy} rule for {gap.description}",
                     source_type="gap_fill",
                     source_text=gap.description,
@@ -408,9 +514,12 @@ class SelfModifyingSystem:
         This is proto-meta-reasoning: the system reflects on its own performance.
         Foundation for Phase 5 meta-reasoning capabilities.
         """
-        # Analyze incorporation history
+        # Analyze incorporation history - handle both dict and object formats
         total_attempts = len(self.incorporation_engine.incorporation_history)
-        successes = sum(1 for r in self.incorporation_engine.incorporation_history if r.success)
+        successes = sum(
+            1 for r in self.incorporation_engine.incorporation_history
+            if (r.get("status") == "success" if isinstance(r, dict) else r.is_success())
+        )
 
         # Analyze strategy performance
         strategy_stats = self.ab_testing.analyze_strategy_performance()
@@ -544,7 +653,8 @@ class SelfModifyingSystem:
 
         # Recent activity
         recent_incorporations = len(
-            [r for r in self.incorporation_engine.incorporation_history[-10:] if r.success]
+            [r for r in self.incorporation_engine.incorporation_history[-10:]
+             if (r.get("status") == "success" if isinstance(r, dict) else r.is_success())]
         )
         recent_rollbacks = len(self.incorporation_engine.rollback_history[-10:])
 
@@ -588,3 +698,274 @@ class SelfModifyingSystem:
     def get_cycle_history(self) -> List[ImprovementCycleResult]:
         """Get history of improvement cycles."""
         return self.improvement_cycles.copy()
+
+    def _initialize_llm_generator(self) -> Optional[RuleGenerator]:
+        """Initialize LLM-based rule generator."""
+        try:
+            from loft.config import config
+            from loft.neural.llm_interface import LLMInterface
+            from loft.neural.providers import AnthropicProvider
+
+            # Check if API key is configured
+            if not config.llm.api_key:
+                logger.warning(
+                    "No LLM API key configured. Set ANTHROPIC_API_KEY in .env file. "
+                    "System will use mock rule generation."
+                )
+                return None
+
+            # Initialize provider
+            provider = AnthropicProvider(
+                api_key=config.llm.api_key,
+                model=config.llm.model
+            )
+
+            # Initialize LLM interface
+            llm = LLMInterface(provider=provider, enable_cache=True, max_retries=3)
+
+            # Initialize rule generator
+            rule_generator = RuleGenerator(
+                llm=llm,
+                asp_core=self.asp_core,
+                domain="legal",
+                prompt_version="latest"
+            )
+
+            logger.info(f"Initialized LLM rule generator with model: {config.llm.model}")
+            return rule_generator
+
+        except Exception as e:
+            logger.error(f"Failed to initialize LLM rule generator: {e}")
+            logger.warning("System will use mock rule generation")
+            return None
+
+    def _load_persisted_rules(self) -> None:
+        """Load previously persisted ASP rules from disk."""
+        try:
+            loaded_count = 0
+            for layer in StratificationLevel:
+                layer_file = self.persistence_dir / f"{layer.value}.lp"
+                if layer_file.exists():
+                    logger.info(f"Loading rules from {layer_file}")
+                    with open(layer_file, 'r') as f:
+                        rules_text = f.read()
+
+                    # Parse and track loaded rules (store in a set for duplicate detection)
+                    for line in rules_text.strip().split('\n'):
+                        line = line.strip()
+                        if line and not line.startswith('%') and not line.startswith('#'):
+                            # Store rule in a loaded rules tracking set
+                            if not hasattr(self, '_loaded_rules'):
+                                self._loaded_rules = set()
+                            self._loaded_rules.add((line, layer))
+                            loaded_count += 1
+                            logger.debug(f"Loaded rule: {line}")
+
+            if loaded_count > 0:
+                logger.info(f"Finished loading {loaded_count} persisted rules")
+        except Exception as e:
+            logger.warning(f"Failed to load persisted rules: {e}")
+
+    def _persist_rule(self, rule: str, layer: StratificationLevel, metadata: dict = None) -> None:
+        """Persist a single rule to disk with metadata."""
+        try:
+            layer_file = self.persistence_dir / f"{layer.value}.lp"
+
+            # Append rule to layer file with metadata comment
+            with open(layer_file, 'a') as f:
+                if metadata:
+                    f.write(f"% Added: {metadata.get('timestamp', 'unknown')}, ")
+                    f.write(f"Cycle: {metadata.get('cycle', 'N/A')}, ")
+                    f.write(f"Confidence: {metadata.get('confidence', 'N/A')}\n")
+                f.write(f"{rule}\n\n")
+
+            logger.debug(f"Persisted rule to {layer_file}: {rule}")
+        except Exception as e:
+            logger.error(f"Failed to persist rule: {e}")
+
+    def _persist_all_rules(self) -> None:
+        """Persist all current ASP rules to disk."""
+        try:
+            for layer in StratificationLevel:
+                layer_file = self.persistence_dir / f"{layer.value}.lp"
+                rules = self.asp_core.get_rules_by_layer(layer)
+
+                with open(layer_file, 'w') as f:
+                    f.write(f"% {layer.value.upper()} Layer Rules\n")
+                    f.write(f"% Generated: {datetime.now().isoformat()}\n\n")
+
+                    for rule in rules:
+                        f.write(f"{rule}\n")
+
+                logger.info(f"Persisted {len(rules)} rules to {layer_file}")
+
+        except Exception as e:
+            logger.error(f"Failed to persist all rules: {e}")
+
+    def generate_living_document(self, output_path: Optional[str] = None) -> str:
+        """
+        Generate a living document describing the current state of ASP rules.
+
+        This creates a markdown document that:
+        - Shows all current rules organized by stratification layer
+        - Includes rule statistics and metadata
+        - Shows incorporation history and evolution
+        - Provides human-readable explanations
+
+        Args:
+            output_path: Optional path to save the document (default: ./asp_rules/LIVING_DOCUMENT.md)
+
+        Returns:
+            The generated markdown document as a string
+        """
+        lines = [
+            "# ASP Core Living Document",
+            f"*Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*",
+            "",
+            "This document represents the current state of the self-modifying ASP reasoning core.",
+            "",
+            "## Overview",
+            "",
+        ]
+
+        # System statistics
+        total_rules = 0
+        for layer in StratificationLevel:
+            count = len(self.asp_core.get_rules_by_layer(layer))
+            total_rules += count
+
+        lines.extend([
+            f"- **Total Rules**: {total_rules}",
+            f"- **Improvement Cycles**: {len(self.improvement_cycles)}",
+            f"- **LLM Integration**: {'Enabled' if self.rule_generator else 'Disabled (Mock Mode)'}",
+            "",
+        ])
+
+        # Rules by stratification layer
+        lines.append("## Rules by Stratification Layer")
+        lines.append("")
+
+        for layer in StratificationLevel:
+            rules = self.asp_core.get_rules_by_layer(layer)
+            lines.extend([
+                f"### {layer.value.title()} Layer",
+                "",
+                f"**Count**: {len(rules)} rules",
+                "",
+            ])
+
+            if layer == StratificationLevel.CONSTITUTIONAL:
+                lines.append("*Constitutional rules are immutable and define core legal principles.*")
+            elif layer == StratificationLevel.STRATEGIC:
+                lines.append("*Strategic rules require human review before modification.*")
+            elif layer == StratificationLevel.TACTICAL:
+                lines.append("*Tactical rules can be autonomously modified with rollback protection.*")
+            else:  # OPERATIONAL
+                lines.append("*Operational rules are learned from case patterns and frequently updated.*")
+
+            lines.append("")
+
+            if rules:
+                lines.append("```prolog")
+                for rule in rules:
+                    lines.append(rule)
+                lines.append("```")
+                lines.append("")
+
+        # Incorporation history
+        lines.extend([
+            "## Recent Incorporation History",
+            "",
+        ])
+
+        recent_incorporations = self.incorporation_engine.incorporation_history[-10:]
+        if recent_incorporations:
+            lines.append("| Timestamp | Rule ID | Layer | Success | Performance |")
+            lines.append("|-----------|---------|-------|---------|-------------|")
+
+            for inc in recent_incorporations:
+                # Handle both dict and object formats
+                if isinstance(inc, dict):
+                    timestamp = inc.get("timestamp", "Unknown")
+                    if hasattr(timestamp, "strftime"):
+                        timestamp = timestamp.strftime("%Y-%m-%d %H:%M")
+                    rule_id = inc.get("rule_id", "unknown")
+                    status = "✅" if inc.get("status") == "success" else "❌"
+                    perf = f"{inc.get('performance_delta', 0):+.1%}" if inc.get("performance_delta") else "N/A"
+                    target_layer = inc.get("target_layer", "unknown")
+                else:
+                    timestamp = inc.timestamp.strftime("%Y-%m-%d %H:%M")
+                    rule_id = inc.rule_id
+                    status = "✅" if inc.is_success() else "❌"
+                    perf = f"{inc.performance_delta:+.1%}" if inc.performance_delta else "N/A"
+                    target_layer = inc.target_layer
+
+                lines.append(
+                    f"| {timestamp} | `{rule_id[:8]}...` | {target_layer} | {status} | {perf} |"
+                )
+        else:
+            lines.append("*No incorporation history yet.*")
+
+        lines.append("")
+
+        # Improvement cycles
+        if self.improvement_cycles:
+            lines.extend([
+                "## Improvement Cycle History",
+                "",
+            ])
+
+            for cycle in self.improvement_cycles[-5:]:
+                lines.extend([
+                    f"### Cycle #{cycle.cycle_number} - {cycle.timestamp.strftime('%Y-%m-%d %H:%M')}",
+                    "",
+                    f"- **Status**: {cycle.status}",
+                    f"- **Gaps Identified**: {cycle.gaps_identified}",
+                    f"- **Variants Generated**: {cycle.variants_generated}",
+                    f"- **Rules Incorporated**: {cycle.rules_incorporated}",
+                    f"- **Performance**: {cycle.baseline_accuracy:.1%} → {cycle.final_accuracy:.1%} ({cycle.overall_improvement:+.1%})",
+                    "",
+                ])
+
+        # Self-analysis
+        if self.improvement_cycles:
+            lines.extend([
+                "## Self-Analysis",
+                "",
+            ])
+
+            report = self.get_self_report()
+            lines.extend([
+                f"**Incorporation Success Rate**: {report.incorporation_success_rate:.1%}",
+                f"**Self-Confidence**: {report.confidence_in_self:.1%}",
+                f"**Best Strategy**: {report.best_strategy or 'N/A'}",
+                "",
+                "### System Narrative",
+                "",
+                report.narrative,
+                "",
+            ])
+
+        # Footer
+        lines.extend([
+            "---",
+            "",
+            f"*This document is automatically generated and updated with each improvement cycle.*",
+            f"*Persistence directory: `{self.persistence_dir}`*",
+            "",
+        ])
+
+        document = "\n".join(lines)
+
+        # Save to file if path provided
+        if output_path is None:
+            output_path = str(self.persistence_dir / "LIVING_DOCUMENT.md")
+
+        try:
+            with open(output_path, 'w') as f:
+                f.write(document)
+            logger.info(f"Generated living document at {output_path}")
+        except Exception as e:
+            logger.error(f"Failed to save living document: {e}")
+
+        return document
