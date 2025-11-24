@@ -141,9 +141,7 @@ class SimpleASPCore:
             }
         )
         self.rule_count += 1
-        logger.info(
-            f"Added rule to {stratification_level.value} layer: {rule_text[:50]}..."
-        )
+        logger.info(f"Added rule to {stratification_level.value} layer: {rule_text[:50]}...")
 
     def get_state(self) -> Dict[str, Any]:
         """Get current state for snapshotting."""
@@ -186,9 +184,7 @@ class SimpleTestSuite:
         random.seed(42)  # Fixed seed for deterministic testing
 
         # Tests pass
-        self.current_accuracy = min(
-            1.0, self.current_accuracy + random.uniform(0, 0.01)
-        )
+        self.current_accuracy = min(1.0, self.current_accuracy + random.uniform(0, 0.01))
         return {"passed": True, "failures": [], "accuracy": self.current_accuracy}
 
     def measure_accuracy(self) -> float:
@@ -266,9 +262,7 @@ class RuleIncorporationEngine:
         policy = self.policies[target_layer]
 
         if not policy.autonomous_allowed and is_autonomous:
-            logger.warning(
-                f"Autonomous modification not allowed for {target_layer.value} layer"
-            )
+            logger.warning(f"Autonomous modification not allowed for {target_layer.value} layer")
             return IncorporationResult(
                 status="blocked",
                 reason=f"Autonomous modification not allowed for {target_layer.value} layer",
@@ -288,10 +282,7 @@ class RuleIncorporationEngine:
             )
 
         # 3. Check modification limit
-        if (
-            self.modification_count[target_layer]
-            >= policy.max_modifications_per_session
-        ):
+        if self.modification_count[target_layer] >= policy.max_modifications_per_session:
             logger.warning(
                 f"Reached max modifications ({policy.max_modifications_per_session}) for {target_layer.value}"
             )
@@ -381,9 +372,7 @@ class RuleIncorporationEngine:
             logger.error(f"Error during incorporation: {e}")
             self.asp_core.restore_state(current_state)
 
-            return IncorporationResult(
-                status="error", reason=str(e), requires_human_review=True
-            )
+            return IncorporationResult(status="error", reason=str(e), requires_human_review=True)
 
     def reset_session(self):
         """Reset modification counters (e.g., start of new session)."""
@@ -394,9 +383,7 @@ class RuleIncorporationEngine:
         """Get incorporation statistics."""
         total_modifications = sum(self.modification_count.values())
 
-        by_layer = {
-            layer.value: count for layer, count in self.modification_count.items()
-        }
+        by_layer = {layer.value: count for layer, count in self.modification_count.items()}
 
         return {
             "total_modifications": total_modifications,
