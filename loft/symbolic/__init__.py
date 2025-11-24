@@ -88,6 +88,19 @@ from .stratification import (
     print_all_policies,
 )
 
+from .stratified_core import (
+    StratifiedASPCore as AdvancedStratifiedASPCore,
+    AddRuleResult,
+    ModificationEvent,
+    ModificationStats,
+)
+
+from .stratification_validator import (
+    StratificationValidator,
+    StratificationViolation,
+    StratificationReport,
+)
+
 __all__ = [
     # Core classes
     "ASPRule",
@@ -110,4 +123,13 @@ __all__ = [
     "get_policy",
     "infer_stratification_level",
     "print_all_policies",
+    # Advanced stratified core
+    "AdvancedStratifiedASPCore",
+    "AddRuleResult",
+    "ModificationEvent",
+    "ModificationStats",
+    # Validation
+    "StratificationValidator",
+    "StratificationViolation",
+    "StratificationReport",
 ]
