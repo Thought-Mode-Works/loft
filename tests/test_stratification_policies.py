@@ -4,7 +4,6 @@ Unit tests for stratification policy enhancements.
 Tests new policy features: cooldowns and dependency constraints.
 """
 
-
 from loft.symbolic.stratification import (
     MODIFICATION_POLICIES,
     StratificationLevel,

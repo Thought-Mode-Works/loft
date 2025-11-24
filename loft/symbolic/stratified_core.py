@@ -127,9 +127,7 @@ class StratifiedASPCore:
 
             # Check 1: Policy allows autonomous modification
             if not policy.autonomous_allowed and is_autonomous:
-                logger.warning(
-                    f"Autonomous modification not allowed for {layer_key} layer"
-                )
+                logger.warning(f"Autonomous modification not allowed for {layer_key} layer")
                 return AddRuleResult(
                     success=False,
                     reason=f"Autonomous modification not allowed for {layer_key} layer",
