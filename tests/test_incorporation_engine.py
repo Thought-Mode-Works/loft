@@ -184,13 +184,13 @@ class TestIncorporationEngine:
             is_autonomous=True,
         )
         assert result.status == "success"
-        assert engine.modification_count[StratificationLevel.TACTICAL] == 1
+        assert engine.modification_count["tactical"] == 1
 
         # Reset session
         engine.reset_session()
 
         # Counter should be reset
-        assert engine.modification_count[StratificationLevel.TACTICAL] == 0
+        assert engine.modification_count["tactical"] == 0
 
     def test_incorporation_history_tracking(self):
         """Test that incorporation history is tracked."""

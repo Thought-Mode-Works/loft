@@ -223,14 +223,14 @@ class RuleIncorporationEngine:
         if policies is None:
             from loft.symbolic.stratification import MODIFICATION_POLICIES
 
-            # Make a copy to avoid any reference issues
-            self.policies = dict(MODIFICATION_POLICIES)
+            # Convert to string keys to avoid enum instance mismatch issues
+            self.policies = {level.value: policy for level, policy in MODIFICATION_POLICIES.items()}
         else:
+            # Assume policies dict already uses appropriate keys
             self.policies = policies
 
-        self.modification_count: Dict[StratificationLevel, int] = {
-            level: 0 for level in StratificationLevel
-        }
+        # Use string values as keys to avoid enum instance mismatch issues
+        self.modification_count: Dict[str, int] = {level.value: 0 for level in StratificationLevel}
 
         self.incorporation_history: List[Dict[str, Any]] = []
 
@@ -260,7 +260,7 @@ class RuleIncorporationEngine:
         )
 
         # 1. Check policy
-        if target_layer not in self.policies:
+        if target_layer.value not in self.policies:
             # Fallback: if policies not properly initialized, get from stratification module
             from loft.symbolic.stratification import get_policy
 
@@ -269,7 +269,7 @@ class RuleIncorporationEngine:
                 f"Policy for {target_layer.value} not found in engine policies, using default"
             )
         else:
-            policy = self.policies[target_layer]
+            policy = self.policies[target_layer.value]
 
         if not policy.autonomous_allowed and is_autonomous:
             logger.warning(f"Autonomous modification not allowed for {target_layer.value} layer")
@@ -292,7 +292,7 @@ class RuleIncorporationEngine:
             )
 
         # 3. Check modification limit
-        if self.modification_count[target_layer] >= policy.max_modifications_per_session:
+        if self.modification_count[target_layer.value] >= policy.max_modifications_per_session:
             logger.warning(
                 f"Reached max modifications ({policy.max_modifications_per_session}) for {target_layer.value}"
             )
@@ -347,7 +347,7 @@ class RuleIncorporationEngine:
                     )
 
             # 7. Success!
-            self.modification_count[target_layer] += 1
+            self.modification_count[target_layer.value] += 1
             accuracy_after = self.test_suite.measure_accuracy()
 
             # Record in history
@@ -365,14 +365,14 @@ class RuleIncorporationEngine:
 
             logger.info(
                 f"Successfully incorporated rule into {target_layer.value} layer "
-                f"(modification #{self.modification_count[target_layer]})"
+                f"(modification #{self.modification_count[target_layer.value]})"
             )
 
             return IncorporationResult(
                 status="success",
                 reason="Rule successfully incorporated",
                 snapshot_id=snapshot_id,
-                modification_number=self.modification_count[target_layer],
+                modification_number=self.modification_count[target_layer.value],
                 accuracy_before=accuracy_before,
                 accuracy_after=accuracy_after,
             )
@@ -386,14 +386,15 @@ class RuleIncorporationEngine:
 
     def reset_session(self):
         """Reset modification counters (e.g., start of new session)."""
-        self.modification_count = {level: 0 for level in StratificationLevel}
+        self.modification_count = {level.value: 0 for level in StratificationLevel}
         logger.info("Modification counters reset for new session")
 
     def get_statistics(self) -> Dict[str, Any]:
         """Get incorporation statistics."""
         total_modifications = sum(self.modification_count.values())
 
-        by_layer = {layer.value: count for layer, count in self.modification_count.items()}
+        # modification_count already uses string keys (layer.value)
+        by_layer = dict(self.modification_count)
 
         return {
             "total_modifications": total_modifications,
