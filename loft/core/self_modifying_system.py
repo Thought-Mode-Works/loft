@@ -98,6 +98,7 @@ class SelfModifyingSystem:
 
         # Setup persistence
         from pathlib import Path
+
         self.persistence_dir = Path(persistence_dir or "./asp_rules")
         self.persistence_dir.mkdir(parents=True, exist_ok=True)
 
@@ -184,16 +185,18 @@ class SelfModifyingSystem:
             # Handle validation result
             if validation_report.final_decision == "accept":
                 # Check for duplicates in loaded rules and current incorporations
-                if hasattr(self, '_loaded_rules'):
+                if hasattr(self, "_loaded_rules"):
                     if (winner.rule.asp_rule, target_layer) in self._loaded_rules:
-                        logger.info(f"⊘ Rule already exists in {target_layer.value} layer (from disk), skipping")
+                        logger.info(
+                            f"⊘ Rule already exists in {target_layer.value} layer (from disk), skipping"
+                        )
                         continue
 
                 # Also track in this session
-                if not hasattr(self, '_incorporated_this_session'):
+                if not hasattr(self, "_incorporated_this_session"):
                     self._incorporated_this_session = set()
                 if (winner.rule.asp_rule, target_layer) in self._incorporated_this_session:
-                    logger.info(f"⊘ Rule already incorporated in this session, skipping")
+                    logger.info("⊘ Rule already incorporated in this session, skipping")
                     continue
 
                 # Incorporate
@@ -212,9 +215,9 @@ class SelfModifyingSystem:
 
                     # Persist the rule to disk with metadata
                     metadata = {
-                        'timestamp': datetime.now().isoformat(),
-                        'cycle': len(self.improvement_cycles) + 1,
-                        'confidence': winner.rule.confidence,
+                        "timestamp": datetime.now().isoformat(),
+                        "cycle": len(self.improvement_cycles) + 1,
+                        "confidence": winner.rule.confidence,
                     }
                     self._persist_rule(winner.rule.asp_rule, target_layer, metadata)
                 else:
@@ -415,7 +418,9 @@ class SelfModifyingSystem:
                         confidence = 0.73
                 elif "assent" in gap.description.lower() or "mutual" in gap.description.lower():
                     if strategy == "conservative":
-                        asp_rule = "mutual_assent(C) :- contract(C), meeting_of_minds(C), no_fraud(C)."
+                        asp_rule = (
+                            "mutual_assent(C) :- contract(C), meeting_of_minds(C), no_fraud(C)."
+                        )
                         confidence = 0.87
                     elif strategy == "balanced":
                         asp_rule = "mutual_assent(C) :- contract(C), agreement(C)."
@@ -427,7 +432,11 @@ class SelfModifyingSystem:
                     # Generic fallback
                     pred = gap.missing_predicate or "rule"
                     asp_rule = f"{pred}(X) :- base_condition(X)."
-                    confidence = 0.80 if strategy == "balanced" else (0.85 if strategy == "conservative" else 0.75)
+                    confidence = (
+                        0.80
+                        if strategy == "balanced"
+                        else (0.85 if strategy == "conservative" else 0.75)
+                    )
 
                 mock_rule = GeneratedRule(
                     asp_rule=asp_rule,
@@ -519,7 +528,8 @@ class SelfModifyingSystem:
         # (failed attempts are not added to history)
         total_attempts = len(self.incorporation_engine.incorporation_history)
         successes = sum(
-            1 for r in self.incorporation_engine.incorporation_history
+            1
+            for r in self.incorporation_engine.incorporation_history
             if isinstance(r, dict)  # All dicts in history are successes
         )
 
@@ -656,8 +666,11 @@ class SelfModifyingSystem:
         # Recent activity
         # All entries in incorporation_history are successful incorporations
         recent_incorporations = len(
-            [r for r in self.incorporation_engine.incorporation_history[-10:]
-             if isinstance(r, dict)]
+            [
+                r
+                for r in self.incorporation_engine.incorporation_history[-10:]
+                if isinstance(r, dict)
+            ]
         )
         recent_rollbacks = len(self.incorporation_engine.rollback_history[-10:])
 
@@ -718,20 +731,14 @@ class SelfModifyingSystem:
                 return None
 
             # Initialize provider
-            provider = AnthropicProvider(
-                api_key=config.llm.api_key,
-                model=config.llm.model
-            )
+            provider = AnthropicProvider(api_key=config.llm.api_key, model=config.llm.model)
 
             # Initialize LLM interface
             llm = LLMInterface(provider=provider, enable_cache=True, max_retries=3)
 
             # Initialize rule generator
             rule_generator = RuleGenerator(
-                llm=llm,
-                asp_core=self.asp_core,
-                domain="legal",
-                prompt_version="latest"
+                llm=llm, asp_core=self.asp_core, domain="legal", prompt_version="latest"
             )
 
             logger.info(f"Initialized LLM rule generator with model: {config.llm.model}")
@@ -750,15 +757,15 @@ class SelfModifyingSystem:
                 layer_file = self.persistence_dir / f"{layer.value}.lp"
                 if layer_file.exists():
                     logger.info(f"Loading rules from {layer_file}")
-                    with open(layer_file, 'r') as f:
+                    with open(layer_file, "r") as f:
                         rules_text = f.read()
 
                     # Parse and track loaded rules (store in a set for duplicate detection)
-                    for line in rules_text.strip().split('\n'):
+                    for line in rules_text.strip().split("\n"):
                         line = line.strip()
-                        if line and not line.startswith('%') and not line.startswith('#'):
+                        if line and not line.startswith("%") and not line.startswith("#"):
                             # Store rule in a loaded rules tracking set
-                            if not hasattr(self, '_loaded_rules'):
+                            if not hasattr(self, "_loaded_rules"):
                                 self._loaded_rules = set()
                             self._loaded_rules.add((line, layer))
                             loaded_count += 1
@@ -775,7 +782,7 @@ class SelfModifyingSystem:
             layer_file = self.persistence_dir / f"{layer.value}.lp"
 
             # Append rule to layer file with metadata comment
-            with open(layer_file, 'a') as f:
+            with open(layer_file, "a") as f:
                 if metadata:
                     f.write(f"% Added: {metadata.get('timestamp', 'unknown')}, ")
                     f.write(f"Cycle: {metadata.get('cycle', 'N/A')}, ")
@@ -793,7 +800,7 @@ class SelfModifyingSystem:
                 layer_file = self.persistence_dir / f"{layer.value}.lp"
                 rules = self.asp_core.get_rules_by_layer(layer)
 
-                with open(layer_file, 'w') as f:
+                with open(layer_file, "w") as f:
                     f.write(f"% {layer.value.upper()} Layer Rules\n")
                     f.write(f"% Generated: {datetime.now().isoformat()}\n\n")
 
@@ -837,12 +844,14 @@ class SelfModifyingSystem:
             count = len(self.asp_core.get_rules_by_layer(layer))
             total_rules += count
 
-        lines.extend([
-            f"- **Total Rules**: {total_rules}",
-            f"- **Improvement Cycles**: {len(self.improvement_cycles)}",
-            f"- **LLM Integration**: {'Enabled' if self.rule_generator else 'Disabled (Mock Mode)'}",
-            "",
-        ])
+        lines.extend(
+            [
+                f"- **Total Rules**: {total_rules}",
+                f"- **Improvement Cycles**: {len(self.improvement_cycles)}",
+                f"- **LLM Integration**: {'Enabled' if self.rule_generator else 'Disabled (Mock Mode)'}",
+                "",
+            ]
+        )
 
         # Rules by stratification layer
         lines.append("## Rules by Stratification Layer")
@@ -850,21 +859,29 @@ class SelfModifyingSystem:
 
         for layer in StratificationLevel:
             rules = self.asp_core.get_rules_by_layer(layer)
-            lines.extend([
-                f"### {layer.value.title()} Layer",
-                "",
-                f"**Count**: {len(rules)} rules",
-                "",
-            ])
+            lines.extend(
+                [
+                    f"### {layer.value.title()} Layer",
+                    "",
+                    f"**Count**: {len(rules)} rules",
+                    "",
+                ]
+            )
 
             if layer == StratificationLevel.CONSTITUTIONAL:
-                lines.append("*Constitutional rules are immutable and define core legal principles.*")
+                lines.append(
+                    "*Constitutional rules are immutable and define core legal principles.*"
+                )
             elif layer == StratificationLevel.STRATEGIC:
                 lines.append("*Strategic rules require human review before modification.*")
             elif layer == StratificationLevel.TACTICAL:
-                lines.append("*Tactical rules can be autonomously modified with rollback protection.*")
+                lines.append(
+                    "*Tactical rules can be autonomously modified with rollback protection.*"
+                )
             else:  # OPERATIONAL
-                lines.append("*Operational rules are learned from case patterns and frequently updated.*")
+                lines.append(
+                    "*Operational rules are learned from case patterns and frequently updated.*"
+                )
 
             lines.append("")
 
@@ -876,10 +893,12 @@ class SelfModifyingSystem:
                 lines.append("")
 
         # Incorporation history
-        lines.extend([
-            "## Recent Incorporation History",
-            "",
-        ])
+        lines.extend(
+            [
+                "## Recent Incorporation History",
+                "",
+            ]
+        )
 
         recent_incorporations = self.incorporation_engine.incorporation_history[-10:]
         if recent_incorporations:
@@ -895,7 +914,11 @@ class SelfModifyingSystem:
                     rule_id = inc.get("rule_id", "unknown")
                     # All dicts in incorporation_history are successes
                     status = "✅"
-                    perf = f"{inc.get('performance_delta', 0):+.1%}" if inc.get("performance_delta") else "N/A"
+                    perf = (
+                        f"{inc.get('performance_delta', 0):+.1%}"
+                        if inc.get("performance_delta")
+                        else "N/A"
+                    )
                     target_layer = inc.get("target_layer", "unknown")
                 else:
                     timestamp = inc.timestamp.strftime("%Y-%m-%d %H:%M")
@@ -914,50 +937,60 @@ class SelfModifyingSystem:
 
         # Improvement cycles
         if self.improvement_cycles:
-            lines.extend([
-                "## Improvement Cycle History",
-                "",
-            ])
+            lines.extend(
+                [
+                    "## Improvement Cycle History",
+                    "",
+                ]
+            )
 
             for cycle in self.improvement_cycles[-5:]:
-                lines.extend([
-                    f"### Cycle #{cycle.cycle_number} - {cycle.timestamp.strftime('%Y-%m-%d %H:%M')}",
-                    "",
-                    f"- **Status**: {cycle.status}",
-                    f"- **Gaps Identified**: {cycle.gaps_identified}",
-                    f"- **Variants Generated**: {cycle.variants_generated}",
-                    f"- **Rules Incorporated**: {cycle.rules_incorporated}",
-                    f"- **Performance**: {cycle.baseline_accuracy:.1%} → {cycle.final_accuracy:.1%} ({cycle.overall_improvement:+.1%})",
-                    "",
-                ])
+                lines.extend(
+                    [
+                        f"### Cycle #{cycle.cycle_number} - {cycle.timestamp.strftime('%Y-%m-%d %H:%M')}",
+                        "",
+                        f"- **Status**: {cycle.status}",
+                        f"- **Gaps Identified**: {cycle.gaps_identified}",
+                        f"- **Variants Generated**: {cycle.variants_generated}",
+                        f"- **Rules Incorporated**: {cycle.rules_incorporated}",
+                        f"- **Performance**: {cycle.baseline_accuracy:.1%} → {cycle.final_accuracy:.1%} ({cycle.overall_improvement:+.1%})",
+                        "",
+                    ]
+                )
 
         # Self-analysis
         if self.improvement_cycles:
-            lines.extend([
-                "## Self-Analysis",
-                "",
-            ])
+            lines.extend(
+                [
+                    "## Self-Analysis",
+                    "",
+                ]
+            )
 
             report = self.get_self_report()
-            lines.extend([
-                f"**Incorporation Success Rate**: {report.incorporation_success_rate:.1%}",
-                f"**Self-Confidence**: {report.confidence_in_self:.1%}",
-                f"**Best Strategy**: {report.best_strategy or 'N/A'}",
-                "",
-                "### System Narrative",
-                "",
-                report.narrative,
-                "",
-            ])
+            lines.extend(
+                [
+                    f"**Incorporation Success Rate**: {report.incorporation_success_rate:.1%}",
+                    f"**Self-Confidence**: {report.confidence_in_self:.1%}",
+                    f"**Best Strategy**: {report.best_strategy or 'N/A'}",
+                    "",
+                    "### System Narrative",
+                    "",
+                    report.narrative,
+                    "",
+                ]
+            )
 
         # Footer
-        lines.extend([
-            "---",
-            "",
-            f"*This document is automatically generated and updated with each improvement cycle.*",
-            f"*Persistence directory: `{self.persistence_dir}`*",
-            "",
-        ])
+        lines.extend(
+            [
+                "---",
+                "",
+                "*This document is automatically generated and updated with each improvement cycle.*",
+                f"*Persistence directory: `{self.persistence_dir}`*",
+                "",
+            ]
+        )
 
         document = "\n".join(lines)
 
@@ -966,7 +999,7 @@ class SelfModifyingSystem:
             output_path = str(self.persistence_dir / "LIVING_DOCUMENT.md")
 
         try:
-            with open(output_path, 'w') as f:
+            with open(output_path, "w") as f:
                 f.write(document)
             logger.info(f"Generated living document at {output_path}")
         except Exception as e:

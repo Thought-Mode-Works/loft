@@ -144,7 +144,9 @@ def history():
 
 
 @improve.command()
-@click.option("--persistence-dir", default="./asp_rules", help="Directory containing persisted rules")
+@click.option(
+    "--persistence-dir", default="./asp_rules", help="Directory containing persisted rules"
+)
 @click.option("--output", default=None, help="Output path for living document")
 def document(persistence_dir, output):
     """Generate living document of ASP core evolution."""
