@@ -76,11 +76,18 @@ class Synthesizer:
             logger.debug("Calling LLM for synthesis")
             response = self._call_llm(prompt)
             logger.debug("Parsing LLM response as JSON")
-            data = json.loads(response)
+
+            # Extract JSON from response (may be wrapped in markdown)
+            json_str = self._extract_json(response)
+            data = json.loads(json_str, strict=False)
+
+            # Normalize ASP rule (remove extra whitespace, newlines)
+            asp_rule = data["synthesized_rule"].replace('\n', ' ').replace('\r', '')
+            asp_rule = ' '.join(asp_rule.split())  # Collapse multiple spaces
 
             # Create synthesized rule
             synthesis_rule = GeneratedRule(
-                asp_rule=data["synthesized_rule"],
+                asp_rule=asp_rule,
                 confidence=data.get("confidence", 0.8),
                 reasoning=data.get("reasoning", "Synthesized from debate"),
                 predicates_used=thesis.predicates_used,
@@ -166,11 +173,13 @@ Synthesize an improved ASP rule that:
 5. Maintains compatibility with existing rules
 
 Return a JSON object with:
-- synthesized_rule: The improved ASP rule
+- synthesized_rule: The improved ASP rule (single line, no newlines)
 - reasoning: Explanation of how you combined thesis and antithesis
 - argument: Your dialectical argument for this synthesis
 - confidence: Your confidence in the synthesis (0.0-1.0)
 - changes_made: List of specific changes from thesis
+
+IMPORTANT: Return valid JSON with no newlines inside string values.
 
 Example:
 {{
@@ -182,6 +191,31 @@ Example:
 }}
         """.strip()
 
+    def _extract_json(self, response: str) -> str:
+        """
+        Extract JSON from LLM response, handling markdown code blocks.
+
+        Args:
+            response: Raw LLM response
+
+        Returns:
+            Cleaned JSON string
+        """
+        import re
+
+        # Try to extract from markdown code block
+        json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', response, re.DOTALL)
+        if json_match:
+            return json_match.group(1)
+
+        # Try to find JSON object in response
+        json_match = re.search(r'\{.*\}', response, re.DOTALL)
+        if json_match:
+            return json_match.group(0)
+
+        # Return as-is and let JSON parser handle it
+        return response
+
     def _call_llm(self, prompt: str) -> str:
         """Call LLM with prompt."""
         if not self.llm_client:
@@ -191,7 +225,9 @@ Example:
             f"LLM Request:\n{prompt[:500]}..." if len(prompt) > 500 else f"LLM Request:\n{prompt}"
         )
 
-        response = self.llm_client.generate(prompt)
+        # Use LLMInterface.query() method
+        llm_response = self.llm_client.query(question=prompt)
+        response = llm_response.raw_text
 
         logger.debug(
             f"LLM Response:\n{response[:500]}..."
