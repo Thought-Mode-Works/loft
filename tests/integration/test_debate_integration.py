@@ -33,7 +33,7 @@ class MockGenerator:
         self.initial_rule = initial_rule
 
     def fill_knowledge_gap(
-        self, gap_description, existing_rules, existing_predicates, target_layer
+        self, gap_description, missing_predicate, context=None, existing_predicates=None
     ):
         rule = make_test_rule(
             asp_rule=self.initial_rule,
@@ -43,7 +43,7 @@ class MockGenerator:
         )
         return GapFillingResponse(
             gap_description=gap_description,
-            missing_predicate="enforceable",
+            missing_predicate=missing_predicate or "enforceable",
             candidates=[
                 RuleCandidate(
                     rule=rule,

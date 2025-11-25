@@ -143,7 +143,7 @@ class TestDebateFramework:
 
         class MockGenerator:
             def fill_knowledge_gap(
-                self, gap_description, existing_rules, existing_predicates, target_layer
+                self, gap_description, missing_predicate, context=None, existing_predicates=None
             ):
                 rule = make_test_rule(
                     asp_rule="enforceable(C) :- contract(C), signed(C).",
@@ -153,7 +153,7 @@ class TestDebateFramework:
                 )
                 return GapFillingResponse(
                     gap_description=gap_description,
-                    missing_predicate="enforceable",
+                    missing_predicate=missing_predicate or "enforceable",
                     candidates=[
                         RuleCandidate(
                             rule=rule,
@@ -321,7 +321,7 @@ class TestDebateIntegration:
 
         class MockGenerator:
             def fill_knowledge_gap(
-                self, gap_description, existing_rules, existing_predicates, target_layer
+                self, gap_description, missing_predicate, context=None, existing_predicates=None
             ):
                 rule = make_test_rule(
                     asp_rule="enforceable(C) :- contract(C).",
@@ -331,7 +331,7 @@ class TestDebateIntegration:
                 )
                 return GapFillingResponse(
                     gap_description=gap_description,
-                    missing_predicate="enforceable",
+                    missing_predicate=missing_predicate or "enforceable",
                     candidates=[
                         RuleCandidate(
                             rule=rule,
