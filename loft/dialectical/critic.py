@@ -97,7 +97,8 @@ class CriticSystem:
             logger.debug("Calling LLM for critique generation")
             response = self._call_llm(prompt)
             logger.debug("Parsing LLM response as JSON")
-            critique_data = json.loads(response)
+            json_str = self._extract_json(response)
+            critique_data = json.loads(json_str, strict=False)
 
             # Parse critique data into structured objects
             issues = [
@@ -182,7 +183,8 @@ class CriticSystem:
             logger.debug("Calling LLM for edge case identification")
             response = self._call_llm(prompt)
             logger.debug("Parsing LLM response as JSON")
-            data = json.loads(response)
+            json_str = self._extract_json(response)
+            data = json.loads(json_str, strict=False)
 
             edge_cases = [
                 EdgeCase(
@@ -233,7 +235,8 @@ class CriticSystem:
             logger.debug("Calling LLM for contradiction checking")
             response = self._call_llm(prompt)
             logger.debug("Parsing LLM response as JSON")
-            data = json.loads(response)
+            json_str = self._extract_json(response)
+            data = json.loads(json_str, strict=False)
 
             contradictions = [
                 Contradiction(
@@ -294,7 +297,8 @@ class CriticSystem:
             logger.debug("Calling LLM for rule synthesis")
             response = self._call_llm(prompt)
             logger.debug("Parsing LLM response as JSON")
-            data = json.loads(response)
+            json_str = self._extract_json(response)
+            data = json.loads(json_str, strict=False)
 
             improved_rule = GeneratedRule(
                 asp_rule=data["improved_rule"],
@@ -311,6 +315,31 @@ class CriticSystem:
         except Exception as e:
             logger.error(f"Failed to synthesize improvement: {e}")
             return None
+
+    def _extract_json(self, response: str) -> str:
+        """
+        Extract JSON from LLM response, handling markdown code blocks.
+
+        Args:
+            response: Raw LLM response
+
+        Returns:
+            Cleaned JSON string
+        """
+        import re
+
+        # Try to extract from markdown code block
+        json_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", response, re.DOTALL)
+        if json_match:
+            return json_match.group(1)
+
+        # Try to find JSON object in response
+        json_match = re.search(r"\{.*\}", response, re.DOTALL)
+        if json_match:
+            return json_match.group(0)
+
+        # Return as-is and let JSON parser handle it
+        return response
 
     def _call_llm(self, prompt: str) -> str:
         """
@@ -329,9 +358,9 @@ class CriticSystem:
             f"LLM Request:\n{prompt[:500]}..." if len(prompt) > 500 else f"LLM Request:\n{prompt}"
         )
 
-        # This will be implemented based on the specific LLM client
-        # For now, assume it has a .generate() method
-        response = self.llm_client.generate(prompt)
+        # Use LLMInterface.query() method
+        llm_response = self.llm_client.query(question=prompt)
+        response = llm_response.raw_text
 
         logger.debug(
             f"LLM Response:\n{response[:500]}..."

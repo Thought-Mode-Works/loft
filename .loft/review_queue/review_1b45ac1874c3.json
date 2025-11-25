@@ -1,0 +1,46 @@
+{
+  "id": "review_1b45ac1874c3",
+  "rule": {
+    "asp_rule": "test(X) :- valid(X).",
+    "confidence": 0.75,
+    "reasoning": "Borderline confidence",
+    "predicates_used": [
+      "test",
+      "valid"
+    ],
+    "new_predicates": [],
+    "alternative_formulations": [],
+    "source_type": "principle",
+    "source_text": "Test source",
+    "citation": null,
+    "jurisdiction": null
+  },
+  "validation_report": {
+    "rule_asp": "test(X) :- valid(X).",
+    "rule_id": "test_1",
+    "target_layer": "tactical",
+    "stage_results": {},
+    "aggregate_confidence": 0.0,
+    "final_decision": "flag_for_review",
+    "rejection_reason": null,
+    "flag_reason": null,
+    "suggested_revisions": [],
+    "timestamp": "2025-11-23T19:22:16.317510",
+    "metadata": {}
+  },
+  "priority": "high",
+  "reason": "Confidence borderline for target layer",
+  "status": "reviewed",
+  "reviewer_id": "alice",
+  "review_started_at": "2025-11-23T19:24:35.581832",
+  "review_decision": {
+    "item_id": "review_1b45ac1874c3",
+    "decision": "accept",
+    "reviewer_notes": "Approved",
+    "suggested_revision": null,
+    "reviewed_at": "2025-11-23T19:26:10.767971",
+    "review_time_seconds": 95.186078
+  },
+  "metadata": {},
+  "created_at": "2025-11-23T19:22:28.538561"
+}
