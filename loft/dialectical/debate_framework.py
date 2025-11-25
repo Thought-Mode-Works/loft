@@ -242,13 +242,18 @@ class DebateFramework:
         logger.debug("Generating initial thesis from knowledge gap")
 
         # Extract missing predicate from gap description or use first predicate
-        missing_predicate = context.existing_predicates[0] if context.existing_predicates else "rule"
+        missing_predicate = (
+            context.existing_predicates[0] if context.existing_predicates else "rule"
+        )
 
         # Use generator to create initial proposal
         response = self.generator.fill_knowledge_gap(
             gap_description=context.knowledge_gap_description,
             missing_predicate=missing_predicate,
-            context={"existing_rules": context.existing_rules, "target_layer": context.target_layer},
+            context={
+                "existing_rules": context.existing_rules,
+                "target_layer": context.target_layer,
+            },
             existing_predicates=context.existing_predicates,
         )
 

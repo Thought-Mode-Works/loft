@@ -329,12 +329,12 @@ class CriticSystem:
         import re
 
         # Try to extract from markdown code block
-        json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', response, re.DOTALL)
+        json_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", response, re.DOTALL)
         if json_match:
             return json_match.group(1)
 
         # Try to find JSON object in response
-        json_match = re.search(r'\{.*\}', response, re.DOTALL)
+        json_match = re.search(r"\{.*\}", response, re.DOTALL)
         if json_match:
             return json_match.group(0)
 

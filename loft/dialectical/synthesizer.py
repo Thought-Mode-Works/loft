@@ -82,8 +82,8 @@ class Synthesizer:
             data = json.loads(json_str, strict=False)
 
             # Normalize ASP rule (remove extra whitespace, newlines)
-            asp_rule = data["synthesized_rule"].replace('\n', ' ').replace('\r', '')
-            asp_rule = ' '.join(asp_rule.split())  # Collapse multiple spaces
+            asp_rule = data["synthesized_rule"].replace("\n", " ").replace("\r", "")
+            asp_rule = " ".join(asp_rule.split())  # Collapse multiple spaces
 
             # Create synthesized rule
             synthesis_rule = GeneratedRule(
@@ -204,12 +204,12 @@ Example:
         import re
 
         # Try to extract from markdown code block
-        json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', response, re.DOTALL)
+        json_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", response, re.DOTALL)
         if json_match:
             return json_match.group(1)
 
         # Try to find JSON object in response
-        json_match = re.search(r'\{.*\}', response, re.DOTALL)
+        json_match = re.search(r"\{.*\}", response, re.DOTALL)
         if json_match:
             return json_match.group(0)
 
