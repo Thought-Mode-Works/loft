@@ -296,9 +296,7 @@ class ASPPersistenceManager:
                     with self._atomic_write(layer_file) as f:
                         self._write_layer_header(f, layer)
                         for rule in rules:
-                            comment_block = self._generate_linkedasp_comment(
-                                rule, layer, None
-                            )
+                            comment_block = self._generate_linkedasp_comment(rule, layer, None)
                             if comment_block:
                                 f.write(comment_block)
                                 f.write("\n")
@@ -308,9 +306,7 @@ class ASPPersistenceManager:
                     for rule in rules:
                         self.save_rule(rule, layer)
 
-                logger.info(
-                    f"Saved {len(rules)} rules to {layer.value}.lp (overwrite={overwrite})"
-                )
+                logger.info(f"Saved {len(rules)} rules to {layer.value}.lp (overwrite={overwrite})")
 
             except Exception as e:
                 logger.error(f"Failed to save rules for {layer.value}: {e}")
@@ -390,15 +386,11 @@ class ASPPersistenceManager:
 
             except Exception as e:
                 logger.error(f"Failed to load rules from {layer.value}.lp: {e}")
-                raise CorruptedFileError(
-                    f"Could not load {layer.value}.lp: {e}"
-                ) from e
+                raise CorruptedFileError(f"Could not load {layer.value}.lp: {e}") from e
 
         return rules_by_layer
 
-    def _parse_lp_file(
-        self, filepath: Path, layer: StratificationLevel
-    ) -> List[ASPRule]:
+    def _parse_lp_file(self, filepath: Path, layer: StratificationLevel) -> List[ASPRule]:
         """
         Parse .lp file and extract ASP rules with metadata.
 
@@ -479,9 +471,7 @@ class ASPPersistenceManager:
 
         return rules
 
-    def create_snapshot(
-        self, cycle_number: int, description: Optional[str] = None
-    ) -> Path:
+    def create_snapshot(self, cycle_number: int, description: Optional[str] = None) -> Path:
         """
         Create snapshot of current rule state.
 
@@ -709,9 +699,7 @@ class ASPPersistenceManager:
                 stats["layers"][layer.value] = {
                     "count": count,
                     "file_size": layer_file.stat().st_size,
-                    "last_modified": datetime.fromtimestamp(
-                        layer_file.stat().st_mtime
-                    ).isoformat(),
+                    "last_modified": datetime.fromtimestamp(layer_file.stat().st_mtime).isoformat(),
                 }
                 stats["total_rules"] += count
             else:

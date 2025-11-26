@@ -126,9 +126,7 @@ class TestASPPersistenceManager:
         assert len(strategic_rules) >= 1
 
         # Find our rule
-        loaded_rule = next(
-            (r for r in strategic_rules if "contract(X)" in r.asp_text), None
-        )
+        loaded_rule = next((r for r in strategic_rules if "contract(X)" in r.asp_text), None)
         assert loaded_rule is not None
         assert loaded_rule.stratification_level == StratificationLevel.STRATEGIC
 
@@ -188,9 +186,7 @@ class TestASPPersistenceManager:
         persistence_manager.save_rule(sample_rule, StratificationLevel.STRATEGIC)
 
         for i in range(1, 4):
-            persistence_manager.create_snapshot(
-                cycle_number=i, description=f"Snapshot {i}"
-            )
+            persistence_manager.create_snapshot(cycle_number=i, description=f"Snapshot {i}")
 
         # List snapshots
         snapshots = persistence_manager.list_snapshots()
@@ -208,9 +204,7 @@ class TestASPPersistenceManager:
         persistence_manager.create_snapshot(cycle_number=1)
 
         # Modify rules
-        metadata = RuleMetadata(
-            provenance="test", timestamp=datetime.now().isoformat()
-        )
+        metadata = RuleMetadata(provenance="test", timestamp=datetime.now().isoformat())
         new_rule = ASPRule(
             rule_id="new_rule",
             asp_text="new_test(X) :- condition(X).",
@@ -250,9 +244,7 @@ class TestASPPersistenceManager:
     def test_snapshot_retention(self, temp_dir, sample_rule):
         """Test snapshot retention policy."""
         # Create manager with retention limit
-        manager = ASPPersistenceManager(
-            base_dir=temp_dir, enable_git=False, snapshot_retention=3
-        )
+        manager = ASPPersistenceManager(base_dir=temp_dir, enable_git=False, snapshot_retention=3)
 
         # Save rule
         manager.save_rule(sample_rule, StratificationLevel.STRATEGIC)
@@ -327,9 +319,7 @@ class TestASPPersistenceManager:
         """Test saving multiple rules to same layer."""
         rules = []
         for i in range(3):
-            metadata = RuleMetadata(
-                provenance="test", timestamp=datetime.now().isoformat()
-            )
+            metadata = RuleMetadata(provenance="test", timestamp=datetime.now().isoformat())
             rule = ASPRule(
                 rule_id=f"rule_{i}",
                 asp_text=f"test_{i}(X) :- condition_{i}(X).",
@@ -401,9 +391,7 @@ class TestIntegration:
         manager = ASPPersistenceManager(base_dir=temp_dir, enable_git=False)
 
         # Step 1: Save initial rules
-        metadata = RuleMetadata(
-            provenance="manual", timestamp=datetime.now().isoformat()
-        )
+        metadata = RuleMetadata(provenance="manual", timestamp=datetime.now().isoformat())
         rule1 = ASPRule(
             rule_id="rule1",
             asp_text="test1(X) :- condition(X).",
