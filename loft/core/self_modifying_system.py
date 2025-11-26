@@ -849,181 +849,25 @@ class SelfModifyingSystem:
         Returns:
             The generated markdown document as a string
         """
-        lines = [
-            "# ASP Core Living Document",
-            f"*Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*",
-            "",
-            "This document represents the current state of the self-modifying ASP reasoning core.",
-            "",
-            "## Overview",
-            "",
-        ]
+        # Use the comprehensive LivingDocumentGenerator
+        from loft.documentation.living_document import LivingDocumentGenerator
 
-        # System statistics
-        total_rules = 0
-        for layer in StratificationLevel:
-            count = len(self.asp_core.get_rules_by_layer(layer))
-            total_rules += count
+        generator = LivingDocumentGenerator(system=self)
 
-        lines.extend(
-            [
-                f"- **Total Rules**: {total_rules}",
-                f"- **Improvement Cycles**: {len(self.improvement_cycles)}",
-                f"- **LLM Integration**: {'Enabled' if self.rule_generator else 'Disabled (Mock Mode)'}",
-                "",
-            ]
-        )
+        # Update cycle history
+        for cycle in self.improvement_cycles:
+            generator.update_cycle_history(cycle)
 
-        # Rules by stratification layer
-        lines.append("## Rules by Stratification Layer")
-        lines.append("")
-
-        for layer in StratificationLevel:
-            rules = self.asp_core.get_rules_by_layer(layer)
-            lines.extend(
-                [
-                    f"### {layer.value.title()} Layer",
-                    "",
-                    f"**Count**: {len(rules)} rules",
-                    "",
-                ]
-            )
-
-            if layer == StratificationLevel.CONSTITUTIONAL:
-                lines.append(
-                    "*Constitutional rules are immutable and define core legal principles.*"
-                )
-            elif layer == StratificationLevel.STRATEGIC:
-                lines.append("*Strategic rules require human review before modification.*")
-            elif layer == StratificationLevel.TACTICAL:
-                lines.append(
-                    "*Tactical rules can be autonomously modified with rollback protection.*"
-                )
-            else:  # OPERATIONAL
-                lines.append(
-                    "*Operational rules are learned from case patterns and frequently updated.*"
-                )
-
-            lines.append("")
-
-            if rules:
-                lines.append("```prolog")
-                for rule in rules:
-                    lines.append(rule)
-                lines.append("```")
-                lines.append("")
-
-        # Incorporation history
-        lines.extend(
-            [
-                "## Recent Incorporation History",
-                "",
-            ]
-        )
-
-        recent_incorporations = self.incorporation_engine.incorporation_history[-10:]
-        if recent_incorporations:
-            lines.append("| Timestamp | Rule ID | Layer | Success | Performance |")
-            lines.append("|-----------|---------|-------|---------|-------------|")
-
-            for inc in recent_incorporations:
-                # Handle both dict and object formats
-                if isinstance(inc, dict):
-                    timestamp = inc.get("timestamp", "Unknown")
-                    if hasattr(timestamp, "strftime"):
-                        timestamp = timestamp.strftime("%Y-%m-%d %H:%M")
-                    rule_id = inc.get("rule_id", "unknown")
-                    # All dicts in incorporation_history are successes
-                    status = "✅"
-                    perf = (
-                        f"{inc.get('performance_delta', 0):+.1%}"
-                        if inc.get("performance_delta")
-                        else "N/A"
-                    )
-                    target_layer = inc.get("target_layer", "unknown")
-                else:
-                    timestamp = inc.timestamp.strftime("%Y-%m-%d %H:%M")
-                    rule_id = inc.rule_id
-                    status = "✅" if inc.is_success() else "❌"
-                    perf = f"{inc.performance_delta:+.1%}" if inc.performance_delta else "N/A"
-                    target_layer = inc.target_layer
-
-                lines.append(
-                    f"| {timestamp} | `{rule_id[:8]}...` | {target_layer} | {status} | {perf} |"
-                )
-        else:
-            lines.append("*No incorporation history yet.*")
-
-        lines.append("")
-
-        # Improvement cycles
-        if self.improvement_cycles:
-            lines.extend(
-                [
-                    "## Improvement Cycle History",
-                    "",
-                ]
-            )
-
-            for cycle in self.improvement_cycles[-5:]:
-                lines.extend(
-                    [
-                        f"### Cycle #{cycle.cycle_number} - {cycle.timestamp.strftime('%Y-%m-%d %H:%M')}",
-                        "",
-                        f"- **Status**: {cycle.status}",
-                        f"- **Gaps Identified**: {cycle.gaps_identified}",
-                        f"- **Variants Generated**: {cycle.variants_generated}",
-                        f"- **Rules Incorporated**: {cycle.rules_incorporated}",
-                        f"- **Performance**: {cycle.baseline_accuracy:.1%} → {cycle.final_accuracy:.1%} ({cycle.overall_improvement:+.1%})",
-                        "",
-                    ]
-                )
-
-        # Self-analysis
-        if self.improvement_cycles:
-            lines.extend(
-                [
-                    "## Self-Analysis",
-                    "",
-                ]
-            )
-
-            report = self.get_self_report()
-            lines.extend(
-                [
-                    f"**Incorporation Success Rate**: {report.incorporation_success_rate:.1%}",
-                    f"**Self-Confidence**: {report.confidence_in_self:.1%}",
-                    f"**Best Strategy**: {report.best_strategy or 'N/A'}",
-                    "",
-                    "### System Narrative",
-                    "",
-                    report.narrative,
-                    "",
-                ]
-            )
-
-        # Footer
-        lines.extend(
-            [
-                "---",
-                "",
-                "*This document is automatically generated and updated with each improvement cycle.*",
-                f"*Persistence directory: `{self.persistence_dir}`*",
-                "",
-            ]
-        )
-
-        document = "\n".join(lines)
-
-        # Save to file if path provided
+        # Set default output path
         if output_path is None:
             output_path = str(self.persistence_dir / "LIVING_DOCUMENT.md")
 
+        # Generate document
         try:
-            with open(output_path, "w") as f:
-                f.write(document)
+            document = generator.generate(output_path=output_path, include_metadata=True)
             logger.info(f"Generated living document at {output_path}")
+            return document
         except Exception as e:
-            logger.error(f"Failed to save living document: {e}")
-
-        return document
+            logger.error(f"Failed to generate living document: {e}")
+            # Fall back to a simple message
+            return f"# ASP Core Living Document\n\n*Error generating document: {e}*"
