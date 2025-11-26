@@ -12,7 +12,6 @@ from loguru import logger
 
 from loft.external.base import LegalAPIProvider
 from loft.external.courtlistener import CourtListenerClient
-from loft.external.cap import CaselawAccessProjectClient
 
 
 @dataclass
@@ -21,7 +20,7 @@ class APIConfig:
     Configuration for legal API providers.
 
     Supports multiple ways to configure APIs:
-    1. Environment variables (COURTLISTENER_API_KEY, CAP_API_KEY)
+    1. Environment variables (COURT_LISTENER_API_TOKEN)
     2. Configuration dict
     3. Direct instantiation
     """
@@ -29,10 +28,6 @@ class APIConfig:
     # CourtListener settings
     courtlistener_api_key: Optional[str] = None
     courtlistener_enabled: bool = True
-
-    # Caselaw Access Project settings
-    cap_api_key: Optional[str] = None
-    cap_enabled: bool = True
 
     # Global settings
     timeout: int = 30
@@ -50,8 +45,8 @@ class APIConfig:
         Load configuration from environment variables.
 
         Environment variables:
-        - COURTLISTENER_API_KEY: CourtListener API key
-        - CAP_API_KEY: Caselaw Access Project API key
+        - COURT_LISTENER_API_TOKEN: CourtListener API token
+        - COURTLISTENER_ENABLED: Enable CourtListener (true/false)
         - LEGAL_API_TIMEOUT: Request timeout in seconds
         - LEGAL_API_MAX_RETRIES: Maximum retry attempts
         - LEGAL_API_CACHE_ENABLED: Enable caching (true/false)
@@ -61,10 +56,8 @@ class APIConfig:
             APIConfig with settings from environment
         """
         return cls(
-            courtlistener_api_key=os.getenv("COURTLISTENER_API_KEY"),
+            courtlistener_api_key=os.getenv("COURT_LISTENER_API_TOKEN"),
             courtlistener_enabled=os.getenv("COURTLISTENER_ENABLED", "true").lower() == "true",
-            cap_api_key=os.getenv("CAP_API_KEY"),
-            cap_enabled=os.getenv("CAP_ENABLED", "true").lower() == "true",
             timeout=int(os.getenv("LEGAL_API_TIMEOUT", "30")),
             max_retries=int(os.getenv("LEGAL_API_MAX_RETRIES", "3")),
             cache_enabled=os.getenv("LEGAL_API_CACHE_ENABLED", "true").lower() == "true",
@@ -87,8 +80,6 @@ class APIConfig:
         return cls(
             courtlistener_api_key=config_dict.get("courtlistener_api_key"),
             courtlistener_enabled=config_dict.get("courtlistener_enabled", True),
-            cap_api_key=config_dict.get("cap_api_key"),
-            cap_enabled=config_dict.get("cap_enabled", True),
             timeout=config_dict.get("timeout", 30),
             max_retries=config_dict.get("max_retries", 3),
             cache_enabled=config_dict.get("cache_enabled", True),
@@ -109,9 +100,6 @@ class APIConfig:
         if self.courtlistener_enabled:
             enabled.append("courtlistener")
 
-        if self.cap_enabled:
-            enabled.append("cap")
-
         return enabled
 
     def get_configured_providers(self) -> List[str]:
@@ -125,9 +113,6 @@ class APIConfig:
 
         if self.courtlistener_api_key:
             configured.append("courtlistener")
-
-        if self.cap_api_key:
-            configured.append("cap")
 
         return configured
 
@@ -161,19 +146,6 @@ def get_configured_clients(
             logger.info("Initialized CourtListener client")
         except Exception as e:
             logger.warning(f"Failed to initialize CourtListener: {e}")
-
-    # Caselaw Access Project
-    if config.cap_enabled:
-        try:
-            client = CaselawAccessProjectClient(
-                api_key=config.cap_api_key,
-                timeout=config.timeout,
-                max_retries=config.max_retries,
-            )
-            clients["cap"] = client
-            logger.info("Initialized CAP client")
-        except Exception as e:
-            logger.warning(f"Failed to initialize CAP: {e}")
 
     logger.info(f"Configured {len(clients)} legal API clients")
 

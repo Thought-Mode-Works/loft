@@ -15,7 +15,6 @@ from loft.external.base import (
 )
 from loft.external.config import APIConfig, validate_config
 from loft.external.courtlistener import CourtListenerClient
-from loft.external.cap import CaselawAccessProjectClient
 from loft.external.manager import LegalAPIManager
 
 
@@ -42,7 +41,7 @@ class TestCaseLawDocument:
         """Test document to_dict."""
         doc = CaseLawDocument(
             document_id="123",
-            source_api="cap",
+            source_api="courtlistener",
             url="https://example.com",
             case_name="Test Case",
             court="Test Court",
@@ -115,31 +114,26 @@ class TestAPIConfig:
         """Test getting enabled providers."""
         config = APIConfig(
             courtlistener_enabled=True,
-            cap_enabled=False,
         )
 
         enabled = config.get_enabled_providers()
 
         assert "courtlistener" in enabled
-        assert "cap" not in enabled
 
     def test_get_configured_providers(self):
         """Test getting configured providers."""
         config = APIConfig(
             courtlistener_api_key="key1",
-            cap_api_key=None,
         )
 
         configured = config.get_configured_providers()
 
         assert "courtlistener" in configured
-        assert "cap" not in configured
 
     def test_validate_config(self):
         """Test config validation."""
         config = APIConfig(
             courtlistener_enabled=False,
-            cap_enabled=False,
         )
 
         warnings = validate_config(config)
@@ -224,63 +218,6 @@ class TestCourtListenerClient:
         assert client._determine_court_level("district") == CourtLevel.DISTRICT
 
 
-class TestCAPClient:
-    """Test Caselaw Access Project API client."""
-
-    @pytest.fixture
-    def client(self):
-        """Create CAP client."""
-        return CaselawAccessProjectClient(api_key="test-key")
-
-    def test_client_initialization(self, client):
-        """Test client initialization."""
-        assert client.api_key == "test-key"
-        assert client.base_url == "https://api.case.law/v1"
-
-    @patch("requests.Session.get")
-    def test_search(self, mock_get, client):
-        """Test CAP search."""
-        mock_response = Mock()
-        mock_response.json.return_value = {
-            "count": 1,
-            "results": [
-                {
-                    "id": 789,
-                    "name": "Marbury v. Madison",
-                    "court": {"name": "U.S. Supreme Court"},
-                    "decision_date": "1803-02-24",
-                    "url": "https://api.case.law/cases/789/",
-                    "casebody": {"data": "Opinion text"},
-                }
-            ],
-            "next": None,
-        }
-        mock_response.raise_for_status = Mock()
-        mock_get.return_value = mock_response
-
-        query = SearchQuery(query_text="marbury", max_results=10)
-        result = client.search(query)
-
-        assert len(result.documents) == 1
-        assert result.documents[0].case_name == "Marbury v. Madison"
-
-    def test_build_search_params(self, client):
-        """Test building search parameters."""
-        query = SearchQuery(
-            query_text="contract",
-            jurisdiction="massachusetts",
-            court="supreme",
-            max_results=20,
-        )
-
-        params = client._build_search_params(query)
-
-        assert params["search"] == "contract"
-        assert params["jurisdiction"] == "massachusetts"
-        assert params["court"] == "supreme"
-        assert params["page_size"] == 20
-
-
 class TestLegalAPIManager:
     """Test unified API manager."""
 
@@ -288,11 +225,9 @@ class TestLegalAPIManager:
     def mock_clients(self):
         """Create mock clients."""
         cl_client = Mock(spec=CourtListenerClient)
-        cap_client = Mock(spec=CaselawAccessProjectClient)
 
         return {
             "courtlistener": cl_client,
-            "cap": cap_client,
         }
 
     @pytest.fixture
@@ -303,40 +238,27 @@ class TestLegalAPIManager:
 
     def test_manager_initialization(self, manager, mock_clients):
         """Test manager initialization."""
-        assert len(manager.clients) == 2
+        assert len(manager.clients) == 1
         assert "courtlistener" in manager.clients
-        assert "cap" in manager.clients
 
     def test_get_available_providers(self, manager, mock_clients):
         """Test getting available providers."""
         mock_clients["courtlistener"].is_available.return_value = True
-        mock_clients["cap"].is_available.return_value = False
 
         available = manager.get_available_providers()
 
         assert "courtlistener" in available
-        assert "cap" not in available
 
-    def test_search_with_fallback(self, manager, mock_clients):
-        """Test search with provider fallback."""
-        # First provider fails
+    def test_search_error_handling(self, manager, mock_clients):
+        """Test search error handling."""
+        # Provider fails
         mock_clients["courtlistener"].search.side_effect = APIError("Failed")
 
-        # Second provider succeeds
-        mock_result = SearchResult(
-            query=SearchQuery(query_text="test"),
-            documents=[],
-            total_results=0,
-            page=1,
-            has_more=False,
-        )
-        mock_clients["cap"].search.return_value = mock_result
-
         query = SearchQuery(query_text="test")
-        result = manager.search(query)
 
-        assert result is not None
-        assert mock_clients["cap"].search.called
+        # Should raise APIError when all providers fail
+        with pytest.raises(APIError):
+            manager.search(query)
 
     def test_cache_functionality(self, manager, mock_clients):
         """Test response caching."""
@@ -375,22 +297,14 @@ class TestLegalAPIManager:
         assert "expired_entries" in stats
         assert "active_entries" in stats
 
-    def test_aggregate_results(self, manager, mock_clients):
-        """Test result aggregation."""
+    def test_search_results(self, manager, mock_clients):
+        """Test basic search functionality."""
         doc1 = CaseLawDocument(
             document_id="1",
             source_api="courtlistener",
             url="url1",
             case_name="Case A",
             court="court1",
-        )
-
-        doc2 = CaseLawDocument(
-            document_id="2",
-            source_api="cap",
-            url="url2",
-            case_name="Case B",
-            court="court2",
         )
 
         result1 = SearchResult(
@@ -401,19 +315,10 @@ class TestLegalAPIManager:
             has_more=False,
         )
 
-        result2 = SearchResult(
-            query=SearchQuery(query_text="test"),
-            documents=[doc2],
-            total_results=1,
-            page=1,
-            has_more=False,
-        )
-
         mock_clients["courtlistener"].search.return_value = result1
-        mock_clients["cap"].search.return_value = result2
 
         query = SearchQuery(query_text="test")
-        result = manager.search(query, aggregate_results=True)
+        result = manager.search(query)
 
-        assert len(result.documents) == 2
-        assert result.source_api == "aggregated"
+        assert len(result.documents) == 1
+        assert result.documents[0].case_name == "Case A"

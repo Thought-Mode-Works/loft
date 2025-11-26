@@ -16,7 +16,6 @@ from loft.external.base import (
     AuthenticationError,
 )
 from loft.external.courtlistener import CourtListenerClient
-from loft.external.cap import CaselawAccessProjectClient
 from loft.external.config import APIConfig, get_configured_clients
 from loft.external.manager import LegalAPIManager
 
@@ -30,7 +29,6 @@ __all__ = [
     "RateLimitError",
     "AuthenticationError",
     "CourtListenerClient",
-    "CaselawAccessProjectClient",
     "APIConfig",
     "get_configured_clients",
     "LegalAPIManager",
