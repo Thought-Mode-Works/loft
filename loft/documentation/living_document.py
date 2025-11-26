@@ -3,6 +3,12 @@ Living Document Generator for ASP Core Evolution.
 
 Automatically generates and maintains human-readable documentation of the
 evolving ASP core, showing rules, their history, and system performance over time.
+
+Designed for seamless future integration with LinkedASP (docs/MAINTAINABILITY.md):
+- Exports structured metadata compatible with RDF/Turtle format
+- Prepares for SPARQL-based querying and analysis
+- Includes provenance tracking for LLM-generated rules
+- Supports genre-based code generation patterns
 """
 
 from datetime import datetime
@@ -12,6 +18,7 @@ from loguru import logger
 
 from loft.symbolic.stratification import StratificationLevel
 from loft.core.integration_schemas import ImprovementCycleResult
+from loft.documentation.linkedasp_metadata import LinkedASPExporter, RuleMetadata
 
 
 class LivingDocumentGenerator:
@@ -36,11 +43,13 @@ class LivingDocumentGenerator:
         """
         self.system = system
         self.cycle_history: List[ImprovementCycleResult] = []
+        self.linkedasp_exporter = LinkedASPExporter()
 
     def generate(
         self,
         output_path: str = "./LIVING_DOCUMENT.md",
         include_metadata: bool = True,
+        export_linkedasp: bool = True,
     ) -> str:
         """
         Generate comprehensive living document.
@@ -48,6 +57,7 @@ class LivingDocumentGenerator:
         Args:
             output_path: Path to save the generated document
             include_metadata: Whether to include generation metadata
+            export_linkedasp: Whether to export LinkedASP metadata (JSON-LD/Turtle)
 
         Returns:
             Generated document content as string
@@ -99,6 +109,11 @@ class LivingDocumentGenerator:
             f.write(document)
 
         logger.info(f"Living document generated: {output_path}")
+
+        # Export LinkedASP metadata for future SPARQL querying
+        # (See docs/MAINTAINABILITY.md for LinkedASP integration roadmap)
+        if export_linkedasp and self.system:
+            self._export_linkedasp_metadata(output_file.parent)
 
         return document
 
@@ -415,4 +430,84 @@ to show the current state of rules, their history, and system performance."""
 - System: Self-Modifying ASP System
 
 This document is automatically generated after each improvement cycle.
-Changes to this document reflect the system's evolution over time."""
+Changes to this document reflect the system's evolution over time.
+
+**Future Queryability (LinkedASP)**
+
+This document is designed for seamless integration with the LinkedASP system
+(see `docs/MAINTAINABILITY.md`), which will enable:
+- RDF/Turtle metadata export for SPARQL querying
+- Genre-based ASP code generation
+- Dependency analysis and impact assessment
+- Automated stratification violation detection
+
+Structured metadata is exported alongside this document in JSON-LD format,
+preparing for Phase 1.5+ LinkedASP integration."""
+
+    def _export_linkedasp_metadata(self, output_dir: Path) -> None:
+        """
+        Export LinkedASP-compatible metadata for future SPARQL querying.
+
+        Generates JSON-LD and example SPARQL queries that will be consumable
+        once the LinkedASP system is implemented (Phase 1.5+).
+
+        Args:
+            output_dir: Directory to save metadata files
+        """
+        try:
+            # Extract rule metadata from ASP core
+            if hasattr(self.system, "asp_core"):
+                for layer in StratificationLevel:
+                    rules = self.system.asp_core.get_rules_by_layer(layer)
+                    for rule_text in rules:
+                        # Extract predicate name (simplified - full parsing in Phase 1.5+)
+                        predicate = self._extract_predicate_name(rule_text)
+
+                        # Create rule metadata
+                        rule_meta = RuleMetadata(
+                            rule_id=f"{predicate}_{layer.value}",
+                            rule_text=rule_text,
+                            predicate_name=predicate,
+                            stratification_level=layer.value,
+                            confidence=1.0,  # Default - will be tracked in Phase 2+
+                            source_type="manual",  # Will be tracked from incorporation
+                            last_modified=datetime.now(),
+                        )
+
+                        self.linkedasp_exporter.add_rule(rule_meta)
+
+            # Export JSON-LD
+            jsonld_path = output_dir / "LIVING_DOCUMENT_METADATA.jsonld"
+            self.linkedasp_exporter.export_json_ld(str(jsonld_path))
+            logger.info(f"Exported LinkedASP JSON-LD metadata: {jsonld_path}")
+
+            # Export example SPARQL queries
+            queries_path = output_dir / "SPARQL_QUERIES.md"
+            self.linkedasp_exporter.generate_query_examples(str(queries_path))
+            logger.info(f"Exported example SPARQL queries: {queries_path}")
+
+        except Exception as e:
+            logger.warning(f"Could not export LinkedASP metadata: {e}")
+            # Non-fatal - document generation succeeded even if metadata export failed
+
+    def _extract_predicate_name(self, rule_text: str) -> str:
+        """
+        Extract predicate name from ASP rule text.
+
+        This is a simplified implementation. Full predicate parsing will be
+        implemented in Phase 1.5+ with proper ASP grammar parsing.
+
+        Args:
+            rule_text: ASP rule text
+
+        Returns:
+            Extracted predicate name
+        """
+        # Simple extraction: get text before first '('
+        if "(" in rule_text:
+            return rule_text.split("(")[0].strip()
+        # For facts without parentheses
+        if ":-" in rule_text:
+            return rule_text.split(":-")[0].strip().rstrip(".")
+        # Fallback
+        return rule_text[:30].replace(" ", "_")
