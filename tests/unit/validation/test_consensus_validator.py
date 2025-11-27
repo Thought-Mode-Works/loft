@@ -5,7 +5,7 @@ Tests multi-LLM consensus validation of LLM-generated ASP rules.
 """
 
 import pytest
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
 from loft.validation.consensus_validator import ConsensusValidator
 from loft.validation.validation_schemas import ConsensusValidationResult
 from loft.neural.rule_schemas import ConsensusVote

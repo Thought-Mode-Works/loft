@@ -5,7 +5,7 @@ Tests the multi-stage validation pipeline for LLM-generated ASP rules.
 """
 
 import pytest
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
 from loft.validation.validation_pipeline import ValidationPipeline
 from loft.validation.validation_schemas import ValidationReport, ValidationResult, TestCase
 from loft.validation.asp_validators import ASPSyntaxValidator
@@ -322,7 +322,6 @@ class TestValidationPipeline:
     def test_validate_rule_consensus_revise(self, pipeline, mock_validators):
         """Test that consensus revise decision triggers revision."""
         from loft.validation.validation_schemas import ConsensusValidationResult
-        from loft.neural.rule_schemas import ConsensusVote
 
         mock_validators["syntax"].validate_generated_rule.return_value = ValidationResult(
             is_valid=True,
@@ -618,7 +617,6 @@ class TestValidationPipeline:
     def test_suggested_revisions_collected_from_stages(self, pipeline, mock_validators):
         """Test that suggested revisions are collected from various stages."""
         from loft.validation.validation_schemas import ConsensusValidationResult
-        from loft.neural.rule_schemas import ConsensusVote
 
         mock_validators["syntax"].validate_generated_rule.return_value = ValidationResult(
             is_valid=True,
