@@ -5,7 +5,7 @@ Tests quality validation, fidelity computation, and roundtrip testing.
 """
 
 import pytest
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
 from loft.translation.quality import (
     QualityMetrics,
     validate_translation_quality,
@@ -17,7 +17,6 @@ from loft.translation.quality import (
     compute_asp_equivalence,
     _compute_semantic_equivalence_with_solver,
 )
-from loft.translation.asp_to_nl import extract_predicates
 
 
 class TestQualityMetrics:
@@ -404,7 +403,7 @@ class TestComputeSemanticEquivalenceWithSolver:
     def test_identical_facts(self):
         """Test semantic equivalence of identical facts."""
         try:
-            from clingo import Control
+            from clingo import Control  # noqa: F401
 
             asp1 = "contract(c1)."
             asp2 = "contract(c1)."
@@ -418,7 +417,7 @@ class TestComputeSemanticEquivalenceWithSolver:
     def test_both_unsatisfiable(self):
         """Test equivalence when both are unsatisfiable."""
         try:
-            from clingo import Control
+            from clingo import Control  # noqa: F401
 
             asp1 = "contract(c1). :- contract(c1)."
             asp2 = "void(c1). :- void(c1)."
@@ -432,7 +431,7 @@ class TestComputeSemanticEquivalenceWithSolver:
     def test_one_satisfiable_one_not(self):
         """Test when one is satisfiable and other is not."""
         try:
-            from clingo import Control
+            from clingo import Control  # noqa: F401
 
             asp1 = "contract(c1)."
             asp2 = ":- contract(c1)."  # Unsatisfiable if contract(c1) is added
@@ -447,7 +446,7 @@ class TestComputeSemanticEquivalenceWithSolver:
     def test_different_models(self):
         """Test equivalence with different answer sets."""
         try:
-            from clingo import Control
+            from clingo import Control  # noqa: F401
 
             asp1 = "contract(c1)."
             asp2 = "void(c1)."
