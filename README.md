@@ -1,5 +1,9 @@
 # LOFT - Reflexive Neuro-Symbolic AI Architecture
 
+![Coverage](https://img.shields.io/badge/coverage-70.3%25-yellow)
+![Tests](https://img.shields.io/badge/tests-813%20passing-brightgreen)
+![Python](https://img.shields.io/badge/python-3.11%2B-blue)
+
 > Building a self-reflexive symbolic core that autonomously reconstructs its own logic using LLM outputs, creating an ontological bridge between symbolic reasoning and neural pattern recognition.
 
 ## 🎯 Vision
