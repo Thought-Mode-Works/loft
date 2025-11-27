@@ -444,7 +444,9 @@ class TestValidationPipeline:
         assert stats["rejected"] == 1
         assert stats["needs_revision"] == 1
         assert stats["flagged"] == 1
-        assert abs(stats["mean_confidence"] - (0.9 + 0.2 + 0.5 + 0.55) / 4) < 0.001  # Floating point tolerance
+        assert (
+            abs(stats["mean_confidence"] - (0.9 + 0.2 + 0.5 + 0.55) / 4) < 0.001
+        )  # Floating point tolerance
         assert stats["acceptance_rate"] == 0.25
 
     def test_get_pipeline_stats_empty(self, pipeline):
