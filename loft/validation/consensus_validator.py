@@ -143,7 +143,8 @@ class ConsensusValidator:
         # Collect suggested revisions
         suggested_revisions = []
         for vote in votes:
-            suggested_revisions.extend(vote.suggested_revisions)
+            if vote.suggested_revision:
+                suggested_revisions.append(vote.suggested_revision)
 
         # Check if valid (accept with sufficient consensus)
         is_valid = decision == "accept" and consensus_strength >= self.consensus_threshold
