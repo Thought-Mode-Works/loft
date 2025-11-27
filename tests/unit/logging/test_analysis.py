@@ -708,7 +708,9 @@ class TestEdgeCases:
     def test_parse_log_line_with_extra_pipes(self):
         """Test parsing log line with pipes in the message."""
         analyzer = LogAnalyzer()
-        line = "2024-01-01 12:00:00.123 | INFO     | llm | module:function:42 | Message | with | pipes"
+        line = (
+            "2024-01-01 12:00:00.123 | INFO     | llm | module:function:42 | Message | with | pipes"
+        )
         entry = analyzer.parse_log_line(line)
 
         # Should parse correctly, message includes the extra pipes

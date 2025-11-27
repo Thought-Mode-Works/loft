@@ -46,11 +46,12 @@ class TestStratificationLevelStrategy:
 
     def test_stratification_level_is_enum(self):
         """Test that generated levels are proper enums."""
+
         @given(stratification_level_strategy())
         @settings(max_examples=10)
         def check_enum(level):
-            assert hasattr(level, 'value')
-            assert level.value in ['constitutional', 'strategic', 'tactical', 'operational']
+            assert hasattr(level, "value")
+            assert level.value in ["constitutional", "strategic", "tactical", "operational"]
 
         check_enum()
 
