@@ -4,7 +4,6 @@ Unit tests for ASP grounding and validation.
 Tests fact grounding, type constraints, and ambiguity detection.
 """
 
-import pytest
 from unittest.mock import Mock
 from loft.translation.grounding import (
     extract_predicate_name,

@@ -4,7 +4,6 @@ Unit tests for Pydantic schemas for NL → ASP translation.
 Tests schema creation, validation, and ASP fact generation.
 """
 
-import pytest
 from loft.translation.schemas import (
     LegalEntity,
     Party,
