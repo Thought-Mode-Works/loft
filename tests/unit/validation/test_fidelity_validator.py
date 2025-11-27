@@ -5,7 +5,11 @@ Tests translation fidelity measurement for ASP ↔ Natural Language conversion.
 """
 
 import pytest
-from loft.validation.fidelity import FidelityValidator, FidelityTestResult, compute_translation_fidelity
+from loft.validation.fidelity import (
+    FidelityValidator,
+    FidelityTestResult,
+    compute_translation_fidelity,
+)
 
 
 class TestFidelityValidator:
@@ -179,8 +183,8 @@ class TestFidelityValidator:
 
         assert len(answer_sets) == 1
         # Should contain 'a' and 'b'
-        assert 'a' in answer_sets[0]
-        assert 'b' in answer_sets[0]
+        assert "a" in answer_sets[0]
+        assert "b" in answer_sets[0]
 
     def test_get_answer_sets_with_choice(self, validator):
         """Test getting multiple answer sets with choice rule."""
@@ -208,41 +212,41 @@ class TestFidelityValidator:
 
         assert len(answer_sets) == 1
         # Both 'a' and 'b' should be derived
-        assert 'a' in answer_sets[0]
-        assert 'b' in answer_sets[0]
+        assert "a" in answer_sets[0]
+        assert "b" in answer_sets[0]
 
     def test_answer_sets_match_identical(self, validator):
         """Test answer set matching with identical sets."""
-        sets1 = [frozenset(['a', 'b']), frozenset(['c'])]
-        sets2 = [frozenset(['a', 'b']), frozenset(['c'])]
+        sets1 = [frozenset(["a", "b"]), frozenset(["c"])]
+        sets2 = [frozenset(["a", "b"]), frozenset(["c"])]
 
         assert validator._answer_sets_match(sets1, sets2)
 
     def test_answer_sets_match_different_order(self, validator):
         """Test answer set matching with different order."""
-        sets1 = [frozenset(['a', 'b']), frozenset(['c'])]
-        sets2 = [frozenset(['c']), frozenset(['a', 'b'])]  # Different order
+        sets1 = [frozenset(["a", "b"]), frozenset(["c"])]
+        sets2 = [frozenset(["c"]), frozenset(["a", "b"])]  # Different order
 
         assert validator._answer_sets_match(sets1, sets2)
 
     def test_answer_sets_match_different_content(self, validator):
         """Test answer set matching with different content."""
-        sets1 = [frozenset(['a', 'b'])]
-        sets2 = [frozenset(['c', 'd'])]
+        sets1 = [frozenset(["a", "b"])]
+        sets2 = [frozenset(["c", "d"])]
 
         assert not validator._answer_sets_match(sets1, sets2)
 
     def test_answer_sets_match_different_length(self, validator):
         """Test answer set matching with different lengths."""
-        sets1 = [frozenset(['a']), frozenset(['b'])]
-        sets2 = [frozenset(['a'])]
+        sets1 = [frozenset(["a"]), frozenset(["b"])]
+        sets2 = [frozenset(["a"])]
 
         assert not validator._answer_sets_match(sets1, sets2)
 
     def test_compute_answer_set_overlap_perfect(self, validator):
         """Test overlap computation with perfect match."""
-        sets1 = [frozenset(['a', 'b'])]
-        sets2 = [frozenset(['a', 'b'])]
+        sets1 = [frozenset(["a", "b"])]
+        sets2 = [frozenset(["a", "b"])]
 
         overlap = validator._compute_answer_set_overlap(sets1, sets2)
 
@@ -250,8 +254,8 @@ class TestFidelityValidator:
 
     def test_compute_answer_set_overlap_none(self, validator):
         """Test overlap computation with no overlap."""
-        sets1 = [frozenset(['a'])]
-        sets2 = [frozenset(['b'])]
+        sets1 = [frozenset(["a"])]
+        sets2 = [frozenset(["b"])]
 
         overlap = validator._compute_answer_set_overlap(sets1, sets2)
 
@@ -259,8 +263,8 @@ class TestFidelityValidator:
 
     def test_compute_answer_set_overlap_partial(self, validator):
         """Test overlap computation with partial overlap."""
-        sets1 = [frozenset(['a', 'b']), frozenset(['c'])]
-        sets2 = [frozenset(['a', 'b']), frozenset(['d'])]
+        sets1 = [frozenset(["a", "b"]), frozenset(["c"])]
+        sets2 = [frozenset(["a", "b"]), frozenset(["d"])]
 
         overlap = validator._compute_answer_set_overlap(sets1, sets2)
 
@@ -280,7 +284,7 @@ class TestFidelityValidator:
 
     def test_compute_answer_set_overlap_one_empty(self, validator):
         """Test overlap computation with one empty."""
-        sets1 = [frozenset(['a'])]
+        sets1 = [frozenset(["a"])]
         sets2 = []
 
         overlap = validator._compute_answer_set_overlap(sets1, sets2)

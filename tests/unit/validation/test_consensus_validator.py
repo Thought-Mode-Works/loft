@@ -105,7 +105,8 @@ class TestConsensusValidator:
                 confidence=0.7,
                 reasoning="Rule needs minor adjustments",
                 issues_found=["missing_negation"],
-                suggested_revision="Add 'not void(C)' condition", test_cases_to_validate=[],
+                suggested_revision="Add 'not void(C)' condition",
+                test_cases_to_validate=[],
                 voter_id="test_voter",
             )
 
@@ -126,7 +127,8 @@ class TestConsensusValidator:
             confidence=0.9,
             reasoning="Good rule",
             issues_found=[],
-            suggested_revision=None, test_cases_to_validate=[],
+            suggested_revision=None,
+            test_cases_to_validate=[],
             voter_id="voter_0",
         )
 
@@ -135,7 +137,8 @@ class TestConsensusValidator:
             confidence=0.85,
             reasoning="Acceptable",
             issues_found=[],
-            suggested_revision=None, test_cases_to_validate=[],
+            suggested_revision=None,
+            test_cases_to_validate=[],
             voter_id="voter_1",
         )
 
@@ -144,7 +147,8 @@ class TestConsensusValidator:
             confidence=0.6,
             reasoning="Could be better",
             issues_found=["clarity"],
-            suggested_revision="Rephrase", test_cases_to_validate=[],
+            suggested_revision="Rephrase",
+            test_cases_to_validate=[],
             voter_id="voter_2",
         )
 
@@ -174,7 +178,8 @@ class TestConsensusValidator:
             confidence=1.0,
             reasoning="Major issue",
             issues_found=["critical_error"],
-            suggested_revision=None, test_cases_to_validate=[],
+            suggested_revision=None,
+            test_cases_to_validate=[],
             voter_id="voter_0",
         )
 
@@ -183,7 +188,8 @@ class TestConsensusValidator:
             confidence=1.0,
             reasoning="Looks good",
             issues_found=[],
-            suggested_revision=None, test_cases_to_validate=[],
+            suggested_revision=None,
+            test_cases_to_validate=[],
             voter_id="voter_1",
         )
 
@@ -192,7 +198,8 @@ class TestConsensusValidator:
             confidence=1.0,
             reasoning="Looks good",
             issues_found=[],
-            suggested_revision=None, test_cases_to_validate=[],
+            suggested_revision=None,
+            test_cases_to_validate=[],
             voter_id="voter_2",
         )
 
@@ -217,13 +224,31 @@ class TestConsensusValidator:
 
         # 2 accept, 1 reject (weak consensus)
         gen1.get_consensus_vote.return_value = ConsensusVote(
-            vote="accept", confidence=0.6, reasoning="OK", issues_found=[], suggested_revision=None, test_cases_to_validate=[], voter_id="v0"
+            vote="accept",
+            confidence=0.6,
+            reasoning="OK",
+            issues_found=[],
+            suggested_revision=None,
+            test_cases_to_validate=[],
+            voter_id="v0",
         )
         gen2.get_consensus_vote.return_value = ConsensusVote(
-            vote="accept", confidence=0.6, reasoning="OK", issues_found=[], suggested_revision=None, test_cases_to_validate=[], voter_id="v1"
+            vote="accept",
+            confidence=0.6,
+            reasoning="OK",
+            issues_found=[],
+            suggested_revision=None,
+            test_cases_to_validate=[],
+            voter_id="v1",
         )
         gen3.get_consensus_vote.return_value = ConsensusVote(
-            vote="reject", confidence=0.6, reasoning="No", issues_found=[], suggested_revision=None, test_cases_to_validate=[], voter_id="v2"
+            vote="reject",
+            confidence=0.6,
+            reasoning="No",
+            issues_found=[],
+            suggested_revision=None,
+            test_cases_to_validate=[],
+            voter_id="v2",
         )
 
         result = validator.validate_rule(
@@ -240,11 +265,23 @@ class TestConsensusValidator:
         """Test handling of vote failures."""
         # Gen1 and Gen2 succeed, Gen3 fails
         mock_rule_generators[0].get_consensus_vote.return_value = ConsensusVote(
-            vote="accept", confidence=0.9, reasoning="Good", issues_found=[], suggested_revision=None, test_cases_to_validate=[], voter_id="v0"
+            vote="accept",
+            confidence=0.9,
+            reasoning="Good",
+            issues_found=[],
+            suggested_revision=None,
+            test_cases_to_validate=[],
+            voter_id="v0",
         )
 
         mock_rule_generators[1].get_consensus_vote.return_value = ConsensusVote(
-            vote="accept", confidence=0.85, reasoning="Good", issues_found=[], suggested_revision=None, test_cases_to_validate=[], voter_id="v1"
+            vote="accept",
+            confidence=0.85,
+            reasoning="Good",
+            issues_found=[],
+            suggested_revision=None,
+            test_cases_to_validate=[],
+            voter_id="v1",
         )
 
         # Gen3 raises an exception
@@ -265,7 +302,13 @@ class TestConsensusValidator:
         """Test that existing predicates are passed to voters."""
         for gen in mock_rule_generators:
             gen.get_consensus_vote.return_value = ConsensusVote(
-                vote="accept", confidence=0.9, reasoning="Good", issues_found=[], suggested_revision=None, test_cases_to_validate=[], voter_id="v"
+                vote="accept",
+                confidence=0.9,
+                reasoning="Good",
+                issues_found=[],
+                suggested_revision=None,
+                test_cases_to_validate=[],
+                voter_id="v",
             )
 
         existing_predicates = ["contract", "void", "enforceable"]
@@ -286,7 +329,13 @@ class TestConsensusValidator:
         """Test that source_type is passed to voters."""
         for gen in mock_rule_generators:
             gen.get_consensus_vote.return_value = ConsensusVote(
-                vote="accept", confidence=0.9, reasoning="Good", issues_found=[], suggested_revision=None, test_cases_to_validate=[], voter_id="v"
+                vote="accept",
+                confidence=0.9,
+                reasoning="Good",
+                issues_found=[],
+                suggested_revision=None,
+                test_cases_to_validate=[],
+                voter_id="v",
             )
 
         validator.validate_rule(
@@ -304,7 +353,13 @@ class TestConsensusValidator:
         """Test batch validation of multiple rules."""
         for gen in mock_rule_generators:
             gen.get_consensus_vote.return_value = ConsensusVote(
-                vote="accept", confidence=0.9, reasoning="Good", issues_found=[], suggested_revision=None, test_cases_to_validate=[], voter_id="v"
+                vote="accept",
+                confidence=0.9,
+                reasoning="Good",
+                issues_found=[],
+                suggested_revision=None,
+                test_cases_to_validate=[],
+                voter_id="v",
             )
 
         rules = [
@@ -337,7 +392,13 @@ class TestConsensusValidator:
         # All vote accept with confidence 1.0
         for gen in mock_rule_generators:
             gen.get_consensus_vote.return_value = ConsensusVote(
-                vote="accept", confidence=1.0, reasoning="Perfect", issues_found=[], suggested_revision=None, test_cases_to_validate=[], voter_id="v"
+                vote="accept",
+                confidence=1.0,
+                reasoning="Perfect",
+                issues_found=[],
+                suggested_revision=None,
+                test_cases_to_validate=[],
+                voter_id="v",
             )
 
         result = validator.validate_rule(
@@ -353,7 +414,13 @@ class TestConsensusValidator:
         # All votes with zero confidence
         for gen in mock_rule_generators:
             gen.get_consensus_vote.return_value = ConsensusVote(
-                vote="revise", confidence=0.0, reasoning="Unsure", issues_found=[], suggested_revision="Needs review", test_cases_to_validate=[], voter_id="v"
+                vote="revise",
+                confidence=0.0,
+                reasoning="Unsure",
+                issues_found=[],
+                suggested_revision="Needs review",
+                test_cases_to_validate=[],
+                voter_id="v",
             )
 
         result = validator.validate_rule(
@@ -373,7 +440,8 @@ class TestConsensusValidator:
             confidence=0.7,
             reasoning="Needs work",
             issues_found=[],
-            suggested_revision="Add negation; Check consistency", test_cases_to_validate=[],
+            suggested_revision="Add negation; Check consistency",
+            test_cases_to_validate=[],
             voter_id="v0",
         )
 
@@ -392,7 +460,8 @@ class TestConsensusValidator:
             confidence=0.9,
             reasoning="OK",
             issues_found=[],
-            suggested_revision=None, test_cases_to_validate=[],
+            suggested_revision=None,
+            test_cases_to_validate=[],
             voter_id="v2",
         )
 
@@ -413,7 +482,13 @@ class TestConsensusValidator:
         """Test that validation result has all expected fields."""
         for gen in mock_rule_generators:
             gen.get_consensus_vote.return_value = ConsensusVote(
-                vote="accept", confidence=0.9, reasoning="Good", issues_found=[], suggested_revision=None, test_cases_to_validate=[], voter_id="v"
+                vote="accept",
+                confidence=0.9,
+                reasoning="Good",
+                issues_found=[],
+                suggested_revision=None,
+                test_cases_to_validate=[],
+                voter_id="v",
             )
 
         result = validator.validate_rule(

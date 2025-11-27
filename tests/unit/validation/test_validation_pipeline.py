@@ -212,7 +212,9 @@ class TestValidationPipeline:
             test_cases_failed=5,
             total_test_cases=10,
             failures=[
-                FailureCase(test_case=failed_tc, expected=True, actual=False, explanation="Test failed")
+                FailureCase(
+                    test_case=failed_tc, expected=True, actual=False, explanation="Test failed"
+                )
             ],
             improvements=[],
             is_valid=False,
@@ -584,7 +586,10 @@ class TestValidationPipeline:
             is_valid=True,
             stage_name="semantic",
             warnings=[],
-            details={"consistency": {"is_consistent": True}, "stratification": {"is_compatible": True}},
+            details={
+                "consistency": {"is_consistent": True},
+                "stratification": {"is_compatible": True},
+            },
         )
 
         result = pipeline.validate_rule(
