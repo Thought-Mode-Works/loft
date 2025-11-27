@@ -388,6 +388,234 @@ class TestRoundtripTesting:
         assert equiv > 0.8  # Should be high since predicates are the same
 
 
+class TestNLToStructured:
+    """Test nl_to_structured function."""
+
+    def test_contract_fact_without_llm(self) -> None:
+        """Test parsing ContractFact without LLM."""
+        from loft.translation.nl_to_asp import nl_to_structured
+
+        nl = "John and Mary have a land sale contract for $500,000"
+        contract = nl_to_structured(nl, ContractFact, llm_interface=None)
+
+        assert contract.contract_id == "contract_1"
+        assert "John" in contract.parties or "Mary" in contract.parties
+        assert contract.sale_amount == 500000.0
+
+    def test_with_llm_interface(self) -> None:
+        """Test parsing with LLM interface."""
+        from loft.translation.nl_to_asp import nl_to_structured
+        from unittest.mock import Mock
+
+        llm = Mock()
+        mock_response = Mock()
+        mock_response.content = ContractFact(contract_id="c1", contract_type="land_sale")
+        llm.query.return_value = mock_response
+
+        nl = "This is a land sale contract"
+        contract = nl_to_structured(nl, ContractFact, llm_interface=llm)
+
+        assert contract.contract_id == "c1"
+        assert contract.contract_type == "land_sale"
+        llm.query.assert_called_once()
+
+    def test_extracted_entities_without_llm(self) -> None:
+        """Test parsing ExtractedEntities without LLM."""
+        from loft.translation.nl_to_asp import nl_to_structured
+        from loft.translation.schemas import ExtractedEntities
+
+        nl = "John and Mary have a contract"
+        entities = nl_to_structured(nl, ExtractedEntities, llm_interface=None)
+
+        assert len(entities.contracts) > 0
+        assert len(entities.parties) > 0
+
+    def test_unsupported_schema(self) -> None:
+        """Test with unsupported schema type."""
+        from loft.translation.nl_to_asp import nl_to_structured
+        from pydantic import BaseModel
+
+        class CustomSchema(BaseModel):
+            value: str
+
+        nl = "Some text"
+        try:
+            nl_to_structured(nl, CustomSchema, llm_interface=None)
+            assert False, "Should raise ValueError"
+        except ValueError as e:
+            assert "Unsupported schema" in str(e)
+
+
+class TestNLToASPResult:
+    """Test NLToASPResult dataclass."""
+
+    def test_creation(self) -> None:
+        """Test creating NLToASPResult."""
+        from loft.translation.nl_to_asp import NLToASPResult
+
+        result = NLToASPResult(
+            asp_facts=["contract(c1)."],
+            source_nl="c1 is a contract",
+            confidence=0.8,
+            extraction_method="pattern",
+        )
+
+        assert result.asp_facts == ["contract(c1)."]
+        assert result.source_nl == "c1 is a contract"
+        assert result.confidence == 0.8
+        assert result.extraction_method == "pattern"
+        assert result.ambiguities == []
+        assert result.metadata == {}
+
+
+class TestParseRuleFromNLBasic:
+    """Test _parse_rule_from_nl_basic function."""
+
+    def test_if_pattern_with_has(self) -> None:
+        """Test 'A X is Y if it has Z' pattern."""
+        from loft.translation.nl_to_asp import _parse_rule_from_nl_basic
+
+        nl = "a contract satisfies statute of frauds if it has a signed writing"
+        rule = _parse_rule_from_nl_basic(nl)
+
+        assert "satisfies_statute_of_frauds(C)" in rule
+        assert ":-" in rule
+        assert "has_" in rule
+
+    def test_unless_pattern(self) -> None:
+        """Test 'A X is Y unless Z' pattern."""
+        from loft.translation.nl_to_asp import _parse_rule_from_nl_basic
+
+        nl = "a contract is enforceable unless proven unenforceable"
+        rule = _parse_rule_from_nl_basic(nl)
+
+        assert "enforceable(C)" in rule
+        assert "not" in rule
+        assert "unenforceable(C)" in rule
+
+    def test_unrecognized_pattern(self) -> None:
+        """Test unrecognized pattern returns comment."""
+        from loft.translation.nl_to_asp import _parse_rule_from_nl_basic
+
+        nl = "This is not a valid rule format"
+        rule = _parse_rule_from_nl_basic(nl)
+
+        assert "%" in rule
+        assert "Could not parse" in rule
+
+
+class TestTranslatorWithLLM:
+    """Test NLToASPTranslator with LLM."""
+
+    def test_translator_with_llm_enabled(self) -> None:
+        """Test translator with LLM enabled."""
+        from unittest.mock import Mock
+
+        llm = Mock()
+        translator = NLToASPTranslator(llm_interface=llm, use_llm_by_default=True)
+
+        assert translator.llm_interface == llm
+        assert translator.use_llm is True
+
+    def test_translator_with_llm_disabled(self) -> None:
+        """Test translator with LLM but disabled."""
+        from unittest.mock import Mock
+
+        llm = Mock()
+        translator = NLToASPTranslator(llm_interface=llm, use_llm_by_default=False)
+
+        assert translator.llm_interface == llm
+        assert translator.use_llm is False
+
+    def test_extract_entities(self) -> None:
+        """Test extract_entities method."""
+        from loft.translation.schemas import ExtractedEntities
+
+        translator = NLToASPTranslator()
+        entities = translator.extract_entities("John and Mary have a contract")
+
+        assert isinstance(entities, ExtractedEntities)
+        assert len(entities.contracts) > 0
+
+
+class TestPatternFunctions:
+    """Test additional pattern functions."""
+
+    def test_extract_contract_type_employment(self) -> None:
+        """Test extracting employment contract type."""
+        assert extract_contract_type("This is an employment contract") == "employment"
+
+    def test_extract_contract_type_lease(self) -> None:
+        """Test extracting lease contract type."""
+        assert extract_contract_type("This is a lease agreement") == "lease"
+
+    def test_extract_essential_elements_agreement(self) -> None:
+        """Test that 'agreement' implies mutual assent."""
+        elements = extract_essential_elements("The parties have an agreement")
+        assert elements["has_mutual_assent"] is True
+
+    def test_extract_essential_elements_meeting_of_minds(self) -> None:
+        """Test 'meeting of the minds' implies mutual assent."""
+        elements = extract_essential_elements("There was a meeting of the minds")
+        assert elements["has_mutual_assent"] is True
+
+    def test_extract_essential_elements_document(self) -> None:
+        """Test 'document' implies writing."""
+        elements = extract_essential_elements("The contract has a document")
+        assert elements["has_writing"] is True
+
+    def test_extract_essential_elements_signature(self) -> None:
+        """Test 'signature' implies signed."""
+        elements = extract_essential_elements("The contract has a signature")
+        assert elements["is_signed"] is True
+
+
+class TestPatternExtraction:
+    """Test additional pattern extraction cases."""
+
+    def test_includes_pattern(self) -> None:
+        """Test 'X includes Y' pattern."""
+        facts = pattern_based_extraction("contract c1 includes essential terms")
+        assert any("contains" in f for f in facts)
+
+    def test_sale_amount_pattern(self) -> None:
+        """Test sale amount extraction."""
+        facts = pattern_based_extraction("sale price of $250,000")
+        assert any("sale_amount" in f and "250000" in f for f in facts)
+
+    def test_deduplication(self) -> None:
+        """Test that duplicate facts are removed."""
+        nl = "c1 is a contract. c1 is a contract."
+        facts = pattern_based_extraction(nl)
+        # Count occurrences of contract(c1).
+        count = sum(1 for f in facts if f == "contract(c1).")
+        assert count == 1
+
+
+class TestNLToASPWithLLM:
+    """Test nl_to_asp_facts with LLM."""
+
+    def test_with_use_llm_flag(self) -> None:
+        """Test using LLM flag."""
+        from unittest.mock import Mock
+        from loft.translation.schemas import ExtractedEntities
+
+        llm = Mock()
+        mock_response = Mock()
+        mock_response.content = ExtractedEntities(contracts=[], parties=[])
+        llm.query.return_value = mock_response
+
+        facts = nl_to_asp_facts("some text", llm_interface=llm, use_llm=True)
+        assert isinstance(facts, list)
+        llm.query.assert_called_once()
+
+    def test_without_llm(self) -> None:
+        """Test without LLM uses patterns."""
+        facts = nl_to_asp_facts("c1 is a contract", llm_interface=None, use_llm=False)
+        assert isinstance(facts, list)
+        assert len(facts) > 0
+
+
 class TestIntegration:
     """Integration tests for complete workflows."""
 
