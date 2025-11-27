@@ -353,21 +353,23 @@ class TestCriticWithLLM:
         """Test critique generation with LLM."""
         # Mock LLM response
         mock_llm.query.return_value = Mock(
-            raw_text=json.dumps({
-                "issues": [
-                    {
-                        "category": "missing_condition",
-                        "description": "Missing consideration requirement",
-                        "severity": "medium",
-                        "suggestion": "Add consideration(C) to the rule body",
-                    }
-                ],
-                "edge_cases": [],
-                "contradictions": [],
-                "overall_severity": "medium",
-                "recommendation": "revise",
-                "confidence": 0.8,
-            })
+            raw_text=json.dumps(
+                {
+                    "issues": [
+                        {
+                            "category": "missing_condition",
+                            "description": "Missing consideration requirement",
+                            "severity": "medium",
+                            "suggestion": "Add consideration(C) to the rule body",
+                        }
+                    ],
+                    "edge_cases": [],
+                    "contradictions": [],
+                    "overall_severity": "medium",
+                    "recommendation": "revise",
+                    "confidence": 0.8,
+                }
+            )
         )
 
         critic = CriticSystem(llm_client=mock_llm, mock_mode=False)
@@ -418,22 +420,24 @@ class TestCriticWithLLM:
     def test_critique_with_edge_cases(self, mock_llm, sample_rule):
         """Test critique with edge cases."""
         mock_llm.query.return_value = Mock(
-            raw_text=json.dumps({
-                "issues": [],
-                "edge_cases": [
-                    {
-                        "description": "Contract with minor",
-                        "scenario": {"party_age": 17},
-                        "expected_outcome": "Voidable",
-                        "current_outcome": "Enforceable",
-                        "severity": "high",
-                    }
-                ],
-                "contradictions": [],
-                "overall_severity": "medium",
-                "recommendation": "revise",
-                "confidence": 0.75,
-            })
+            raw_text=json.dumps(
+                {
+                    "issues": [],
+                    "edge_cases": [
+                        {
+                            "description": "Contract with minor",
+                            "scenario": {"party_age": 17},
+                            "expected_outcome": "Voidable",
+                            "current_outcome": "Enforceable",
+                            "severity": "high",
+                        }
+                    ],
+                    "contradictions": [],
+                    "overall_severity": "medium",
+                    "recommendation": "revise",
+                    "confidence": 0.75,
+                }
+            )
         )
 
         critic = CriticSystem(llm_client=mock_llm, mock_mode=False)
@@ -447,22 +451,24 @@ class TestCriticWithLLM:
         """Test critique with contradictions."""
         existing_rules = ["enforceable(C) :- contract(C), consideration(C)."]
         mock_llm.query.return_value = Mock(
-            raw_text=json.dumps({
-                "issues": [],
-                "edge_cases": [],
-                "contradictions": [
-                    {
-                        "description": "Conflicting enforceability conditions",
-                        "conflicting_rule": existing_rules[0],
-                        "example_scenario": {"contract": "c1"},
-                        "severity": "high",
-                        "resolution_suggestion": "Add consideration requirement",
-                    }
-                ],
-                "overall_severity": "high",
-                "recommendation": "revise",
-                "confidence": 0.85,
-            })
+            raw_text=json.dumps(
+                {
+                    "issues": [],
+                    "edge_cases": [],
+                    "contradictions": [
+                        {
+                            "description": "Conflicting enforceability conditions",
+                            "conflicting_rule": existing_rules[0],
+                            "example_scenario": {"contract": "c1"},
+                            "severity": "high",
+                            "resolution_suggestion": "Add consideration requirement",
+                        }
+                    ],
+                    "overall_severity": "high",
+                    "recommendation": "revise",
+                    "confidence": 0.85,
+                }
+            )
         )
 
         critic = CriticSystem(llm_client=mock_llm, mock_mode=False)
@@ -475,17 +481,23 @@ class TestCriticWithLLM:
     def test_critique_with_suggested_revision(self, mock_llm, sample_rule):
         """Test critique with suggested revision."""
         mock_llm.query.return_value = Mock(
-            raw_text=json.dumps({
-                "issues": [
-                    {"category": "missing_condition", "description": "Missing consideration", "severity": "medium"}
-                ],
-                "edge_cases": [],
-                "contradictions": [],
-                "overall_severity": "medium",
-                "recommendation": "revise",
-                "suggested_revision": "enforceable(C) :- contract(C), signed(C), consideration(C).",
-                "confidence": 0.8,
-            })
+            raw_text=json.dumps(
+                {
+                    "issues": [
+                        {
+                            "category": "missing_condition",
+                            "description": "Missing consideration",
+                            "severity": "medium",
+                        }
+                    ],
+                    "edge_cases": [],
+                    "contradictions": [],
+                    "overall_severity": "medium",
+                    "recommendation": "revise",
+                    "suggested_revision": "enforceable(C) :- contract(C), signed(C), consideration(C).",
+                    "confidence": 0.8,
+                }
+            )
         )
 
         critic = CriticSystem(llm_client=mock_llm, mock_mode=False)
@@ -497,23 +509,25 @@ class TestCriticWithLLM:
     def test_find_edge_cases_with_llm(self, mock_llm, sample_rule):
         """Test edge case identification with LLM."""
         mock_llm.query.return_value = Mock(
-            raw_text=json.dumps({
-                "edge_cases": [
-                    {
-                        "description": "Oral contract over $500",
-                        "scenario": {"contract_value": 600, "form": "oral"},
-                        "expected_outcome": "Unenforceable under statute of frauds",
-                        "current_outcome": "Enforceable",
-                        "severity": "high",
-                    },
-                    {
-                        "description": "Contract with intoxicated party",
-                        "scenario": {"party_state": "intoxicated"},
-                        "expected_outcome": "Voidable",
-                        "severity": "medium",
-                    },
-                ]
-            })
+            raw_text=json.dumps(
+                {
+                    "edge_cases": [
+                        {
+                            "description": "Oral contract over $500",
+                            "scenario": {"contract_value": 600, "form": "oral"},
+                            "expected_outcome": "Unenforceable under statute of frauds",
+                            "current_outcome": "Enforceable",
+                            "severity": "high",
+                        },
+                        {
+                            "description": "Contract with intoxicated party",
+                            "scenario": {"party_state": "intoxicated"},
+                            "expected_outcome": "Voidable",
+                            "severity": "medium",
+                        },
+                    ]
+                }
+            )
         )
 
         critic = CriticSystem(llm_client=mock_llm, mock_mode=False)
@@ -540,17 +554,19 @@ class TestCriticWithLLM:
         ]
 
         mock_llm.query.return_value = Mock(
-            raw_text=json.dumps({
-                "contradictions": [
-                    {
-                        "description": "Different enforceability conditions",
-                        "conflicting_rule": existing_rules[0],
-                        "example_scenario": {"contract": "c1", "signed": True},
-                        "severity": "high",
-                        "resolution_suggestion": "Align conditions or add qualification",
-                    }
-                ]
-            })
+            raw_text=json.dumps(
+                {
+                    "contradictions": [
+                        {
+                            "description": "Different enforceability conditions",
+                            "conflicting_rule": existing_rules[0],
+                            "example_scenario": {"contract": "c1", "signed": True},
+                            "severity": "high",
+                            "resolution_suggestion": "Align conditions or add qualification",
+                        }
+                    ]
+                }
+            )
         )
 
         critic = CriticSystem(llm_client=mock_llm, mock_mode=False)
@@ -583,11 +599,13 @@ class TestCriticWithLLM:
         )
 
         mock_llm.query.return_value = Mock(
-            raw_text=json.dumps({
-                "improved_rule": "enforceable(C) :- contract(C), signed(C), consideration(C).",
-                "changes": "Added consideration requirement",
-                "confidence": 0.85,
-            })
+            raw_text=json.dumps(
+                {
+                    "improved_rule": "enforceable(C) :- contract(C), signed(C), consideration(C).",
+                    "changes": "Added consideration requirement",
+                    "confidence": 0.85,
+                }
+            )
         )
 
         critic = CriticSystem(llm_client=mock_llm, mock_mode=False)
@@ -602,7 +620,9 @@ class TestCriticWithLLM:
         """Test synthesis error handling."""
         critique = CritiqueReport(
             rule=sample_rule.asp_rule,
-            issues=[CritiqueIssue(category="test", description="test", severity=CritiqueSeverity.LOW)],
+            issues=[
+                CritiqueIssue(category="test", description="test", severity=CritiqueSeverity.LOW)
+            ],
         )
 
         mock_llm.query.side_effect = Exception("LLM synthesis error")
@@ -764,9 +784,15 @@ class TestRecommendationLogic:
         report = CritiqueReport(
             rule="test",
             issues=[
-                CritiqueIssue(category="flaw1", description="Issue 1", severity=CritiqueSeverity.HIGH),
-                CritiqueIssue(category="flaw2", description="Issue 2", severity=CritiqueSeverity.HIGH),
-                CritiqueIssue(category="flaw3", description="Issue 3", severity=CritiqueSeverity.HIGH),
+                CritiqueIssue(
+                    category="flaw1", description="Issue 1", severity=CritiqueSeverity.HIGH
+                ),
+                CritiqueIssue(
+                    category="flaw2", description="Issue 2", severity=CritiqueSeverity.HIGH
+                ),
+                CritiqueIssue(
+                    category="flaw3", description="Issue 3", severity=CritiqueSeverity.HIGH
+                ),
             ],
             overall_severity=CritiqueSeverity.HIGH,
         )

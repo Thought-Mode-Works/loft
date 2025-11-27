@@ -222,13 +222,15 @@ class TestSynthesizerWithLLM:
     def test_synthesize_with_llm_success(self, mock_llm, thesis, antithesis):
         """Test synthesis with LLM."""
         mock_llm.query.return_value = Mock(
-            raw_text=json.dumps({
-                "synthesized_rule": "enforceable(C) :- contract(C), signed(C), consideration(C).",
-                "reasoning": "Added consideration requirement from critique",
-                "argument": "The thesis correctly identified contract and signature, but critique rightly noted missing consideration",
-                "confidence": 0.85,
-                "changes_made": ["Added consideration(C)"],
-            })
+            raw_text=json.dumps(
+                {
+                    "synthesized_rule": "enforceable(C) :- contract(C), signed(C), consideration(C).",
+                    "reasoning": "Added consideration requirement from critique",
+                    "argument": "The thesis correctly identified contract and signature, but critique rightly noted missing consideration",
+                    "confidence": 0.85,
+                    "changes_made": ["Added consideration(C)"],
+                }
+            )
         )
 
         synthesizer = Synthesizer(llm_client=mock_llm, mock_mode=False)
@@ -277,12 +279,14 @@ class TestSynthesizerWithLLM:
     def test_synthesize_normalizes_whitespace(self, mock_llm, thesis, antithesis):
         """Test synthesis normalizes ASP rule whitespace."""
         mock_llm.query.return_value = Mock(
-            raw_text=json.dumps({
-                "synthesized_rule": "enforceable(C) :- \n  contract(C), \n  signed(C),\n  consideration(C).",
-                "reasoning": "Test",
-                "argument": "Test",
-                "confidence": 0.8,
-            })
+            raw_text=json.dumps(
+                {
+                    "synthesized_rule": "enforceable(C) :- \n  contract(C), \n  signed(C),\n  consideration(C).",
+                    "reasoning": "Test",
+                    "argument": "Test",
+                    "confidence": 0.8,
+                }
+            )
         )
 
         synthesizer = Synthesizer(llm_client=mock_llm, mock_mode=False)
@@ -308,12 +312,14 @@ class TestSynthesizerWithLLM:
         )
 
         mock_llm.query.return_value = Mock(
-            raw_text=json.dumps({
-                "synthesized_rule": "enforceable(C) :- contract(C), signed(C), all_parties_competent(C).",
-                "reasoning": "Added competency check to handle minor party edge case",
-                "argument": "Addressed edge case of minor parties",
-                "confidence": 0.85,
-            })
+            raw_text=json.dumps(
+                {
+                    "synthesized_rule": "enforceable(C) :- contract(C), signed(C), all_parties_competent(C).",
+                    "reasoning": "Added competency check to handle minor party edge case",
+                    "argument": "Addressed edge case of minor parties",
+                    "confidence": 0.85,
+                }
+            )
         )
 
         synthesizer = Synthesizer(llm_client=mock_llm, mock_mode=False)
@@ -339,12 +345,14 @@ class TestSynthesizerWithLLM:
         )
 
         mock_llm.query.return_value = Mock(
-            raw_text=json.dumps({
-                "synthesized_rule": "enforceable(C) :- contract(C), signed(C), consideration(C), capacity(P).",
-                "reasoning": "Aligned with existing rule to resolve contradiction",
-                "argument": "Resolved contradiction by incorporating all conditions",
-                "confidence": 0.8,
-            })
+            raw_text=json.dumps(
+                {
+                    "synthesized_rule": "enforceable(C) :- contract(C), signed(C), consideration(C), capacity(P).",
+                    "reasoning": "Aligned with existing rule to resolve contradiction",
+                    "argument": "Resolved contradiction by incorporating all conditions",
+                    "confidence": 0.8,
+                }
+            )
         )
 
         synthesizer = Synthesizer(llm_client=mock_llm, mock_mode=False)

@@ -6,7 +6,6 @@ rule critique, edge case identification, contradiction detection,
 and synthesis prompting.
 """
 
-
 from loft.dialectical.critique_prompts import (
     get_contradiction_check_prompt,
     get_critique_prompt,
