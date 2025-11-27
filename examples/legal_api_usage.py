@@ -126,7 +126,7 @@ def example_custom_configuration():
 
     manager = LegalAPIManager(config=config)
 
-    print(f"\nConfiguration:")
+    print("\nConfiguration:")
     print(f"  Timeout: {config.timeout}s")
     print(f"  Cache enabled: {config.cache_enabled}")
     print(f"  Cache TTL: {config.cache_ttl_seconds}s")
@@ -140,7 +140,7 @@ def example_custom_configuration():
 
     # Check cache stats
     stats = manager.get_cache_stats()
-    print(f"\nCache stats:")
+    print("\nCache stats:")
     print(f"  Total entries: {stats['total_entries']}")
     print(f"  Active entries: {stats['active_entries']}")
 
