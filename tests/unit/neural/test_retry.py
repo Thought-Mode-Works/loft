@@ -7,7 +7,7 @@ error handling, and retry limits.
 
 import pytest
 import time
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from loft.neural.retry import exponential_backoff
 from loft.neural.errors import (

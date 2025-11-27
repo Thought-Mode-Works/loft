@@ -6,9 +6,7 @@ actual API calls using mocked responses.
 """
 
 import pytest
-import sys
 from unittest.mock import Mock, MagicMock, patch
-from datetime import datetime
 from pydantic import BaseModel
 
 from loft.neural.providers import (
@@ -17,7 +15,7 @@ from loft.neural.providers import (
     LocalProvider,
     DefaultResponse,
 )
-from loft.neural.llm_interface import LLMQuery, LLMResponse, ResponseMetadata
+from loft.neural.llm_interface import LLMQuery, LLMResponse
 from loft.neural.errors import (
     LLMRateLimitError,
     LLMTimeoutError,
