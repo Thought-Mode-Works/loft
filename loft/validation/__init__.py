@@ -22,7 +22,7 @@ from loft.validation.fidelity import (
     compute_translation_fidelity,
 )
 from loft.validation.test_case_validator import (
-    TestCase,
+    ValidationCase,
     TestResult,
     TestCaseValidator,
     create_test_suite,
@@ -42,6 +42,10 @@ from loft.validation.empirical_validator import EmpiricalValidator
 from loft.validation.consensus_validator import ConsensusValidator
 from loft.validation.validation_pipeline import ValidationPipeline
 
+# Backward compatibility aliases
+TestCase = ValidationCase  # For old code importing TestCase
+TestCaseData = ValidationCase  # For code that already migrated to TestCaseData
+
 __all__ = [
     # ASP Validators
     "ASPSyntaxValidator",
@@ -58,7 +62,9 @@ __all__ = [
     "FidelityTestResult",
     "compute_translation_fidelity",
     # Test Cases
-    "TestCase",
+    "ValidationCase",
+    "TestCase",  # Backward compatibility alias
+    "TestCaseData",  # Backward compatibility alias
     "TestResult",
     "TestCaseValidator",
     "create_test_suite",

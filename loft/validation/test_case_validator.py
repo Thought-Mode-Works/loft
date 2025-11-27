@@ -11,18 +11,23 @@ from loguru import logger
 
 
 @dataclass
-class TestCase:
+class ValidationCase:
     """
     A test case for validating ASP programs.
 
+    Note: Renamed from TestCase to ValidationCase to avoid pytest collection warning
+    (pytest collects classes starting with 'Test' as test classes).
+
     Example:
-        >>> test = TestCase(
+        >>> test = ValidationCase(
         ...     case_id="test_1",
         ...     description="Contract with writing",
         ...     asp_facts="contract(c1). has_writing(c1).",
         ...     expected_results={"enforceable": True}
         ... )
     """
+
+    __test__ = False  # Tell pytest not to collect this class as a test
 
     case_id: str
     description: str
@@ -36,7 +41,7 @@ class TestCase:
 class TestResult:
     """Result from running a single test case."""
 
-    test_case: TestCase
+    test_case: ValidationCase
     passed: bool
     actual_results: Dict[str, bool]
     mismatches: List[str]
@@ -47,13 +52,13 @@ class TestResult:
 class TestCaseValidator:
     """Validates ASP programs against test cases."""
 
-    def validate_test_case(self, asp_program: str, test_case: TestCase) -> TestResult:
+    def validate_test_case(self, asp_program: str, test_case: ValidationCase) -> TestResult:
         """
         Run ASP program with test case facts and check results.
 
         Args:
             asp_program: ASP program text (rules)
-            test_case: TestCase with facts and expected results
+            test_case: ValidationCase with facts and expected results
 
         Returns:
             TestResult with pass/fail and details
@@ -61,7 +66,7 @@ class TestCaseValidator:
         Example:
             >>> validator = TestCaseValidator()
             >>> program = "enforceable(C) :- contract(C), has_writing(C)."
-            >>> test = TestCase(
+            >>> test = ValidationCase(
             ...     case_id="test_1",
             ...     description="Contract with writing",
             ...     asp_facts="contract(c1). has_writing(c1).",
@@ -136,7 +141,7 @@ class TestCaseValidator:
 
     def _generate_explanation(
         self,
-        test_case: TestCase,
+        test_case: ValidationCase,
         actual_results: Dict[str, bool],
         passed: bool,
     ) -> str:
@@ -155,13 +160,13 @@ class TestCaseValidator:
 
         return "\n".join(lines)
 
-    def batch_validate(self, asp_program: str, test_cases: List[TestCase]) -> Dict[str, Any]:
+    def batch_validate(self, asp_program: str, test_cases: List[ValidationCase]) -> Dict[str, Any]:
         """
         Run all test cases and compute metrics.
 
         Args:
             asp_program: ASP program to test
-            test_cases: List of TestCase instances
+            test_cases: List of ValidationCase instances
 
         Returns:
             Dictionary with validation statistics:
@@ -215,7 +220,7 @@ class TestCaseValidator:
         return stats
 
     def validate_with_explanation(
-        self, asp_program: str, test_case: TestCase
+        self, asp_program: str, test_case: ValidationCase
     ) -> Tuple[TestResult, str]:
         """
         Validate test case and return detailed explanation.
@@ -245,7 +250,7 @@ Actual Results:
         return (result, detailed_explanation)
 
 
-def create_test_suite(test_cases_data: List[Dict[str, Any]]) -> List[TestCase]:
+def create_test_suite(test_cases_data: List[Dict[str, Any]]) -> List[ValidationCase]:
     """
     Create a test suite from dictionary data.
 
@@ -253,7 +258,7 @@ def create_test_suite(test_cases_data: List[Dict[str, Any]]) -> List[TestCase]:
         test_cases_data: List of test case dictionaries
 
     Returns:
-        List of TestCase instances
+        List of ValidationCase instances
 
     Example:
         >>> suite = create_test_suite([
@@ -269,7 +274,7 @@ def create_test_suite(test_cases_data: List[Dict[str, Any]]) -> List[TestCase]:
     test_suite = []
 
     for data in test_cases_data:
-        test_case = TestCase(
+        test_case = ValidationCase(
             case_id=data["case_id"],
             description=data["description"],
             asp_facts=data["asp_facts"],
