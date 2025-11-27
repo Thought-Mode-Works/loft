@@ -8,6 +8,7 @@ from loft.symbolic.stratification import (
     MODIFICATION_POLICIES,
     StratificationLevel,
     get_policy,
+    infer_stratification_level,
 )
 
 
@@ -109,3 +110,121 @@ class TestPolicyEnhancements:
 
         # Operational has no cooldown
         assert op_cooldown == 0.0
+
+
+class TestModificationPolicy:
+    """Test ModificationPolicy class methods."""
+
+    def test_allows_modification_high_confidence_autonomous(self):
+        """Test that high confidence autonomous modifications are allowed for autonomous layers."""
+        policy = get_policy(StratificationLevel.TACTICAL)
+        assert policy.allows_modification(confidence=0.9, is_autonomous=True)
+
+    def test_rejects_low_confidence(self):
+        """Test that low confidence modifications are rejected."""
+        policy = get_policy(StratificationLevel.TACTICAL)
+        assert not policy.allows_modification(confidence=0.5, is_autonomous=True)
+
+    def test_rejects_autonomous_for_constitutional(self):
+        """Test that autonomous modifications are rejected for constitutional layer."""
+        policy = get_policy(StratificationLevel.CONSTITUTIONAL)
+        assert not policy.allows_modification(confidence=1.0, is_autonomous=True)
+
+    def test_allows_non_autonomous_modification(self):
+        """Test that non-autonomous modifications are allowed if confidence is sufficient."""
+        policy = get_policy(StratificationLevel.CONSTITUTIONAL)
+        assert policy.allows_modification(confidence=1.0, is_autonomous=False)
+
+    def test_summary_format(self):
+        """Test that summary generates readable output."""
+        policy = get_policy(StratificationLevel.TACTICAL)
+        summary = policy.summary()
+
+        assert "TACTICAL" in summary
+        assert "Autonomous:" in summary
+        assert "Confidence Threshold:" in summary
+        assert "0.80" in summary
+
+    def test_summary_includes_all_fields(self):
+        """Test that summary includes all policy fields."""
+        policy = get_policy(StratificationLevel.STRATEGIC)
+        summary = policy.summary()
+
+        assert "Human Approval" in summary
+        assert "Max Modifications" in summary
+        assert "Regression Tests" in summary
+
+
+class TestStratificationLevel:
+    """Test StratificationLevel enum functionality."""
+
+    def test_level_comparison_operational_less_than_tactical(self):
+        """Test that operational < tactical."""
+        assert StratificationLevel.OPERATIONAL < StratificationLevel.TACTICAL
+
+    def test_level_comparison_tactical_less_than_strategic(self):
+        """Test that tactical < strategic."""
+        assert StratificationLevel.TACTICAL < StratificationLevel.STRATEGIC
+
+    def test_level_comparison_strategic_less_than_constitutional(self):
+        """Test that strategic < constitutional."""
+        assert StratificationLevel.STRATEGIC < StratificationLevel.CONSTITUTIONAL
+
+    def test_level_comparison_transitive(self):
+        """Test that operational is less than all higher levels."""
+        assert StratificationLevel.OPERATIONAL < StratificationLevel.TACTICAL
+        assert StratificationLevel.OPERATIONAL < StratificationLevel.STRATEGIC
+        assert StratificationLevel.OPERATIONAL < StratificationLevel.CONSTITUTIONAL
+
+    def test_level_string_values(self):
+        """Test that enum values are correct strings."""
+        assert StratificationLevel.CONSTITUTIONAL.value == "constitutional"
+        assert StratificationLevel.STRATEGIC.value == "strategic"
+        assert StratificationLevel.TACTICAL.value == "tactical"
+        assert StratificationLevel.OPERATIONAL.value == "operational"
+
+
+class TestInferStratificationLevel:
+    """Test stratification level inference from rule text."""
+
+    def test_infer_constitutional_from_fundamental(self):
+        """Test that 'fundamental' keyword triggers constitutional."""
+        rule = "fundamental(X) :- entity(X)."
+        assert infer_stratification_level(rule) == StratificationLevel.CONSTITUTIONAL
+
+    def test_infer_constitutional_from_constitutional(self):
+        """Test that 'constitutional' keyword triggers constitutional."""
+        rule = "constitutional_principle(justice)."
+        assert infer_stratification_level(rule) == StratificationLevel.CONSTITUTIONAL
+
+    def test_infer_strategic_from_policy(self):
+        """Test that 'policy' keyword triggers strategic."""
+        rule = "policy(X) :- rule(X), valid(X)."
+        assert infer_stratification_level(rule) == StratificationLevel.STRATEGIC
+
+    def test_infer_strategic_from_must(self):
+        """Test that 'must' keyword triggers strategic."""
+        rule = "action_must_be_logged(X) :- action(X)."
+        assert infer_stratification_level(rule) == StratificationLevel.STRATEGIC
+
+    def test_infer_operational_from_cache(self):
+        """Test that 'cache' keyword triggers operational."""
+        rule = "cache_result(X, Y) :- compute(X, Y)."
+        assert infer_stratification_level(rule) == StratificationLevel.OPERATIONAL
+
+    def test_infer_operational_from_optimize(self):
+        """Test that 'optimize' keyword triggers operational."""
+        rule = "optimize_query(X) :- query(X), slow(X)."
+        assert infer_stratification_level(rule) == StratificationLevel.OPERATIONAL
+
+    def test_infer_tactical_default(self):
+        """Test that rules default to tactical when no keywords match."""
+        rule = "process(X) :- input(X), valid(X)."
+        assert infer_stratification_level(rule) == StratificationLevel.TACTICAL
+
+    def test_infer_case_insensitive(self):
+        """Test that inference is case-insensitive."""
+        rule1 = "FUNDAMENTAL(X) :- entity(X)."
+        rule2 = "Fundamental(X) :- entity(X)."
+        assert infer_stratification_level(rule1) == StratificationLevel.CONSTITUTIONAL
+        assert infer_stratification_level(rule2) == StratificationLevel.CONSTITUTIONAL

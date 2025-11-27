@@ -124,8 +124,8 @@ class StratificationValidator:
         constitutional_rules = core.get_rules_by_layer(StratificationLevel.CONSTITUTIONAL)
 
         # Check if any rules were added or removed
-        initial_ids = {r.id for r in self.initial_constitutional_rules}
-        current_ids = {r.id for r in constitutional_rules}
+        initial_ids = {r.rule_id for r in self.initial_constitutional_rules}
+        current_ids = {r.rule_id for r in constitutional_rules}
 
         added = current_ids - initial_ids
         removed = initial_ids - current_ids
@@ -183,10 +183,10 @@ class StratificationValidator:
                                 layer=layer,
                                 violation_type="invalid_dependency",
                                 description=(
-                                    f"Rule {rule.id} in {layer.value} depends on "
+                                    f"Rule {rule.rule_id} in {layer.value} depends on "
                                     f"predicate '{pred}' from {pred_layer.value}"
                                 ),
-                                affected_rules=[rule.id],
+                                affected_rules=[rule.rule_id],
                             )
                         )
 
