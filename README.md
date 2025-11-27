@@ -4,7 +4,7 @@
 
 ## 🎯 Vision
 
-LOFT (Logical Ontological Framework for Thought) is an ambitious research project exploring the intersection of classical symbolic AI and modern large language models. The system features a **self-reflexive symbolic core** capable of:
+LOFT (Logical Ontological Framework Translator) is an ambitious research project exploring the intersection of classical symbolic AI and modern large language models. The system features a **self-reflexive symbolic core** capable of:
 
 - Questioning its own logic
 - Identifying gaps in its knowledge
