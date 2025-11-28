@@ -1,0 +1,291 @@
+@prefix canon: <https://loft.legal/canonical/> .
+@prefix loft: <https://loft.legal/ontology/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+
+# ============================================
+# Ontology Metadata
+# ============================================
+
+<https://loft.legal/ontology/canonical> a owl:Ontology ;
+    rdfs:label "LOFT Canonical Predicate Ontology" ;
+    rdfs:comment "Domain-agnostic legal concepts for cross-domain rule translation" ;
+    owl:versionInfo "1.0.0" .
+
+# ============================================
+# Core Classes
+# ============================================
+
+canon:CanonicalPredicate a owl:Class ;
+    rdfs:label "Canonical Predicate" ;
+    rdfs:comment "A domain-agnostic predicate representing a fundamental legal concept" .
+
+canon:DomainPredicate a owl:Class ;
+    rdfs:label "Domain Predicate" ;
+    rdfs:comment "A domain-specific predicate that maps to a canonical concept" .
+
+# ============================================
+# Core Properties
+# ============================================
+
+canon:mapsTo a owl:ObjectProperty ;
+    rdfs:label "maps to" ;
+    rdfs:comment "Maps a domain-specific predicate to its canonical equivalent" ;
+    rdfs:domain canon:DomainPredicate ;
+    rdfs:range canon:CanonicalPredicate .
+
+canon:arity a owl:DatatypeProperty ;
+    rdfs:label "arity" ;
+    rdfs:comment "Number of arguments the predicate takes" ;
+    rdfs:domain canon:CanonicalPredicate ;
+    rdfs:range xsd:integer .
+
+canon:argTypes a owl:DatatypeProperty ;
+    rdfs:label "argument types" ;
+    rdfs:comment "Types of arguments (entity, boolean, number, string)" ;
+    rdfs:domain canon:CanonicalPredicate ;
+    rdfs:range xsd:string .
+
+canon:legalCategory a owl:DatatypeProperty ;
+    rdfs:label "legal category" ;
+    rdfs:comment "Category of legal concept (temporal, behavioral, outcome, etc.)" ;
+    rdfs:domain canon:CanonicalPredicate ;
+    rdfs:range xsd:string .
+
+loft:domain a owl:DatatypeProperty ;
+    rdfs:label "domain" ;
+    rdfs:comment "Legal domain this predicate belongs to" ;
+    rdfs:domain canon:DomainPredicate ;
+    rdfs:range xsd:string .
+
+# ============================================
+# Canonical Legal Concepts - Temporal
+# ============================================
+
+canon:continuous_possession a canon:CanonicalPredicate ;
+    rdfs:label "Continuous Possession/Use" ;
+    rdfs:comment "Whether possession or use was uninterrupted over time" ;
+    canon:arity 2 ;
+    canon:argTypes "entity, boolean" ;
+    canon:legalCategory "temporal_requirement" .
+
+canon:duration_period a canon:CanonicalPredicate ;
+    rdfs:label "Duration Period" ;
+    rdfs:comment "Length of time in years for a claim or action" ;
+    canon:arity 2 ;
+    canon:argTypes "entity, number" ;
+    canon:legalCategory "temporal_measurement" .
+
+canon:required_period a canon:CanonicalPredicate ;
+    rdfs:label "Required Statutory Period" ;
+    rdfs:comment "Legally required time period for claim validity" ;
+    canon:arity 2 ;
+    canon:argTypes "entity, number" ;
+    canon:legalCategory "legal_threshold" .
+
+# ============================================
+# Canonical Legal Concepts - Behavioral
+# ============================================
+
+canon:hostile_action a canon:CanonicalPredicate ;
+    rdfs:label "Hostile/Adverse Action" ;
+    rdfs:comment "Action taken without permission of the rightful owner" ;
+    canon:arity 2 ;
+    canon:argTypes "entity, boolean" ;
+    canon:legalCategory "behavioral_element" .
+
+canon:open_notorious a canon:CanonicalPredicate ;
+    rdfs:label "Open and Notorious" ;
+    rdfs:comment "Visible and known to a reasonable observer" ;
+    canon:arity 2 ;
+    canon:argTypes "entity, boolean" ;
+    canon:legalCategory "behavioral_element" .
+
+canon:taxes_payment a canon:CanonicalPredicate ;
+    rdfs:label "Property Tax Payment" ;
+    rdfs:comment "Whether property taxes were paid by claimant" ;
+    canon:arity 2 ;
+    canon:argTypes "entity, boolean" ;
+    canon:legalCategory "behavioral_element" .
+
+# ============================================
+# Canonical Legal Concepts - Entity/Relationship
+# ============================================
+
+canon:legal_claim a canon:CanonicalPredicate ;
+    rdfs:label "Legal Claim" ;
+    rdfs:comment "An entity representing a legal claim or case" ;
+    canon:arity 1 ;
+    canon:argTypes "entity" ;
+    canon:legalCategory "entity_type" .
+
+canon:claimant_party a canon:CanonicalPredicate ;
+    rdfs:label "Claimant Party" ;
+    rdfs:comment "Party making the legal claim" ;
+    canon:arity 2 ;
+    canon:argTypes "entity, entity" ;
+    canon:legalCategory "relationship" .
+
+canon:property_classification a canon:CanonicalPredicate ;
+    rdfs:label "Property Classification" ;
+    rdfs:comment "Type or classification of property involved" ;
+    canon:arity 2 ;
+    canon:argTypes "entity, string" ;
+    canon:legalCategory "classification" .
+
+# ============================================
+# Canonical Legal Concepts - Outcome
+# ============================================
+
+canon:claim_enforceable a canon:CanonicalPredicate ;
+    rdfs:label "Claim Enforceable" ;
+    rdfs:comment "Legal claim can be enforced by court" ;
+    canon:arity 1 ;
+    canon:argTypes "entity" ;
+    canon:legalCategory "outcome" .
+
+canon:claim_unenforceable a canon:CanonicalPredicate ;
+    rdfs:label "Claim Unenforceable" ;
+    rdfs:comment "Legal claim cannot be enforced by court" ;
+    canon:arity 1 ;
+    canon:argTypes "entity" ;
+    canon:legalCategory "outcome" .
+
+# ============================================
+# Domain Mappings - Adverse Possession
+# ============================================
+
+<https://loft.legal/domains/adverse_possession/claim> a canon:DomainPredicate ;
+    rdfs:label "claim (adverse_possession)" ;
+    canon:mapsTo canon:legal_claim ;
+    loft:domain "adverse_possession" .
+
+<https://loft.legal/domains/adverse_possession/claimant> a canon:DomainPredicate ;
+    rdfs:label "claimant (adverse_possession)" ;
+    canon:mapsTo canon:claimant_party ;
+    loft:domain "adverse_possession" .
+
+<https://loft.legal/domains/adverse_possession/property_type> a canon:DomainPredicate ;
+    rdfs:label "property_type (adverse_possession)" ;
+    canon:mapsTo canon:property_classification ;
+    loft:domain "adverse_possession" .
+
+<https://loft.legal/domains/adverse_possession/occupation_continuous> a canon:DomainPredicate ;
+    rdfs:label "occupation_continuous (adverse_possession)" ;
+    canon:mapsTo canon:continuous_possession ;
+    loft:domain "adverse_possession" .
+
+<https://loft.legal/domains/adverse_possession/occupation_years> a canon:DomainPredicate ;
+    rdfs:label "occupation_years (adverse_possession)" ;
+    canon:mapsTo canon:duration_period ;
+    loft:domain "adverse_possession" .
+
+<https://loft.legal/domains/adverse_possession/statutory_period> a canon:DomainPredicate ;
+    rdfs:label "statutory_period (adverse_possession)" ;
+    canon:mapsTo canon:required_period ;
+    loft:domain "adverse_possession" .
+
+<https://loft.legal/domains/adverse_possession/occupation_hostile> a canon:DomainPredicate ;
+    rdfs:label "occupation_hostile (adverse_possession)" ;
+    canon:mapsTo canon:hostile_action ;
+    loft:domain "adverse_possession" .
+
+<https://loft.legal/domains/adverse_possession/occupation_open> a canon:DomainPredicate ;
+    rdfs:label "occupation_open (adverse_possession)" ;
+    canon:mapsTo canon:open_notorious ;
+    loft:domain "adverse_possession" .
+
+<https://loft.legal/domains/adverse_possession/taxes_paid> a canon:DomainPredicate ;
+    rdfs:label "taxes_paid (adverse_possession)" ;
+    canon:mapsTo canon:taxes_payment ;
+    loft:domain "adverse_possession" .
+
+<https://loft.legal/domains/adverse_possession/enforceable> a canon:DomainPredicate ;
+    rdfs:label "enforceable (adverse_possession)" ;
+    canon:mapsTo canon:claim_enforceable ;
+    loft:domain "adverse_possession" .
+
+<https://loft.legal/domains/adverse_possession/unenforceable> a canon:DomainPredicate ;
+    rdfs:label "unenforceable (adverse_possession)" ;
+    canon:mapsTo canon:claim_unenforceable ;
+    loft:domain "adverse_possession" .
+
+# ============================================
+# Domain Mappings - Property Law
+# ============================================
+
+<https://loft.legal/domains/property_law/claim> a canon:DomainPredicate ;
+    rdfs:label "claim (property_law)" ;
+    canon:mapsTo canon:legal_claim ;
+    loft:domain "property_law" .
+
+<https://loft.legal/domains/property_law/claimant> a canon:DomainPredicate ;
+    rdfs:label "claimant (property_law)" ;
+    canon:mapsTo canon:claimant_party ;
+    loft:domain "property_law" .
+
+<https://loft.legal/domains/property_law/use_continuous> a canon:DomainPredicate ;
+    rdfs:label "use_continuous (property_law)" ;
+    canon:mapsTo canon:continuous_possession ;
+    loft:domain "property_law" .
+
+<https://loft.legal/domains/property_law/use_duration_years> a canon:DomainPredicate ;
+    rdfs:label "use_duration_years (property_law)" ;
+    canon:mapsTo canon:duration_period ;
+    loft:domain "property_law" .
+
+<https://loft.legal/domains/property_law/statutory_period> a canon:DomainPredicate ;
+    rdfs:label "statutory_period (property_law)" ;
+    canon:mapsTo canon:required_period ;
+    loft:domain "property_law" .
+
+<https://loft.legal/domains/property_law/use_adverse> a canon:DomainPredicate ;
+    rdfs:label "use_adverse (property_law)" ;
+    canon:mapsTo canon:hostile_action ;
+    loft:domain "property_law" .
+
+<https://loft.legal/domains/property_law/use_open> a canon:DomainPredicate ;
+    rdfs:label "use_open (property_law)" ;
+    canon:mapsTo canon:open_notorious ;
+    loft:domain "property_law" .
+
+<https://loft.legal/domains/property_law/enforceable> a canon:DomainPredicate ;
+    rdfs:label "enforceable (property_law)" ;
+    canon:mapsTo canon:claim_enforceable ;
+    loft:domain "property_law" .
+
+<https://loft.legal/domains/property_law/unenforceable> a canon:DomainPredicate ;
+    rdfs:label "unenforceable (property_law)" ;
+    canon:mapsTo canon:claim_unenforceable ;
+    loft:domain "property_law" .
+
+# ============================================
+# Domain Mappings - Statute of Frauds
+# ============================================
+
+<https://loft.legal/domains/statute_of_frauds/contract> a canon:DomainPredicate ;
+    rdfs:label "contract (statute_of_frauds)" ;
+    canon:mapsTo canon:legal_claim ;
+    loft:domain "statute_of_frauds" .
+
+<https://loft.legal/domains/statute_of_frauds/party> a canon:DomainPredicate ;
+    rdfs:label "party (statute_of_frauds)" ;
+    canon:mapsTo canon:claimant_party ;
+    loft:domain "statute_of_frauds" .
+
+<https://loft.legal/domains/statute_of_frauds/subject_matter> a canon:DomainPredicate ;
+    rdfs:label "subject_matter (statute_of_frauds)" ;
+    canon:mapsTo canon:property_classification ;
+    loft:domain "statute_of_frauds" .
+
+<https://loft.legal/domains/statute_of_frauds/enforceable> a canon:DomainPredicate ;
+    rdfs:label "enforceable (statute_of_frauds)" ;
+    canon:mapsTo canon:claim_enforceable ;
+    loft:domain "statute_of_frauds" .
+
+<https://loft.legal/domains/statute_of_frauds/unenforceable> a canon:DomainPredicate ;
+    rdfs:label "unenforceable (statute_of_frauds)" ;
+    canon:mapsTo canon:claim_unenforceable ;
+    loft:domain "statute_of_frauds" .
