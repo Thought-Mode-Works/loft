@@ -18,6 +18,7 @@ from .rule_schemas import (
 )
 from .rule_prompts import get_prompt
 from .errors import LLMParsingError
+from .rule_generalizer import RuleGeneralizer, GeneralizationResult
 from loft.symbolic.asp_core import ASPCore
 
 
@@ -798,6 +799,100 @@ class RuleGenerator:
             attempts=max_retries,
             last_error=last_error,
         )
+
+    def generalize_rule(
+        self,
+        generated_rule: GeneratedRule,
+        facts: Optional[str] = None,
+        known_entities: Optional[set] = None,
+    ) -> tuple[GeneratedRule, GeneralizationResult]:
+        """
+        Generalize a generated rule to improve coverage.
+
+        Replaces specific entity constants (like 'alice', 'c1') with anonymous
+        variables while preserving intentional constants (like 'yes', 'no', 'land').
+
+        Args:
+            generated_rule: The rule to generalize
+            facts: ASP facts to extract entity names from (auto-extracts if provided)
+            known_entities: Explicit set of entity names to generalize
+
+        Returns:
+            Tuple of (modified GeneratedRule, GeneralizationResult)
+
+        Example:
+            >>> rule = generator.generate_from_principle("...")
+            >>> generalized, result = generator.generalize_rule(
+            ...     rule, facts="claim(c1). claimant(c1, alice)."
+            ... )
+            >>> # Original: "enforceable(X) :- claimant(X, alice)."
+            >>> # Generalized: "enforceable(X) :- claimant(X, _)."
+        """
+        from .rule_generalizer import extract_entities_from_facts
+
+        # Extract entities from facts if not provided
+        if known_entities is None and facts:
+            known_entities = extract_entities_from_facts(facts)
+
+        generalizer = RuleGeneralizer(known_entities=known_entities)
+        result = generalizer.generalize(generated_rule.asp_rule)
+
+        if result.was_modified:
+            logger.info(
+                f"Generalized rule: {len(result.changes)} changes made - "
+                f"{', '.join(result.changes[:3])}"
+            )
+            # Create new GeneratedRule with generalized ASP
+            generalized_rule = GeneratedRule(
+                asp_rule=result.generalized_rule,
+                confidence=generated_rule.confidence,
+                reasoning=generated_rule.reasoning
+                + f"\n[Generalized: {', '.join(result.changes)}]",
+                predicates_used=generated_rule.predicates_used,
+                predicates_defined=generated_rule.predicates_defined,
+            )
+            return generalized_rule, result
+        else:
+            logger.debug("Rule unchanged after generalization attempt")
+            return generated_rule, result
+
+    def generate_and_generalize(
+        self,
+        principle_text: str,
+        facts: str,
+        existing_predicates: Optional[List[str]] = None,
+        constraints: Optional[str] = None,
+    ) -> tuple[GeneratedRule, GeneralizationResult]:
+        """
+        Generate a rule from a principle and automatically generalize it.
+
+        Combines generate_from_principle and generalize_rule into a single
+        operation for convenience.
+
+        Args:
+            principle_text: Natural language statement of legal principle
+            facts: ASP facts from the dataset (used to identify entities)
+            existing_predicates: List of predicates that can be referenced
+            constraints: Optional constraints on generation
+
+        Returns:
+            Tuple of (GeneratedRule with generalized ASP, GeneralizationResult)
+
+        Example:
+            >>> rule, gen_result = generator.generate_and_generalize(
+            ...     "Adverse possession requires continuous occupation",
+            ...     facts="claim(c1). claimant(c1, alice). occupation_years(c1, 25)."
+            ... )
+        """
+        # Generate initial rule
+        rule = self.generate_from_principle(
+            principle_text=principle_text,
+            existing_predicates=existing_predicates,
+            constraints=constraints,
+        )
+
+        # Generalize it
+        return self.generalize_rule(rule, facts=facts)
 
 
 def extract_predicates_from_asp_facts(asp_facts: str) -> List[str]:
