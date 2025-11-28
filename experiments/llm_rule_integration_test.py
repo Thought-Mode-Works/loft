@@ -184,10 +184,13 @@ class EnhancedExperimentRunner:
             )
 
             # Initialize incorporation engine
-            self.modification_session = ModificationSession(system_name="statute_of_frauds")
             self.incorporation_engine = RuleIncorporationEngine(
                 asp_core=self.asp_core,
-                modification_session=self.modification_session,
+            )
+
+            # Initialize modification session (requires incorporation_engine)
+            self.modification_session = ModificationSession(
+                incorporation_engine=self.incorporation_engine,
             )
         else:
             logger.info("Dry run mode: Skipping LLM component initialization")
