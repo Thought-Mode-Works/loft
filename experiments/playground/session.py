@@ -110,10 +110,22 @@ class PlaygroundSession:
         with open(scenario_path) as f:
             data = json.load(f)
 
+        # Handle facts as either list or string
+        facts = data.get("facts", "")
+        if isinstance(facts, list):
+            facts = "\n".join(facts)
+
+        # Use asp_facts if available, otherwise use facts
+        asp_facts = data.get("asp_facts", facts)
+
+        # Ensure asp_facts is a string
+        if not isinstance(asp_facts, str):
+            asp_facts = str(asp_facts) if asp_facts else ""
+
         scenario = LoadedScenario(
             scenario_id=data.get("id", "unknown"),
             description=data.get("description", ""),
-            facts=data.get("facts", ""),
+            facts=asp_facts,  # Use ASP facts for the playground
             question=data.get("question", ""),
             ground_truth=data.get("ground_truth"),
             rationale=data.get("rationale"),
