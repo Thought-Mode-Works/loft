@@ -46,7 +46,10 @@ def validate_asp_rule_completeness(rule: str) -> Tuple[bool, Optional[str]]:
     open_brackets = normalized.count("{")
     close_brackets = normalized.count("}")
     if open_brackets != close_brackets:
-        return False, f"Unbalanced brackets: {open_brackets} '{{' vs {close_brackets} '}}'"
+        return (
+            False,
+            f"Unbalanced brackets: {open_brackets} '{{' vs {close_brackets} '}}'",
+        )
 
     # Check 4: No trailing incomplete identifiers before the period
     # Pattern: identifier followed by underscore or incomplete predicate
@@ -140,7 +143,9 @@ class GeneratedRule(BaseModel):
     and provenance tracking for validation pipeline integration.
     """
 
-    asp_rule: str = Field(description="ASP rule in Clingo syntax (e.g., 'enforceable(C) :- ...')")
+    asp_rule: str = Field(
+        description="ASP rule in Clingo syntax (e.g., 'enforceable(C) :- ...')"
+    )
     confidence: float = Field(
         ge=0.0, le=1.0, description="Model confidence in rule validity (0.0-1.0)"
     )
@@ -160,7 +165,9 @@ class GeneratedRule(BaseModel):
     source_type: Literal["principle", "case", "gap_fill", "refinement"] = Field(
         description="Type of source that generated this rule"
     )
-    source_text: str = Field(description="Original natural language text that motivated the rule")
+    source_text: str = Field(
+        description="Original natural language text that motivated the rule"
+    )
     citation: Optional[str] = Field(
         default=None, description="Legal citation if from case law or statute"
     )
@@ -234,13 +241,21 @@ class GapFillingResponse(BaseModel):
     recommendations.
     """
 
-    gap_description: str = Field(description="Description of the knowledge gap being addressed")
-    missing_predicate: str = Field(description="The specific predicate that needs to be defined")
+    gap_description: str = Field(
+        description="Description of the knowledge gap being addressed"
+    )
+    missing_predicate: str = Field(
+        description="The specific predicate that needs to be defined"
+    )
     candidates: List[RuleCandidate] = Field(
         description="Candidate rules that could fill the gap", min_length=1
     )
-    recommended_index: int = Field(description="Index of recommended candidate (0-based)", ge=0)
-    requires_validation: bool = Field(description="Whether this gap-fill requires human validation")
+    recommended_index: int = Field(
+        description="Index of recommended candidate (0-based)", ge=0
+    )
+    requires_validation: bool = Field(
+        description="Whether this gap-fill requires human validation"
+    )
     test_cases_needed: List[str] = Field(
         description="Test cases needed to validate the generated rules"
     )
@@ -267,7 +282,9 @@ class ConsensusVote(BaseModel):
     a proposed rule, with detailed justification.
     """
 
-    vote: Literal["accept", "reject", "revise"] = Field(description="Vote on the proposed rule")
+    vote: Literal["accept", "reject", "revise"] = Field(
+        description="Vote on the proposed rule"
+    )
     confidence: float = Field(
         ge=0.0,
         le=1.0,
@@ -284,7 +301,9 @@ class ConsensusVote(BaseModel):
         default_factory=list,
         description="Test cases that should be used to validate the rule",
     )
-    reasoning: str = Field(description="Detailed explanation of the vote and any issues")
+    reasoning: str = Field(
+        description="Detailed explanation of the vote and any issues"
+    )
 
     @field_validator("suggested_revision")
     @classmethod
@@ -303,7 +322,9 @@ class PrincipleToRuleRequest(BaseModel):
     codified legal principles.
     """
 
-    principle_text: str = Field(description="Natural language statement of the legal principle")
+    principle_text: str = Field(
+        description="Natural language statement of the legal principle"
+    )
     domain: str = Field(description="Legal domain (e.g., 'contract_law', 'torts')")
     existing_predicates: List[str] = Field(
         default_factory=list,
@@ -323,7 +344,9 @@ class CaseToRuleRequest(BaseModel):
     """
 
     case_text: str = Field(description="Excerpt from judicial opinion")
-    citation: str = Field(description="Case citation (e.g., 'Smith v. Jones, 123 F.3d 456')")
+    citation: str = Field(
+        description="Case citation (e.g., 'Smith v. Jones, 123 F.3d 456')"
+    )
     jurisdiction: str = Field(description="Jurisdiction (e.g., 'CA', 'Federal')")
     domain: str = Field(description="Legal domain")
     existing_predicates: List[str] = Field(

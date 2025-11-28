@@ -131,7 +131,9 @@ class RuleGenerator:
 
         for attempt in range(max_retries):
             # Escalate max_tokens on retries
-            current_max_tokens = DEFAULT_MAX_TOKENS if attempt == 0 else RETRY_MAX_TOKENS
+            current_max_tokens = (
+                DEFAULT_MAX_TOKENS if attempt == 0 else RETRY_MAX_TOKENS
+            )
 
             try:
                 logger.debug(
@@ -166,17 +168,13 @@ class RuleGenerator:
                 return rule
 
             except LLMParsingError as e:
-                logger.warning(
-                    f"LLM parsing error on attempt {attempt + 1}: {e}"
-                )
+                logger.warning(f"LLM parsing error on attempt {attempt + 1}: {e}")
                 last_error = str(e)
                 continue  # Retry
 
             except ValueError as e:
                 # Pydantic validation error (including our ASP validation)
-                logger.warning(
-                    f"Validation error on attempt {attempt + 1}: {e}"
-                )
+                logger.warning(f"Validation error on attempt {attempt + 1}: {e}")
                 last_error = str(e)
                 continue  # Retry
 
@@ -259,7 +257,9 @@ class RuleGenerator:
 
         for attempt in range(max_retries):
             # Escalate max_tokens on retries
-            current_max_tokens = DEFAULT_MAX_TOKENS if attempt == 0 else RETRY_MAX_TOKENS
+            current_max_tokens = (
+                DEFAULT_MAX_TOKENS if attempt == 0 else RETRY_MAX_TOKENS
+            )
 
             try:
                 logger.debug(
@@ -292,17 +292,13 @@ class RuleGenerator:
                 return rule
 
             except LLMParsingError as e:
-                logger.warning(
-                    f"LLM parsing error on attempt {attempt + 1}: {e}"
-                )
+                logger.warning(f"LLM parsing error on attempt {attempt + 1}: {e}")
                 last_error = str(e)
                 continue  # Retry
 
             except ValueError as e:
                 # Pydantic validation error (including our ASP validation)
-                logger.warning(
-                    f"Validation error on attempt {attempt + 1}: {e}"
-                )
+                logger.warning(f"Validation error on attempt {attempt + 1}: {e}")
                 last_error = str(e)
                 continue  # Retry
 
@@ -497,7 +493,8 @@ class RuleGenerator:
 
         issue_counts = Counter(all_issues)
         common_issues = [
-            f"- {issue} (mentioned {count}x)" for issue, count in issue_counts.most_common(5)
+            f"- {issue} (mentioned {count}x)"
+            for issue, count in issue_counts.most_common(5)
         ]
         common_issues_str = (
             "\n".join(common_issues) if common_issues else "No common issues identified"

@@ -284,9 +284,7 @@ class TestRuleGeneratorRetryLogic:
 
         mock_llm.query = Mock(side_effect=[mock_response_1, mock_response_2])
 
-        result = rule_generator.generate_from_principle(
-            principle_text="Test principle"
-        )
+        result = rule_generator.generate_from_principle(principle_text="Test principle")
 
         assert result.asp_rule == "enforceable(C) :- contract(C), land_sale(C)."
         assert mock_llm.query.call_count == 2
@@ -315,9 +313,7 @@ class TestRuleGeneratorRetryLogic:
             ]
         )
 
-        result = rule_generator.generate_from_principle(
-            principle_text="Test principle"
-        )
+        result = rule_generator.generate_from_principle(principle_text="Test principle")
 
         assert result.asp_rule == "valid(C) :- contract(C)."
         assert mock_llm.query.call_count == 3
@@ -379,9 +375,7 @@ class TestRuleGeneratorRetryLogic:
             ]
         )
 
-        result = rule_generator.generate_from_principle(
-            principle_text="Test principle"
-        )
+        result = rule_generator.generate_from_principle(principle_text="Test principle")
 
         assert result.asp_rule == "result(X) :- input(X)."
         assert mock_llm.query.call_count == 2
