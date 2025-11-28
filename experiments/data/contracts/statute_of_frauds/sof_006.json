@@ -1,0 +1,17 @@
+{
+  "id": "sof_006",
+  "description": "Specially manufactured goods",
+  "facts": [
+    "Iris ordered custom widgets from Jack for $2000",
+    "Widgets are specially manufactured and not suitable for others",
+    "Jack has begun manufacturing"
+  ],
+  "question": "Is the contract enforceable?",
+  "ground_truth": "enforceable",
+  "rationale": "UCC 2-201(3)(a) specially manufactured goods exception",
+  "asp_facts": "contract_fact(c6). goods_sale_contract(c6). specially_manufactured(c6). substantial_beginning_made(c6).",
+  "legal_citations": [
+    "UCC 2-201(3)(a)"
+  ],
+  "difficulty": "medium"
+}

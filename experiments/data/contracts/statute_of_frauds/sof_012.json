@@ -1,0 +1,16 @@
+{
+  "id": "sof_012",
+  "description": "Suretyship agreement",
+  "facts": [
+    "Uma orally promised to pay Victor's debt if Victor defaulted",
+    "No written agreement"
+  ],
+  "question": "Is the contract enforceable?",
+  "ground_truth": "unenforceable",
+  "rationale": "Suretyship agreements must be in writing",
+  "asp_facts": "contract_fact(c12). suretyship_agreement(c12). not in_writing(c12).",
+  "legal_citations": [
+    "Statute of Frauds - Suretyship"
+  ],
+  "difficulty": "hard"
+}

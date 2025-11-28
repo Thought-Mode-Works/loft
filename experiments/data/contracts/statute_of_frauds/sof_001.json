@@ -1,0 +1,17 @@
+{
+  "id": "sof_001",
+  "description": "Oral promise to sell land",
+  "facts": [
+    "Alice orally promised to sell her house to Bob",
+    "Bob agreed to pay $500,000",
+    "No written contract was signed"
+  ],
+  "question": "Is the contract enforceable?",
+  "ground_truth": "unenforceable",
+  "rationale": "Land sale contracts must be in writing under statute of frauds",
+  "asp_facts": "contract_fact(c1). land_sale_contract(c1). not in_writing(c1).",
+  "legal_citations": [
+    "Statute of Frauds"
+  ],
+  "difficulty": "easy"
+}

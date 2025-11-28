@@ -1,0 +1,16 @@
+{
+  "id": "sof_008",
+  "description": "Admission in court",
+  "facts": [
+    "Mike sued Nora for breach of oral contract for goods worth $800",
+    "Nora admitted in court testimony that contract existed"
+  ],
+  "question": "Is the contract enforceable?",
+  "ground_truth": "enforceable",
+  "rationale": "UCC 2-201(3)(b) admission exception",
+  "asp_facts": "contract_fact(c8). goods_sale_contract(c8). value(c8, 800). admission_in_court(c8, nora).",
+  "legal_citations": [
+    "UCC 2-201(3)(b)"
+  ],
+  "difficulty": "medium"
+}

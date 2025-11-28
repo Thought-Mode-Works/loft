@@ -1,0 +1,18 @@
+{
+  "id": "sof_015",
+  "description": "Electronic signature on land sale",
+  "facts": [
+    "Alice and Bob signed land sale contract via DocuSign",
+    "Contract includes all material terms",
+    "Electronic signatures are valid under ESIGN Act"
+  ],
+  "question": "Is the contract enforceable?",
+  "ground_truth": "enforceable",
+  "rationale": "Electronic signatures satisfy writing requirement",
+  "asp_facts": "contract_fact(c15). land_sale_contract(c15). electronic_signature(c15). esign_compliant(c15).",
+  "legal_citations": [
+    "ESIGN Act",
+    "Statute of Frauds"
+  ],
+  "difficulty": "medium"
+}

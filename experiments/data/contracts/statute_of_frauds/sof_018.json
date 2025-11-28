@@ -1,0 +1,17 @@
+{
+  "id": "sof_018",
+  "description": "Promissory estoppel exception",
+  "facts": [
+    "Grace orally promised land to Henry",
+    "Henry relied on promise and built house on the land",
+    "Grace knew Henry would rely on the promise"
+  ],
+  "question": "Is the contract enforceable?",
+  "ground_truth": "enforceable",
+  "rationale": "Promissory estoppel can overcome statute of frauds in some jurisdictions",
+  "asp_facts": "contract_fact(c18). land_sale_contract(c18). detrimental_reliance(c18, henry). foreseeable_reliance(c18).",
+  "legal_citations": [
+    "Promissory Estoppel"
+  ],
+  "difficulty": "hard"
+}

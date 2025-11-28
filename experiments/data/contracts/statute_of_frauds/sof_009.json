@@ -1,0 +1,16 @@
+{
+  "id": "sof_009",
+  "description": "Services contract for one year",
+  "facts": [
+    "Oscar hired Pam as consultant for 6 months",
+    "Contract was oral only"
+  ],
+  "question": "Is the contract enforceable?",
+  "ground_truth": "enforceable",
+  "rationale": "Statute of frauds only applies to contracts that cannot be performed within one year",
+  "asp_facts": "contract_fact(c9). service_contract(c9). duration_months(c9, 6). not in_writing(c9).",
+  "legal_citations": [
+    "Statute of Frauds - One Year Rule"
+  ],
+  "difficulty": "medium"
+}

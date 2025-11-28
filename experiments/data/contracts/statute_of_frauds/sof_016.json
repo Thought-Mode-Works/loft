@@ -1,0 +1,17 @@
+{
+  "id": "sof_016",
+  "description": "Insufficient memorandum",
+  "facts": [
+    "Carol wrote note on napkin about selling land to Dave",
+    "Note lacks material terms like price",
+    "Carol signed it"
+  ],
+  "question": "Is the contract enforceable?",
+  "ground_truth": "unenforceable",
+  "rationale": "Writing must contain material terms to satisfy statute of frauds",
+  "asp_facts": "contract_fact(c16). land_sale_contract(c16). in_writing(c16). lacks_material_terms(c16).",
+  "legal_citations": [
+    "Statute of Frauds - Writing Requirements"
+  ],
+  "difficulty": "hard"
+}
