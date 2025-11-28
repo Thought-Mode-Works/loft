@@ -32,6 +32,15 @@ except ImportError:
     CANONICAL_TRANSLATOR_AVAILABLE = False
     CanonicalTranslator = None
 
+# Optional hybrid translator with LLM fallback
+try:
+    from loft.ontology.hybrid_translator import HybridTranslator
+
+    HYBRID_TRANSLATOR_AVAILABLE = True
+except ImportError:
+    HYBRID_TRANSLATOR_AVAILABLE = False
+    HybridTranslator = None
+
 
 @dataclass
 class TransferResult:
@@ -123,6 +132,8 @@ class TransferStudy:
         self,
         model: str = "claude-3-5-haiku-20241022",
         use_canonical_translation: bool = False,
+        use_hybrid_translation: bool = False,
+        min_llm_confidence: float = 0.6,
     ):
         """
         Initialize transfer study.
@@ -130,25 +141,44 @@ class TransferStudy:
         Args:
             model: LLM model to use for learning
             use_canonical_translation: If True, use canonical ontology for
-                cross-domain predicate translation
+                cross-domain predicate translation (deterministic only)
+            use_hybrid_translation: If True, use hybrid translator with LLM
+                fallback for unmapped predicates
+            min_llm_confidence: Minimum confidence for LLM translations (hybrid mode)
         """
         self.model = model
         self.asp_reasoner = ASPReasoner()
         self._unknown_predictions: List[str] = []  # Track scenarios with unknown predictions
         self.use_canonical_translation = use_canonical_translation
+        self.use_hybrid_translation = use_hybrid_translation
         self._translator: Optional["CanonicalTranslator"] = None
+        self._hybrid_translator: Optional["HybridTranslator"] = None
 
-        if use_canonical_translation:
+        # Hybrid translation takes precedence
+        if use_hybrid_translation:
+            if not HYBRID_TRANSLATOR_AVAILABLE:
+                raise ImportError(
+                    "Hybrid translation requires rdflib and anthropic. "
+                    "Install with: pip install rdflib anthropic"
+                )
+            self._hybrid_translator = HybridTranslator(
+                model=model,
+                min_llm_confidence=min_llm_confidence,
+                enable_llm=True,
+            )
+            self._translator = self._hybrid_translator.canonical
+            logger.info(
+                f"Hybrid translation enabled (LLM fallback). "
+                f"Domains: {self._translator.get_domains()}, "
+                f"min_confidence: {min_llm_confidence}"
+            )
+        elif use_canonical_translation:
             if not CANONICAL_TRANSLATOR_AVAILABLE:
                 raise ImportError(
-                    "Canonical translation requires rdflib. "
-                    "Install with: pip install rdflib"
+                    "Canonical translation requires rdflib. Install with: pip install rdflib"
                 )
             self._translator = CanonicalTranslator()
-            logger.info(
-                f"Canonical translation enabled. "
-                f"Domains: {self._translator.get_domains()}"
-            )
+            logger.info(f"Canonical translation enabled. Domains: {self._translator.get_domains()}")
 
     def run_same_domain_experiment(
         self,
@@ -270,9 +300,7 @@ class TransferStudy:
 
         # Check canonical translation availability
         if self.use_canonical_translation and self._translator:
-            coverage = self._translator.get_translation_coverage(
-                source_domain, target_domain
-            )
+            coverage = self._translator.get_translation_coverage(source_domain, target_domain)
             logger.info(
                 f"Canonical translation coverage: {coverage['coverage_ratio']:.1%} "
                 f"({coverage['translatable_count']}/{coverage['source_predicates']} predicates)"
@@ -389,6 +417,9 @@ class TransferStudy:
         """
         Translate knowledge base rules from source to target domain.
 
+        Uses hybrid translator (with LLM fallback) if available, otherwise
+        falls back to canonical-only translation.
+
         Args:
             rules: List of ASP rules in source domain
             source_domain: Source domain name
@@ -402,6 +433,11 @@ class TransferStudy:
         if not self._translator:
             return rules, {"total_translated": 0, "total_untranslatable": 0}
 
+        # Use hybrid translator if available
+        if self._hybrid_translator:
+            return self._translate_with_hybrid(rules, source_domain, target_domain)
+
+        # Fall back to canonical-only translation
         translated_rules = []
         total_translated = 0
         total_untranslatable = 0
@@ -423,6 +459,62 @@ class TransferStudy:
             "total_translated": total_translated,
             "total_untranslatable": total_untranslatable,
             "rules_processed": len(rules),
+        }
+
+        return translated_rules, stats
+
+    def _translate_with_hybrid(
+        self,
+        rules: List[str],
+        source_domain: str,
+        target_domain: str,
+    ) -> tuple[List[str], dict]:
+        """
+        Translate rules using hybrid translator (canonical + LLM fallback).
+
+        Args:
+            rules: List of ASP rules to translate
+            source_domain: Source domain name
+            target_domain: Target domain name
+
+        Returns:
+            Tuple of (translated_rules, stats)
+        """
+        translated_rules = []
+        successful_translations = 0
+        failed_translations = 0
+        total_confidence = 0.0
+
+        for rule in rules:
+            result = self._hybrid_translator.translate_rule(rule, source_domain, target_domain)
+
+            if result.translated is not None:
+                translated_rules.append(result.translated)
+                successful_translations += 1
+                total_confidence += result.confidence
+
+                if result.translations:
+                    logger.debug(f"Hybrid translated ({result.method}): {result.reasoning}")
+            else:
+                # Keep original rule if translation fails
+                translated_rules.append(rule)
+                failed_translations += 1
+                logger.debug(f"Translation failed: {result.reasoning}")
+
+        # Get hybrid translator stats
+        hybrid_stats = self._hybrid_translator.get_stats()
+
+        stats = {
+            "total_translated": successful_translations,
+            "total_untranslatable": failed_translations,
+            "rules_processed": len(rules),
+            "average_confidence": (
+                total_confidence / successful_translations if successful_translations > 0 else 0.0
+            ),
+            "canonical_translations": hybrid_stats.canonical_translations,
+            "llm_translations": hybrid_stats.llm_translations,
+            "canonical_rate": hybrid_stats.canonical_rate,
+            "llm_rate": hybrid_stats.llm_rate,
         }
 
         return translated_rules, stats
@@ -662,7 +754,18 @@ def main():
     parser.add_argument(
         "--use-canonical",
         action="store_true",
-        help="Use canonical predicate translation for cross-domain transfer",
+        help="Use canonical predicate translation for cross-domain transfer (deterministic only)",
+    )
+    parser.add_argument(
+        "--use-hybrid",
+        action="store_true",
+        help="Use hybrid translation with LLM fallback for unmapped predicates",
+    )
+    parser.add_argument(
+        "--min-llm-confidence",
+        type=float,
+        default=0.6,
+        help="Minimum confidence threshold for LLM translations (default: 0.6)",
     )
 
     args = parser.parse_args()
@@ -695,6 +798,8 @@ def main():
     study = TransferStudy(
         model=args.model,
         use_canonical_translation=args.use_canonical,
+        use_hybrid_translation=args.use_hybrid,
+        min_llm_confidence=args.min_llm_confidence,
     )
 
     if mode == "same_domain":
