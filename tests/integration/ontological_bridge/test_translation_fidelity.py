@@ -104,6 +104,7 @@ class TestTranslationFidelity:
 
         # Wrap in object for consistency with tests
         from loft.translation.asp_to_nl import TranslationResult
+
         nl_result = TranslationResult(
             natural_language=nl_text,
             asp_source=asp_result.asp_code,
@@ -146,6 +147,7 @@ class TestTranslationFidelity:
             nl_text = asp_to_nl(asp_result.asp_code)
 
             from loft.translation.asp_to_nl import TranslationResult
+
             nl_result = TranslationResult(
                 natural_language=nl_text,
                 asp_source=asp_result.asp_code,
@@ -188,6 +190,7 @@ class TestTranslationFidelity:
         nl_text = asp_to_nl(asp_result.asp_code)
 
         from loft.translation.asp_to_nl import TranslationResult
+
         nl_result = TranslationResult(
             natural_language=nl_text,
             asp_source=asp_result.asp_code,
@@ -280,6 +283,7 @@ class TestExtensiveTranslation:
                 nl_text = asp_to_nl(asp_result.asp_code)
 
                 from loft.translation.asp_to_nl import TranslationResult
+
                 nl_result = TranslationResult(
                     natural_language=nl_text,
                     asp_source=asp_result.asp_code,
