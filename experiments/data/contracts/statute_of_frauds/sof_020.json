@@ -1,0 +1,17 @@
+{
+  "id": "sof_020",
+  "description": "Lease with option to purchase",
+  "facts": [
+    "Kim leased property from Leo with option to purchase",
+    "Lease is written, but option to purchase is only oral",
+    "Kim wants to exercise option"
+  ],
+  "question": "Is the purchase option enforceable?",
+  "ground_truth": "unenforceable",
+  "rationale": "Option to purchase land must be in writing",
+  "asp_facts": "contract_fact(c20). lease_contract(c20). in_writing(c20). option_to_purchase(c20). option_not_in_writing(c20).",
+  "legal_citations": [
+    "Statute of Frauds"
+  ],
+  "difficulty": "hard"
+}

@@ -1,0 +1,16 @@
+{
+  "id": "sof_017",
+  "description": "Partial written confirmation",
+  "facts": [
+    "Eve and Frank had oral agreement for $5000 in goods",
+    "Eve sent written confirmation covering only $3000"
+  ],
+  "question": "Is the contract enforceable?",
+  "ground_truth": "unenforceable",
+  "rationale": "Contract only enforceable to extent admitted in writing",
+  "asp_facts": "contract_fact(c17). goods_sale_contract(c17). value(c17, 5000). partial_writing_amount(c17, 3000).",
+  "legal_citations": [
+    "UCC 2-201"
+  ],
+  "difficulty": "hard"
+}

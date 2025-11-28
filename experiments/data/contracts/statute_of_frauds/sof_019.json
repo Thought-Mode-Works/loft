@@ -1,0 +1,18 @@
+{
+  "id": "sof_019",
+  "description": "Sale of growing crops",
+  "facts": [
+    "Iris sold unharvested corn to Jack for $600",
+    "Oral agreement only",
+    "Corn still in ground"
+  ],
+  "question": "Is the contract enforceable?",
+  "ground_truth": "unenforceable",
+  "rationale": "Growing crops are considered goods requiring writing if over $500",
+  "asp_facts": "contract_fact(c19). goods_sale_contract(c19). growing_crops(c19). value(c19, 600). not in_writing(c19).",
+  "legal_citations": [
+    "UCC 2-201",
+    "UCC 2-107"
+  ],
+  "difficulty": "hard"
+}

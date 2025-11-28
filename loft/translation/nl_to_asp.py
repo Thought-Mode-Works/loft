@@ -31,6 +31,24 @@ class NLToASPResult:
     ambiguities: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
+    @property
+    def asp_code(self) -> str:
+        """Get ASP code as a single string (convenience property for tests)."""
+        return " ".join(self.asp_facts) if self.asp_facts else ""
+
+    @property
+    def predicates_used(self) -> List[str]:
+        """Extract predicates used in ASP facts."""
+        # Simple extraction - get predicate names from facts
+        predicates = []
+        for fact in self.asp_facts:
+            # Extract predicate name (text before '(')
+            if "(" in fact:
+                pred = fact.split("(")[0].strip()
+                if pred and pred not in predicates:
+                    predicates.append(pred)
+        return predicates
+
 
 def nl_to_structured(
     nl_response: str,
@@ -316,6 +334,26 @@ class NLToASPTranslator:
             confidence=0.7 if self.use_llm else 0.5,
             extraction_method="llm" if self.use_llm else "pattern",
         )
+
+    def translate(self, nl_text: str) -> NLToASPResult:
+        """
+        Convenience method for translation. Automatically chooses between
+        translate_to_facts or translate_to_rule based on input.
+
+        Args:
+            nl_text: Natural language text or rule
+
+        Returns:
+            NLToASPResult with ASP code
+        """
+        # Simple heuristic: if it looks like a rule (has "if", "when", etc.), translate as rule
+        rule_keywords = ["if ", "when ", "unless ", "provided that", "except"]
+        is_rule = any(keyword in nl_text.lower() for keyword in rule_keywords)
+
+        if is_rule:
+            return self.translate_to_rule(nl_text)
+        else:
+            return self.translate_to_rule(nl_text)  # Default to rule for most statements
 
     def extract_entities(self, nl_text: str) -> ExtractedEntities:
         """

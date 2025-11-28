@@ -1,0 +1,16 @@
+{
+  "id": "sof_013",
+  "description": "Main purpose exception to suretyship",
+  "facts": [
+    "Wendy orally guaranteed Xavier's debt to protect her own business interest",
+    "The main purpose was Wendy's economic advantage"
+  ],
+  "question": "Is the contract enforceable?",
+  "ground_truth": "enforceable",
+  "rationale": "Main purpose exception to suretyship rule",
+  "asp_facts": "contract_fact(c13). suretyship_agreement(c13). main_purpose_own_benefit(c13, wendy).",
+  "legal_citations": [
+    "Main Purpose Exception"
+  ],
+  "difficulty": "hard"
+}

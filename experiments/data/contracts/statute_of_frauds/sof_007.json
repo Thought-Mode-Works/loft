@@ -1,0 +1,17 @@
+{
+  "id": "sof_007",
+  "description": "Part performance - land with possession",
+  "facts": [
+    "Kim orally agreed to buy land from Leo",
+    "Kim took possession of the land",
+    "Kim made substantial improvements to the property"
+  ],
+  "question": "Is the contract enforceable?",
+  "ground_truth": "enforceable",
+  "rationale": "Part performance exception with possession and improvements",
+  "asp_facts": "contract_fact(c7). land_sale_contract(c7). possession_taken(c7). improvements_made(c7).",
+  "legal_citations": [
+    "Part Performance Doctrine"
+  ],
+  "difficulty": "medium"
+}

@@ -1,0 +1,16 @@
+{
+  "id": "sof_014",
+  "description": "Marriage contract",
+  "facts": [
+    "Yuri orally promised Zelda $10,000 if she married him",
+    "No written agreement"
+  ],
+  "question": "Is the contract enforceable?",
+  "ground_truth": "unenforceable",
+  "rationale": "Contracts in consideration of marriage must be in writing",
+  "asp_facts": "contract_fact(c14). marriage_consideration(c14). not in_writing(c14).",
+  "legal_citations": [
+    "Statute of Frauds - Marriage"
+  ],
+  "difficulty": "medium"
+}

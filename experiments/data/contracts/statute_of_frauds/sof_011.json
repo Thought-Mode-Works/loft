@@ -1,0 +1,17 @@
+{
+  "id": "sof_011",
+  "description": "Payment and acceptance exception",
+  "facts": [
+    "Sam orally agreed to buy goods from Tina for $1500",
+    "Sam paid in full",
+    "Tina accepted payment and delivered goods"
+  ],
+  "question": "Is the contract enforceable?",
+  "ground_truth": "enforceable",
+  "rationale": "UCC 2-201(3)(c) payment and acceptance exception",
+  "asp_facts": "contract_fact(c11). goods_sale_contract(c11). payment_made(c11). goods_accepted(c11).",
+  "legal_citations": [
+    "UCC 2-201(3)(c)"
+  ],
+  "difficulty": "medium"
+}

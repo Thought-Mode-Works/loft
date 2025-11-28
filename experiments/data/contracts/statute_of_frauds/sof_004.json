@@ -1,0 +1,16 @@
+{
+  "id": "sof_004",
+  "description": "Sale of goods under $500",
+  "facts": [
+    "Grace orally agreed to buy a lamp from Henry for $300",
+    "No written contract exists"
+  ],
+  "question": "Is the contract enforceable?",
+  "ground_truth": "enforceable",
+  "rationale": "Oral contracts for goods under $500 are enforceable",
+  "asp_facts": "contract_fact(c4). goods_sale_contract(c4). value(c4, 300). not in_writing(c4).",
+  "legal_citations": [
+    "UCC 2-201"
+  ],
+  "difficulty": "easy"
+}

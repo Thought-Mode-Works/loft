@@ -157,6 +157,106 @@ loft/
 
 ---
 
+## Phase 4.5: Validation Infrastructure & Testing Playground (Current Priority)
+
+**Goal**: Build comprehensive testing infrastructure to validate the ontological bridge functionality with real LLM integration, demonstrating automated AI rule expansion, persistence, and natural ASP development through casework exploration.
+
+**Status**: Since Phases 0-4 are complete, we need robust validation infrastructure before advancing to Phase 5 meta-reasoning.
+
+### Core Deliverables
+- [ ] Enhanced `experiments/llm_rule_integration_test.py` with real LLM integration
+  - Replace mock implementations with actual neural interface providers
+  - Connect real gap identification, validation pipeline, and incorporation logic
+  - Measure end-to-end workflow performance
+- [ ] Interactive testing playground (CLI interface)
+  - Load and explore legal scenario datasets
+  - Visualize NL→ASP translation process in real-time
+  - Display validation pipeline steps (syntactic → semantic → empirical → consensus)
+  - Show before/after reasoning capacity improvements
+- [ ] Automated casework exploration system
+  - Batch processing of legal scenarios (contract disputes, statute of frauds, torts, etc.)
+  - Automatic knowledge gap identification
+  - Autonomous rule generation via dialectical reasoning
+  - End-to-end validation and incorporation cycles
+  - Performance metrics tracking over time
+- [ ] Rule expansion & persistence demonstration
+  - Iterative rule refinement across multiple test cases
+  - Rule evolution tracking (versions, A/B test results, improvement metrics)
+  - Persistent storage to stratified knowledge base layers
+  - Knowledge accumulation visualization
+- [ ] Ontological bridge validation suite
+  - Bidirectional translation tests: NL→ASP→NL fidelity measurements
+  - Semantic preservation metrics (does meaning survive translation?)
+  - Edge case handling: ambiguity, contradictions, exceptions, negation
+  - Cross-domain translation quality assessment
+
+### MVP Validation Criteria
+- ✓ Testing playground successfully processes 50+ diverse legal scenarios
+- ✓ Bidirectional translation maintains >90% semantic fidelity (NL→ASP→NL)
+- ✓ Automated casework exploration identifies gaps and generates valid rules in >80% of cases
+- ✓ Rule persistence and retrieval works correctly across stratified layers
+- ✓ System demonstrates measurable reasoning improvement over baseline (>10% accuracy gain)
+- ✓ Edge cases documented with clear failure analysis
+- ✓ All Phases 0-4 components integrate successfully in real-world workflows
+
+### Integration with Existing Components
+- **Phase 1 (Translation)**: Validate quality.py, grounding.py, nl_to_asp.py with real scenarios
+- **Phase 2 (Validation Pipeline)**: Test multi-stage validation with generated rules
+- **Phase 3 (Self-Modification)**: Verify modification_session.py and incorporation.py work end-to-end
+- **Phase 4 (Dialectical)**: Exercise critic.py and synthesizer.py in real debate cycles
+
+### Key Experiments
+1. **Translation Fidelity Study**:
+   - 100 legal clauses → ASP → back to NL
+   - Measure semantic drift, information loss, hallucinations
+   - Identify systematic translation failures
+
+2. **Automated Learning Curve**:
+   - Start with minimal contract law knowledge base
+   - Feed 200 test cases incrementally
+   - Track: gap identification rate, rule acceptance rate, accuracy improvement trajectory
+   - Measure: convergence time, final performance, rule stability
+
+3. **Cross-Domain Generalization**:
+   - Train on contract law scenarios
+   - Test on related but distinct domain (e.g., property law)
+   - Measure: zero-shot transfer, few-shot adaptation, domain-specific tuning needs
+
+4. **Dialectical Reasoning Quality**:
+   - Compare rules from single LLM vs. dialectical cycles
+   - Measure: validation pass rate, edge case coverage, generalization
+   - Document: synthesis quality, convergence patterns
+
+### Ontological Bridge Checkpoint
+- **Representational Adequacy**: Can symbolic ASP express all necessary legal concepts?
+- **Translation Invertibility**: Is information preserved bidirectionally?
+- **Ambiguity Handling**: How does system handle inherent linguistic ambiguity?
+- **Compositional Semantics**: Do complex rules compose correctly from primitives?
+- **Grounding Quality**: Are ASP predicates grounded in real legal semantics?
+
+### Risk Mitigation for Phase 5+
+- Validates that autonomous meta-reasoning (Phase 5) will have solid foundation
+- Exposes integration issues before adding additional complexity
+- Provides baseline performance metrics for measuring Phase 5 improvements
+- Documents known limitations and edge cases for meta-reasoner to address
+
+### Timeline
+- **Week 1**: Replace mock implementations, integrate real neural providers
+- **Week 2**: Build interactive CLI playground, visualizations
+- **Week 3**: Implement automated casework exploration, batch processing
+- **Week 4**: Rule evolution tracking, persistence validation
+- **Week 5**: Run comprehensive experiments, document findings
+
+### Success Criteria
+**This phase is complete when:**
+1. We have empirical evidence that the ontological bridge works in practice
+2. The reflexive loop (gap → generate → validate → incorporate) operates autonomously
+3. We understand the system's limitations through documented edge cases
+4. We have baseline metrics for measuring future Phase 5+ improvements
+5. All stakeholders can observe the system learning in the testing playground
+
+---
+
 ## Phase 5: Meta-Reasoning Layer (Weeks 18-22)
 
 **Goal**: Implement the reflexive orchestrator that reasons about the system's own reasoning processes.
@@ -331,13 +431,15 @@ The ontological bridge is validated when:
 
 ## Timeline Summary
 
-- **Phase 0-1**: Weeks 1-5 (Foundation + Static Core)
-- **Phase 2-3**: Weeks 6-13 (Logic Generation + Safe Modification)
-- **Phase 4-5**: Weeks 14-22 (Dialectical Reasoning + Meta-Reasoning)
-- **Phase 6-7**: Weeks 23-30 (Neural Ensemble + Geometric Constraints)
-- **Phase 8-9**: Weeks 31-40 (Multi-Domain + Production)
+- **Phase 0-1**: Weeks 1-5 (Foundation + Static Core) ✅ COMPLETE
+- **Phase 2-3**: Weeks 6-13 (Logic Generation + Safe Modification) ✅ COMPLETE
+- **Phase 4**: Weeks 14-17 (Dialectical Reasoning) ✅ COMPLETE
+- **Phase 4.5**: Weeks 18-22 (Validation Infrastructure & Testing Playground) 🔄 CURRENT
+- **Phase 5**: Weeks 23-27 (Meta-Reasoning Layer)
+- **Phase 6-7**: Weeks 28-35 (Neural Ensemble + Geometric Constraints)
+- **Phase 8-9**: Weeks 36-45 (Multi-Domain + Production)
 
-**Total Duration**: ~9 months to production-ready system
+**Total Duration**: ~10.5 months to production-ready system (updated to include Phase 4.5)
 
 ---
 

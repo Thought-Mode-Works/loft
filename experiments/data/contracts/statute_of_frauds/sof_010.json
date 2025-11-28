@@ -1,0 +1,16 @@
+{
+  "id": "sof_010",
+  "description": "Services contract over one year",
+  "facts": [
+    "Quinn orally hired Rachel as employee for 18 months",
+    "No written contract exists"
+  ],
+  "question": "Is the contract enforceable?",
+  "ground_truth": "unenforceable",
+  "rationale": "Contracts that cannot be performed within one year must be in writing",
+  "asp_facts": "contract_fact(c10). service_contract(c10). duration_months(c10, 18). not in_writing(c10).",
+  "legal_citations": [
+    "Statute of Frauds - One Year Rule"
+  ],
+  "difficulty": "medium"
+}

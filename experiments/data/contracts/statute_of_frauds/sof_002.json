@@ -1,0 +1,17 @@
+{
+  "id": "sof_002",
+  "description": "Written land sale contract",
+  "facts": [
+    "Charlie signed a written contract to buy land from Diana",
+    "The contract includes all material terms",
+    "Both parties signed the document"
+  ],
+  "question": "Is the contract enforceable?",
+  "ground_truth": "enforceable",
+  "rationale": "Written and signed land sale contract satisfies statute of frauds",
+  "asp_facts": "contract_fact(c2). land_sale_contract(c2). in_writing(c2). signed_by_party(c2, charlie). signed_by_party(c2, diana).",
+  "legal_citations": [
+    "Statute of Frauds"
+  ],
+  "difficulty": "easy"
+}

@@ -1,0 +1,17 @@
+{
+  "id": "sof_005",
+  "description": "Merchant confirmation exception",
+  "facts": [
+    "Two merchants had oral agreement for goods worth $1000",
+    "One merchant sent written confirmation within reasonable time",
+    "Other merchant received it but did not object within 10 days"
+  ],
+  "question": "Is the contract enforceable?",
+  "ground_truth": "enforceable",
+  "rationale": "UCC 2-201(2) merchant confirmation exception applies",
+  "asp_facts": "contract_fact(c5). goods_sale_contract(c5). between_merchants(c5). confirmation_sent(c5). not objection_within_10_days(c5).",
+  "legal_citations": [
+    "UCC 2-201(2)"
+  ],
+  "difficulty": "medium"
+}

@@ -1,0 +1,17 @@
+{
+  "id": "sof_003",
+  "description": "Sale of goods over $500",
+  "facts": [
+    "Eve orally agreed to buy 100 widgets from Frank for $600",
+    "No written contract exists",
+    "The widgets have not been delivered"
+  ],
+  "question": "Is the contract enforceable?",
+  "ground_truth": "unenforceable",
+  "rationale": "UCC 2-201 requires writing for goods over $500",
+  "asp_facts": "contract_fact(c3). goods_sale_contract(c3). value(c3, 600). not in_writing(c3).",
+  "legal_citations": [
+    "UCC 2-201"
+  ],
+  "difficulty": "easy"
+}
