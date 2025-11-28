@@ -172,7 +172,7 @@ class CaseworkExplorer:
                 )
 
                 # Accept if validated
-                if report.overall_decision == "accept":
+                if report.final_decision == "accept":
                     rules_accepted = 1
                     self.knowledge_base_rules.append(candidate.asp_rule)
                     logger.info(f"Learned new rule from {scenario.scenario_id}")

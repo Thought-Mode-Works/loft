@@ -403,7 +403,7 @@ class EnhancedExperimentRunner:
                 test_cases=test_cases,
             )
 
-            decision = "accept" if report.overall_decision == "accept" else "reject"
+            decision = "accept" if report.final_decision == "accept" else "reject"
 
             return {
                 "rule_id": rule_id,
@@ -411,7 +411,7 @@ class EnhancedExperimentRunner:
                 "candidate": candidate,
                 "report": report,
                 "decision": decision,
-                "confidence": report.final_confidence,
+                "confidence": report.aggregate_confidence,
             }
 
         except Exception as e:
