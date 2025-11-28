@@ -397,6 +397,83 @@ Before any significant change, verify:
 
 ---
 
+## Predicate Ontology Alignment: Critical Validation Insight
+
+### The Core Problem
+
+When validating neuro-symbolic learning systems, **predicate ontology alignment** is a fundamental requirement that is easy to overlook. This was discovered during transfer study experiments (Issue #100).
+
+### Key Finding
+
+**Transfer learning between scenarios requires shared predicate vocabulary.** If scenarios use incompatible predicate ontologies, learned rules will never fire on new cases - producing 0% accuracy that appears to be a pipeline bug but is actually a dataset design issue.
+
+### Diagnostic Pattern
+
+When you see:
+- Rules are being learned and validated ✓
+- Rules have correct ASP syntax ✓
+- But 0% accuracy / 0% coverage on test cases ✗
+- All predictions return "unknown" ✗
+
+**The problem is likely predicate ontology mismatch, not a pipeline bug.**
+
+### Example: What Goes Wrong
+
+Dataset with different legal doctrines per scenario:
+| Scenario | Doctrine | Predicates |
+|----------|----------|------------|
+| prop_001 | Adverse possession | `occupation_continuous`, `occupation_years` |
+| prop_002 | Easement | `is_landlocked`, `common_ownership_history` |
+| prop_003 | Recording statute | `first_deed_recorded`, `second_buyer_notice` |
+
+A rule learned from prop_001 uses `occupation_continuous(X, yes)` - this predicate **never exists** in prop_002 or prop_003 facts, so the rule never fires.
+
+### Solution: Same-Doctrine Datasets
+
+For valid transfer learning experiments, create datasets where:
+1. All scenarios test the **same legal doctrine**
+2. All scenarios share the **same predicate vocabulary**
+3. Scenarios vary in **fact combinations**, not predicate schemas
+
+**Validated Result:**
+- `datasets/adverse_possession/` - 10 scenarios, same doctrine → **100% test accuracy**
+- `datasets/property_law/` - 10 scenarios, 10 doctrines → **0% coverage** (expected)
+
+### Validation Commands
+
+```bash
+# Same-domain test (should achieve high accuracy with proper dataset)
+PYTHONPATH=. python3 experiments/casework/transfer_study.py \
+  --same-domain datasets/adverse_possession \
+  --train-ratio 0.7
+
+# Cross-domain test (expected to fail if domains have incompatible predicates)
+PYTHONPATH=. python3 experiments/casework/transfer_study.py \
+  --source-domain datasets/statute_of_frauds \
+  --target-domain datasets/property_law
+```
+
+### LLM Predicate Invention Problem
+
+Even with correct dataset design, LLMs may **invent predicates** instead of using dataset predicates:
+
+**Bad:** LLM generates `annexed(X, yes)` when dataset has `built_in(X, yes)`
+
+**Solution:** Use strict predicate alignment prompts (see `ALIGNED_PRINCIPLE_TO_RULE_V1_1` in `loft/neural/rule_prompts.py`) that:
+1. List available predicates explicitly
+2. Forbid inventing new predicates
+3. Provide mapping examples (legal term → dataset predicate)
+
+### Checklist for Transfer Learning Experiments
+
+- [ ] All scenarios in dataset share same predicate vocabulary
+- [ ] Extracted predicates from dataset are passed to LLM prompts
+- [ ] LLM prompt enforces use of dataset predicates only
+- [ ] Test with same-domain split before attempting cross-domain
+- [ ] If 0% coverage, diagnose predicate mismatch before assuming pipeline bug
+
+---
+
 ## Research Integration
 
 This project sits at cutting edge of neuro-symbolic AI. Stay connected to research:
