@@ -1,0 +1,16 @@
+{
+  "id": "sof_003",
+  "description": "Oral contract for goods worth over $500",
+  "facts": [
+    "Emily agreed by phone to purchase 100 widgets from Frank's company",
+    "The total price was $1,200",
+    "No written contract exists",
+    "Emily sent a confirmation email but Frank never responded"
+  ],
+  "asp_facts": "contract(c3). subject_matter(c3, goods). parties(c3, emily, frank). sale_amount(c3, 1200). has_writing(c3, no). has_consideration(c3, yes). has_mutual_assent(c3, yes).",
+  "question": "Is this contract enforceable under the Statute of Frauds?",
+  "ground_truth": "unenforceable",
+  "rationale": "Under UCC 2-201, contracts for the sale of goods for $500 or more must be in writing. The email confirmation from only one party is insufficient.",
+  "legal_citations": ["UCC 2-201", "Statute of Frauds"],
+  "difficulty": "medium"
+}

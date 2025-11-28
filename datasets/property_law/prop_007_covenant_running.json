@@ -1,0 +1,16 @@
+{
+  "id": "prop_007",
+  "description": "Restrictive covenant running with the land",
+  "facts": [
+    "Mike's subdivision has a recorded covenant prohibiting commercial use",
+    "The covenant was created 30 years ago and affects all lots",
+    "Nancy bought a lot in the subdivision 5 years ago",
+    "Nancy wants to open a small bakery in her home"
+  ],
+  "asp_facts": "covenant(cov1). subdivision(cov1, mikes_subdivision). restriction_type(cov1, no_commercial_use). covenant_recorded(cov1, yes). covenant_age_years(cov1, 30). affects_all_lots(cov1, yes). current_owner(cov1, nancy). purchase_date_years_ago(cov1, 5). proposed_use(cov1, commercial_bakery).",
+  "question": "Can the covenant be enforced against Nancy to prevent the bakery?",
+  "ground_truth": "enforceable",
+  "rationale": "A recorded restrictive covenant that touches and concerns the land, has horizontal and vertical privity, and provides notice to subsequent purchasers runs with the land and is enforceable against Nancy.",
+  "legal_citations": ["Restrictive Covenants", "Running with the Land"],
+  "difficulty": "medium"
+}

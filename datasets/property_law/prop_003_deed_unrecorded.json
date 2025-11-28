@@ -1,0 +1,16 @@
+{
+  "id": "prop_003",
+  "description": "Unrecorded deed versus subsequent purchaser",
+  "facts": [
+    "David sold his house to Emily with a valid deed on January 1",
+    "Emily never recorded the deed",
+    "David then sold the same house to Frank on February 1",
+    "Frank had no knowledge of the earlier sale and recorded his deed immediately"
+  ],
+  "asp_facts": "property(prop1). first_sale(prop1, david, emily, jan1). first_deed_recorded(prop1, no). second_sale(prop1, david, frank, feb1). second_deed_recorded(prop1, yes). second_buyer_good_faith(prop1, yes). second_buyer_notice(prop1, no).",
+  "question": "Who has superior title to the property?",
+  "ground_truth": "enforceable",
+  "rationale": "Under recording statutes in most jurisdictions, a subsequent bona fide purchaser who records first takes priority over an earlier unrecorded deed. Frank has superior title.",
+  "legal_citations": ["Recording Acts", "Race-Notice Statute"],
+  "difficulty": "hard"
+}

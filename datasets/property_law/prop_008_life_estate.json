@@ -1,0 +1,16 @@
+{
+  "id": "prop_008",
+  "description": "Life tenant waste and duties",
+  "facts": [
+    "Oliver has a life estate in a farm, with Patricia as the remainderman",
+    "Oliver allowed the barn to fall into disrepair",
+    "Oliver cut down and sold 50 mature oak trees for profit",
+    "The property value has decreased by $100,000"
+  ],
+  "asp_facts": "life_estate(le1). life_tenant(le1, oliver). remainderman(le1, patricia). property_type(le1, farm). maintenance_neglect(le1, yes). structure_disrepair(le1, barn). trees_cut(le1, 50). trees_sold(le1, yes). value_decrease(le1, 100000). waste_type(le1, both_permissive_and_voluntary).",
+  "question": "Has Oliver committed waste, and can Patricia seek relief?",
+  "ground_truth": "enforceable",
+  "rationale": "Oliver has committed both permissive waste (neglect of barn) and voluntary waste (cutting timber beyond normal maintenance). Patricia can seek damages and possibly an injunction as remainderman.",
+  "legal_citations": ["Life Estate", "Doctrine of Waste"],
+  "difficulty": "hard"
+}

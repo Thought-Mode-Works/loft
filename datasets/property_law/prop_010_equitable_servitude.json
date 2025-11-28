@@ -1,0 +1,16 @@
+{
+  "id": "prop_010",
+  "description": "Equitable servitude in residential subdivision",
+  "facts": [
+    "Sam's neighborhood has a common scheme requiring minimum 2,000 sq ft homes",
+    "The restriction was in Tom's deed when he purchased 10 years ago",
+    "Tom wants to build a 1,200 sq ft accessory dwelling unit",
+    "All other homes in the area comply with the minimum size requirement"
+  ],
+  "asp_facts": "subdivision(sub1). owner(sub1, tom). restriction(sub1, minimum_2000_sqft). common_scheme_exists(sub1, yes). restriction_in_deed(sub1, yes). years_owned(sub1, 10). proposed_structure_size(sub1, 1200). neighborhood_compliance(sub1, high). proposed_use(sub1, accessory_dwelling).",
+  "question": "Can neighbors enforce the restriction through equitable servitude?",
+  "ground_truth": "enforceable",
+  "rationale": "An equitable servitude arises when there is a common scheme, notice to the purchaser (through the deed), and intent to create mutually enforceable restrictions. Neighbors can enjoin Tom's non-conforming construction.",
+  "legal_citations": ["Equitable Servitude", "Common Scheme Doctrine"],
+  "difficulty": "hard"
+}

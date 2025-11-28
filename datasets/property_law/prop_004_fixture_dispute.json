@@ -1,0 +1,16 @@
+{
+  "id": "prop_004",
+  "description": "Dispute over whether items are fixtures or personal property",
+  "facts": [
+    "George sold his house to Helen",
+    "The contract did not mention the custom-built bookshelf",
+    "The bookshelf is bolted to the wall and built into an alcove",
+    "George removed it before closing, claiming it was personal property"
+  ],
+  "asp_facts": "property_dispute(pd1). seller(pd1, george). buyer(pd1, helen). item(pd1, bookshelf). attachment_method(pd1, bolted). custom_built(pd1, yes). built_in(pd1, yes). contract_mention(pd1, no). removed_before_closing(pd1, yes).",
+  "question": "Is the bookshelf a fixture that should remain with the property?",
+  "ground_truth": "enforceable",
+  "rationale": "The three-part fixture test examines: (1) annexation - it's bolted; (2) adaptation - custom-built for the space; (3) intent - built-in suggests permanence. The bookshelf is a fixture and should convey with the property.",
+  "legal_citations": ["Fixture Doctrine"],
+  "difficulty": "medium"
+}

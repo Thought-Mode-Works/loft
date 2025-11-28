@@ -1,0 +1,16 @@
+{
+  "id": "sof_002",
+  "description": "Written and signed land sale agreement",
+  "facts": [
+    "Carol and Dave signed a written contract for the sale of Carol's property",
+    "The contract specifies the property address and sale price of $250,000",
+    "Both parties signed the document",
+    "The contract includes all essential terms"
+  ],
+  "asp_facts": "contract(c2). subject_matter(c2, land). parties(c2, carol, dave). has_writing(c2, yes). is_signed(c2, yes). sale_amount(c2, 250000). has_consideration(c2, yes). has_mutual_assent(c2, yes). essential_terms_present(c2, yes).",
+  "question": "Is this contract enforceable under the Statute of Frauds?",
+  "ground_truth": "enforceable",
+  "rationale": "The contract satisfies the Statute of Frauds because it is in writing, signed by both parties, and contains all essential terms for a land sale.",
+  "legal_citations": ["Statute of Frauds", "UCC 2-201"],
+  "difficulty": "easy"
+}

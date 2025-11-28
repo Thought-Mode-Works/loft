@@ -1,0 +1,16 @@
+{
+  "id": "sof_006",
+  "description": "Written promise by executor to pay estate debt",
+  "facts": [
+    "Karen, as executor of her father's estate, signed a written promise to personally pay a $30,000 debt owed by the estate",
+    "The creditor is Larry",
+    "The writing clearly states Karen's personal liability",
+    "The estate has insufficient assets to cover the debt"
+  ],
+  "asp_facts": "contract(c6). subject_matter(c6, debt_payment). parties(c6, karen, larry). is_executor_promise(c6, yes). has_writing(c6, yes). is_signed(c6, yes). debt_amount(c6, 30000). personal_liability(c6, yes).",
+  "question": "Is this promise enforceable under the Statute of Frauds?",
+  "ground_truth": "enforceable",
+  "rationale": "An executor's promise to personally pay estate debts must be in writing under the Statute of Frauds. This promise is in writing and signed, so it satisfies the statute.",
+  "legal_citations": ["Statute of Frauds"],
+  "difficulty": "hard"
+}
