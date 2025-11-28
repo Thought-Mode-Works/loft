@@ -86,6 +86,14 @@ class PlaygroundCLI:
             self.cmd_export(args)
         elif cmd == "show-rules":
             self.cmd_show_rules()
+        elif cmd == "explain":
+            self.cmd_explain()
+        elif cmd == "rollback":
+            self.cmd_rollback()
+        elif cmd == "metrics":
+            self.cmd_metrics()
+        elif cmd == "history":
+            self.cmd_history()
         else:
             console.print(f"[red]Unknown command:[/red] {cmd}")
             console.print("Type 'help' for available commands")
@@ -105,6 +113,10 @@ class PlaygroundCLI:
             ("incorporate-rule <rule-id>", "Incorporate validated rule into KB"),
             ("show-rules", "Show all generated and incorporated rules"),
             ("predict", "Make prediction on loaded scenario"),
+            ("explain", "Show reasoning trace for current prediction"),
+            ("rollback", "Undo last rule incorporation"),
+            ("metrics", "Display detailed performance metrics"),
+            ("history", "Show command history"),
             ("status", "Show current session status"),
             ("export <file>", "Export session data to JSON"),
             ("help", "Show this help message"),
@@ -380,6 +392,115 @@ class PlaygroundCLI:
 
         except Exception as e:
             console.print(f"[red]Error exporting session:[/red] {e}")
+
+    def cmd_explain(self) -> None:
+        """Show reasoning trace for current prediction."""
+        try:
+            explanation = self.session.explain_prediction()
+
+            console.print(
+                Panel(
+                    f"[bold]Scenario:[/bold] {explanation['scenario']}\n"
+                    f"[bold]Question:[/bold] {explanation['question']}\n\n"
+                    f"[bold]Description:[/bold] {explanation['description']}",
+                    title="Explanation",
+                    border_style="cyan",
+                )
+            )
+
+            if explanation["applicable_rules"]:
+                console.print("\n[bold]Applicable Rules:[/bold]")
+                for rule_info in explanation["applicable_rules"]:
+                    syntax = Syntax(
+                        rule_info["rule"], "prolog", theme="monokai", line_numbers=False
+                    )
+                    console.print(f"  [{rule_info['rule_id']}]")
+                    console.print(syntax)
+            else:
+                console.print("\n[yellow]No incorporated rules apply to this scenario.[/yellow]")
+
+            console.print(f"\n[bold]Prediction:[/bold] {explanation['prediction']}")
+            console.print(f"[bold]Confidence:[/bold] {explanation['confidence']:.2f}")
+
+        except Exception as e:
+            console.print(f"[red]Error generating explanation:[/red] {e}")
+
+    def cmd_rollback(self) -> None:
+        """Undo last rule incorporation."""
+        try:
+            result = self.session.rollback_last_incorporation()
+
+            console.print(
+                Panel(
+                    f"[bold yellow]Rolled back rule: {result['rule_id']}[/bold yellow]\n\n"
+                    f"Remaining incorporated rules: {result['remaining_incorporated']}\n"
+                    f"Can undo rollback: {'Yes' if result['can_undo'] else 'No'}",
+                    title="Rollback Complete",
+                    border_style="yellow",
+                )
+            )
+
+        except ValueError as e:
+            console.print(f"[yellow]{e}[/yellow]")
+        except Exception as e:
+            console.print(f"[red]Error during rollback:[/red] {e}")
+
+    def cmd_metrics(self) -> None:
+        """Display detailed performance metrics."""
+        metrics = self.session.get_metrics()
+
+        table = Table(title="Performance Metrics", show_header=True, header_style="bold magenta")
+        table.add_column("Metric", style="cyan")
+        table.add_column("Value", style="white")
+
+        table.add_row("Session Duration", metrics["session_duration"])
+        table.add_row("Commands Executed", str(metrics["commands_executed"]))
+        table.add_row("", "")  # Separator
+
+        table.add_row("[bold]Rule Generation", "")
+        table.add_row("  Gaps Identified", str(metrics["gaps_identified"]))
+        table.add_row("  Rules Generated", str(metrics["rules_generated"]))
+        table.add_row("  Rules Validated", str(metrics["rules_validated"]))
+        table.add_row("  Rules Incorporated", str(metrics["rules_incorporated"]))
+        table.add_row("", "")  # Separator
+
+        table.add_row("[bold]Success Rates", "")
+        table.add_row("  Acceptance Rate", f"{metrics['acceptance_rate']:.1%}")
+        table.add_row("  Incorporation Rate", f"{metrics['incorporation_rate']:.1%}")
+        table.add_row("", "")  # Separator
+
+        table.add_row("[bold]Confidence Scores", "")
+        table.add_row("  Avg Generation Confidence", f"{metrics['avg_generation_confidence']:.2f}")
+        table.add_row("  Avg Validation Confidence", f"{metrics['avg_validation_confidence']:.2f}")
+
+        console.print(table)
+
+    def cmd_history(self) -> None:
+        """Show command history."""
+        history = self.session.get_command_history()
+
+        if not history:
+            console.print("[yellow]No commands executed yet.[/yellow]")
+            return
+
+        table = Table(title="Command History", show_header=True, header_style="bold magenta")
+        table.add_column("Time", style="cyan")
+        table.add_column("Command", style="white")
+        table.add_column("Details", style="dim")
+
+        # Show last 20 commands
+        for entry in history[-20:]:
+            timestamp = entry["timestamp"].split("T")[1].split(".")[0]  # Get time part
+            details = str(entry.get("details", ""))
+            if len(details) > 50:
+                details = details[:47] + "..."
+
+            table.add_row(timestamp, entry["command"], details)
+
+        console.print(table)
+
+        if len(history) > 20:
+            console.print(f"\n[dim]Showing last 20 of {len(history)} commands[/dim]")
 
 
 def main():
