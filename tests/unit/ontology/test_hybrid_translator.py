@@ -9,7 +9,6 @@ Tests for:
 - Statistics tracking
 """
 
-import pytest
 from unittest.mock import MagicMock, patch
 
 from loft.ontology.hybrid_translator import (
