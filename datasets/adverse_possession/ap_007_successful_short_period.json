@@ -1,0 +1,17 @@
+{
+  "id": "ap_007",
+  "description": "Successful adverse possession - shorter statutory period jurisdiction",
+  "facts": [
+    "Henry has occupied the abandoned farm for 12 years",
+    "His use has been continuous, open, and hostile",
+    "He has farmed the land and built structures",
+    "He has paid all property taxes",
+    "This jurisdiction has a 10-year statutory period"
+  ],
+  "asp_facts": "claim(c7). claimant(c7, henry). property_type(c7, land). occupation_years(c7, 12). occupation_continuous(c7, yes). occupation_open(c7, yes). occupation_hostile(c7, yes). taxes_paid(c7, yes). statutory_period(c7, 10).",
+  "question": "Has Henry acquired title through adverse possession?",
+  "ground_truth": "enforceable",
+  "rationale": "Henry meets all elements: continuous (yes), open (yes), hostile (yes), and has occupied for 12 years which exceeds the 10-year statutory period in this jurisdiction.",
+  "legal_citations": ["Adverse Possession Doctrine"],
+  "difficulty": "easy"
+}

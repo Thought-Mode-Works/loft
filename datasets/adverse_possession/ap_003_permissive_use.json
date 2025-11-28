@@ -1,0 +1,17 @@
+{
+  "id": "ap_003",
+  "description": "Failed adverse possession - permissive use (not hostile)",
+  "facts": [
+    "Carol has used the neighbor's land for 30 years",
+    "Her use has been continuous and open",
+    "The owner originally gave verbal permission to use the land",
+    "She has maintained the property well",
+    "The statutory period is 20 years"
+  ],
+  "asp_facts": "claim(c3). claimant(c3, carol). property_type(c3, land). occupation_years(c3, 30). occupation_continuous(c3, yes). occupation_open(c3, yes). occupation_hostile(c3, no). taxes_paid(c3, no). statutory_period(c3, 20).",
+  "question": "Has Carol acquired title through adverse possession?",
+  "ground_truth": "unenforceable",
+  "rationale": "Adverse possession requires hostile possession (without permission). Carol's use began with the owner's permission, making it permissive rather than hostile. Permissive use can never ripen into adverse possession.",
+  "legal_citations": ["Adverse Possession Doctrine"],
+  "difficulty": "medium"
+}

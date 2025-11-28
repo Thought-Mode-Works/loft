@@ -453,68 +453,59 @@ Respond with a GeneratedRule JSON object.
 
 ALIGNED_PRINCIPLE_TO_RULE_V1_1 = """You are an expert in converting legal principles into GENERAL Answer Set Programming (ASP) rules.
 
-**CRITICAL: GENERALIZATION REQUIREMENT**
-Your goal is to create rules that capture the GENERAL LEGAL PRINCIPLE, not the specific case facts.
-Rules must apply to ANY case matching the legal test, not just the example case.
+**CRITICAL REQUIREMENT: USE ONLY THESE DATASET PREDICATES**
+
+The ONLY predicates you may use are listed below. DO NOT invent new predicate names.
+If a legal concept doesn't have a matching predicate, find the CLOSEST match from this list.
+
+**AVAILABLE PREDICATES (USE THESE EXACTLY):**
+{dataset_predicates}
 
 **Legal Principle:**
 {principle_text}
 
 **Domain:** {domain}
 
-**AVAILABLE PREDICATES FROM DATASET:**
-{dataset_predicates}
+**STRICT RULES:**
 
-**GENERALIZATION RULES (MOST IMPORTANT):**
-1. NEVER use specific names (e.g., "Frank", "Nancy", "Alice") - use VARIABLES instead
-2. NEVER use specific property names or identifiers - use variables (X, Y, Z)
-3. Extract the ABSTRACT LEGAL TEST from the principle, not the specific scenario
-4. The rule should fire for ANY case that satisfies the legal test
+1. **USE ONLY DATASET PREDICATES**: Every predicate in your rule body MUST appear in the list above.
+   - If the principle mentions "annexation", look for predicates like `built_in(X, yes)` or `attachment_method(X, Y)`
+   - If the principle mentions "intent", look for predicates like `custom_built(X, yes)` or `built_in(X, yes)`
+   - DO NOT create `annexed(X, yes)` or `intent_permanent(X, yes)` if they're not in the list
 
-**EXAMPLES OF GOOD vs BAD RULES:**
+2. **MAP LEGAL CONCEPTS TO DATASET PREDICATES:**
+   - "annexed/annexation" → use `attachment_method(X, Y)` or `built_in(X, yes)`
+   - "adaptation/adapted" → use `custom_built(X, yes)`
+   - "intent/intention" → use `built_in(X, yes)` or infer from other predicates
+   - "continuous" → use `occupation_continuous(X, yes)`
+   - "hostile/adverse" → use `occupation_hostile(X, yes)` or `use_adverse(X, yes)`
 
-BAD (overfitting to specific case):
+3. **GENERALIZE (no specific names):**
+   - NEVER use specific names (Frank, Nancy, Alice) - use VARIABLES (X, Y, P)
+   - Use uppercase for variables: X, Y, Z, N, Owner, Buyer
+
+4. **SYNTAX:**
+   - Head MUST be `enforceable(X)` or `unenforceable(X)`
+   - Rule MUST end with a period
+   - All parentheses must be balanced
+
+**EXAMPLE:**
+
+Legal principle: "The fixture test requires annexation, adaptation, and intent"
+Available predicates: `attachment_method(X, Y)`, `custom_built(X, yes/no)`, `built_in(X, yes/no)`
+
+WRONG (invents predicates):
 ```asp
-enforceable(Title) :- buyer(Frank, Title), property(123_main_st).
+enforceable(X) :- annexed(X, yes), adapted(X, yes), intent_permanent(X, yes).
 ```
 
-GOOD (generalizes to any case):
+CORRECT (uses available predicates):
 ```asp
-enforceable(X) :- claim(X), buyer(P, X), valid_purchase(X).
+enforceable(X) :- attachment_method(X, bolted), custom_built(X, yes), built_in(X, yes).
 ```
-
-BAD (specific names):
-```asp
-unenforceable(X) :- servient_estate_owner(X, Nancy), subdivision(X, greenacres).
-```
-
-GOOD (uses variables):
-```asp
-unenforceable(X) :- servient_estate_owner(X, Owner), subdivision(X, Area), not necessity_established(X).
-```
-
-**PREDICATE SELECTION:**
-1. PREFER predicates from the dataset list above when they match the concept
-2. Match predicate names EXACTLY as shown
-3. For yes/no predicates, use the exact format (e.g., `custom_built(X, yes)`)
-4. If NO suitable predicate exists, you MAY create a new predicate
-5. The head MUST be `enforceable(X)` or `unenforceable(X)`
-6. Use uppercase variables: X, Y, Z, N, P, Owner, Buyer (NOT lowercase constants)
-
-**LEGAL PRINCIPLE EXTRACTION:**
-1. Identify the ELEMENTS required by law (e.g., "continuous use for statutory period")
-2. Translate each element to a predicate condition
-3. Combine conditions that must ALL be true (conjunction)
-4. Add negations for exceptions or defenses
 
 **OUTPUT:**
-Generate ONE complete, GENERAL ASP rule that:
-1. Uses VARIABLES (uppercase) instead of specific names/constants
-2. Captures the abstract legal test that applies to multiple cases
-3. Uses dataset predicates where available
-4. Ends with a period and has balanced parentheses
-5. Derives `enforceable(X)` or `unenforceable(X)`
-
+Generate ONE complete ASP rule using ONLY predicates from the list above.
 Respond with a GeneratedRule JSON object.
 """
 

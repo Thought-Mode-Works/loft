@@ -1,0 +1,17 @@
+{
+  "id": "ap_006",
+  "description": "Failed adverse possession - use was not open and notorious",
+  "facts": [
+    "Grace has secretly used an underground cellar on neighbor's property",
+    "She has used it for storage for 25 years",
+    "The entrance is hidden and the owner never knew",
+    "Her use has been continuous and without permission",
+    "The statutory period is 15 years"
+  ],
+  "asp_facts": "claim(c6). claimant(c6, grace). property_type(c6, land). occupation_years(c6, 25). occupation_continuous(c6, yes). occupation_open(c6, no). occupation_hostile(c6, yes). taxes_paid(c6, no). statutory_period(c6, 15).",
+  "question": "Has Grace acquired title through adverse possession?",
+  "ground_truth": "unenforceable",
+  "rationale": "Adverse possession requires open and notorious possession - the use must be visible enough that a reasonable owner would discover it. Grace's secret use of a hidden cellar fails this requirement.",
+  "legal_citations": ["Adverse Possession Doctrine"],
+  "difficulty": "medium"
+}
