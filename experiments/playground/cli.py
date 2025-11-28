@@ -269,7 +269,7 @@ class PlaygroundCLI:
             result = self.session.incorporate_rule(args)
 
             # Show the actual rule that was incorporated
-            rule_asp = result.get('asp_rule', 'N/A')
+            rule_asp = result.get("asp_rule", "N/A")
             asp_syntax = Syntax(rule_asp, "prolog", theme="monokai", line_numbers=False)
 
             console.print(
@@ -282,7 +282,9 @@ class PlaygroundCLI:
                 )
             )
             console.print(asp_syntax)
-            console.print("\n[cyan]Tip:[/cyan] Use 'show-rules' to see all rules, or 'export' to save session data")
+            console.print(
+                "\n[cyan]Tip:[/cyan] Use 'show-rules' to see all rules, or 'export' to save session data"
+            )
 
         except Exception as e:
             console.print(f"[red]Error incorporating rule:[/red] {e}")
@@ -361,7 +363,9 @@ class PlaygroundCLI:
 
         # Show incorporated rules summary
         if self.session.incorporated_rules:
-            console.print(f"\n[green]✓ {len(self.session.incorporated_rules)} rule(s) incorporated into knowledge base[/green]")
+            console.print(
+                f"\n[green]✓ {len(self.session.incorporated_rules)} rule(s) incorporated into knowledge base[/green]"
+            )
             console.print("[cyan]Tip:[/cyan] Use 'export' to save all rules to a file")
 
     def cmd_export(self, args: str) -> None:
