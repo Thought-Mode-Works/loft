@@ -105,6 +105,9 @@ class PlaygroundSession:
         # Command history
         self.command_history: List[Dict[str, Any]] = []
 
+        # Rollback support - track state snapshots
+        self.incorporation_snapshots: List[Dict[str, Any]] = []
+
     def load_scenario(self, scenario_path: Path) -> LoadedScenario:
         """Load a test scenario from JSON file."""
         with open(scenario_path) as f:
@@ -309,6 +312,97 @@ class PlaygroundSession:
                 "details": details,
             }
         )
+
+    def get_command_history(self) -> List[Dict[str, Any]]:
+        """Get command history for display."""
+        return self.command_history
+
+    def get_metrics(self) -> Dict[str, Any]:
+        """Get detailed performance metrics."""
+        total_gaps = len(self.identified_gaps)
+        total_generated = len(self.generated_rules)
+        total_validated = len(self.validation_results)
+        total_incorporated = len(self.incorporated_rules)
+
+        # Calculate acceptance rates
+        acceptance_rate = (
+            len([v for v in self.validation_results.values() if v.decision == "accept"])
+            / total_validated
+            if total_validated > 0
+            else 0.0
+        )
+
+        incorporation_rate = total_incorporated / total_generated if total_generated > 0 else 0.0
+
+        # Calculate average confidences
+        avg_generation_confidence = (
+            sum(r.confidence for r in self.generated_rules.values()) / total_generated
+            if total_generated > 0
+            else 0.0
+        )
+
+        avg_validation_confidence = (
+            sum(v.confidence for v in self.validation_results.values()) / total_validated
+            if total_validated > 0
+            else 0.0
+        )
+
+        return {
+            "session_duration": str(datetime.now() - self.session_start),
+            "gaps_identified": total_gaps,
+            "rules_generated": total_generated,
+            "rules_validated": total_validated,
+            "rules_incorporated": total_incorporated,
+            "acceptance_rate": acceptance_rate,
+            "incorporation_rate": incorporation_rate,
+            "avg_generation_confidence": avg_generation_confidence,
+            "avg_validation_confidence": avg_validation_confidence,
+            "commands_executed": len(self.command_history),
+        }
+
+    def explain_prediction(self) -> Dict[str, Any]:
+        """Generate reasoning trace for current prediction."""
+        if not self.loaded_scenario:
+            raise ValueError("No scenario loaded. Use 'load <scenario>' first.")
+
+        # For MVP, return a simplified explanation
+        # In full implementation, would trace through ASP reasoning
+        return {
+            "scenario": self.loaded_scenario.scenario_id,
+            "description": self.loaded_scenario.description,
+            "question": self.loaded_scenario.question,
+            "facts": self.loaded_scenario.facts,
+            "applicable_rules": [
+                {"rule_id": rule_id, "rule": self.generated_rules[rule_id].asp_rule}
+                for rule_id in self.incorporated_rules
+                if rule_id in self.generated_rules
+            ],
+            "prediction": "Based on current knowledge base",
+            "confidence": 0.75,
+        }
+
+    def rollback_last_incorporation(self) -> Dict[str, Any]:
+        """Rollback the last rule incorporation."""
+        if not self.incorporated_rules:
+            raise ValueError("No rules to rollback")
+
+        # Create snapshot before rollback
+        snapshot = {
+            "timestamp": datetime.now().isoformat(),
+            "incorporated_rules": self.incorporated_rules.copy(),
+        }
+        self.incorporation_snapshots.append(snapshot)
+
+        # Remove last incorporated rule
+        last_rule_id = self.incorporated_rules.pop()
+
+        self._log_command("rollback", {"rule_id": last_rule_id})
+
+        return {
+            "rule_id": last_rule_id,
+            "remaining_incorporated": len(self.incorporated_rules),
+            "can_undo": len(self.incorporation_snapshots) > 0,
+        }
 
     def export_session(self, output_path: Path) -> None:
         """Export session data to JSON."""
