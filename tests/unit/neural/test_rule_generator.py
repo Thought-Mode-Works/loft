@@ -285,11 +285,11 @@ class TestFillKnowledgeGap:
             candidates=[
                 RuleCandidate(
                     rule=GeneratedRule(
-                        asp_rule="test_pred(X) :- true.",
+                        asp_rule="test_pred(X) :- input(X).",
                         confidence=0.5,
                         reasoning="Test",
-                        predicates_used=[],
-                        new_predicates=[],
+                        predicates_used=["input/1"],
+                        new_predicates=["test_pred/1"],
                         source_type="gap_fill",
                         source_text="Test",
                     ),
@@ -327,11 +327,11 @@ class TestFillKnowledgeGap:
             candidates=[
                 RuleCandidate(
                     rule=GeneratedRule(
-                        asp_rule="test(X).",
+                        asp_rule="test(X) :- base(X).",
                         confidence=0.5,
                         reasoning="Test",
-                        predicates_used=[],
-                        new_predicates=[],
+                        predicates_used=["base/1"],
+                        new_predicates=["test/1"],
                         source_type="gap_fill",
                         source_text="Test",
                     ),

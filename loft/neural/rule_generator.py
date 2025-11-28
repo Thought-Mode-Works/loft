@@ -14,9 +14,26 @@ from .rule_schemas import (
     GeneratedRule,
     GapFillingResponse,
     ConsensusVote,
+    validate_asp_rule_completeness,
 )
 from .rule_prompts import get_prompt
+from .errors import LLMParsingError
 from loft.symbolic.asp_core import ASPCore
+
+
+# Default and escalation token limits for rule generation
+DEFAULT_MAX_TOKENS = 4096
+RETRY_MAX_TOKENS = 8192  # Increased limit for retry attempts
+MAX_GENERATION_RETRIES = 3  # Maximum retry attempts for truncation
+
+
+class RuleGenerationError(Exception):
+    """Raised when rule generation fails after all retries."""
+
+    def __init__(self, message: str, attempts: int, last_error: Optional[str] = None):
+        super().__init__(message)
+        self.attempts = attempts
+        self.last_error = last_error
 
 
 class RuleGenerator:
@@ -56,17 +73,25 @@ class RuleGenerator:
         principle_text: str,
         existing_predicates: Optional[List[str]] = None,
         constraints: Optional[str] = None,
+        max_retries: int = MAX_GENERATION_RETRIES,
     ) -> GeneratedRule:
         """
         Generate ASP rule from a legal principle.
+
+        Implements retry logic with increased token limits to handle truncation.
+        Validates that generated rules are complete before returning.
 
         Args:
             principle_text: Natural language statement of legal principle
             existing_predicates: List of predicates that can be referenced
             constraints: Optional constraints on generation
+            max_retries: Maximum number of retry attempts for truncated rules
 
         Returns:
             GeneratedRule with ASP rule and metadata
+
+        Raises:
+            RuleGenerationError: If rule generation fails after all retries
 
         Example:
             >>> generator = RuleGenerator(llm, asp_core)
@@ -82,7 +107,7 @@ class RuleGenerator:
         if existing_predicates is None:
             existing_predicates = self._get_existing_predicates()
 
-        # Format prompt
+        # Format prompt with explicit instruction for complete rules
         prompt_template = get_prompt("principle_to_rule", self.prompt_version)
         prompt = prompt_template.format(
             principle_text=principle_text,
@@ -91,17 +116,74 @@ class RuleGenerator:
             constraints=f"\n**Constraints:** {constraints}" if constraints else "",
         )
 
-        # Query LLM with structured output
-        response = self.llm.query(
-            question=prompt,
-            output_schema=GeneratedRule,
-            temperature=0.3,  # Lower temperature for more consistent rule generation
+        # Add explicit completeness instruction to prompt
+        completeness_instruction = (
+            "\n\n**CRITICAL:** The ASP rule MUST be complete and well-formed. "
+            "Ensure the rule:\n"
+            "1. Ends with a period '.'\n"
+            "2. Has balanced parentheses\n"
+            "3. Has a complete rule body (no trailing underscores or incomplete predicates)\n"
+            "4. Is valid Clingo ASP syntax\n"
         )
+        prompt = prompt + completeness_instruction
 
-        rule = response.content
-        logger.info(f"Generated rule with confidence {rule.confidence:.2f}: {rule.asp_rule[:100]}")
+        last_error: Optional[str] = None
 
-        return rule
+        for attempt in range(max_retries):
+            # Escalate max_tokens on retries
+            current_max_tokens = DEFAULT_MAX_TOKENS if attempt == 0 else RETRY_MAX_TOKENS
+
+            try:
+                logger.debug(
+                    f"Generation attempt {attempt + 1}/{max_retries}, "
+                    f"max_tokens={current_max_tokens}"
+                )
+
+                # Query LLM with structured output
+                response = self.llm.query(
+                    question=prompt,
+                    output_schema=GeneratedRule,
+                    temperature=0.3,  # Lower temperature for more consistent rule generation
+                    max_tokens=current_max_tokens,
+                )
+
+                rule = response.content
+
+                # Double-check completeness (schema validation should catch this,
+                # but we verify explicitly for safety)
+                is_valid, error_msg = validate_asp_rule_completeness(rule.asp_rule)
+                if not is_valid:
+                    logger.warning(f"Generated rule failed completeness check: {error_msg}")
+                    last_error = error_msg
+                    continue  # Retry
+
+                logger.info(
+                    f"Generated rule with confidence {rule.confidence:.2f}: {rule.asp_rule[:100]}"
+                )
+                return rule
+
+            except LLMParsingError as e:
+                logger.warning(f"LLM parsing error on attempt {attempt + 1}: {e}")
+                last_error = str(e)
+                continue  # Retry
+
+            except ValueError as e:
+                # Pydantic validation error (including our ASP validation)
+                logger.warning(f"Validation error on attempt {attempt + 1}: {e}")
+                last_error = str(e)
+                continue  # Retry
+
+        # All retries exhausted
+        error_message = (
+            f"Failed to generate complete ASP rule after {max_retries} attempts. "
+            f"Last error: {last_error}"
+        )
+        logger.error(error_message)
+        raise RuleGenerationError(
+            message=error_message,
+            attempts=max_retries,
+            last_error=last_error,
+        )
 
     def generate_from_case(
         self,
@@ -110,9 +192,13 @@ class RuleGenerator:
         jurisdiction: str = "Unknown",
         existing_predicates: Optional[List[str]] = None,
         focus: Optional[str] = None,
+        max_retries: int = MAX_GENERATION_RETRIES,
     ) -> GeneratedRule:
         """
         Extract ASP rule from case law.
+
+        Implements retry logic with increased token limits to handle truncation.
+        Validates that generated rules are complete before returning.
 
         Args:
             case_text: Excerpt from judicial opinion
@@ -120,9 +206,13 @@ class RuleGenerator:
             jurisdiction: Jurisdiction (e.g., "CA", "Federal")
             existing_predicates: List of predicates that can be referenced
             focus: Specific aspect to focus on
+            max_retries: Maximum number of retry attempts for truncated rules
 
         Returns:
             GeneratedRule extracted from case holding
+
+        Raises:
+            RuleGenerationError: If rule generation fails after all retries
 
         Example:
             >>> rule = generator.generate_from_case(
@@ -147,17 +237,71 @@ class RuleGenerator:
             focus=f"\n**Focus:** {focus}" if focus else "",
         )
 
-        # Query LLM
-        response = self.llm.query(
-            question=prompt,
-            output_schema=GeneratedRule,
-            temperature=0.3,
+        # Add explicit completeness instruction to prompt
+        completeness_instruction = (
+            "\n\n**CRITICAL:** The ASP rule MUST be complete and well-formed. "
+            "Ensure the rule:\n"
+            "1. Ends with a period '.'\n"
+            "2. Has balanced parentheses\n"
+            "3. Has a complete rule body (no trailing underscores or incomplete predicates)\n"
+            "4. Is valid Clingo ASP syntax\n"
         )
+        prompt = prompt + completeness_instruction
 
-        rule = response.content
-        logger.info(f"Extracted rule from {citation} with confidence {rule.confidence:.2f}")
+        last_error: Optional[str] = None
 
-        return rule
+        for attempt in range(max_retries):
+            # Escalate max_tokens on retries
+            current_max_tokens = DEFAULT_MAX_TOKENS if attempt == 0 else RETRY_MAX_TOKENS
+
+            try:
+                logger.debug(
+                    f"Case rule generation attempt {attempt + 1}/{max_retries}, "
+                    f"max_tokens={current_max_tokens}"
+                )
+
+                # Query LLM
+                response = self.llm.query(
+                    question=prompt,
+                    output_schema=GeneratedRule,
+                    temperature=0.3,
+                    max_tokens=current_max_tokens,
+                )
+
+                rule = response.content
+
+                # Double-check completeness
+                is_valid, error_msg = validate_asp_rule_completeness(rule.asp_rule)
+                if not is_valid:
+                    logger.warning(f"Generated rule failed completeness check: {error_msg}")
+                    last_error = error_msg
+                    continue  # Retry
+
+                logger.info(f"Extracted rule from {citation} with confidence {rule.confidence:.2f}")
+                return rule
+
+            except LLMParsingError as e:
+                logger.warning(f"LLM parsing error on attempt {attempt + 1}: {e}")
+                last_error = str(e)
+                continue  # Retry
+
+            except ValueError as e:
+                # Pydantic validation error (including our ASP validation)
+                logger.warning(f"Validation error on attempt {attempt + 1}: {e}")
+                last_error = str(e)
+                continue  # Retry
+
+        # All retries exhausted
+        error_message = (
+            f"Failed to generate complete ASP rule from case {citation} "
+            f"after {max_retries} attempts. Last error: {last_error}"
+        )
+        logger.error(error_message)
+        raise RuleGenerationError(
+            message=error_message,
+            attempts=max_retries,
+            last_error=last_error,
+        )
 
     def fill_knowledge_gap(
         self,
