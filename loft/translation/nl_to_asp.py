@@ -31,6 +31,24 @@ class NLToASPResult:
     ambiguities: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
+    @property
+    def asp_code(self) -> str:
+        """Get ASP code as a single string (convenience property for tests)."""
+        return " ".join(self.asp_facts) if self.asp_facts else ""
+
+    @property
+    def predicates_used(self) -> List[str]:
+        """Extract predicates used in ASP facts."""
+        # Simple extraction - get predicate names from facts
+        predicates = []
+        for fact in self.asp_facts:
+            # Extract predicate name (text before '(')
+            if "(" in fact:
+                pred = fact.split("(")[0].strip()
+                if pred and pred not in predicates:
+                    predicates.append(pred)
+        return predicates
+
 
 def nl_to_structured(
     nl_response: str,
