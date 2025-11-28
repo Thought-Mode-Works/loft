@@ -235,3 +235,101 @@ class CaseworkExplorer:
                 "rules": self.knowledge_base_rules,
             },
         }
+
+
+def main():
+    """Main entry point for casework explorer CLI."""
+    import argparse
+    import json
+
+    parser = argparse.ArgumentParser(
+        description="Automated Casework Explorer - Process legal scenarios and learn rules"
+    )
+    parser.add_argument(
+        "--dataset",
+        type=str,
+        required=True,
+        help="Path to dataset directory containing JSON scenario files",
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        default=None,
+        help="Path to output JSON file for results (default: reports/casework_TIMESTAMP.json)",
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="claude-3-5-haiku-20241022",
+        help="LLM model to use (default: claude-3-5-haiku-20241022)",
+    )
+    parser.add_argument(
+        "--max-cases",
+        type=int,
+        default=None,
+        help="Maximum number of cases to process (default: all)",
+    )
+    parser.add_argument(
+        "--difficulty",
+        type=str,
+        choices=["easy", "medium", "hard"],
+        default=None,
+        help="Filter by difficulty level",
+    )
+    parser.add_argument(
+        "--no-learning",
+        action="store_true",
+        help="Disable rule incorporation (exploration only)",
+    )
+
+    args = parser.parse_args()
+
+    # Create output path if not specified
+    if not args.output:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_dir = Path("reports")
+        output_dir.mkdir(exist_ok=True)
+        args.output = str(output_dir / f"casework_{timestamp}.json")
+
+    # Run explorer
+    logger.info(f"Starting casework exploration")
+    logger.info(f"Dataset: {args.dataset}")
+    logger.info(f"Model: {args.model}")
+    logger.info(f"Learning: {not args.no_learning}")
+
+    explorer = CaseworkExplorer(
+        dataset_dir=Path(args.dataset),
+        model=args.model,
+        enable_learning=not args.no_learning,
+    )
+
+    metrics = explorer.explore_dataset(
+        max_cases=args.max_cases,
+        difficulty=args.difficulty,
+    )
+
+    # Generate and save report
+    from experiments.casework.reporting import generate_html_report
+
+    report_data = explorer.get_report_data()
+
+    # Save JSON report
+    with open(args.output, "w") as f:
+        json.dump(report_data, f, indent=2)
+
+    logger.info(f"Results saved to: {args.output}")
+
+    # Print summary
+    print("\n" + "=" * 80)
+    print("Casework Exploration Summary")
+    print("=" * 80)
+    print(f"Cases processed: {metrics.cases_processed}")
+    print(f"Accuracy: {metrics.current_accuracy:.1%}")
+    print(f"Rules incorporated: {len(explorer.knowledge_base_rules)}")
+    print(f"Total processing time: {metrics.total_processing_time:.2f}s")
+    print(f"\nFull results: {args.output}")
+    print("=" * 80)
+
+
+if __name__ == "__main__":
+    main()

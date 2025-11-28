@@ -84,6 +84,8 @@ class PlaygroundCLI:
             self.cmd_status()
         elif cmd == "export":
             self.cmd_export(args)
+        elif cmd == "show-rules":
+            self.cmd_show_rules()
         else:
             console.print(f"[red]Unknown command:[/red] {cmd}")
             console.print("Type 'help' for available commands")
@@ -101,6 +103,7 @@ class PlaygroundCLI:
             ("generate-rule <gap-id>", "Generate candidate rule for a gap"),
             ("validate-rule <rule-id>", "Validate a generated rule"),
             ("incorporate-rule <rule-id>", "Incorporate validated rule into KB"),
+            ("show-rules", "Show all generated and incorporated rules"),
             ("predict", "Make prediction on loaded scenario"),
             ("status", "Show current session status"),
             ("export <file>", "Export session data to JSON"),
@@ -265,14 +268,21 @@ class PlaygroundCLI:
         try:
             result = self.session.incorporate_rule(args)
 
+            # Show the actual rule that was incorporated
+            rule_asp = result.get('asp_rule', 'N/A')
+            asp_syntax = Syntax(rule_asp, "prolog", theme="monokai", line_numbers=False)
+
             console.print(
                 Panel(
                     f"[bold green]Successfully incorporated rule: {result['rule_id']}[/bold green]\n\n"
-                    f"The rule has been added to the knowledge base.",
+                    f"The rule has been added to the knowledge base.\n\n"
+                    f"[bold]Rule:[/bold]",
                     title="Rule Incorporated",
                     border_style="green",
                 )
             )
+            console.print(asp_syntax)
+            console.print("\n[cyan]Tip:[/cyan] Use 'show-rules' to see all rules, or 'export' to save session data")
 
         except Exception as e:
             console.print(f"[red]Error incorporating rule:[/red] {e}")
@@ -307,6 +317,52 @@ class PlaygroundCLI:
             table.add_row(key.replace("_", " ").title(), str(value))
 
         console.print(table)
+
+    def cmd_show_rules(self) -> None:
+        """Show all generated and incorporated rules."""
+        if not self.session.generated_rules:
+            console.print("[yellow]No rules generated yet.[/yellow]")
+            console.print("Use 'identify-gaps' and 'generate-rule <gap-id>' to create rules.")
+            return
+
+        # Create table of all rules
+        table = Table(title="Generated Rules", show_header=True, header_style="bold magenta")
+        table.add_column("Rule ID", style="cyan")
+        table.add_column("Status", style="white")
+        table.add_column("Confidence", style="white")
+        table.add_column("ASP Rule", style="green")
+
+        for rule_id, rule in self.session.generated_rules.items():
+            # Determine status
+            if rule_id in self.session.incorporated_rules:
+                status = "[bold green]Incorporated[/bold green]"
+            elif rule.validation_status == "accept":
+                status = "[green]Accepted[/green]"
+            elif rule.validation_status == "reject":
+                status = "[red]Rejected[/red]"
+            elif rule.validation_status:
+                status = f"[yellow]{rule.validation_status.title()}[/yellow]"
+            else:
+                status = "[dim]Not validated[/dim]"
+
+            # Truncate long rules
+            rule_text = rule.asp_rule
+            if len(rule_text) > 60:
+                rule_text = rule_text[:57] + "..."
+
+            table.add_row(
+                rule_id,
+                status,
+                f"{rule.confidence:.2f}",
+                rule_text,
+            )
+
+        console.print(table)
+
+        # Show incorporated rules summary
+        if self.session.incorporated_rules:
+            console.print(f"\n[green]✓ {len(self.session.incorporated_rules)} rule(s) incorporated into knowledge base[/green]")
+            console.print("[cyan]Tip:[/cyan] Use 'export' to save all rules to a file")
 
     def cmd_export(self, args: str) -> None:
         """Export session data."""
