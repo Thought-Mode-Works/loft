@@ -308,16 +308,26 @@ def main():
         difficulty=args.difficulty,
     )
 
-    # Generate and save report
-    from experiments.casework.reporting import generate_html_report
+    # Generate and save reports
+    from experiments.casework.reporting import ReportGenerator
 
     report_data = explorer.get_report_data()
+    report_gen = ReportGenerator(report_data)
 
     # Save JSON report
-    with open(args.output, "w") as f:
-        json.dump(report_data, f, indent=2)
+    output_path = Path(args.output)
+    report_gen.generate_json(output_path)
+    logger.info(f"JSON report saved to: {args.output}")
 
-    logger.info(f"Results saved to: {args.output}")
+    # Generate text report
+    text_output = output_path.with_suffix(".txt")
+    report_gen.generate_text(text_output)
+    logger.info(f"Text report saved to: {text_output}")
+
+    # Generate HTML report
+    html_output = output_path.with_suffix(".html")
+    report_gen.generate_html(html_output)
+    logger.info(f"HTML report saved to: {html_output}")
 
     # Print summary
     print("\n" + "=" * 80)
