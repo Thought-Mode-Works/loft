@@ -19,7 +19,15 @@ from loft.neural.providers import AnthropicProvider
 @pytest.fixture(scope="module")
 def nl_to_asp():
     """Initialize NL to ASP translator."""
-    provider = AnthropicProvider(model_name="claude-haiku-3-5-20241022")
+    import os
+
+    api_key = os.getenv("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        raise ValueError(
+            "ANTHROPIC_API_KEY environment variable not set. "
+            "Set it with: export ANTHROPIC_API_KEY='your-key-here'"
+        )
+    provider = AnthropicProvider(api_key=api_key, model="claude-haiku-3-5-20241022")
     llm = LLMInterface(provider=provider)
     return NLToASPTranslator(llm=llm)
 

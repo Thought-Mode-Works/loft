@@ -55,7 +55,15 @@ TRANSLATION_TEST_CASES = [
 def translation_components():
     """Initialize translation components once for all tests."""
     # Use Haiku for cost-effectiveness in testing
-    provider = AnthropicProvider(model_name="claude-haiku-3-5-20241022")
+    import os
+
+    api_key = os.getenv("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        raise ValueError(
+            "ANTHROPIC_API_KEY environment variable not set. "
+            "Set it with: export ANTHROPIC_API_KEY='your-key-here'"
+        )
+    provider = AnthropicProvider(api_key=api_key, model="claude-haiku-3-5-20241022")
     llm = LLMInterface(provider=provider)
 
     nl_to_asp_translator = NLToASPTranslator(llm=llm)

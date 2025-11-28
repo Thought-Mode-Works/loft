@@ -52,7 +52,15 @@ class CaseworkExplorer:
 
         # Initialize components
         self.asp_core = ASPCore()
-        provider = AnthropicProvider(model_name=model)
+        import os
+
+        api_key = os.getenv("ANTHROPIC_API_KEY", "")
+        if not api_key:
+            raise ValueError(
+                "ANTHROPIC_API_KEY environment variable not set. "
+                "Set it with: export ANTHROPIC_API_KEY='your-key-here'"
+            )
+        provider = AnthropicProvider(api_key=api_key, model=model)
         self.llm = LLMInterface(provider=provider)
         self.rule_generator = RuleGenerator(llm=self.llm, asp_core=self.asp_core)
         self.validation_pipeline = ValidationPipeline(min_confidence=0.6)
