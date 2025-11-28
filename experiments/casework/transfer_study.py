@@ -73,6 +73,34 @@ class TransferResult:
         self.few_shot_advantage = self.few_shot_accuracy - self.scratch_accuracy
 
 
+@dataclass
+class SameDomainResult:
+    """Results from a same-domain learning experiment."""
+
+    domain: str
+    total_cases: int
+    train_cases: int
+    test_cases: int
+
+    # Training results
+    rules_learned: int
+    train_accuracy: float
+
+    # Test results (rules applied to held-out test set)
+    test_accuracy: float
+    test_coverage: float
+    test_unknown: int
+
+    # Final KB accuracy (re-evaluate all with complete KB)
+    final_kb_accuracy: float
+
+    # Learned rules for inspection
+    learned_rules: List[str]
+
+    # ASP reasoning statistics
+    reasoning_stats: Optional[dict] = None
+
+
 class TransferStudy:
     """
     Cross-domain transfer learning experiments.
@@ -86,6 +114,99 @@ class TransferStudy:
         self.model = model
         self.asp_reasoner = ASPReasoner()
         self._unknown_predictions: List[str] = []  # Track scenarios with unknown predictions
+
+    def run_same_domain_experiment(
+        self,
+        dataset_path: Path,
+        train_ratio: float = 0.7,
+    ) -> SameDomainResult:
+        """
+        Run same-domain learning experiment with train/test split.
+
+        This validates the pipeline by testing on the same domain,
+        eliminating predicate ontology mismatch issues.
+
+        Args:
+            dataset_path: Path to dataset directory
+            train_ratio: Fraction of data for training (default: 0.7)
+
+        Returns:
+            SameDomainResult with metrics
+        """
+        loader = DatasetLoader(dataset_path)
+        domain = dataset_path.name
+
+        logger.info(f"Starting same-domain experiment: {domain}")
+
+        # Load and split scenarios
+        all_scenarios = loader.load_all()
+        split_idx = int(len(all_scenarios) * train_ratio)
+        train_scenarios = all_scenarios[:split_idx]
+        test_scenarios = all_scenarios[split_idx:]
+
+        logger.info(
+            f"Split: {len(train_scenarios)} train, {len(test_scenarios)} test "
+            f"({train_ratio:.0%}/{1 - train_ratio:.0%})"
+        )
+
+        # Step 1: Train on training set
+        logger.info("Step 1: Training on training set...")
+        explorer = CaseworkExplorer(
+            dataset_dir=dataset_path, model=self.model, enable_learning=True
+        )
+
+        # Only process training scenarios
+        train_metrics = explorer.explore_dataset(max_cases=len(train_scenarios))
+        train_accuracy = train_metrics.get_current_accuracy()
+        rules_learned = len(explorer.knowledge_base_rules)
+
+        logger.info(f"Training complete: {train_accuracy:.1%} accuracy, {rules_learned} rules")
+
+        # Log the learned rules for inspection
+        logger.info("Learned rules:")
+        for i, rule in enumerate(explorer.knowledge_base_rules, 1):
+            logger.info(f"  {i}. {rule[:100]}...")
+
+        # Step 2: Test on held-out test set
+        logger.info("Step 2: Testing on held-out test set...")
+        self.asp_reasoner.reset_stats()
+        self._unknown_predictions = []
+
+        test_accuracy, test_coverage = self._test_knowledge_base_asp(
+            explorer.knowledge_base_rules, test_scenarios
+        )
+        test_unknown = len(self._unknown_predictions)
+
+        logger.info(
+            f"Test accuracy: {test_accuracy:.1%} "
+            f"(coverage: {test_coverage:.1%}, unknown: {test_unknown})"
+        )
+
+        # Step 3: Calculate final KB accuracy on ALL scenarios
+        logger.info("Step 3: Re-evaluating all scenarios with complete KB...")
+        self.asp_reasoner.reset_stats()
+        self._unknown_predictions = []
+
+        final_accuracy, final_coverage = self._test_knowledge_base_asp(
+            explorer.knowledge_base_rules, all_scenarios
+        )
+
+        logger.info(f"Final KB accuracy (all scenarios): {final_accuracy:.1%}")
+
+        return SameDomainResult(
+            domain=domain,
+            total_cases=len(all_scenarios),
+            train_cases=len(train_scenarios),
+            test_cases=len(test_scenarios),
+            rules_learned=rules_learned,
+            train_accuracy=train_accuracy,
+            test_accuracy=test_accuracy,
+            test_coverage=test_coverage,
+            test_unknown=test_unknown,
+            final_kb_accuracy=final_accuracy,
+            learned_rules=explorer.knowledge_base_rules.copy(),
+            reasoning_stats=self.asp_reasoner.get_stats().to_dict(),
+        )
 
     def run_transfer_experiment(
         self,
@@ -335,23 +456,79 @@ class TransferStudy:
 
         logger.info(f"Transfer study report saved to: {output_path}")
 
+    def generate_same_domain_report(self, result: SameDomainResult, output_path: Path) -> None:
+        """Generate same-domain study report."""
+        report = {
+            "experiment": {
+                "type": "same_domain_learning",
+                "timestamp": datetime.now().isoformat(),
+                "domain": result.domain,
+                "reasoning_method": "asp",
+            },
+            "dataset": {
+                "total_cases": result.total_cases,
+                "train_cases": result.train_cases,
+                "test_cases": result.test_cases,
+            },
+            "training_results": {
+                "rules_learned": result.rules_learned,
+                "train_accuracy": result.train_accuracy,
+            },
+            "test_results": {
+                "test_accuracy": result.test_accuracy,
+                "test_coverage": result.test_coverage,
+                "test_unknown": result.test_unknown,
+            },
+            "final_evaluation": {
+                "final_kb_accuracy": result.final_kb_accuracy,
+            },
+            "learned_rules": result.learned_rules,
+            "asp_reasoning_stats": result.reasoning_stats,
+        }
+
+        # Save JSON
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, "w") as f:
+            json.dump(report, f, indent=2)
+
+        logger.info(f"Same-domain study report saved to: {output_path}")
+
 
 def main():
     """Main entry point for transfer study CLI."""
     import argparse
 
-    parser = argparse.ArgumentParser(description="Cross-Domain Transfer Study for Legal Knowledge")
+    parser = argparse.ArgumentParser(
+        description="Transfer Learning Study for Legal Knowledge (Cross-Domain or Same-Domain)"
+    )
+
+    # Mode selection
+    parser.add_argument(
+        "--same-domain",
+        type=str,
+        default=None,
+        metavar="PATH",
+        help="Run same-domain experiment with train/test split on this dataset",
+    )
+    parser.add_argument(
+        "--train-ratio",
+        type=float,
+        default=0.7,
+        help="Train/test split ratio for same-domain mode (default: 0.7)",
+    )
+
+    # Cross-domain arguments
     parser.add_argument(
         "--source-domain",
         type=str,
-        required=True,
-        help="Path to source domain dataset",
+        default=None,
+        help="Path to source domain dataset (for cross-domain mode)",
     )
     parser.add_argument(
         "--target-domain",
         type=str,
-        required=True,
-        help="Path to target domain dataset",
+        default=None,
+        help="Path to target domain dataset (for cross-domain mode)",
     )
     parser.add_argument(
         "--few-shot",
@@ -359,6 +536,8 @@ def main():
         default=10,
         help="Number of target cases for few-shot learning (default: 10)",
     )
+
+    # Common arguments
     parser.add_argument(
         "--model",
         type=str,
@@ -369,67 +548,133 @@ def main():
         "--output",
         type=str,
         default=None,
-        help="Output path for report (default: reports/transfer_TIMESTAMP.json)",
+        help="Output path for report (default: auto-generated)",
     )
 
     args = parser.parse_args()
 
+    # Validate arguments
+    if args.same_domain:
+        # Same-domain mode
+        mode = "same_domain"
+    elif args.source_domain and args.target_domain:
+        # Cross-domain mode
+        mode = "cross_domain"
+    else:
+        parser.error(
+            "Either --same-domain PATH or both --source-domain and --target-domain are required"
+        )
+
     # Create output path if not specified
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_dir = Path("reports")
+    output_dir.mkdir(exist_ok=True)
+
     if not args.output:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_dir = Path("reports")
-        output_dir.mkdir(exist_ok=True)
-        args.output = str(output_dir / f"transfer_{timestamp}.json")
+        if mode == "same_domain":
+            domain_name = Path(args.same_domain).name
+            args.output = str(output_dir / f"same_domain_{domain_name}_{timestamp}.json")
+        else:
+            args.output = str(output_dir / f"transfer_{timestamp}.json")
 
     # Run experiment
     study = TransferStudy(model=args.model)
 
-    logger.info("=" * 80)
-    logger.info("Cross-Domain Transfer Learning Experiment")
-    logger.info("=" * 80)
+    if mode == "same_domain":
+        logger.info("=" * 80)
+        logger.info("Same-Domain Learning Experiment")
+        logger.info("=" * 80)
 
-    result = study.run_transfer_experiment(
-        source_dataset=Path(args.source_domain),
-        target_dataset=Path(args.target_domain),
-        few_shot_count=args.few_shot,
-    )
+        result = study.run_same_domain_experiment(
+            dataset_path=Path(args.same_domain),
+            train_ratio=args.train_ratio,
+        )
 
-    # Generate report
-    study.generate_report(result, Path(args.output))
+        # Generate report
+        study.generate_same_domain_report(result, Path(args.output))
 
-    # Print summary
-    print("\n" + "=" * 80)
-    print("Transfer Study Results (ASP Reasoning)")
-    print("=" * 80)
-    print(f"Source Domain: {result.source_domain}")
-    print(f"Target Domain: {result.target_domain}")
-    print()
-    print("Source Training:")
-    print(
-        f"  Baseline → Final: {result.source_baseline_accuracy:.1%} → {result.source_final_accuracy:.1%}"
-    )
-    print(f"  Rules Learned: {result.source_rules_learned}")
-    print()
-    print("Transfer Results (ASP Reasoning):")
-    print(f"  Zero-shot Accuracy: {result.zero_shot_accuracy:.1%}")
-    print(f"  Zero-shot Coverage: {result.zero_shot_coverage:.1%}")
-    print(f"  Unknown Predictions: {result.zero_shot_unknown}")
-    print(f"  Transfer Rate: {result.transfer_rate:.1%}")
-    print()
-    print("Few-shot Learning:")
-    print(f"  Few-shot Accuracy: {result.few_shot_accuracy:.1%} ({args.few_shot} cases)")
-    print(f"  From-scratch Accuracy: {result.scratch_accuracy:.1%}")
-    print(f"  Advantage: {result.few_shot_advantage:+.1%}")
-    print()
-    if result.reasoning_stats:
-        print("ASP Reasoning Statistics:")
-        print(f"  Total Scenarios: {result.reasoning_stats.get('total_scenarios', 0)}")
-        print(f"  Correct Predictions: {result.reasoning_stats.get('correct_predictions', 0)}")
-        print(f"  Unknown Predictions: {result.reasoning_stats.get('unknown_predictions', 0)}")
-        print(f"  Reasoning Errors: {result.reasoning_stats.get('reasoning_errors', 0)}")
+        # Print summary
+        print("\n" + "=" * 80)
+        print("Same-Domain Learning Results (ASP Reasoning)")
+        print("=" * 80)
+        print(f"Domain: {result.domain}")
+        print(f"Dataset: {result.train_cases} train, {result.test_cases} test")
         print()
-    print(f"Full report: {args.output}")
-    print("=" * 80)
+        print("Training Results:")
+        print(f"  Rules Learned: {result.rules_learned}")
+        print(f"  Train Accuracy: {result.train_accuracy:.1%}")
+        print()
+        print("Test Results (Held-out Set):")
+        print(f"  Test Accuracy: {result.test_accuracy:.1%}")
+        print(f"  Test Coverage: {result.test_coverage:.1%}")
+        print(f"  Unknown Predictions: {result.test_unknown}")
+        print()
+        print("Final KB Evaluation (All Scenarios):")
+        print(f"  Final Accuracy: {result.final_kb_accuracy:.1%}")
+        print()
+        print("Learned Rules:")
+        for i, rule in enumerate(result.learned_rules[:5], 1):
+            print(f"  {i}. {rule[:80]}...")
+        if len(result.learned_rules) > 5:
+            print(f"  ... and {len(result.learned_rules) - 5} more")
+        print()
+        if result.reasoning_stats:
+            print("ASP Reasoning Statistics:")
+            print(f"  Total Scenarios: {result.reasoning_stats.get('total_scenarios', 0)}")
+            print(f"  Correct Predictions: {result.reasoning_stats.get('correct_predictions', 0)}")
+            print(f"  Unknown Predictions: {result.reasoning_stats.get('unknown_predictions', 0)}")
+            print()
+        print(f"Full report: {args.output}")
+        print("=" * 80)
+
+    else:
+        # Cross-domain mode
+        logger.info("=" * 80)
+        logger.info("Cross-Domain Transfer Learning Experiment")
+        logger.info("=" * 80)
+
+        result = study.run_transfer_experiment(
+            source_dataset=Path(args.source_domain),
+            target_dataset=Path(args.target_domain),
+            few_shot_count=args.few_shot,
+        )
+
+        # Generate report
+        study.generate_report(result, Path(args.output))
+
+        # Print summary
+        print("\n" + "=" * 80)
+        print("Transfer Study Results (ASP Reasoning)")
+        print("=" * 80)
+        print(f"Source Domain: {result.source_domain}")
+        print(f"Target Domain: {result.target_domain}")
+        print()
+        print("Source Training:")
+        print(
+            f"  Baseline → Final: {result.source_baseline_accuracy:.1%} → {result.source_final_accuracy:.1%}"
+        )
+        print(f"  Rules Learned: {result.source_rules_learned}")
+        print()
+        print("Transfer Results (ASP Reasoning):")
+        print(f"  Zero-shot Accuracy: {result.zero_shot_accuracy:.1%}")
+        print(f"  Zero-shot Coverage: {result.zero_shot_coverage:.1%}")
+        print(f"  Unknown Predictions: {result.zero_shot_unknown}")
+        print(f"  Transfer Rate: {result.transfer_rate:.1%}")
+        print()
+        print("Few-shot Learning:")
+        print(f"  Few-shot Accuracy: {result.few_shot_accuracy:.1%} ({args.few_shot} cases)")
+        print(f"  From-scratch Accuracy: {result.scratch_accuracy:.1%}")
+        print(f"  Advantage: {result.few_shot_advantage:+.1%}")
+        print()
+        if result.reasoning_stats:
+            print("ASP Reasoning Statistics:")
+            print(f"  Total Scenarios: {result.reasoning_stats.get('total_scenarios', 0)}")
+            print(f"  Correct Predictions: {result.reasoning_stats.get('correct_predictions', 0)}")
+            print(f"  Unknown Predictions: {result.reasoning_stats.get('unknown_predictions', 0)}")
+            print(f"  Reasoning Errors: {result.reasoning_stats.get('reasoning_errors', 0)}")
+            print()
+        print(f"Full report: {args.output}")
+        print("=" * 80)
 
 
 if __name__ == "__main__":
