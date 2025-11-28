@@ -131,9 +131,7 @@ class RuleGenerator:
 
         for attempt in range(max_retries):
             # Escalate max_tokens on retries
-            current_max_tokens = (
-                DEFAULT_MAX_TOKENS if attempt == 0 else RETRY_MAX_TOKENS
-            )
+            current_max_tokens = DEFAULT_MAX_TOKENS if attempt == 0 else RETRY_MAX_TOKENS
 
             try:
                 logger.debug(
@@ -155,15 +153,12 @@ class RuleGenerator:
                 # but we verify explicitly for safety)
                 is_valid, error_msg = validate_asp_rule_completeness(rule.asp_rule)
                 if not is_valid:
-                    logger.warning(
-                        f"Generated rule failed completeness check: {error_msg}"
-                    )
+                    logger.warning(f"Generated rule failed completeness check: {error_msg}")
                     last_error = error_msg
                     continue  # Retry
 
                 logger.info(
-                    f"Generated rule with confidence {rule.confidence:.2f}: "
-                    f"{rule.asp_rule[:100]}"
+                    f"Generated rule with confidence {rule.confidence:.2f}: {rule.asp_rule[:100]}"
                 )
                 return rule
 
@@ -257,9 +252,7 @@ class RuleGenerator:
 
         for attempt in range(max_retries):
             # Escalate max_tokens on retries
-            current_max_tokens = (
-                DEFAULT_MAX_TOKENS if attempt == 0 else RETRY_MAX_TOKENS
-            )
+            current_max_tokens = DEFAULT_MAX_TOKENS if attempt == 0 else RETRY_MAX_TOKENS
 
             try:
                 logger.debug(
@@ -280,15 +273,11 @@ class RuleGenerator:
                 # Double-check completeness
                 is_valid, error_msg = validate_asp_rule_completeness(rule.asp_rule)
                 if not is_valid:
-                    logger.warning(
-                        f"Generated rule failed completeness check: {error_msg}"
-                    )
+                    logger.warning(f"Generated rule failed completeness check: {error_msg}")
                     last_error = error_msg
                     continue  # Retry
 
-                logger.info(
-                    f"Extracted rule from {citation} with confidence {rule.confidence:.2f}"
-                )
+                logger.info(f"Extracted rule from {citation} with confidence {rule.confidence:.2f}")
                 return rule
 
             except LLMParsingError as e:
@@ -493,8 +482,7 @@ class RuleGenerator:
 
         issue_counts = Counter(all_issues)
         common_issues = [
-            f"- {issue} (mentioned {count}x)"
-            for issue, count in issue_counts.most_common(5)
+            f"- {issue} (mentioned {count}x)" for issue, count in issue_counts.most_common(5)
         ]
         common_issues_str = (
             "\n".join(common_issues) if common_issues else "No common issues identified"
