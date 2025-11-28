@@ -220,15 +220,23 @@ class PlaygroundSession:
             proposer_reasoning=rule.reasoning,
         )
 
+        # Extract stage results for summary
+        syntax_valid = report.stage_results.get("syntactic", {})
+        semantic_result = report.stage_results.get("semantic", {})
+
+        # Build summary from stage results
+        syntax_status = "PASS" if getattr(syntax_valid, "is_valid", False) else "FAIL"
+        semantic_warnings = len(getattr(semantic_result, "warnings", []))
+
         validation = ValidationRecord(
             rule_id=rule_id,
-            decision=report.overall_decision,
-            confidence=report.final_confidence,
-            report_summary=f"Syntax: {report.syntax_valid}, Semantic: {report.semantic_score:.2f}",
+            decision=report.final_decision,
+            confidence=report.aggregate_confidence,
+            report_summary=f"Syntax: {syntax_status}, Semantic warnings: {semantic_warnings}",
         )
 
         self.validation_results[rule_id] = validation
-        rule.validation_status = report.overall_decision
+        rule.validation_status = report.final_decision
 
         self._log_command("validate_rule", {"rule_id": rule_id, "decision": validation.decision})
 
