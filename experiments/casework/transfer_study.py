@@ -3,13 +3,16 @@ Cross-Domain Transfer Study for Legal Knowledge.
 
 Tests how well knowledge learned in one legal domain transfers to another.
 Implements zero-shot and few-shot transfer learning experiments.
+
+Uses actual ASP (Answer Set Programming) reasoning instead of heuristics
+to make predictions based on learned rules and scenario facts.
 """
 
 import sys
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, List
+from typing import Any, List, Optional
 from dataclasses import dataclass
 from loguru import logger
 
@@ -17,7 +20,8 @@ from loguru import logger
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from experiments.casework.explorer import CaseworkExplorer
-from experiments.casework.dataset_loader import DatasetLoader
+from experiments.casework.dataset_loader import DatasetLoader, LegalScenario
+from loft.symbolic.asp_reasoner import ASPReasoner
 
 
 @dataclass
@@ -50,6 +54,11 @@ class TransferResult:
     transfer_rate: float = 0.0  # (zero_shot - baseline) / (final - baseline)
     few_shot_advantage: float = 0.0  # few_shot_accuracy - scratch_accuracy
 
+    # ASP reasoning statistics (new)
+    zero_shot_coverage: float = 0.0  # % of scenarios with ASP predictions
+    zero_shot_unknown: int = 0  # Scenarios where ASP returned "unknown"
+    reasoning_stats: Optional[dict] = None  # Detailed ASP reasoning stats
+
     def __post_init__(self):
         """Calculate derived metrics."""
         # Transfer rate: how much of the learning transferred
@@ -69,11 +78,14 @@ class TransferStudy:
     Cross-domain transfer learning experiments.
 
     Tests how well knowledge learned in one legal domain applies to another.
+    Uses actual ASP reasoning for predictions instead of heuristics.
     """
 
     def __init__(self, model: str = "claude-3-5-haiku-20241022"):
         """Initialize transfer study."""
         self.model = model
+        self.asp_reasoner = ASPReasoner()
+        self._unknown_predictions: List[str] = []  # Track scenarios with unknown predictions
 
     def run_transfer_experiment(
         self,
@@ -118,14 +130,23 @@ class TransferStudy:
             f"({source_rules} rules)"
         )
 
-        # Step 2: Test zero-shot on target domain
+        # Step 2: Test zero-shot on target domain (using ASP reasoning)
         logger.info(f"Step 2: Testing zero-shot transfer to {target_domain}...")
         target_scenarios = target_loader.load_all()
 
-        zero_shot_acc = self._test_knowledge_base(
+        # Reset ASP reasoner stats and unknown predictions for this test
+        self.asp_reasoner.reset_stats()
+        self._unknown_predictions = []
+
+        zero_shot_acc, zero_shot_coverage = self._test_knowledge_base_asp(
             source_explorer.knowledge_base_rules, target_scenarios
         )
-        logger.info(f"Zero-shot accuracy: {zero_shot_acc:.1%}")
+        zero_shot_unknown = len(self._unknown_predictions)
+
+        logger.info(
+            f"Zero-shot accuracy: {zero_shot_acc:.1%} "
+            f"(coverage: {zero_shot_coverage:.1%}, unknown: {zero_shot_unknown})"
+        )
 
         # Step 3: Few-shot learning on target
         logger.info(f"Step 3: Few-shot learning ({few_shot_count} cases)...")
@@ -154,7 +175,7 @@ class TransferStudy:
 
         logger.info(f"From-scratch accuracy: {scratch_acc:.1%} ({scratch_rules} rules)")
 
-        # Create result
+        # Create result with ASP reasoning statistics
         result = TransferResult(
             source_domain=source_domain,
             target_domain=target_domain,
@@ -169,6 +190,9 @@ class TransferStudy:
             few_shot_rules_learned=few_shot_rules,
             scratch_accuracy=scratch_acc,
             scratch_rules_learned=scratch_rules,
+            zero_shot_coverage=zero_shot_coverage,
+            zero_shot_unknown=zero_shot_unknown,
+            reasoning_stats=self.asp_reasoner.get_stats().to_dict(),
         )
 
         return result
@@ -184,27 +208,90 @@ class TransferStudy:
 
         return correct / len(scenarios) if scenarios else 0.0
 
-    def _test_knowledge_base(self, knowledge_base: List[str], scenarios: List[Any]) -> float:
-        """Test knowledge base on scenarios without learning."""
-        # For MVP, use simple heuristic
-        # In full implementation, would use ASP core with knowledge base
+    def _test_knowledge_base_asp(
+        self, knowledge_base: List[str], scenarios: List[LegalScenario]
+    ) -> tuple[float, float]:
+        """
+        Test knowledge base on scenarios using actual ASP reasoning.
+
+        Args:
+            knowledge_base: List of ASP rules
+            scenarios: List of legal scenarios to test
+
+        Returns:
+            Tuple of (accuracy, coverage) where:
+            - accuracy: Fraction of definitive predictions that were correct
+            - coverage: Fraction of scenarios with definitive (non-unknown) predictions
+        """
         correct = 0
+        total_definitive = 0
+
         for scenario in scenarios:
-            # Simplified: predict based on whether KB has relevant rules
-            # In reality, would run ASP solver with KB + scenario facts
-            if "writing" in scenario.description.lower():
-                prediction = (
-                    "enforceable"
-                    if any("writing" in rule for rule in knowledge_base)
-                    else "unenforceable"
+            # Get ASP facts from scenario
+            asp_facts = scenario.asp_facts or ""
+
+            if not asp_facts:
+                # No ASP facts available - log and skip
+                logger.debug(f"No ASP facts for scenario {scenario.scenario_id}, skipping")
+                self._unknown_predictions.append(scenario.scenario_id)
+                continue
+
+            # Make prediction using ASP reasoning
+            result = self.asp_reasoner.reason(knowledge_base, asp_facts)
+
+            if result.prediction == "unknown":
+                # Track unknown predictions separately
+                self._unknown_predictions.append(scenario.scenario_id)
+                logger.debug(
+                    f"ASP returned unknown for {scenario.scenario_id}: "
+                    f"derived atoms = {result.derived_atoms}"
                 )
             else:
-                prediction = "enforceable"
+                # Count definitive predictions
+                total_definitive += 1
+                if result.prediction == scenario.ground_truth:
+                    correct += 1
+                else:
+                    logger.debug(
+                        f"Incorrect prediction for {scenario.scenario_id}: "
+                        f"predicted {result.prediction}, expected {scenario.ground_truth}"
+                    )
 
-            if prediction == scenario.ground_truth:
-                correct += 1
+            # Update reasoner stats
+            is_correct = (
+                result.prediction == scenario.ground_truth
+                if result.prediction != "unknown"
+                else None
+            )
+            self.asp_reasoner.stats.update(result, is_correct)
 
-        return correct / len(scenarios) if scenarios else 0.0
+        # Calculate metrics
+        accuracy = correct / total_definitive if total_definitive > 0 else 0.0
+        coverage = total_definitive / len(scenarios) if scenarios else 0.0
+
+        return accuracy, coverage
+
+    def _make_asp_prediction(
+        self, knowledge_base: List[str], scenario: LegalScenario
+    ) -> tuple[str, float]:
+        """
+        Make a single prediction using ASP reasoning.
+
+        Args:
+            knowledge_base: List of ASP rules
+            scenario: Legal scenario to predict
+
+        Returns:
+            Tuple of (prediction, confidence)
+        """
+        asp_facts = scenario.asp_facts or ""
+
+        if not asp_facts:
+            logger.warning(f"No ASP facts for scenario {scenario.scenario_id}")
+            return "unknown", 0.0
+
+        result = self.asp_reasoner.reason(knowledge_base, asp_facts)
+        return result.prediction, result.confidence
 
     def generate_report(self, result: TransferResult, output_path: Path) -> None:
         """Generate transfer study report."""
@@ -214,6 +301,7 @@ class TransferStudy:
                 "timestamp": datetime.now().isoformat(),
                 "source_domain": result.source_domain,
                 "target_domain": result.target_domain,
+                "reasoning_method": "asp",  # Explicitly note ASP reasoning is used
             },
             "source_training": {
                 "cases": result.source_cases,
@@ -224,6 +312,8 @@ class TransferStudy:
             },
             "transfer_results": {
                 "zero_shot_accuracy": result.zero_shot_accuracy,
+                "zero_shot_coverage": result.zero_shot_coverage,
+                "zero_shot_unknown": result.zero_shot_unknown,
                 "transfer_rate": result.transfer_rate,
                 "few_shot_cases": result.few_shot_cases,
                 "few_shot_accuracy": result.few_shot_accuracy,
@@ -235,6 +325,7 @@ class TransferStudy:
                 "from_scratch_rules": result.scratch_rules_learned,
                 "few_shot_vs_scratch": result.few_shot_advantage,
             },
+            "asp_reasoning_stats": result.reasoning_stats,
         }
 
         # Save JSON
@@ -308,7 +399,7 @@ def main():
 
     # Print summary
     print("\n" + "=" * 80)
-    print("Transfer Study Results")
+    print("Transfer Study Results (ASP Reasoning)")
     print("=" * 80)
     print(f"Source Domain: {result.source_domain}")
     print(f"Target Domain: {result.target_domain}")
@@ -319,8 +410,10 @@ def main():
     )
     print(f"  Rules Learned: {result.source_rules_learned}")
     print()
-    print("Transfer Results:")
+    print("Transfer Results (ASP Reasoning):")
     print(f"  Zero-shot Accuracy: {result.zero_shot_accuracy:.1%}")
+    print(f"  Zero-shot Coverage: {result.zero_shot_coverage:.1%}")
+    print(f"  Unknown Predictions: {result.zero_shot_unknown}")
     print(f"  Transfer Rate: {result.transfer_rate:.1%}")
     print()
     print("Few-shot Learning:")
@@ -328,6 +421,13 @@ def main():
     print(f"  From-scratch Accuracy: {result.scratch_accuracy:.1%}")
     print(f"  Advantage: {result.few_shot_advantage:+.1%}")
     print()
+    if result.reasoning_stats:
+        print("ASP Reasoning Statistics:")
+        print(f"  Total Scenarios: {result.reasoning_stats.get('total_scenarios', 0)}")
+        print(f"  Correct Predictions: {result.reasoning_stats.get('correct_predictions', 0)}")
+        print(f"  Unknown Predictions: {result.reasoning_stats.get('unknown_predictions', 0)}")
+        print(f"  Reasoning Errors: {result.reasoning_stats.get('reasoning_errors', 0)}")
+        print()
     print(f"Full report: {args.output}")
     print("=" * 80)
 

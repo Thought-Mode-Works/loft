@@ -16,6 +16,7 @@ from loguru import logger
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from loft.symbolic.asp_core import ASPCore
+from loft.symbolic.asp_reasoner import ASPReasoner
 from loft.neural.llm_interface import LLMInterface
 from loft.neural.providers import AnthropicProvider
 from loft.neural.rule_generator import RuleGenerator
@@ -52,6 +53,7 @@ class CaseworkExplorer:
 
         # Initialize components
         self.asp_core = ASPCore()
+        self.asp_reasoner = ASPReasoner()  # For ASP-based predictions
         import os
 
         api_key = os.getenv("ANTHROPIC_API_KEY", "")
@@ -196,19 +198,39 @@ class CaseworkExplorer:
 
     def _make_prediction(self, scenario: LegalScenario) -> tuple[str, float]:
         """
-        Make a prediction for a scenario.
+        Make a prediction for a scenario using ASP reasoning.
+
+        Uses the current knowledge base rules combined with scenario facts
+        to derive predictions through actual ASP solving.
 
         Returns:
             Tuple of (prediction, confidence)
         """
-        # Simplified prediction logic for MVP
-        # In full implementation, would use ASP core with current KB
+        # Get ASP facts from scenario
+        asp_facts = scenario.asp_facts or ""
 
-        # For now, use a simple heuristic
-        if "writing" in scenario.description.lower() or "written" in scenario.description.lower():
-            return "enforceable", 0.7
+        if not asp_facts:
+            # Fall back to unknown if no ASP facts available
+            logger.debug(f"No ASP facts for scenario {scenario.scenario_id}")
+            return "unknown", 0.0
+
+        # Use ASP reasoning with current knowledge base
+        result = self.asp_reasoner.reason(self.knowledge_base_rules, asp_facts)
+
+        # Log reasoning details for debugging
+        if result.prediction == "unknown":
+            logger.debug(
+                f"ASP reasoning for {scenario.scenario_id}: unknown "
+                f"(derived atoms: {len(result.derived_atoms)}, "
+                f"rules fired: {len(result.rules_fired)})"
+            )
         else:
-            return "unenforceable", 0.6
+            logger.debug(
+                f"ASP reasoning for {scenario.scenario_id}: {result.prediction} "
+                f"(confidence: {result.confidence:.2f})"
+            )
+
+        return result.prediction, result.confidence
 
     def _identify_gap(self, scenario: LegalScenario, prediction: str) -> Dict[str, Any]:
         """Identify knowledge gap from failed prediction."""
