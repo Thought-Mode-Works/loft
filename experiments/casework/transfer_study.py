@@ -9,8 +9,8 @@ import sys
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, List, Optional
-from dataclasses import dataclass, field
+from typing import Any, List
+from dataclasses import dataclass
 from loguru import logger
 
 # Add parent to path
@@ -18,7 +18,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from experiments.casework.explorer import CaseworkExplorer
 from experiments.casework.dataset_loader import DatasetLoader
-from experiments.casework.metrics import LearningMetrics
 
 
 @dataclass
