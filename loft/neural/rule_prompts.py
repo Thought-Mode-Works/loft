@@ -451,6 +451,73 @@ Generate ONE complete ASP rule that:
 Respond with a GeneratedRule JSON object.
 """
 
+ALIGNED_PRINCIPLE_TO_RULE_V1_1 = """You are an expert in converting legal principles into GENERAL Answer Set Programming (ASP) rules.
+
+**CRITICAL: GENERALIZATION REQUIREMENT**
+Your goal is to create rules that capture the GENERAL LEGAL PRINCIPLE, not the specific case facts.
+Rules must apply to ANY case matching the legal test, not just the example case.
+
+**Legal Principle:**
+{principle_text}
+
+**Domain:** {domain}
+
+**AVAILABLE PREDICATES FROM DATASET:**
+{dataset_predicates}
+
+**GENERALIZATION RULES (MOST IMPORTANT):**
+1. NEVER use specific names (e.g., "Frank", "Nancy", "Alice") - use VARIABLES instead
+2. NEVER use specific property names or identifiers - use variables (X, Y, Z)
+3. Extract the ABSTRACT LEGAL TEST from the principle, not the specific scenario
+4. The rule should fire for ANY case that satisfies the legal test
+
+**EXAMPLES OF GOOD vs BAD RULES:**
+
+BAD (overfitting to specific case):
+```asp
+enforceable(Title) :- buyer(Frank, Title), property(123_main_st).
+```
+
+GOOD (generalizes to any case):
+```asp
+enforceable(X) :- claim(X), buyer(P, X), valid_purchase(X).
+```
+
+BAD (specific names):
+```asp
+unenforceable(X) :- servient_estate_owner(X, Nancy), subdivision(X, greenacres).
+```
+
+GOOD (uses variables):
+```asp
+unenforceable(X) :- servient_estate_owner(X, Owner), subdivision(X, Area), not necessity_established(X).
+```
+
+**PREDICATE SELECTION:**
+1. PREFER predicates from the dataset list above when they match the concept
+2. Match predicate names EXACTLY as shown
+3. For yes/no predicates, use the exact format (e.g., `custom_built(X, yes)`)
+4. If NO suitable predicate exists, you MAY create a new predicate
+5. The head MUST be `enforceable(X)` or `unenforceable(X)`
+6. Use uppercase variables: X, Y, Z, N, P, Owner, Buyer (NOT lowercase constants)
+
+**LEGAL PRINCIPLE EXTRACTION:**
+1. Identify the ELEMENTS required by law (e.g., "continuous use for statutory period")
+2. Translate each element to a predicate condition
+3. Combine conditions that must ALL be true (conjunction)
+4. Add negations for exceptions or defenses
+
+**OUTPUT:**
+Generate ONE complete, GENERAL ASP rule that:
+1. Uses VARIABLES (uppercase) instead of specific names/constants
+2. Captures the abstract legal test that applies to multiple cases
+3. Uses dataset predicates where available
+4. Ends with a period and has balanced parentheses
+5. Derives `enforceable(X)` or `unenforceable(X)`
+
+Respond with a GeneratedRule JSON object.
+"""
+
 # =============================================================================
 # MULTI-LLM REFINEMENT PROMPTS
 # =============================================================================
@@ -499,7 +566,8 @@ PROMPT_VERSIONS = {
     },
     "aligned_principle_to_rule": {
         "v1.0": ALIGNED_PRINCIPLE_TO_RULE_V1_0,
-        "latest": "v1.0",
+        "v1.1": ALIGNED_PRINCIPLE_TO_RULE_V1_1,
+        "latest": "v1.1",
     },
     "case_to_rule": {
         "v1.0": CASE_TO_RULE_V1_0,
