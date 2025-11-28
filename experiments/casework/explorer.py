@@ -330,13 +330,20 @@ def main():
     logger.info(f"HTML report saved to: {html_output}")
 
     # Print summary
+    summary = metrics.get_summary()
     print("\n" + "=" * 80)
     print("Casework Exploration Summary")
     print("=" * 80)
-    print(f"Cases processed: {metrics.cases_processed}")
-    print(f"Accuracy: {metrics.current_accuracy:.1%}")
+    print(f"Cases processed: {summary['total_cases']}")
+    print(f"Cases correct: {summary['cases_correct']}")
+    print(f"Final accuracy: {summary['final_accuracy']:.1%}")
+    print(f"Gaps identified: {summary['total_gaps_identified']}")
+    print(f"Rules generated: {summary['total_rules_generated']}")
+    print(f"Rules accepted: {summary['total_rules_accepted']}")
     print(f"Rules incorporated: {len(explorer.knowledge_base_rules)}")
-    print(f"Total processing time: {metrics.total_processing_time:.2f}s")
+    print(f"Acceptance rate: {summary['acceptance_rate']:.1%}")
+    print(f"Total processing time: {summary['total_time_seconds']:.2f}s")
+    print(f"Avg time per case: {summary['avg_time_per_case']:.2f}s")
     print(f"\nFull results: {args.output}")
     print("=" * 80)
 
