@@ -27,7 +27,7 @@ def nl_to_asp():
             "ANTHROPIC_API_KEY environment variable not set. "
             "Set it with: export ANTHROPIC_API_KEY='your-key-here'"
         )
-    provider = AnthropicProvider(api_key=api_key, model="claude-haiku-3-5-20241022")
+    provider = AnthropicProvider(api_key=api_key, model="claude-3-5-haiku-20241022")
     llm = LLMInterface(provider=provider)
     return NLToASPTranslator(llm_interface=llm)
 

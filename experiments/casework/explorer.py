@@ -35,7 +35,7 @@ class CaseworkExplorer:
     def __init__(
         self,
         dataset_dir: Path,
-        model: str = "claude-haiku-3-5-20241022",
+        model: str = "claude-3-5-haiku-20241022",
         enable_learning: bool = True,
     ):
         """

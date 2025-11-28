@@ -24,7 +24,7 @@ console = Console()
 class PlaygroundCLI:
     """Interactive CLI for LOFT Playground."""
 
-    def __init__(self, model: str = "claude-haiku-3-5-20241022"):
+    def __init__(self, model: str = "claude-3-5-haiku-20241022"):
         """Initialize CLI with session."""
         self.session = PlaygroundSession(model=model)
         self.running = True
@@ -330,7 +330,7 @@ def main():
     parser.add_argument(
         "--model",
         type=str,
-        default="claude-haiku-3-5-20241022",
+        default="claude-3-5-haiku-20241022",
         help="LLM model to use",
     )
 

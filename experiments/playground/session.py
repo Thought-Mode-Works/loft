@@ -63,7 +63,7 @@ class PlaygroundSession:
     Maintains state across commands and provides access to all LOFT components.
     """
 
-    def __init__(self, model: str = "claude-haiku-3-5-20241022"):
+    def __init__(self, model: str = "claude-3-5-haiku-20241022"):
         """Initialize playground session."""
         self.model = model
         self.session_start = datetime.now()

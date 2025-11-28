@@ -141,7 +141,7 @@ class EnhancedExperimentRunner:
 
     def __init__(
         self,
-        model: str = "claude-haiku-3-5-20241022",
+        model: str = "claude-3-5-haiku-20241022",
         dry_run: bool = False,
         max_gaps: int = 10,
         candidates_per_gap: int = 3,
@@ -518,8 +518,8 @@ def main():
     parser.add_argument(
         "--model",
         type=str,
-        default="claude-haiku-3-5-20241022",
-        help="LLM model to use (default: claude-haiku-3-5-20241022)",
+        default="claude-3-5-haiku-20241022",
+        help="LLM model to use (default: claude-3-5-haiku-20241022)",
     )
     parser.add_argument(
         "--dry-run",

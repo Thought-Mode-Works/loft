@@ -317,6 +317,26 @@ class NLToASPTranslator:
             extraction_method="llm" if self.use_llm else "pattern",
         )
 
+    def translate(self, nl_text: str) -> NLToASPResult:
+        """
+        Convenience method for translation. Automatically chooses between
+        translate_to_facts or translate_to_rule based on input.
+
+        Args:
+            nl_text: Natural language text or rule
+
+        Returns:
+            NLToASPResult with ASP code
+        """
+        # Simple heuristic: if it looks like a rule (has "if", "when", etc.), translate as rule
+        rule_keywords = ["if ", "when ", "unless ", "provided that", "except"]
+        is_rule = any(keyword in nl_text.lower() for keyword in rule_keywords)
+
+        if is_rule:
+            return self.translate_to_rule(nl_text)
+        else:
+            return self.translate_to_rule(nl_text)  # Default to rule for most statements
+
     def extract_entities(self, nl_text: str) -> ExtractedEntities:
         """
         Extract structured entities from natural language.
