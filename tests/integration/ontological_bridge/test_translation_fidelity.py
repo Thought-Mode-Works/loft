@@ -98,8 +98,17 @@ class TestTranslationFidelity:
         assert asp_result.asp_code, "ASP translation should not be empty"
 
         # Translate ASP -> NL
-        nl_result = asp_to_nl.translate(asp_result.asp_code)
-        assert nl_result.natural_language, "NL translation should not be empty"
+        # asp_to_nl is a function that returns a string, not a class with translate method
+        nl_text = asp_to_nl(asp_result.asp_code)
+        assert nl_text, "NL translation should not be empty"
+
+        # Wrap in object for consistency with tests
+        from loft.translation.asp_to_nl import TranslationResult
+        nl_result = TranslationResult(
+            natural_language=nl_text,
+            asp_source=asp_result.asp_code,
+            predicates_used=asp_result.predicates_used,
+        )
 
         # Calculate semantic similarity
         similarity = similarity_calculator.calculate_similarity(
@@ -134,7 +143,14 @@ class TestTranslationFidelity:
         for original_text in TRANSLATION_TEST_CASES[:5]:
             # Round-trip translation
             asp_result = nl_to_asp.translate(original_text)
-            nl_result = asp_to_nl.translate(asp_result.asp_code)
+            nl_text = asp_to_nl(asp_result.asp_code)
+
+            from loft.translation.asp_to_nl import TranslationResult
+            nl_result = TranslationResult(
+                natural_language=nl_text,
+                asp_source=asp_result.asp_code,
+                predicates_used=asp_result.predicates_used,
+            )
 
             # Calculate metrics
             similarity = similarity_calculator.calculate_similarity(
@@ -169,7 +185,14 @@ class TestTranslationFidelity:
 
         # Round-trip
         asp_result = nl_to_asp.translate(original)
-        nl_result = asp_to_nl.translate(asp_result.asp_code)
+        nl_text = asp_to_nl(asp_result.asp_code)
+
+        from loft.translation.asp_to_nl import TranslationResult
+        nl_result = TranslationResult(
+            natural_language=nl_text,
+            asp_source=asp_result.asp_code,
+            predicates_used=asp_result.predicates_used,
+        )
 
         # Check that key concepts are preserved
         result_lower = nl_result.natural_language.lower()
@@ -254,7 +277,14 @@ class TestExtensiveTranslation:
             try:
                 # Round-trip
                 asp_result = nl_to_asp.translate(original_text)
-                nl_result = asp_to_nl.translate(asp_result.asp_code)
+                nl_text = asp_to_nl(asp_result.asp_code)
+
+                from loft.translation.asp_to_nl import TranslationResult
+                nl_result = TranslationResult(
+                    natural_language=nl_text,
+                    asp_source=asp_result.asp_code,
+                    predicates_used=asp_result.predicates_used,
+                )
 
                 # Calculate metrics
                 similarity = similarity_calculator.calculate_similarity(
