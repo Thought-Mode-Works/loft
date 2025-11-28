@@ -5,8 +5,131 @@ These schemas define structured outputs for rule generation prompts,
 ensuring consistent, validated responses from LLMs during Phase 2.
 """
 
-from typing import List, Literal, Optional
+import re
+from typing import List, Literal, Optional, Tuple
 from pydantic import BaseModel, Field, field_validator
+from loguru import logger
+
+
+def validate_asp_rule_completeness(rule: str) -> Tuple[bool, Optional[str]]:
+    """
+    Validate that an ASP rule is complete and well-formed.
+
+    Checks for common truncation patterns and structural completeness.
+
+    Args:
+        rule: The ASP rule string to validate
+
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    rule = rule.strip()
+
+    if not rule:
+        return False, "ASP rule cannot be empty"
+
+    # Split into individual statements (rules/facts)
+    # Handle multi-line rules by first normalizing whitespace
+    normalized = re.sub(r"\s+", " ", rule)
+
+    # Check 1: Must end with a period
+    if not normalized.rstrip().endswith("."):
+        return False, "ASP rule must end with a period '.'"
+
+    # Check 2: Balanced parentheses
+    open_parens = normalized.count("(")
+    close_parens = normalized.count(")")
+    if open_parens != close_parens:
+        return False, f"Unbalanced parentheses: {open_parens} '(' vs {close_parens} ')'"
+
+    # Check 3: Balanced brackets (for aggregates)
+    open_brackets = normalized.count("{")
+    close_brackets = normalized.count("}")
+    if open_brackets != close_brackets:
+        return False, f"Unbalanced brackets: {open_brackets} '{{' vs {close_brackets} '}}'"
+
+    # Check 4: No trailing incomplete identifiers before the period
+    # Pattern: identifier followed by underscore or incomplete predicate
+    # e.g., "land_sale_" or "predicate(" without closing
+    truncation_patterns = [
+        (r"[a-z_]+_\s*\.", "Rule appears truncated (ends with trailing underscore)"),
+        (r"[a-z_]+\(\s*\.", "Rule appears truncated (empty predicate arguments)"),
+        (r",\s*\.", "Rule appears truncated (trailing comma before period)"),
+        (r":-\s*\.", "Rule appears truncated (empty rule body)"),
+        (r"[a-z_]+\([^)]*,\s*\.", "Rule appears truncated (incomplete argument list)"),
+    ]
+
+    for pattern, message in truncation_patterns:
+        if re.search(pattern, normalized, re.IGNORECASE):
+            return False, message
+
+    # Check 5: If it's a rule (has :-), verify head and body are present
+    if ":-" in normalized:
+        parts = normalized.split(":-", 1)
+        head = parts[0].strip()
+        body = parts[1].strip()
+
+        # Head must be a valid predicate
+        if not head:
+            return False, "Rule has empty head"
+
+        # Head must look like a predicate (name followed by optional args)
+        if not re.match(r"^[a-z_][a-zA-Z0-9_]*(\([^)]+\))?$", head):
+            # Allow for more complex heads like "not pred(X)" for constraints
+            if not re.match(r"^(not\s+)?[a-z_][a-zA-Z0-9_]*(\([^)]+\))?$", head):
+                # Could be a constraint (empty head)
+                if head != "":
+                    return False, f"Invalid rule head format: '{head}'"
+
+        # Body must not be just a period
+        body_content = body.rstrip(".")
+        if not body_content.strip():
+            return False, "Rule has empty body"
+
+        # Body predicates should look complete
+        # Check for incomplete predicate at end of body
+        body_predicates = re.split(r",\s*", body_content)
+        last_pred = body_predicates[-1].strip() if body_predicates else ""
+        if last_pred and not re.match(
+            r"^(not\s+)?[a-z_][a-zA-Z0-9_]*(\([^)]*\))?$", last_pred
+        ):
+            # Check for comparison operators and other valid patterns
+            valid_patterns = [
+                r"^[A-Z_][a-zA-Z0-9_]*\s*[<>=!]+\s*[A-Z0-9_]+$",  # X > Y, X == 5
+                r"^[A-Z_][a-zA-Z0-9_]*\s*[<>=!]+\s*[a-z_]+\([^)]*\)$",  # X = pred(Y)
+                r"^#[a-z]+\s*\{.*\}$",  # Aggregates like #count{...}
+            ]
+            if not any(re.match(p, last_pred) for p in valid_patterns):
+                return False, f"Rule body appears truncated or malformed: '{last_pred}'"
+
+    # Check 6: No orphan characters after the period (garbage at end)
+    # Split by period and check if anything meaningful comes after
+    statements = [s.strip() for s in normalized.split(".") if s.strip()]
+    for stmt in statements:
+        # Each statement should start with a valid identifier or be a comment
+        if stmt and not re.match(r"^(%.*|[a-z_#:])", stmt):
+            # Could be a single letter orphan
+            if len(stmt) <= 2 and stmt.isalpha():
+                return False, f"Orphan character detected after rule: '{stmt}'"
+
+    # Check 7: Try to parse with clingo for definitive validation
+    try:
+        import clingo
+
+        ctl = clingo.Control(["0"])
+        ctl.add("base", [], rule)
+        # Ground to catch more errors
+        ctl.ground([("base", [])])
+        return True, None
+    except Exception as e:
+        error_msg = str(e)
+        # Extract the most relevant part of the error
+        if "parsing failed" in error_msg.lower():
+            return False, f"Clingo parsing failed: {error_msg}"
+        elif "syntax error" in error_msg.lower():
+            return False, f"ASP syntax error: {error_msg}"
+        else:
+            return False, f"ASP validation error: {error_msg}"
 
 
 class GeneratedRule(BaseModel):
@@ -48,13 +171,23 @@ class GeneratedRule(BaseModel):
     @field_validator("asp_rule")
     @classmethod
     def validate_asp_syntax(cls, v: str) -> str:
-        """Basic ASP syntax validation."""
+        """
+        Comprehensive ASP syntax validation.
+
+        Validates that the rule is:
+        1. Complete (not truncated)
+        2. Structurally valid (balanced parens, proper termination)
+        3. Parseable by clingo
+        """
         v = v.strip()
-        if not v:
-            raise ValueError("ASP rule cannot be empty")
-        # Basic checks - full validation happens in validation pipeline
-        if not any(op in v for op in [":-", "."]):
-            raise ValueError("ASP rule must contain ':-' (rule) or end with '.' (fact)")
+
+        # Run comprehensive validation
+        is_valid, error_msg = validate_asp_rule_completeness(v)
+
+        if not is_valid:
+            logger.warning(f"ASP rule validation failed: {error_msg}")
+            raise ValueError(f"Invalid ASP rule: {error_msg}")
+
         return v
 
     @field_validator("confidence")
