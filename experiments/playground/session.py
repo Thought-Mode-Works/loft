@@ -18,7 +18,6 @@ from loft.neural.providers import AnthropicProvider
 from loft.neural.rule_generator import RuleGenerator
 from loft.validation.validation_pipeline import ValidationPipeline
 from loft.translation.nl_to_asp import NLToASPTranslator
-from loft.translation.asp_to_nl import asp_to_nl
 
 
 @dataclass
@@ -87,8 +86,11 @@ class PlaygroundSession:
         self.rule_generator = RuleGenerator(llm=self.llm, asp_core=self.asp_core)
 
         # Translation components
-        self.nl_to_asp = NLToASPTranslator(llm=self.llm)
-        self.asp_to_nl = asp_to_nl(llm=self.llm)
+        self.nl_to_asp = NLToASPTranslator(llm_interface=self.llm)
+        # asp_to_nl is a function, not a class - it doesn't need llm parameter for basic usage
+        from loft.translation.asp_to_nl import asp_to_nl as asp_to_nl_func
+
+        self.asp_to_nl = asp_to_nl_func
 
         # Validation pipeline
         self.validation_pipeline = ValidationPipeline(min_confidence=0.6)
@@ -136,13 +138,14 @@ class PlaygroundSession:
 
     def translate_asp_to_nl(self, asp_code: str) -> Dict[str, Any]:
         """Translate ASP to natural language."""
-        result = self.asp_to_nl.translate(asp_code)
+        # asp_to_nl is a simple function that returns a string
+        nl_text = self.asp_to_nl(asp_code, context=self.asp_core)
 
         self._log_command("translate_asp_to_nl", {"asp_code": asp_code[:100]})
 
         return {
-            "natural_language": result.natural_language,
-            "confidence": result.confidence,
+            "natural_language": nl_text,
+            "confidence": 1.0,  # Simple function doesn't provide confidence scores
         }
 
     def identify_gaps(self) -> List[Dict[str, Any]]:

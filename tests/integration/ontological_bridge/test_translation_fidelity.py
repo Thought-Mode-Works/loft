@@ -66,7 +66,7 @@ def translation_components():
     provider = AnthropicProvider(api_key=api_key, model="claude-haiku-3-5-20241022")
     llm = LLMInterface(provider=provider)
 
-    nl_to_asp_translator = NLToASPTranslator(llm=llm)
+    nl_to_asp_translator = NLToASPTranslator(llm_interface=llm)
     # asp_to_nl is a function, not a class - just return it as-is
     from loft.translation.asp_to_nl import asp_to_nl as asp_to_nl_func
 

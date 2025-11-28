@@ -29,7 +29,7 @@ def nl_to_asp():
         )
     provider = AnthropicProvider(api_key=api_key, model="claude-haiku-3-5-20241022")
     llm = LLMInterface(provider=provider)
-    return NLToASPTranslator(llm=llm)
+    return NLToASPTranslator(llm_interface=llm)
 
 
 class TestConceptualDistinctions:
