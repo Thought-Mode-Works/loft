@@ -159,11 +159,48 @@ class CaseworkExplorer:
             )
 
         self.metrics.end_time = datetime.now()
+
+        # Calculate final accuracy with complete knowledge base
+        if self.knowledge_base_rules:
+            final_accuracy = self._calculate_final_accuracy(scenarios)
+            logger.info(f"\nFinal accuracy with complete KB: {final_accuracy:.1%}")
+            self.metrics.final_kb_accuracy = final_accuracy
+
         logger.info("\n" + "=" * 80)
         logger.info("Casework exploration complete")
         logger.info("=" * 80)
 
         return self.metrics
+
+    def _calculate_final_accuracy(self, scenarios: List[LegalScenario]) -> float:
+        """
+        Calculate accuracy using the complete knowledge base.
+
+        Re-evaluates all scenarios with all learned rules to see what
+        accuracy would be achieved with the final knowledge base.
+
+        Args:
+            scenarios: All scenarios to evaluate
+
+        Returns:
+            Accuracy as a fraction (0.0-1.0)
+        """
+        correct = 0
+        total = 0
+
+        for scenario in scenarios:
+            asp_facts = scenario.asp_facts or ""
+            if not asp_facts:
+                continue
+
+            result = self.asp_reasoner.reason(self.knowledge_base_rules, asp_facts)
+
+            if result.prediction != "unknown":
+                total += 1
+                if result.prediction == scenario.ground_truth:
+                    correct += 1
+
+        return correct / total if total > 0 else 0.0
 
     def process_scenario(self, scenario: LegalScenario) -> CaseResult:
         """

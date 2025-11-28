@@ -416,30 +416,34 @@ Respond with a complete GeneratedRule JSON.
 
 ALIGNED_PRINCIPLE_TO_RULE_V1_0 = """You are an expert in converting legal principles into Answer Set Programming (ASP) rules.
 
-**CRITICAL:** You must generate rules that use predicates matching the dataset format below.
-
 **Legal Principle:**
 {principle_text}
 
 **Domain:** {domain}
 
-**Dataset Predicate Examples (USE THESE EXACT FORMATS):**
+**AVAILABLE PREDICATES FROM DATASET:**
 {dataset_predicates}
 
-**Guidelines:**
-1. Use EXACTLY the predicate formats shown in the dataset examples
-2. Match the arity (number of arguments) of predicates exactly
-3. Use the same argument patterns (e.g., `claim(X)` not `claim(X, Y)`)
-4. The head predicate should be `enforceable(X)` or `unenforceable(X)` to match expected outcomes
-5. Variables should be uppercase (X, C, P)
+**RULES FOR PREDICATE SELECTION:**
+1. PREFER predicates from the list above when they match the concept
+2. Match predicate names EXACTLY as shown (e.g., use `attachment_method(X, Y)` not `annexation(X, Y)`)
+3. For yes/no predicates, use the exact format shown (e.g., `custom_built(X, yes)`)
+4. If NO suitable predicate exists in the list for a required concept, you MAY create a new predicate
+5. The head MUST be `enforceable(X)` or `unenforceable(X)`
+6. Use uppercase variables: X, Y, N, P
 
-**Example Mapping:**
-- If dataset has `occupation_continuous(claim1, yes)`, use `occupation_continuous(X, yes)` not `continuous_occupation(X)`
-- If dataset has `statutory_period(claim1, 20)`, use `statutory_period(X, P)` not `period(X)`
+**PREDICATE MATCHING EXAMPLES:**
+- Dataset has `attachment_method(X, bolted)` → use this, NOT `annexation(X, yes)`
+- Dataset has `custom_built(X, yes)` → use this, NOT `adaptation(X, custom)`
+- Dataset has `occupation_continuous(X, yes)` → use this, NOT `continuous_occupation(X)`
 
-**Output:**
-Generate a single, complete ASP rule that:
-1. Uses predicates from the dataset
+**WHEN TO CREATE NEW PREDICATES:**
+Only create a new predicate if the legal concept has NO logical match in the available predicates.
+List any new predicates in the `new_predicates` field.
+
+**OUTPUT:**
+Generate ONE complete ASP rule that:
+1. Prefers dataset predicates over invented ones
 2. Ends with a period
 3. Has balanced parentheses
 4. Derives `enforceable(X)` or `unenforceable(X)`
