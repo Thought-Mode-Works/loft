@@ -1,0 +1,16 @@
+{
+  "id": "prop_009",
+  "description": "Implied warranty of habitability in new home",
+  "facts": [
+    "Quinn bought a newly constructed home from Rachel Builders",
+    "Within 6 months, the foundation developed major cracks",
+    "The electrical system was improperly installed and poses fire hazard",
+    "Rachel claims the sale was 'as-is' though no such clause was in the contract"
+  ],
+  "asp_facts": "property_sale(ps1). buyer(ps1, quinn). seller(ps1, rachel_builders). property_type(ps1, new_construction). time_since_purchase_months(ps1, 6). foundation_defects(ps1, yes). electrical_defects(ps1, yes). safety_hazard(ps1, yes). as_is_clause(ps1, no). contract_type(ps1, new_home_sale).",
+  "question": "Can Quinn recover against Rachel Builders for the defects?",
+  "ground_truth": "enforceable",
+  "rationale": "The implied warranty of habitability applies to new home construction and cannot be easily disclaimed. Rachel Builders is liable for latent defects affecting the home's habitability and safety.",
+  "legal_citations": ["Implied Warranty of Habitability", "Builder Liability"],
+  "difficulty": "medium"
+}

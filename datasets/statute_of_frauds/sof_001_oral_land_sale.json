@@ -1,0 +1,16 @@
+{
+  "id": "sof_001",
+  "description": "Oral agreement for land sale without writing",
+  "facts": [
+    "Alice and Bob orally agreed that Alice would sell her land to Bob for $50,000",
+    "No written contract was created",
+    "Bob paid a $5,000 deposit",
+    "The parties shook hands on the deal"
+  ],
+  "asp_facts": "contract(c1). subject_matter(c1, land). parties(c1, alice, bob). has_writing(c1, no). sale_amount(c1, 50000). has_consideration(c1, yes). has_mutual_assent(c1, yes).",
+  "question": "Is this contract enforceable under the Statute of Frauds?",
+  "ground_truth": "unenforceable",
+  "rationale": "Contracts for the sale of land must be in writing to satisfy the Statute of Frauds. Oral agreements for land sales are unenforceable.",
+  "legal_citations": ["Statute of Frauds", "UCC 2-201"],
+  "difficulty": "easy"
+}

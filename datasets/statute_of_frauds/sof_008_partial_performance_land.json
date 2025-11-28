@@ -1,0 +1,16 @@
+{
+  "id": "sof_008",
+  "description": "Oral land sale with substantial partial performance",
+  "facts": [
+    "Oliver orally agreed to sell his farm to Patricia for $400,000",
+    "Patricia paid the full purchase price",
+    "Patricia took possession of the land and made $50,000 in improvements",
+    "Oliver now refuses to transfer the deed, claiming no written contract exists"
+  ],
+  "asp_facts": "contract(c8). subject_matter(c8, land). parties(c8, oliver, patricia). has_writing(c8, no). sale_amount(c8, 400000). payment_made(c8, full). possession_taken(c8, yes). improvements_made(c8, yes). improvement_value(c8, 50000).",
+  "question": "Is this contract enforceable despite lacking a writing?",
+  "ground_truth": "enforceable",
+  "rationale": "The doctrine of partial performance creates an exception to the Statute of Frauds for land contracts. Payment, possession, and improvements are sufficient acts of partial performance to make the oral contract enforceable.",
+  "legal_citations": ["Statute of Frauds", "Partial Performance Doctrine"],
+  "difficulty": "hard"
+}

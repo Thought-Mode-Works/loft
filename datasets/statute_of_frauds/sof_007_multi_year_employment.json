@@ -1,0 +1,16 @@
+{
+  "id": "sof_007",
+  "description": "Oral employment contract for more than one year",
+  "facts": [
+    "Mike orally agreed to employ Nancy for a two-year period as CFO",
+    "The salary was set at $150,000 per year",
+    "No written employment contract was created",
+    "Nancy started working immediately"
+  ],
+  "asp_facts": "contract(c7). subject_matter(c7, employment). parties(c7, mike, nancy). duration_months(c7, 24). has_writing(c7, no). salary_annual(c7, 150000). has_consideration(c7, yes). has_mutual_assent(c7, yes).",
+  "question": "Is this contract enforceable under the Statute of Frauds?",
+  "ground_truth": "unenforceable",
+  "rationale": "Contracts that cannot be performed within one year from the date of making must be in writing under the Statute of Frauds. A two-year employment contract falls under this requirement.",
+  "legal_citations": ["Statute of Frauds"],
+  "difficulty": "medium"
+}

@@ -1,0 +1,16 @@
+{
+  "id": "sof_009",
+  "description": "Oral contract between merchants with written confirmation",
+  "facts": [
+    "Quinn and Rachel are both merchants in the electronics business",
+    "They orally agreed on a sale of 500 laptops for $300,000",
+    "Quinn sent a written confirmation within 10 days",
+    "Rachel received the confirmation but did not object within 10 days"
+  ],
+  "asp_facts": "contract(c9). subject_matter(c9, goods). parties(c9, quinn, rachel). both_merchants(c9, yes). sale_amount(c9, 300000). oral_agreement(c9, yes). written_confirmation_sent(c9, yes). confirmation_timely(c9, yes). no_objection(c9, yes).",
+  "question": "Is this contract enforceable under the Statute of Frauds?",
+  "ground_truth": "enforceable",
+  "rationale": "Under UCC 2-201(2), between merchants, if one party sends written confirmation and the other does not object within 10 days, the contract satisfies the Statute of Frauds even though it was originally oral.",
+  "legal_citations": ["UCC 2-201(2)", "Merchant Confirmation Exception"],
+  "difficulty": "hard"
+}

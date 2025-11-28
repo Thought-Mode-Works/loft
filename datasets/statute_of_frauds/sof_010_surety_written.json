@@ -1,0 +1,16 @@
+{
+  "id": "sof_010",
+  "description": "Written surety agreement to pay another's debt",
+  "facts": [
+    "Sam signed a written guarantee to pay Tom's debt to United Bank if Tom defaults",
+    "The debt amount is $75,000",
+    "Tom has already defaulted on the loan",
+    "Sam's signature is on the guarantee document"
+  ],
+  "asp_facts": "contract(c10). subject_matter(c10, surety). parties(c10, sam, united_bank). is_surety_agreement(c10, yes). has_writing(c10, yes). is_signed(c10, yes). debt_amount(c10, 75000). principal_debtor(c10, tom). debtor_defaulted(c10, yes).",
+  "question": "Is the surety agreement enforceable under the Statute of Frauds?",
+  "ground_truth": "enforceable",
+  "rationale": "A promise to answer for the debt of another (surety agreement) must be in writing under the Statute of Frauds. This agreement is written and signed, satisfying the statute.",
+  "legal_citations": ["Statute of Frauds", "Surety Agreements"],
+  "difficulty": "medium"
+}

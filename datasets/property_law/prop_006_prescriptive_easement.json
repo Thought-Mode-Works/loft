@@ -1,0 +1,16 @@
+{
+  "id": "prop_006",
+  "description": "Prescriptive easement through long-term use",
+  "facts": [
+    "For 18 years, Karen has used a path across Larry's land to access the lake",
+    "The use was open and obvious to Larry",
+    "Larry never gave permission and objected several times",
+    "The prescriptive period is 20 years"
+  ],
+  "asp_facts": "easement_claim(e2). claimant(e2, karen). servient_owner(e2, larry). use_duration_years(e2, 18). use_open(e2, yes). use_continuous(e2, yes). use_adverse(e2, yes). permission_given(e2, no). objections_made(e2, yes). prescriptive_period(e2, 20).",
+  "question": "Has Karen acquired a prescriptive easement?",
+  "ground_truth": "unenforceable",
+  "rationale": "A prescriptive easement requires open, continuous, and adverse use for the full statutory period. Karen's 18 years of use is less than the required 20 years.",
+  "legal_citations": ["Prescriptive Easement"],
+  "difficulty": "easy"
+}

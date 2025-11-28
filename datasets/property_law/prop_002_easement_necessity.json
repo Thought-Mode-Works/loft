@@ -1,0 +1,16 @@
+{
+  "id": "prop_002",
+  "description": "Easement by necessity for landlocked parcel",
+  "facts": [
+    "Bob owns a landlocked parcel with no access to a public road",
+    "The only access is across Carol's adjacent property",
+    "Both parcels were originally part of a single tract",
+    "Bob needs to cross Carol's land to reach the public road"
+  ],
+  "asp_facts": "easement_claim(e1). claimant(e1, bob). servient_estate_owner(e1, carol). is_landlocked(e1, yes). common_ownership_history(e1, yes). no_alternative_access(e1, yes). necessity_type(e1, strict).",
+  "question": "Does Bob have an easement by necessity across Carol's property?",
+  "ground_truth": "enforceable",
+  "rationale": "An easement by necessity is created when a parcel becomes landlocked after division from a common owner. Bob has a legal right to access across Carol's property.",
+  "legal_citations": ["Easement by Necessity"],
+  "difficulty": "medium"
+}

@@ -1,0 +1,16 @@
+{
+  "id": "sof_005",
+  "description": "Oral promise in consideration of marriage",
+  "facts": [
+    "Ian orally promised to transfer his beach house to Julia if she agreed to marry him",
+    "Julia accepted the proposal",
+    "No written agreement exists",
+    "The beach house is valued at $500,000"
+  ],
+  "asp_facts": "contract(c5). subject_matter(c5, property_transfer). parties(c5, ian, julia). consideration_type(c5, marriage). has_writing(c5, no). property_value(c5, 500000). has_consideration(c5, yes).",
+  "question": "Is this promise enforceable under the Statute of Frauds?",
+  "ground_truth": "unenforceable",
+  "rationale": "Promises made in consideration of marriage must be in writing under the Statute of Frauds.",
+  "legal_citations": ["Statute of Frauds"],
+  "difficulty": "medium"
+}

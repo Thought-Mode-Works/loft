@@ -1,0 +1,16 @@
+{
+  "id": "sof_004",
+  "description": "Oral contract for services (not land or goods)",
+  "facts": [
+    "George orally agreed to provide consulting services to Helen's company",
+    "The contract was for 6 months of work at $10,000 per month",
+    "No written agreement was signed",
+    "George has already completed 2 months of work"
+  ],
+  "asp_facts": "contract(c4). subject_matter(c4, services). parties(c4, george, helen). duration_months(c4, 6). has_writing(c4, no). has_consideration(c4, yes). has_mutual_assent(c4, yes). partially_performed(c4, yes).",
+  "question": "Is this contract enforceable under the Statute of Frauds?",
+  "ground_truth": "enforceable",
+  "rationale": "Service contracts that can be performed within one year do not fall under the Statute of Frauds writing requirement. Additionally, partial performance supports enforceability.",
+  "legal_citations": ["Statute of Frauds"],
+  "difficulty": "medium"
+}
