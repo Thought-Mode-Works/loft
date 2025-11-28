@@ -334,6 +334,120 @@ Conduct your review now.
 """
 
 # =============================================================================
+# RULE REPAIR PROMPTS
+# =============================================================================
+
+RULE_REPAIR_V1_0 = """You are an expert ASP (Answer Set Programming) debugger.
+
+**Problem:** The following ASP rule was generated but has syntax or completeness issues.
+
+**Malformed Rule:**
+```asp
+{malformed_rule}
+```
+
+**Error Message:**
+{error_message}
+
+**Original Principle/Context:**
+{original_context}
+
+**Available Predicates from Dataset:**
+{available_predicates}
+
+**Your Task:**
+1. Identify what's wrong with the rule (truncation, syntax error, etc.)
+2. Reconstruct the COMPLETE, VALID ASP rule
+3. Use predicates that match the available predicates from the dataset
+
+**CRITICAL Requirements:**
+- The rule MUST end with a period '.'
+- All parentheses MUST be balanced
+- All predicates MUST be complete (no truncated names)
+- Use predicates that exist in the dataset facts
+- Follow proper Clingo ASP syntax
+
+**Output Format:**
+Return a GeneratedRule JSON object with:
+- `asp_rule`: The corrected, complete ASP rule
+- `confidence`: Your confidence in the fix (0.0-1.0)
+- `reasoning`: Explanation of what was wrong and how you fixed it
+- `predicates_used`: List of predicates in the rule
+- `new_predicates`: Any new predicates introduced
+- `alternative_formulations`: Empty list (not needed for repair)
+- `source_type`: "refinement"
+- `source_text`: The original context
+
+Fix the rule now.
+"""
+
+RULE_REPAIR_V1_1 = """You are an expert ASP rule repair specialist.
+
+**Broken Rule:**
+```
+{malformed_rule}
+```
+
+**Error:** {error_message}
+
+**Context:** {original_context}
+
+**Dataset Predicates (USE THESE):**
+{available_predicates}
+
+**Fix Requirements:**
+1. Complete any truncated predicates
+2. Ensure rule ends with '.'
+3. Balance all parentheses
+4. Match predicate names to dataset predicates above
+5. Use proper variable naming (uppercase: C, P, X)
+
+**Common Fixes Needed:**
+- Truncated: `occupation_conti` → `occupation_continuous(X, yes)`
+- Missing period: `pred(X)` → `pred(X).`
+- Unbalanced: `pred(X, Y` → `pred(X, Y)`
+
+Respond with a complete GeneratedRule JSON.
+"""
+
+# =============================================================================
+# PREDICATE-ALIGNED GENERATION PROMPTS
+# =============================================================================
+
+ALIGNED_PRINCIPLE_TO_RULE_V1_0 = """You are an expert in converting legal principles into Answer Set Programming (ASP) rules.
+
+**CRITICAL:** You must generate rules that use predicates matching the dataset format below.
+
+**Legal Principle:**
+{principle_text}
+
+**Domain:** {domain}
+
+**Dataset Predicate Examples (USE THESE EXACT FORMATS):**
+{dataset_predicates}
+
+**Guidelines:**
+1. Use EXACTLY the predicate formats shown in the dataset examples
+2. Match the arity (number of arguments) of predicates exactly
+3. Use the same argument patterns (e.g., `claim(X)` not `claim(X, Y)`)
+4. The head predicate should be `enforceable(X)` or `unenforceable(X)` to match expected outcomes
+5. Variables should be uppercase (X, C, P)
+
+**Example Mapping:**
+- If dataset has `occupation_continuous(claim1, yes)`, use `occupation_continuous(X, yes)` not `continuous_occupation(X)`
+- If dataset has `statutory_period(claim1, 20)`, use `statutory_period(X, P)` not `period(X)`
+
+**Output:**
+Generate a single, complete ASP rule that:
+1. Uses predicates from the dataset
+2. Ends with a period
+3. Has balanced parentheses
+4. Derives `enforceable(X)` or `unenforceable(X)`
+
+Respond with a GeneratedRule JSON object.
+"""
+
+# =============================================================================
 # MULTI-LLM REFINEMENT PROMPTS
 # =============================================================================
 
@@ -379,6 +493,10 @@ PROMPT_VERSIONS = {
         "v1.1": PRINCIPLE_TO_RULE_V1_1,
         "latest": "v1.1",
     },
+    "aligned_principle_to_rule": {
+        "v1.0": ALIGNED_PRINCIPLE_TO_RULE_V1_0,
+        "latest": "v1.0",
+    },
     "case_to_rule": {
         "v1.0": CASE_TO_RULE_V1_0,
         "latest": "v1.0",
@@ -391,6 +509,11 @@ PROMPT_VERSIONS = {
     "consensus_vote": {
         "v1.0": CONSENSUS_VOTE_V1_0,
         "v1.1": CONSENSUS_VOTE_V1_1,
+        "latest": "v1.1",
+    },
+    "rule_repair": {
+        "v1.0": RULE_REPAIR_V1_0,
+        "v1.1": RULE_REPAIR_V1_1,
         "latest": "v1.1",
     },
     "refinement": {

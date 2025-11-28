@@ -19,7 +19,11 @@ from loft.symbolic.asp_core import ASPCore
 from loft.symbolic.asp_reasoner import ASPReasoner
 from loft.neural.llm_interface import LLMInterface
 from loft.neural.providers import AnthropicProvider
-from loft.neural.rule_generator import RuleGenerator
+from loft.neural.rule_generator import (
+    RuleGenerator,
+    RuleGenerationError,
+    extract_predicates_from_asp_facts,
+)
 from loft.validation.validation_pipeline import ValidationPipeline
 
 from experiments.casework.dataset_loader import DatasetLoader, LegalScenario
@@ -74,7 +78,39 @@ class CaseworkExplorer:
         # Knowledge base (track incorporated rules)
         self.knowledge_base_rules: List[str] = []
 
-        logger.info(f"Initialized CaseworkExplorer with model={model}, learning={enable_learning}")
+        # Collect dataset predicates for aligned rule generation
+        self.dataset_predicates: List[str] = self._collect_dataset_predicates()
+
+        logger.info(
+            f"Initialized CaseworkExplorer with model={model}, learning={enable_learning}, "
+            f"dataset_predicates={len(self.dataset_predicates)}"
+        )
+
+    def _collect_dataset_predicates(self) -> List[str]:
+        """
+        Collect all unique predicates from dataset scenarios.
+
+        Scans all scenarios in the dataset and extracts predicate patterns
+        for use in aligned rule generation.
+
+        Returns:
+            List of predicate patterns found in the dataset
+        """
+        all_predicates: set = set()
+
+        try:
+            scenarios = self.dataset_loader.load_all()
+            for scenario in scenarios:
+                if scenario.asp_facts:
+                    predicates = extract_predicates_from_asp_facts(scenario.asp_facts)
+                    all_predicates.update(predicates)
+
+            logger.info(f"Collected {len(all_predicates)} unique predicates from dataset")
+            return sorted(all_predicates)
+
+        except Exception as e:
+            logger.warning(f"Failed to collect dataset predicates: {e}")
+            return []
 
     def explore_dataset(
         self,
@@ -159,11 +195,26 @@ class CaseworkExplorer:
             _gap = self._identify_gap(scenario, prediction)  # noqa: F841
             gaps_identified = 1
 
-            # Generate candidate rule
+            # Generate candidate rule using aligned generation
             try:
-                candidate = self.rule_generator.generate_from_principle(
-                    principle_text=scenario.rationale,
-                )
+                # Combine dataset predicates with scenario-specific predicates
+                scenario_predicates = []
+                if scenario.asp_facts:
+                    scenario_predicates = extract_predicates_from_asp_facts(scenario.asp_facts)
+
+                all_predicates = list(set(self.dataset_predicates + scenario_predicates))
+
+                # Use aligned generation for better predicate matching
+                if all_predicates:
+                    candidate = self.rule_generator.generate_from_principle_aligned(
+                        principle_text=scenario.rationale,
+                        dataset_predicates=all_predicates,
+                    )
+                else:
+                    # Fall back to standard generation if no predicates available
+                    candidate = self.rule_generator.generate_from_principle(
+                        principle_text=scenario.rationale,
+                    )
                 rules_generated = 1
 
                 # Validate
@@ -179,6 +230,8 @@ class CaseworkExplorer:
                     self.knowledge_base_rules.append(candidate.asp_rule)
                     logger.info(f"Learned new rule from {scenario.scenario_id}")
 
+            except RuleGenerationError as e:
+                logger.warning(f"Rule generation failed for {scenario.scenario_id}: {e}")
             except Exception as e:
                 logger.warning(f"Error learning from scenario: {e}")
 
