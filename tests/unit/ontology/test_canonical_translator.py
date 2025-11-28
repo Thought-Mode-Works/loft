@@ -26,7 +26,12 @@ class TestOntologyLoading:
 
     def test_load_ontology_with_path(self):
         """Loading with explicit path should work."""
-        path = Path(__file__).parent.parent.parent.parent / "loft" / "ontology" / "canonical_predicates.ttl"
+        path = (
+            Path(__file__).parent.parent.parent.parent
+            / "loft"
+            / "ontology"
+            / "canonical_predicates.ttl"
+        )
         translator = CanonicalTranslator(ontology_path=path)
         assert translator.graph is not None
 
@@ -62,9 +67,16 @@ class TestDomainToCanonical:
         """Adverse possession predicates should map to canonical."""
         translator = CanonicalTranslator()
 
-        assert translator.to_canonical("occupation_continuous", "adverse_possession") == "continuous_possession"
-        assert translator.to_canonical("occupation_years", "adverse_possession") == "duration_period"
-        assert translator.to_canonical("occupation_hostile", "adverse_possession") == "hostile_action"
+        assert (
+            translator.to_canonical("occupation_continuous", "adverse_possession")
+            == "continuous_possession"
+        )
+        assert (
+            translator.to_canonical("occupation_years", "adverse_possession") == "duration_period"
+        )
+        assert (
+            translator.to_canonical("occupation_hostile", "adverse_possession") == "hostile_action"
+        )
         assert translator.to_canonical("enforceable", "adverse_possession") == "claim_enforceable"
 
     def test_translate_property_law_predicates(self):
@@ -95,15 +107,25 @@ class TestCanonicalToDomain:
         """Canonical predicates should map to adverse possession."""
         translator = CanonicalTranslator()
 
-        assert translator.from_canonical("continuous_possession", "adverse_possession") == "occupation_continuous"
-        assert translator.from_canonical("duration_period", "adverse_possession") == "occupation_years"
-        assert translator.from_canonical("hostile_action", "adverse_possession") == "occupation_hostile"
+        assert (
+            translator.from_canonical("continuous_possession", "adverse_possession")
+            == "occupation_continuous"
+        )
+        assert (
+            translator.from_canonical("duration_period", "adverse_possession") == "occupation_years"
+        )
+        assert (
+            translator.from_canonical("hostile_action", "adverse_possession")
+            == "occupation_hostile"
+        )
 
     def test_translate_to_property_law(self):
         """Canonical predicates should map to property law."""
         translator = CanonicalTranslator()
 
-        assert translator.from_canonical("continuous_possession", "property_law") == "use_continuous"
+        assert (
+            translator.from_canonical("continuous_possession", "property_law") == "use_continuous"
+        )
         assert translator.from_canonical("duration_period", "property_law") == "use_duration_years"
         assert translator.from_canonical("hostile_action", "property_law") == "use_adverse"
 
@@ -129,9 +151,7 @@ class TestCrossDomainTranslation:
         assert result == "use_continuous"
 
         # Property law -> Adverse possession
-        result = translator.translate_predicate(
-            "use_adverse", "property_law", "adverse_possession"
-        )
+        result = translator.translate_predicate("use_adverse", "property_law", "adverse_possession")
         assert result == "occupation_hostile"
 
     def test_translate_predicate_no_target_mapping(self):
@@ -139,9 +159,7 @@ class TestCrossDomainTranslation:
         translator = CanonicalTranslator()
 
         # taxes_paid exists in adverse_possession but not property_law
-        result = translator.translate_predicate(
-            "taxes_paid", "adverse_possession", "property_law"
-        )
+        result = translator.translate_predicate("taxes_paid", "adverse_possession", "property_law")
         assert result is None
 
 
@@ -201,9 +219,7 @@ class TestRuleTranslation:
         rule = "enforceable(X) :- taxes_paid(X, yes)."
 
         with pytest.raises(ValueError) as exc_info:
-            translator.translate_rule(
-                rule, "adverse_possession", "property_law", strict=True
-            )
+            translator.translate_rule(rule, "adverse_possession", "property_law", strict=True)
 
         assert "taxes_paid" in str(exc_info.value)
 
@@ -212,9 +228,7 @@ class TestRuleTranslation:
         translator = CanonicalTranslator()
 
         rule = "enforceable(X) :- occupation_years(X, N), statutory_period(X, P), N >= P."
-        translated, _, _ = translator.translate_rule(
-            rule, "adverse_possession", "property_law"
-        )
+        translated, _, _ = translator.translate_rule(rule, "adverse_possession", "property_law")
 
         assert "N >= P" in translated
 
@@ -245,9 +259,7 @@ class TestTranslationCoverage:
         """Similar domains should have high coverage."""
         translator = CanonicalTranslator()
 
-        coverage = translator.get_translation_coverage(
-            "adverse_possession", "property_law"
-        )
+        coverage = translator.get_translation_coverage("adverse_possession", "property_law")
 
         assert coverage["source_predicates"] > 0
         assert coverage["common_canonical"] > 0
@@ -257,9 +269,7 @@ class TestTranslationCoverage:
         """Common canonical predicates should be found."""
         translator = CanonicalTranslator()
 
-        common = translator.find_common_canonical(
-            "adverse_possession", "property_law"
-        )
+        common = translator.find_common_canonical("adverse_possession", "property_law")
 
         assert "continuous_possession" in common
         assert "hostile_action" in common

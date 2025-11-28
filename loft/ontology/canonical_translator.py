@@ -53,8 +53,7 @@ class CanonicalTranslator:
         """
         if not RDFLIB_AVAILABLE:
             raise ImportError(
-                "rdflib is required for CanonicalTranslator. "
-                "Install with: pip install rdflib"
+                "rdflib is required for CanonicalTranslator. Install with: pip install rdflib"
             )
 
         if ontology_path is None:
@@ -76,9 +75,7 @@ class CanonicalTranslator:
     def _load_ontology(self) -> None:
         """Load and parse the RDF ontology file."""
         if not self.ontology_path.exists():
-            raise FileNotFoundError(
-                f"Ontology file not found: {self.ontology_path}"
-            )
+            raise FileNotFoundError(f"Ontology file not found: {self.ontology_path}")
 
         self.graph.parse(self.ontology_path, format="turtle")
         self._build_mappings()
@@ -239,9 +236,7 @@ class CanonicalTranslator:
         predicates_found = set(re.findall(predicate_pattern, rule))
 
         for pred in predicates_found:
-            target_pred = self.translate_predicate(
-                pred, source_domain, target_domain
-            )
+            target_pred = self.translate_predicate(pred, source_domain, target_domain)
 
             if target_pred is not None and target_pred != pred:
                 # Replace predicate in rule (with word boundary to avoid partial matches)
@@ -253,9 +248,7 @@ class CanonicalTranslator:
                 untranslatable_predicates.append(pred)
 
         if strict and untranslatable_predicates:
-            raise ValueError(
-                f"Cannot translate predicates: {untranslatable_predicates}"
-            )
+            raise ValueError(f"Cannot translate predicates: {untranslatable_predicates}")
 
         return translated_rule, translated_predicates, untranslatable_predicates
 
@@ -271,9 +264,7 @@ class CanonicalTranslator:
         """
         return self._canonical_metadata.get(canonical)
 
-    def find_common_canonical(
-        self, domain1: str, domain2: str
-    ) -> Set[str]:
+    def find_common_canonical(self, domain1: str, domain2: str) -> Set[str]:
         """
         Find canonical predicates that have mappings in both domains.
 
@@ -288,9 +279,7 @@ class CanonicalTranslator:
         preds2 = set(self._domain_to_canonical.get(domain2, {}).values())
         return preds1.intersection(preds2)
 
-    def get_translation_coverage(
-        self, source_domain: str, target_domain: str
-    ) -> Dict:
+    def get_translation_coverage(self, source_domain: str, target_domain: str) -> Dict:
         """
         Calculate translation coverage between two domains.
 
@@ -335,7 +324,4 @@ class CanonicalTranslator:
     def __repr__(self) -> str:
         domains = self.get_domains()
         canonical_count = len(self._canonical_metadata)
-        return (
-            f"CanonicalTranslator(domains={domains}, "
-            f"canonical_predicates={canonical_count})"
-        )
+        return f"CanonicalTranslator(domains={domains}, canonical_predicates={canonical_count})"
