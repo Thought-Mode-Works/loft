@@ -35,7 +35,7 @@ from loft.validation.validation_pipeline import ValidationPipeline
 from loft.validation.asp_validators import ASPSyntaxValidator
 from loft.validation.semantic_validator import SemanticValidator
 from loft.validation.empirical_validator import EmpiricalValidator
-from loft.core.incorporation import IncorporationEngine
+from loft.core.incorporation import RuleIncorporationEngine
 from loft.core.modification_session import ModificationSession
 from loft.symbolic.asp_core import ASPCore
 from experiments.workflow_metrics import WorkflowMetrics
@@ -177,7 +177,7 @@ class EnhancedExperimentRunner:
 
             # Initialize incorporation engine
             self.modification_session = ModificationSession(system_name="statute_of_frauds")
-            self.incorporation_engine = IncorporationEngine(
+            self.incorporation_engine = RuleIncorporationEngine(
                 asp_core=self.asp_core,
                 modification_session=self.modification_session,
             )
