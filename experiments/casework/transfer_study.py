@@ -23,6 +23,15 @@ from experiments.casework.explorer import CaseworkExplorer
 from experiments.casework.dataset_loader import DatasetLoader, LegalScenario
 from loft.symbolic.asp_reasoner import ASPReasoner
 
+# Optional canonical translator for cross-domain translation
+try:
+    from loft.ontology.canonical_translator import CanonicalTranslator
+
+    CANONICAL_TRANSLATOR_AVAILABLE = True
+except ImportError:
+    CANONICAL_TRANSLATOR_AVAILABLE = False
+    CanonicalTranslator = None
+
 
 @dataclass
 class TransferResult:
@@ -107,13 +116,39 @@ class TransferStudy:
 
     Tests how well knowledge learned in one legal domain applies to another.
     Uses actual ASP reasoning for predictions instead of heuristics.
+    Supports canonical translation for cross-domain predicate mapping.
     """
 
-    def __init__(self, model: str = "claude-3-5-haiku-20241022"):
-        """Initialize transfer study."""
+    def __init__(
+        self,
+        model: str = "claude-3-5-haiku-20241022",
+        use_canonical_translation: bool = False,
+    ):
+        """
+        Initialize transfer study.
+
+        Args:
+            model: LLM model to use for learning
+            use_canonical_translation: If True, use canonical ontology for
+                cross-domain predicate translation
+        """
         self.model = model
         self.asp_reasoner = ASPReasoner()
         self._unknown_predictions: List[str] = []  # Track scenarios with unknown predictions
+        self.use_canonical_translation = use_canonical_translation
+        self._translator: Optional["CanonicalTranslator"] = None
+
+        if use_canonical_translation:
+            if not CANONICAL_TRANSLATOR_AVAILABLE:
+                raise ImportError(
+                    "Canonical translation requires rdflib. "
+                    "Install with: pip install rdflib"
+                )
+            self._translator = CanonicalTranslator()
+            logger.info(
+                f"Canonical translation enabled. "
+                f"Domains: {self._translator.get_domains()}"
+            )
 
     def run_same_domain_experiment(
         self,
@@ -233,6 +268,16 @@ class TransferStudy:
 
         logger.info(f"Starting transfer study: {source_domain} → {target_domain}")
 
+        # Check canonical translation availability
+        if self.use_canonical_translation and self._translator:
+            coverage = self._translator.get_translation_coverage(
+                source_domain, target_domain
+            )
+            logger.info(
+                f"Canonical translation coverage: {coverage['coverage_ratio']:.1%} "
+                f"({coverage['translatable_count']}/{coverage['source_predicates']} predicates)"
+            )
+
         # Step 1: Train on source domain
         logger.info(f"Step 1: Training on source domain ({source_domain})...")
         source_explorer = CaseworkExplorer(
@@ -259,8 +304,25 @@ class TransferStudy:
         self.asp_reasoner.reset_stats()
         self._unknown_predictions = []
 
+        # Translate rules if canonical translation is enabled
+        transfer_rules = source_explorer.knowledge_base_rules
+        translation_stats = None
+
+        if self.use_canonical_translation and self._translator:
+            logger.info("Translating rules using canonical predicates...")
+            transfer_rules, translation_stats = self._translate_knowledge_base(
+                source_explorer.knowledge_base_rules,
+                source_domain,
+                target_domain,
+            )
+            logger.info(
+                f"Translated {len(transfer_rules)} rules: "
+                f"{translation_stats['total_translated']} predicates translated, "
+                f"{translation_stats['total_untranslatable']} untranslatable"
+            )
+
         zero_shot_acc, zero_shot_coverage = self._test_knowledge_base_asp(
-            source_explorer.knowledge_base_rules, target_scenarios
+            transfer_rules, target_scenarios
         )
         zero_shot_unknown = len(self._unknown_predictions)
 
@@ -317,6 +379,53 @@ class TransferStudy:
         )
 
         return result
+
+    def _translate_knowledge_base(
+        self,
+        rules: List[str],
+        source_domain: str,
+        target_domain: str,
+    ) -> tuple[List[str], dict]:
+        """
+        Translate knowledge base rules from source to target domain.
+
+        Args:
+            rules: List of ASP rules in source domain
+            source_domain: Source domain name
+            target_domain: Target domain name
+
+        Returns:
+            Tuple of:
+            - List of translated rules
+            - Statistics dictionary with translation metrics
+        """
+        if not self._translator:
+            return rules, {"total_translated": 0, "total_untranslatable": 0}
+
+        translated_rules = []
+        total_translated = 0
+        total_untranslatable = 0
+
+        for rule in rules:
+            translated, success, failed = self._translator.translate_rule(
+                rule, source_domain, target_domain
+            )
+            translated_rules.append(translated)
+            total_translated += len(success)
+            total_untranslatable += len(failed)
+
+            if success:
+                logger.debug(f"Translated: {success}")
+            if failed:
+                logger.debug(f"Untranslatable: {failed}")
+
+        stats = {
+            "total_translated": total_translated,
+            "total_untranslatable": total_untranslatable,
+            "rules_processed": len(rules),
+        }
+
+        return translated_rules, stats
 
     def _measure_baseline(self, explorer: CaseworkExplorer, scenarios: List[Any]) -> float:
         """Measure baseline accuracy before learning."""
@@ -550,6 +659,11 @@ def main():
         default=None,
         help="Output path for report (default: auto-generated)",
     )
+    parser.add_argument(
+        "--use-canonical",
+        action="store_true",
+        help="Use canonical predicate translation for cross-domain transfer",
+    )
 
     args = parser.parse_args()
 
@@ -578,7 +692,10 @@ def main():
             args.output = str(output_dir / f"transfer_{timestamp}.json")
 
     # Run experiment
-    study = TransferStudy(model=args.model)
+    study = TransferStudy(
+        model=args.model,
+        use_canonical_translation=args.use_canonical,
+    )
 
     if mode == "same_domain":
         logger.info("=" * 80)
