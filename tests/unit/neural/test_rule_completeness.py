@@ -497,3 +497,72 @@ class TestEdgeCases:
         # May be valid or invalid depending on clingo parsing
         # Just ensure it doesn't crash and returns a result
         assert isinstance(is_valid, bool)
+
+
+class TestMultiArgumentPredicates:
+    """Test multiline rules with multi-argument predicates.
+
+    Regression tests for issue where rules with predicates like
+    pred(Arg1, Arg2) were incorrectly flagged as truncated when
+    appearing in multiline format.
+    """
+
+    def test_multiline_rule_with_multi_arg_predicates(self):
+        """Test multiline rule with multi-argument predicates."""
+        # This pattern was incorrectly rejected due to comma-splitting
+        rule = """partition_by_sale(Property) :-
+            tenant_in_common(Property, Owners),
+            not physical_division_possible(Property),
+            sale_proceeds_split_proportionally(Property, Owners)."""
+        is_valid, error = validate_asp_rule_completeness(rule)
+        assert is_valid is True, f"Valid multiline rule rejected: {error}"
+
+    def test_predicate_ending_with_owners(self):
+        """Test predicate that ends with 'Owners' argument."""
+        rule = "split_proceeds(Prop, Owners) :- sale(Prop), tenants(Prop, Owners)."
+        is_valid, error = validate_asp_rule_completeness(rule)
+        assert is_valid is True, f"Valid rule with Owners arg rejected: {error}"
+
+    def test_predicate_ending_with_share(self):
+        """Test predicate that ends with 'Share' argument."""
+        rule = "ownership_share(Owner, Share) :- owner(Owner), share(Owner, Share)."
+        is_valid, error = validate_asp_rule_completeness(rule)
+        assert is_valid is True, f"Valid rule with Share arg rejected: {error}"
+
+    def test_complex_multiline_property_rule(self):
+        """Test complex property law rule with multiple predicates."""
+        rule = """adverse_possession_met(Claim) :-
+            claim(Claim),
+            occupation_continuous(Claim, yes),
+            occupation_open(Claim, yes),
+            occupation_hostile(Claim, yes),
+            occupation_years(Claim, Years),
+            statutory_period(Claim, Period),
+            Years >= Period."""
+        is_valid, error = validate_asp_rule_completeness(rule)
+        assert is_valid is True, f"Valid property law rule rejected: {error}"
+
+    def test_statute_of_frauds_multiline(self):
+        """Test Statute of Frauds rule in multiline format."""
+        rule = """unenforceable(Contract) :-
+            contract(Contract),
+            subject_matter(Contract, land),
+            has_writing(Contract, no),
+            not part_performance_exception(Contract)."""
+        is_valid, error = validate_asp_rule_completeness(rule)
+        assert is_valid is True, f"Valid SOF rule rejected: {error}"
+
+    def test_three_arg_predicate(self):
+        """Test rule with three-argument predicate."""
+        rule = "transfer(From, To, Amount) :- party(From), party(To), value(Amount)."
+        is_valid, error = validate_asp_rule_completeness(rule)
+        assert is_valid is True, f"Valid three-arg rule rejected: {error}"
+
+    def test_nested_multiarg_predicates(self):
+        """Test rule with multiple multi-argument predicates."""
+        rule = """valid_transfer(T) :-
+            transfer(T, From, To, Amount),
+            authorized(From, Amount),
+            capacity(To, receive)."""
+        is_valid, error = validate_asp_rule_completeness(rule)
+        assert is_valid is True, f"Valid nested multiarg rule rejected: {error}"
