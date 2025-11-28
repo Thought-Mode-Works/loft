@@ -240,7 +240,6 @@ class CaseworkExplorer:
 def main():
     """Main entry point for casework explorer CLI."""
     import argparse
-    import json
 
     parser = argparse.ArgumentParser(
         description="Automated Casework Explorer - Process legal scenarios and learn rules"
@@ -292,7 +291,7 @@ def main():
         args.output = str(output_dir / f"casework_{timestamp}.json")
 
     # Run explorer
-    logger.info(f"Starting casework exploration")
+    logger.info("Starting casework exploration")
     logger.info(f"Dataset: {args.dataset}")
     logger.info(f"Model: {args.model}")
     logger.info(f"Learning: {not args.no_learning}")
