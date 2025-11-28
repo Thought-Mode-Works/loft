@@ -16,9 +16,14 @@ from loguru import logger
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from loft.symbolic.asp_core import ASPCore
+from loft.symbolic.asp_reasoner import ASPReasoner
 from loft.neural.llm_interface import LLMInterface
 from loft.neural.providers import AnthropicProvider
-from loft.neural.rule_generator import RuleGenerator
+from loft.neural.rule_generator import (
+    RuleGenerator,
+    RuleGenerationError,
+    extract_predicates_from_asp_facts,
+)
 from loft.validation.validation_pipeline import ValidationPipeline
 
 from experiments.casework.dataset_loader import DatasetLoader, LegalScenario
@@ -52,6 +57,7 @@ class CaseworkExplorer:
 
         # Initialize components
         self.asp_core = ASPCore()
+        self.asp_reasoner = ASPReasoner()  # For ASP-based predictions
         import os
 
         api_key = os.getenv("ANTHROPIC_API_KEY", "")
@@ -72,7 +78,39 @@ class CaseworkExplorer:
         # Knowledge base (track incorporated rules)
         self.knowledge_base_rules: List[str] = []
 
-        logger.info(f"Initialized CaseworkExplorer with model={model}, learning={enable_learning}")
+        # Collect dataset predicates for aligned rule generation
+        self.dataset_predicates: List[str] = self._collect_dataset_predicates()
+
+        logger.info(
+            f"Initialized CaseworkExplorer with model={model}, learning={enable_learning}, "
+            f"dataset_predicates={len(self.dataset_predicates)}"
+        )
+
+    def _collect_dataset_predicates(self) -> List[str]:
+        """
+        Collect all unique predicates from dataset scenarios.
+
+        Scans all scenarios in the dataset and extracts predicate patterns
+        for use in aligned rule generation.
+
+        Returns:
+            List of predicate patterns found in the dataset
+        """
+        all_predicates: set = set()
+
+        try:
+            scenarios = self.dataset_loader.load_all()
+            for scenario in scenarios:
+                if scenario.asp_facts:
+                    predicates = extract_predicates_from_asp_facts(scenario.asp_facts)
+                    all_predicates.update(predicates)
+
+            logger.info(f"Collected {len(all_predicates)} unique predicates from dataset")
+            return sorted(all_predicates)
+
+        except Exception as e:
+            logger.warning(f"Failed to collect dataset predicates: {e}")
+            return []
 
     def explore_dataset(
         self,
@@ -121,11 +159,48 @@ class CaseworkExplorer:
             )
 
         self.metrics.end_time = datetime.now()
+
+        # Calculate final accuracy with complete knowledge base
+        if self.knowledge_base_rules:
+            final_accuracy = self._calculate_final_accuracy(scenarios)
+            logger.info(f"\nFinal accuracy with complete KB: {final_accuracy:.1%}")
+            self.metrics.final_kb_accuracy = final_accuracy
+
         logger.info("\n" + "=" * 80)
         logger.info("Casework exploration complete")
         logger.info("=" * 80)
 
         return self.metrics
+
+    def _calculate_final_accuracy(self, scenarios: List[LegalScenario]) -> float:
+        """
+        Calculate accuracy using the complete knowledge base.
+
+        Re-evaluates all scenarios with all learned rules to see what
+        accuracy would be achieved with the final knowledge base.
+
+        Args:
+            scenarios: All scenarios to evaluate
+
+        Returns:
+            Accuracy as a fraction (0.0-1.0)
+        """
+        correct = 0
+        total = 0
+
+        for scenario in scenarios:
+            asp_facts = scenario.asp_facts or ""
+            if not asp_facts:
+                continue
+
+            result = self.asp_reasoner.reason(self.knowledge_base_rules, asp_facts)
+
+            if result.prediction != "unknown":
+                total += 1
+                if result.prediction == scenario.ground_truth:
+                    correct += 1
+
+        return correct / total if total > 0 else 0.0
 
     def process_scenario(self, scenario: LegalScenario) -> CaseResult:
         """
@@ -157,11 +232,26 @@ class CaseworkExplorer:
             _gap = self._identify_gap(scenario, prediction)  # noqa: F841
             gaps_identified = 1
 
-            # Generate candidate rule
+            # Generate candidate rule using aligned generation
             try:
-                candidate = self.rule_generator.generate_from_principle(
-                    principle_text=scenario.rationale,
-                )
+                # Combine dataset predicates with scenario-specific predicates
+                scenario_predicates = []
+                if scenario.asp_facts:
+                    scenario_predicates = extract_predicates_from_asp_facts(scenario.asp_facts)
+
+                all_predicates = list(set(self.dataset_predicates + scenario_predicates))
+
+                # Use aligned generation for better predicate matching
+                if all_predicates:
+                    candidate = self.rule_generator.generate_from_principle_aligned(
+                        principle_text=scenario.rationale,
+                        dataset_predicates=all_predicates,
+                    )
+                else:
+                    # Fall back to standard generation if no predicates available
+                    candidate = self.rule_generator.generate_from_principle(
+                        principle_text=scenario.rationale,
+                    )
                 rules_generated = 1
 
                 # Validate
@@ -177,6 +267,8 @@ class CaseworkExplorer:
                     self.knowledge_base_rules.append(candidate.asp_rule)
                     logger.info(f"Learned new rule from {scenario.scenario_id}")
 
+            except RuleGenerationError as e:
+                logger.warning(f"Rule generation failed for {scenario.scenario_id}: {e}")
             except Exception as e:
                 logger.warning(f"Error learning from scenario: {e}")
 
@@ -196,19 +288,39 @@ class CaseworkExplorer:
 
     def _make_prediction(self, scenario: LegalScenario) -> tuple[str, float]:
         """
-        Make a prediction for a scenario.
+        Make a prediction for a scenario using ASP reasoning.
+
+        Uses the current knowledge base rules combined with scenario facts
+        to derive predictions through actual ASP solving.
 
         Returns:
             Tuple of (prediction, confidence)
         """
-        # Simplified prediction logic for MVP
-        # In full implementation, would use ASP core with current KB
+        # Get ASP facts from scenario
+        asp_facts = scenario.asp_facts or ""
 
-        # For now, use a simple heuristic
-        if "writing" in scenario.description.lower() or "written" in scenario.description.lower():
-            return "enforceable", 0.7
+        if not asp_facts:
+            # Fall back to unknown if no ASP facts available
+            logger.debug(f"No ASP facts for scenario {scenario.scenario_id}")
+            return "unknown", 0.0
+
+        # Use ASP reasoning with current knowledge base
+        result = self.asp_reasoner.reason(self.knowledge_base_rules, asp_facts)
+
+        # Log reasoning details for debugging
+        if result.prediction == "unknown":
+            logger.debug(
+                f"ASP reasoning for {scenario.scenario_id}: unknown "
+                f"(derived atoms: {len(result.derived_atoms)}, "
+                f"rules fired: {len(result.rules_fired)})"
+            )
         else:
-            return "unenforceable", 0.6
+            logger.debug(
+                f"ASP reasoning for {scenario.scenario_id}: {result.prediction} "
+                f"(confidence: {result.confidence:.2f})"
+            )
+
+        return result.prediction, result.confidence
 
     def _identify_gap(self, scenario: LegalScenario, prediction: str) -> Dict[str, Any]:
         """Identify knowledge gap from failed prediction."""

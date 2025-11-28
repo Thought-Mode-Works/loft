@@ -89,19 +89,11 @@ def validate_asp_rule_completeness(rule: str) -> Tuple[bool, Optional[str]]:
         if not body_content.strip():
             return False, "Rule has empty body"
 
-        # Body predicates should look complete
-        # Check for incomplete predicate at end of body
-        body_predicates = re.split(r",\s*", body_content)
-        last_pred = body_predicates[-1].strip() if body_predicates else ""
-        if last_pred and not re.match(r"^(not\s+)?[a-z_][a-zA-Z0-9_]*(\([^)]*\))?$", last_pred):
-            # Check for comparison operators and other valid patterns
-            valid_patterns = [
-                r"^[A-Z_][a-zA-Z0-9_]*\s*[<>=!]+\s*[A-Z0-9_]+$",  # X > Y, X == 5
-                r"^[A-Z_][a-zA-Z0-9_]*\s*[<>=!]+\s*[a-z_]+\([^)]*\)$",  # X = pred(Y)
-                r"^#[a-z]+\s*\{.*\}$",  # Aggregates like #count{...}
-            ]
-            if not any(re.match(p, last_pred) for p in valid_patterns):
-                return False, f"Rule body appears truncated or malformed: '{last_pred}'"
+        # Note: We removed the body predicate completeness check here because:
+        # 1. Splitting by comma breaks multiline rules with multi-argument predicates
+        #    e.g., "pred(A, B)" split by comma gives ["pred(A", "B)"] incorrectly
+        # 2. Check 7 (clingo parsing) is the definitive validation and will catch
+        #    actual syntax errors in rule bodies
 
     # Check 6: No orphan characters after the period (garbage at end)
     # Split by period and check if anything meaningful comes after

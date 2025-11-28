@@ -1,0 +1,18 @@
+{
+  "id": "ap_008",
+  "description": "Successful adverse possession - exactly at statutory period",
+  "facts": [
+    "Irene has occupied the property for exactly 20 years",
+    "Her possession has been continuous without any gaps",
+    "She has openly used the land as her own",
+    "The true owner never authorized her use",
+    "She has paid property taxes throughout",
+    "The statutory period is 20 years"
+  ],
+  "asp_facts": "claim(c8). claimant(c8, irene). property_type(c8, land). occupation_years(c8, 20). occupation_continuous(c8, yes). occupation_open(c8, yes). occupation_hostile(c8, yes). taxes_paid(c8, yes). statutory_period(c8, 20).",
+  "question": "Has Irene acquired title through adverse possession?",
+  "ground_truth": "enforceable",
+  "rationale": "Irene meets all elements of adverse possession: continuous, open, hostile possession for exactly 20 years, which satisfies the 20-year statutory period requirement (must be >= statutory period).",
+  "legal_citations": ["Adverse Possession Doctrine"],
+  "difficulty": "easy"
+}

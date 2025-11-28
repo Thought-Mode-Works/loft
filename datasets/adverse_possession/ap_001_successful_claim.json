@@ -1,0 +1,18 @@
+{
+  "id": "ap_001",
+  "description": "Successful adverse possession claim - all elements met",
+  "facts": [
+    "Alice has occupied the vacant lot for 25 years",
+    "Her use has been continuous without interruption",
+    "She openly maintains a garden visible to all",
+    "The true owner never gave permission",
+    "She has paid property taxes for 20 years",
+    "The statutory period in this jurisdiction is 20 years"
+  ],
+  "asp_facts": "claim(c1). claimant(c1, alice). property_type(c1, land). occupation_years(c1, 25). occupation_continuous(c1, yes). occupation_open(c1, yes). occupation_hostile(c1, yes). taxes_paid(c1, yes). statutory_period(c1, 20).",
+  "question": "Has Alice acquired title through adverse possession?",
+  "ground_truth": "enforceable",
+  "rationale": "Adverse possession requires continuous, open, notorious, and hostile possession for the statutory period. Alice has occupied for 25 years (exceeds 20-year requirement), continuously, openly, without permission, and paid taxes.",
+  "legal_citations": ["Adverse Possession Doctrine"],
+  "difficulty": "easy"
+}

@@ -334,6 +334,182 @@ Conduct your review now.
 """
 
 # =============================================================================
+# RULE REPAIR PROMPTS
+# =============================================================================
+
+RULE_REPAIR_V1_0 = """You are an expert ASP (Answer Set Programming) debugger.
+
+**Problem:** The following ASP rule was generated but has syntax or completeness issues.
+
+**Malformed Rule:**
+```asp
+{malformed_rule}
+```
+
+**Error Message:**
+{error_message}
+
+**Original Principle/Context:**
+{original_context}
+
+**Available Predicates from Dataset:**
+{available_predicates}
+
+**Your Task:**
+1. Identify what's wrong with the rule (truncation, syntax error, etc.)
+2. Reconstruct the COMPLETE, VALID ASP rule
+3. Use predicates that match the available predicates from the dataset
+
+**CRITICAL Requirements:**
+- The rule MUST end with a period '.'
+- All parentheses MUST be balanced
+- All predicates MUST be complete (no truncated names)
+- Use predicates that exist in the dataset facts
+- Follow proper Clingo ASP syntax
+
+**Output Format:**
+Return a GeneratedRule JSON object with:
+- `asp_rule`: The corrected, complete ASP rule
+- `confidence`: Your confidence in the fix (0.0-1.0)
+- `reasoning`: Explanation of what was wrong and how you fixed it
+- `predicates_used`: List of predicates in the rule
+- `new_predicates`: Any new predicates introduced
+- `alternative_formulations`: Empty list (not needed for repair)
+- `source_type`: "refinement"
+- `source_text`: The original context
+
+Fix the rule now.
+"""
+
+RULE_REPAIR_V1_1 = """You are an expert ASP rule repair specialist.
+
+**Broken Rule:**
+```
+{malformed_rule}
+```
+
+**Error:** {error_message}
+
+**Context:** {original_context}
+
+**Dataset Predicates (USE THESE):**
+{available_predicates}
+
+**Fix Requirements:**
+1. Complete any truncated predicates
+2. Ensure rule ends with '.'
+3. Balance all parentheses
+4. Match predicate names to dataset predicates above
+5. Use proper variable naming (uppercase: C, P, X)
+
+**Common Fixes Needed:**
+- Truncated: `occupation_conti` → `occupation_continuous(X, yes)`
+- Missing period: `pred(X)` → `pred(X).`
+- Unbalanced: `pred(X, Y` → `pred(X, Y)`
+
+Respond with a complete GeneratedRule JSON.
+"""
+
+# =============================================================================
+# PREDICATE-ALIGNED GENERATION PROMPTS
+# =============================================================================
+
+ALIGNED_PRINCIPLE_TO_RULE_V1_0 = """You are an expert in converting legal principles into Answer Set Programming (ASP) rules.
+
+**Legal Principle:**
+{principle_text}
+
+**Domain:** {domain}
+
+**AVAILABLE PREDICATES FROM DATASET:**
+{dataset_predicates}
+
+**RULES FOR PREDICATE SELECTION:**
+1. PREFER predicates from the list above when they match the concept
+2. Match predicate names EXACTLY as shown (e.g., use `attachment_method(X, Y)` not `annexation(X, Y)`)
+3. For yes/no predicates, use the exact format shown (e.g., `custom_built(X, yes)`)
+4. If NO suitable predicate exists in the list for a required concept, you MAY create a new predicate
+5. The head MUST be `enforceable(X)` or `unenforceable(X)`
+6. Use uppercase variables: X, Y, N, P
+
+**PREDICATE MATCHING EXAMPLES:**
+- Dataset has `attachment_method(X, bolted)` → use this, NOT `annexation(X, yes)`
+- Dataset has `custom_built(X, yes)` → use this, NOT `adaptation(X, custom)`
+- Dataset has `occupation_continuous(X, yes)` → use this, NOT `continuous_occupation(X)`
+
+**WHEN TO CREATE NEW PREDICATES:**
+Only create a new predicate if the legal concept has NO logical match in the available predicates.
+List any new predicates in the `new_predicates` field.
+
+**OUTPUT:**
+Generate ONE complete ASP rule that:
+1. Prefers dataset predicates over invented ones
+2. Ends with a period
+3. Has balanced parentheses
+4. Derives `enforceable(X)` or `unenforceable(X)`
+
+Respond with a GeneratedRule JSON object.
+"""
+
+ALIGNED_PRINCIPLE_TO_RULE_V1_1 = """You are an expert in converting legal principles into GENERAL Answer Set Programming (ASP) rules.
+
+**CRITICAL REQUIREMENT: USE ONLY THESE DATASET PREDICATES**
+
+The ONLY predicates you may use are listed below. DO NOT invent new predicate names.
+If a legal concept doesn't have a matching predicate, find the CLOSEST match from this list.
+
+**AVAILABLE PREDICATES (USE THESE EXACTLY):**
+{dataset_predicates}
+
+**Legal Principle:**
+{principle_text}
+
+**Domain:** {domain}
+
+**STRICT RULES:**
+
+1. **USE ONLY DATASET PREDICATES**: Every predicate in your rule body MUST appear in the list above.
+   - If the principle mentions "annexation", look for predicates like `built_in(X, yes)` or `attachment_method(X, Y)`
+   - If the principle mentions "intent", look for predicates like `custom_built(X, yes)` or `built_in(X, yes)`
+   - DO NOT create `annexed(X, yes)` or `intent_permanent(X, yes)` if they're not in the list
+
+2. **MAP LEGAL CONCEPTS TO DATASET PREDICATES:**
+   - "annexed/annexation" → use `attachment_method(X, Y)` or `built_in(X, yes)`
+   - "adaptation/adapted" → use `custom_built(X, yes)`
+   - "intent/intention" → use `built_in(X, yes)` or infer from other predicates
+   - "continuous" → use `occupation_continuous(X, yes)`
+   - "hostile/adverse" → use `occupation_hostile(X, yes)` or `use_adverse(X, yes)`
+
+3. **GENERALIZE (no specific names):**
+   - NEVER use specific names (Frank, Nancy, Alice) - use VARIABLES (X, Y, P)
+   - Use uppercase for variables: X, Y, Z, N, Owner, Buyer
+
+4. **SYNTAX:**
+   - Head MUST be `enforceable(X)` or `unenforceable(X)`
+   - Rule MUST end with a period
+   - All parentheses must be balanced
+
+**EXAMPLE:**
+
+Legal principle: "The fixture test requires annexation, adaptation, and intent"
+Available predicates: `attachment_method(X, Y)`, `custom_built(X, yes/no)`, `built_in(X, yes/no)`
+
+WRONG (invents predicates):
+```asp
+enforceable(X) :- annexed(X, yes), adapted(X, yes), intent_permanent(X, yes).
+```
+
+CORRECT (uses available predicates):
+```asp
+enforceable(X) :- attachment_method(X, bolted), custom_built(X, yes), built_in(X, yes).
+```
+
+**OUTPUT:**
+Generate ONE complete ASP rule using ONLY predicates from the list above.
+Respond with a GeneratedRule JSON object.
+"""
+
+# =============================================================================
 # MULTI-LLM REFINEMENT PROMPTS
 # =============================================================================
 
@@ -379,6 +555,11 @@ PROMPT_VERSIONS = {
         "v1.1": PRINCIPLE_TO_RULE_V1_1,
         "latest": "v1.1",
     },
+    "aligned_principle_to_rule": {
+        "v1.0": ALIGNED_PRINCIPLE_TO_RULE_V1_0,
+        "v1.1": ALIGNED_PRINCIPLE_TO_RULE_V1_1,
+        "latest": "v1.1",
+    },
     "case_to_rule": {
         "v1.0": CASE_TO_RULE_V1_0,
         "latest": "v1.0",
@@ -391,6 +572,11 @@ PROMPT_VERSIONS = {
     "consensus_vote": {
         "v1.0": CONSENSUS_VOTE_V1_0,
         "v1.1": CONSENSUS_VOTE_V1_1,
+        "latest": "v1.1",
+    },
+    "rule_repair": {
+        "v1.0": RULE_REPAIR_V1_0,
+        "v1.1": RULE_REPAIR_V1_1,
         "latest": "v1.1",
     },
     "refinement": {

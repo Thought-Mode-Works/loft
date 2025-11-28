@@ -1,0 +1,18 @@
+{
+  "id": "ap_002",
+  "description": "Failed adverse possession - insufficient time period",
+  "facts": [
+    "Bob has occupied the abandoned property for 12 years",
+    "His use has been continuous and open",
+    "He built a fence and planted trees",
+    "The true owner never gave permission",
+    "He has paid all property taxes",
+    "The statutory period in this jurisdiction is 20 years"
+  ],
+  "asp_facts": "claim(c2). claimant(c2, bob). property_type(c2, land). occupation_years(c2, 12). occupation_continuous(c2, yes). occupation_open(c2, yes). occupation_hostile(c2, yes). taxes_paid(c2, yes). statutory_period(c2, 20).",
+  "question": "Has Bob acquired title through adverse possession?",
+  "ground_truth": "unenforceable",
+  "rationale": "Although Bob meets all other requirements (continuous, open, hostile, taxes paid), he has only occupied for 12 years, which is less than the 20-year statutory period required.",
+  "legal_citations": ["Adverse Possession Doctrine"],
+  "difficulty": "easy"
+}

@@ -1,0 +1,17 @@
+{
+  "id": "ap_005",
+  "description": "Successful adverse possession with tacking (privity)",
+  "facts": [
+    "Eve occupied the land for 12 years, then sold her interest to Frank",
+    "Frank has continued the same hostile occupation for 10 more years",
+    "There was privity between Eve and Frank (deed transfer)",
+    "The use has been continuous, open, and hostile throughout",
+    "The statutory period is 20 years"
+  ],
+  "asp_facts": "claim(c5). claimant(c5, frank). property_type(c5, land). occupation_years(c5, 22). occupation_continuous(c5, yes). occupation_open(c5, yes). occupation_hostile(c5, yes). taxes_paid(c5, yes). statutory_period(c5, 20). tacking_allowed(c5, yes).",
+  "question": "Has Frank acquired title through adverse possession?",
+  "ground_truth": "enforceable",
+  "rationale": "When there is privity between successive possessors, their periods of possession can be tacked together. Eve's 12 years plus Frank's 10 years equals 22 years, exceeding the 20-year statutory period.",
+  "legal_citations": ["Adverse Possession Doctrine", "Tacking Doctrine"],
+  "difficulty": "hard"
+}

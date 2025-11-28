@@ -39,6 +39,7 @@ class LearningMetrics:
     case_results: List[CaseResult] = field(default_factory=list)
     start_time: datetime = field(default_factory=datetime.now)
     end_time: Optional[datetime] = None
+    final_kb_accuracy: float = 0.0  # Accuracy with complete knowledge base
 
     def add_case_result(self, result: CaseResult) -> None:
         """Add a case result and update metrics."""
@@ -80,6 +81,7 @@ class LearningMetrics:
             "total_cases": self.total_cases,
             "cases_correct": self.cases_correct,
             "final_accuracy": self.get_current_accuracy(),
+            "final_kb_accuracy": self.final_kb_accuracy,
             "total_gaps_identified": self.total_gaps_identified,
             "total_rules_generated": self.total_rules_generated,
             "total_rules_accepted": self.total_rules_accepted,

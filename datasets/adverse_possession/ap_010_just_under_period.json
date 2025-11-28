@@ -1,0 +1,17 @@
+{
+  "id": "ap_010",
+  "description": "Failed adverse possession - just under statutory period",
+  "facts": [
+    "Karen has occupied the property for 19 years and 11 months",
+    "Her possession has been continuous, open, and hostile",
+    "She has paid all property taxes",
+    "The statutory period is 20 years",
+    "The owner has now filed to eject her"
+  ],
+  "asp_facts": "claim(c10). claimant(c10, karen). property_type(c10, land). occupation_years(c10, 19). occupation_continuous(c10, yes). occupation_open(c10, yes). occupation_hostile(c10, yes). taxes_paid(c10, yes). statutory_period(c10, 20).",
+  "question": "Has Karen acquired title through adverse possession?",
+  "ground_truth": "unenforceable",
+  "rationale": "Although Karen meets all other requirements, she has only occupied for 19 years, which is less than the 20-year statutory period. The owner can still eject her before she completes the required period.",
+  "legal_citations": ["Adverse Possession Doctrine"],
+  "difficulty": "easy"
+}

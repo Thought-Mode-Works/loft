@@ -1,0 +1,17 @@
+{
+  "id": "ap_004",
+  "description": "Failed adverse possession - interrupted continuous possession",
+  "facts": [
+    "David occupied the property from 2000 to 2010",
+    "He was forced to leave when the owner sued for trespass",
+    "He returned in 2012 and has occupied since then",
+    "His current occupation has been open and hostile",
+    "The statutory period is 15 years"
+  ],
+  "asp_facts": "claim(c4). claimant(c4, david). property_type(c4, land). occupation_years(c4, 10). occupation_continuous(c4, no). occupation_open(c4, yes). occupation_hostile(c4, yes). taxes_paid(c4, yes). statutory_period(c4, 15).",
+  "question": "Has David acquired title through adverse possession?",
+  "ground_truth": "unenforceable",
+  "rationale": "Adverse possession requires continuous possession for the entire statutory period. David's possession was interrupted when he was forced to leave. The clock restarted when he returned, so his current 10 years of possession does not meet the 15-year requirement.",
+  "legal_citations": ["Adverse Possession Doctrine"],
+  "difficulty": "medium"
+}

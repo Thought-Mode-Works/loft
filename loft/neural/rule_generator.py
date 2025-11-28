@@ -614,3 +614,245 @@ class RuleGenerator:
                 f"Version {self.prompt_version} not found for {template_name}, using 'latest'"
             )
             return get_prompt(template_name, "latest")
+
+    def repair_malformed_rule(
+        self,
+        malformed_rule: str,
+        error_message: str,
+        original_context: str,
+        available_predicates: Optional[List[str]] = None,
+    ) -> GeneratedRule:
+        """
+        Attempt to repair a malformed or truncated ASP rule.
+
+        Uses a specialized repair prompt to ask the LLM to fix syntax errors,
+        complete truncated rules, and align predicates with the dataset.
+
+        Args:
+            malformed_rule: The broken/truncated ASP rule
+            error_message: The validation error message
+            original_context: The original principle or context for the rule
+            available_predicates: List of predicates from the dataset
+
+        Returns:
+            GeneratedRule with the repaired ASP rule
+
+        Raises:
+            RuleGenerationError: If repair fails
+        """
+        logger.info(f"Attempting to repair malformed rule: {malformed_rule[:50]}...")
+
+        # Format available predicates
+        predicates_str = (
+            self._format_predicate_list(available_predicates)
+            if available_predicates
+            else "No predicate list available."
+        )
+
+        # Get repair prompt
+        prompt_template = get_prompt("rule_repair", "latest")
+        prompt = prompt_template.format(
+            malformed_rule=malformed_rule,
+            error_message=error_message,
+            original_context=original_context,
+            available_predicates=predicates_str,
+        )
+
+        try:
+            response = self.llm.query(
+                question=prompt,
+                output_schema=GeneratedRule,
+                temperature=0.2,  # Low temperature for consistent repair
+                max_tokens=RETRY_MAX_TOKENS,
+            )
+
+            repaired_rule = response.content
+
+            # Validate the repaired rule
+            is_valid, validation_error = validate_asp_rule_completeness(repaired_rule.asp_rule)
+            if not is_valid:
+                logger.warning(f"Repaired rule still invalid: {validation_error}")
+                raise RuleGenerationError(
+                    message=f"Rule repair failed: {validation_error}",
+                    attempts=1,
+                    last_error=validation_error,
+                )
+
+            logger.info(
+                f"Successfully repaired rule with confidence {repaired_rule.confidence:.2f}"
+            )
+            return repaired_rule
+
+        except Exception as e:
+            logger.error(f"Rule repair failed: {e}")
+            raise RuleGenerationError(
+                message=f"Rule repair failed: {e}",
+                attempts=1,
+                last_error=str(e),
+            )
+
+    def generate_from_principle_aligned(
+        self,
+        principle_text: str,
+        dataset_predicates: List[str],
+        max_retries: int = MAX_GENERATION_RETRIES,
+    ) -> GeneratedRule:
+        """
+        Generate ASP rule aligned with dataset predicates.
+
+        Uses a specialized prompt that includes example predicates from the
+        dataset to ensure the generated rule uses matching predicate formats.
+
+        Args:
+            principle_text: Natural language statement of legal principle
+            dataset_predicates: List of predicates extracted from dataset facts
+            max_retries: Maximum number of retry attempts
+
+        Returns:
+            GeneratedRule with aligned predicates
+
+        Raises:
+            RuleGenerationError: If rule generation fails after all retries
+        """
+        logger.info(f"Generating aligned rule from principle: {principle_text[:100]}...")
+
+        # Format dataset predicates as examples
+        predicates_str = "\n".join(f"- {pred}" for pred in dataset_predicates[:20])
+
+        # Get aligned prompt
+        prompt_template = get_prompt("aligned_principle_to_rule", "latest")
+        prompt = prompt_template.format(
+            principle_text=principle_text,
+            domain=self.domain,
+            dataset_predicates=predicates_str,
+        )
+
+        last_error: Optional[str] = None
+        last_malformed_rule: Optional[str] = None
+
+        for attempt in range(max_retries):
+            current_max_tokens = DEFAULT_MAX_TOKENS if attempt == 0 else RETRY_MAX_TOKENS
+
+            try:
+                logger.debug(
+                    f"Aligned generation attempt {attempt + 1}/{max_retries}, "
+                    f"max_tokens={current_max_tokens}"
+                )
+
+                response = self.llm.query(
+                    question=prompt,
+                    output_schema=GeneratedRule,
+                    temperature=0.3,
+                    max_tokens=current_max_tokens,
+                )
+
+                rule = response.content
+
+                # Validate completeness
+                is_valid, error_msg = validate_asp_rule_completeness(rule.asp_rule)
+                if not is_valid:
+                    logger.warning(f"Generated rule failed completeness check: {error_msg}")
+                    last_error = error_msg
+                    last_malformed_rule = rule.asp_rule
+                    continue
+
+                logger.info(
+                    f"Generated aligned rule with confidence {rule.confidence:.2f}: "
+                    f"{rule.asp_rule[:100]}"
+                )
+                return rule
+
+            except LLMParsingError as e:
+                logger.warning(f"LLM parsing error on attempt {attempt + 1}: {e}")
+                last_error = str(e)
+                continue
+
+            except ValueError as e:
+                logger.warning(f"Validation error on attempt {attempt + 1}: {e}")
+                last_error = str(e)
+                # Try to extract the malformed rule from the error
+                if hasattr(e, "__context__") and e.__context__:
+                    last_malformed_rule = str(e.__context__)
+                continue
+
+        # All retries exhausted - try repair as last resort
+        if last_malformed_rule:
+            logger.info("Attempting rule repair as last resort...")
+            try:
+                return self.repair_malformed_rule(
+                    malformed_rule=last_malformed_rule,
+                    error_message=last_error or "Unknown error",
+                    original_context=principle_text,
+                    available_predicates=dataset_predicates,
+                )
+            except RuleGenerationError:
+                pass  # Fall through to raise error
+
+        error_message = (
+            f"Failed to generate aligned ASP rule after {max_retries} attempts. "
+            f"Last error: {last_error}"
+        )
+        logger.error(error_message)
+        raise RuleGenerationError(
+            message=error_message,
+            attempts=max_retries,
+            last_error=last_error,
+        )
+
+
+def extract_predicates_from_asp_facts(asp_facts: str) -> List[str]:
+    """
+    Extract predicate patterns from ASP facts.
+
+    Parses ASP facts and extracts predicate names with their arities and
+    example arguments for use in aligned rule generation.
+
+    Args:
+        asp_facts: String containing ASP facts (e.g., "contract(c1). party(c1, alice).")
+
+    Returns:
+        List of predicate patterns (e.g., ["contract(X)", "party(X, Y)"])
+
+    Example:
+        >>> facts = "claim(c1). occupation_years(c1, 22). occupation_continuous(c1, yes)."
+        >>> predicates = extract_predicates_from_asp_facts(facts)
+        >>> print(predicates)
+        ['claim(X)', 'occupation_years(X, N)', 'occupation_continuous(X, V)']
+    """
+    import re
+
+    predicates = set()
+
+    # Pattern to match predicates: name(args).
+    predicate_pattern = r"([a-z_][a-z0-9_]*)\(([^)]*)\)"
+
+    for match in re.finditer(predicate_pattern, asp_facts):
+        pred_name = match.group(1)
+        args = match.group(2)
+
+        # Count arguments
+        if args.strip():
+            arg_list = [a.strip() for a in args.split(",")]
+            arity = len(arg_list)
+
+            # Create variable pattern based on arity
+            if arity == 1:
+                predicates.add(f"{pred_name}(X)")
+            elif arity == 2:
+                # Try to infer argument types
+                second_arg = arg_list[1]
+                if second_arg in ("yes", "no"):
+                    predicates.add(f"{pred_name}(X, yes/no)")
+                elif second_arg.isdigit():
+                    predicates.add(f"{pred_name}(X, N)")
+                else:
+                    predicates.add(f"{pred_name}(X, Y)")
+            else:
+                vars_str = ", ".join([chr(ord("X") + i) for i in range(min(arity, 3))])
+                if arity > 3:
+                    vars_str += ", ..."
+                predicates.add(f"{pred_name}({vars_str})")
+        else:
+            predicates.add(f"{pred_name}")
+
+    return sorted(predicates)
