@@ -6,9 +6,142 @@ ensuring consistent, validated responses from LLMs during Phase 2.
 """
 
 import re
-from typing import List, Literal, Optional, Tuple
+from typing import List, Literal, Optional, Tuple, Set
 from pydantic import BaseModel, Field, field_validator
 from loguru import logger
+
+
+def extract_body_predicates(rule: str) -> Set[str]:
+    """
+    Extract predicate names from the body of an ASP rule.
+
+    Args:
+        rule: The ASP rule string
+
+    Returns:
+        Set of predicate names found in the rule body
+    """
+    predicates = set()
+
+    if ":-" not in rule:
+        return predicates  # It's a fact, no body predicates
+
+    # Get the body part
+    parts = rule.split(":-", 1)
+    if len(parts) != 2:
+        return predicates
+
+    body = parts[1].strip().rstrip(".")
+
+    # Find all predicate names (word followed by opening paren)
+    # Handle negation: "not predicate(X)" -> "predicate"
+    pattern = r"(?:not\s+)?([a-z_][a-zA-Z0-9_]*)\s*\("
+    matches = re.findall(pattern, body)
+    predicates.update(matches)
+
+    return predicates
+
+
+def extract_head_predicate(rule: str) -> Optional[str]:
+    """
+    Extract the predicate name from the head of an ASP rule.
+
+    Args:
+        rule: The ASP rule string
+
+    Returns:
+        The head predicate name, or None if not found
+    """
+    if ":-" in rule:
+        head = rule.split(":-", 1)[0].strip()
+    else:
+        # It's a fact
+        head = rule.strip().rstrip(".")
+
+    # Extract predicate name
+    match = re.match(r"([a-z_][a-zA-Z0-9_]*)\s*\(", head)
+    if match:
+        return match.group(1)
+
+    return None
+
+
+def check_undefined_predicates(
+    rule: str, known_predicates: Set[str], strict: bool = False
+) -> Tuple[List[str], List[str]]:
+    """
+    Check if rule references predicates that don't exist in the known set.
+
+    Args:
+        rule: The ASP rule to check
+        known_predicates: Set of known predicate names
+        strict: If True, return undefined as errors; otherwise as warnings
+
+    Returns:
+        Tuple of (errors, warnings) listing undefined predicates
+    """
+    errors = []
+    warnings = []
+
+    body_predicates = extract_body_predicates(rule)
+    undefined = body_predicates - known_predicates
+
+    if undefined:
+        msg = f"Undefined predicates in rule body: {', '.join(sorted(undefined))}"
+        if strict:
+            errors.append(msg)
+        else:
+            warnings.append(msg)
+
+    return errors, warnings
+
+
+def validate_rule_grounds(rule: str, sample_facts: str) -> Tuple[bool, Optional[str]]:
+    """
+    Verify that a rule actually grounds with sample facts.
+
+    A rule that doesn't ground with relevant facts will never fire.
+
+    Args:
+        rule: The ASP rule to test
+        sample_facts: Sample facts to test grounding with
+
+    Returns:
+        Tuple of (grounds_successfully, error_message)
+    """
+    try:
+        import clingo
+
+        program = f"{rule}\n{sample_facts}"
+        ctl = clingo.Control(["0"])
+        ctl.add("base", [], program)
+        ctl.ground([("base", [])])
+
+        # Check if the head predicate was derived
+        head_pred = extract_head_predicate(rule)
+        if not head_pred:
+            return True, None  # Can't check, assume OK
+
+        # Get answer set and check for head predicate
+        derived = []
+
+        def on_model(model: clingo.Model) -> bool:
+            for atom in model.symbols(shown=True):
+                derived.append(str(atom))
+            return False  # Stop after first model
+
+        ctl.solve(on_model=on_model)
+
+        # Check if any atom with the head predicate was derived
+        head_derived = any(atom.startswith(f"{head_pred}(") for atom in derived)
+
+        if head_derived:
+            return True, None
+        else:
+            return False, f"Rule did not derive any {head_pred}() atoms with given facts"
+
+    except Exception as e:
+        return False, f"Grounding test failed: {str(e)}"
 
 
 def validate_asp_rule_completeness(rule: str) -> Tuple[bool, Optional[str]]:
