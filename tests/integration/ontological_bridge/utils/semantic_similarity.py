@@ -5,16 +5,23 @@ Uses sentence embeddings to measure semantic similarity between
 natural language texts.
 """
 
-from typing import List, Tuple
-import numpy as np
+from typing import List, Tuple, TYPE_CHECKING, Any
 
-# Try to import sentence-transformers, fall back to simple similarity if unavailable
+# Try to import optional dependencies
 try:
+    import numpy as np
     from sentence_transformers import SentenceTransformer
 
     SENTENCE_TRANSFORMER_AVAILABLE = True
 except ImportError:
     SENTENCE_TRANSFORMER_AVAILABLE = False
+    if not TYPE_CHECKING:
+        # For type checking, pretend numpy exists
+        np = None  # type: ignore
+        SentenceTransformer = None  # type: ignore
+
+if TYPE_CHECKING:
+    import numpy as np
 
 
 class SemanticSimilarityCalculator:
@@ -107,7 +114,7 @@ def semantic_similarity(text1: str, text2: str) -> float:
     return calculator.calculate_similarity(text1, text2)
 
 
-def cosine_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
+def cosine_similarity(vec1: Any, vec2: Any) -> float:
     """
     Calculate cosine similarity between two vectors.
 
