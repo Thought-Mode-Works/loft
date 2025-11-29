@@ -101,6 +101,20 @@ from .stratification_validator import (
     StratificationReport,
 )
 
+from .conflict_resolver import (
+    ConflictResolver,
+    ResolutionStrategy,
+    ConflictInfo,
+    ResolutionResult,
+    ConflictStats,
+)
+
+from .asp_reasoner import (
+    ASPReasoner,
+    ReasoningResult,
+    ReasoningStats,
+)
+
 __all__ = [
     # Core classes
     "ASPRule",
@@ -132,4 +146,14 @@ __all__ = [
     "StratificationValidator",
     "StratificationViolation",
     "StratificationReport",
+    # Conflict Resolution
+    "ConflictResolver",
+    "ResolutionStrategy",
+    "ConflictInfo",
+    "ResolutionResult",
+    "ConflictStats",
+    # ASP Reasoning
+    "ASPReasoner",
+    "ReasoningResult",
+    "ReasoningStats",
 ]
