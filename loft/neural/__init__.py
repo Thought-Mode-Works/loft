@@ -77,6 +77,13 @@ from .rule_schemas import (
 )
 from .prompt_registry import PromptRegistry, PromptTemplate as PromptTemplateV2
 from .rule_prompts import get_prompt, list_templates as list_rule_templates
+from .rule_generalizer import (
+    RuleGeneralizer,
+    GeneralizationResult,
+    GeneralizationStats,
+    extract_entities_from_facts,
+    generalize_rule_with_validation,
+)
 
 __all__ = [
     # Core interfaces
@@ -122,4 +129,10 @@ __all__ = [
     "PromptTemplateV2",
     "get_prompt",
     "list_rule_templates",
+    # Rule Generalization (Phase 3)
+    "RuleGeneralizer",
+    "GeneralizationResult",
+    "GeneralizationStats",
+    "extract_entities_from_facts",
+    "generalize_rule_with_validation",
 ]
