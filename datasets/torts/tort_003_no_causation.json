@@ -1,0 +1,18 @@
+{
+  "id": "tort_003",
+  "domain": "torts",
+  "subdomain": "negligence",
+  "description": "Breach exists but no causation - independent cause",
+  "facts": [
+    "Store owner failed to fix a broken handrail on stairs",
+    "Customer slipped on ice that had formed on the stairs",
+    "Customer fell and broke their wrist",
+    "The broken handrail was not involved in the fall"
+  ],
+  "asp_facts": "claim(c1). claim_type(c1, negligence). defendant(c1, store_owner). plaintiff(c1, customer). duty_owed(c1, yes). duty_breached(c1, yes). breach_cause(c1, broken_handrail). actual_cause(c1, no). independent_cause(c1, ice). damages(c1, 5000). injury_type(c1, physical).",
+  "question": "Is the store owner liable for the customer's injury?",
+  "ground_truth": "unenforceable",
+  "rationale": "Although the store owner breached a duty by not fixing the handrail, this breach did not cause the injury. The customer fell due to ice, not the handrail. There is no actual causation between the breach and the injury.",
+  "legal_citations": ["But-For Causation Test", "Actual Cause Requirement"],
+  "difficulty": "medium"
+}

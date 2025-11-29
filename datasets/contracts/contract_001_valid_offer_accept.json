@@ -1,0 +1,18 @@
+{
+  "id": "contract_001",
+  "domain": "contracts",
+  "subdomain": "formation",
+  "description": "Valid contract formation - offer, acceptance, consideration",
+  "facts": [
+    "Seller offered to sell car for $10,000",
+    "Buyer accepted the offer in writing",
+    "Buyer paid $1,000 deposit",
+    "Both parties are adults with capacity"
+  ],
+  "asp_facts": "contract(c1). offer(c1, yes). acceptance(c1, yes). consideration(c1, yes). meeting_of_minds(c1, yes). capacity(c1, both_parties). legality(c1, yes). subject_matter(c1, goods). sale_amount(c1, 10000).",
+  "question": "Is there a valid contract?",
+  "ground_truth": "enforceable",
+  "rationale": "A valid contract requires offer, acceptance, consideration, capacity, and legality. All elements are present: clear offer, unequivocal acceptance, consideration ($10,000 for car), capacity (both adults), and legal subject matter.",
+  "legal_citations": ["Restatement (Second) of Contracts", "Contract Formation Elements"],
+  "difficulty": "easy"
+}

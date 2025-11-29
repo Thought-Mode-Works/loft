@@ -1,0 +1,18 @@
+{
+  "id": "tort_007",
+  "domain": "torts",
+  "subdomain": "negligence",
+  "description": "Breach but no actual damages",
+  "facts": [
+    "Restaurant served food past its expiration date",
+    "Customer ate the food",
+    "Customer experienced no illness or symptoms",
+    "Customer learned of the expired food the next day"
+  ],
+  "asp_facts": "claim(c1). claim_type(c1, negligence). defendant(c1, restaurant). plaintiff(c1, customer). duty_owed(c1, yes). duty_breached(c1, yes). breach_cause(c1, expired_food). actual_cause(c1, no). damages(c1, 0). injury_type(c1, none).",
+  "question": "Can the customer recover damages for negligence?",
+  "ground_truth": "unenforceable",
+  "rationale": "Negligence requires actual damages. While the restaurant breached its duty by serving expired food, the customer suffered no actual harm. Without damages, there is no compensable negligence claim.",
+  "legal_citations": ["Elements of Negligence", "Nominal Damages Rule"],
+  "difficulty": "easy"
+}

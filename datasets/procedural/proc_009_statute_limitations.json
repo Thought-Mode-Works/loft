@@ -1,0 +1,19 @@
+{
+  "id": "proc_009",
+  "domain": "procedural",
+  "subdomain": "limitations",
+  "description": "Claim barred by statute of limitations",
+  "facts": [
+    "Personal injury occurred on January 1, 2018",
+    "Plaintiff knew of injury immediately",
+    "Statute of limitations for personal injury is 2 years",
+    "Lawsuit filed on January 15, 2021",
+    "No tolling events occurred"
+  ],
+  "asp_facts": "claim(c1). claim_type(c1, statute_of_limitations). plaintiff(c1, plaintiff). defendant(c1, defendant). injury_year(c1, 2018). filing_year(c1, 2021). limitations_period_years(c1, 2). time_elapsed_years(c1, 3). tolling(c1, no). discovery_rule(c1, no). claim_timely(c1, no).",
+  "question": "Is the personal injury claim time-barred?",
+  "ground_truth": "enforceable",
+  "rationale": "The statute of limitations bars claims filed after the limitations period expires. Here, the 2-year period expired on January 1, 2020, but the lawsuit was filed in 2021. With no tolling, the claim is time-barred.",
+  "legal_citations": ["Statute of Limitations", "Laches"],
+  "difficulty": "easy"
+}

@@ -1,0 +1,18 @@
+{
+  "id": "tort_010",
+  "domain": "torts",
+  "subdomain": "negligence",
+  "description": "Vicarious liability - employer liable for employee's negligence",
+  "facts": [
+    "Delivery driver ran a red light while making deliveries",
+    "Driver was using the company vehicle during work hours",
+    "Driver struck another vehicle",
+    "The other driver suffered injuries and property damage"
+  ],
+  "asp_facts": "claim(c1). claim_type(c1, vicarious_liability). defendant(c1, delivery_company). plaintiff(c1, victim). employee(c1, driver). within_scope_employment(c1, yes). duty_owed(c1, yes). duty_breached(c1, yes). breach_cause(c1, ran_red_light). actual_cause(c1, yes). proximate_cause(c1, yes). damages(c1, 25000). injury_type(c1, physical).",
+  "question": "Is the delivery company liable for the driver's negligence?",
+  "ground_truth": "enforceable",
+  "rationale": "Under respondeat superior, employers are vicariously liable for torts committed by employees acting within the scope of their employment. The driver was making deliveries in a company vehicle during work hours, establishing scope of employment.",
+  "legal_citations": ["Respondeat Superior", "Scope of Employment Test"],
+  "difficulty": "medium"
+}

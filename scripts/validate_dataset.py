@@ -452,11 +452,14 @@ Examples:
   python scripts/validate_dataset.py datasets/adverse_possession/
   python scripts/validate_dataset.py datasets/adverse_possession/ --strict
   python scripts/validate_dataset.py datasets/ --recursive
+  python scripts/validate_dataset.py --all-domains
         """,
     )
     parser.add_argument(
         "path",
         type=Path,
+        nargs="?",
+        default=None,
         help="Path to dataset directory or parent directory with --recursive",
     )
     parser.add_argument(
@@ -470,6 +473,11 @@ Examples:
         help="Validate all dataset directories under the given path",
     )
     parser.add_argument(
+        "--all-domains",
+        action="store_true",
+        help="Validate all domains in the datasets directory",
+    )
+    parser.add_argument(
         "--json",
         action="store_true",
         help="Output results as JSON",
@@ -477,9 +485,33 @@ Examples:
 
     args = parser.parse_args()
 
-    if args.recursive:
+    # Determine which mode to use
+    if args.all_domains:
+        # Find datasets directory relative to script or cwd
+        datasets_path = None
+        candidates = [
+            Path(__file__).parent.parent / "datasets",
+            Path.cwd() / "datasets",
+        ]
+        for candidate in candidates:
+            if candidate.exists():
+                datasets_path = candidate
+                break
+
+        if datasets_path is None:
+            print("Error: Could not find datasets directory", file=sys.stderr)
+            sys.exit(2)
+
+        results = validate_recursive(datasets_path, strict=args.strict)
+    elif args.recursive:
+        if args.path is None:
+            print("Error: --recursive requires a path argument", file=sys.stderr)
+            sys.exit(2)
         results = validate_recursive(args.path, strict=args.strict)
     else:
+        if args.path is None:
+            print("Error: path argument required (or use --all-domains)", file=sys.stderr)
+            sys.exit(2)
         validator = DatasetValidator(strict=args.strict)
         results = [validator.validate_directory(args.path)]
 
