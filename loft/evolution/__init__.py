@@ -1,33 +1,76 @@
 """
-Rule evolution tracking system (Phase 4.3 + 4.5 enhancements).
+Rule evolution tracking and visualization.
 
-Maintains version history, dialectical lineage, and performance metrics
-across rule iterations.
+Provides infrastructure to track how rules evolve over time through
+dialectical refinement, A/B testing, and performance-based selection.
 
-Phase 4.5 additions:
-- Text-based visualization of rule genealogy
-- Query interface for evolution analytics
+Example usage:
+    >>> from loft.evolution import RuleEvolutionTracker, RuleMetadata
+    >>>
+    >>> # Create tracker
+    >>> tracker = RuleEvolutionTracker()
+    >>>
+    >>> # Track a new rule
+    >>> metadata = tracker.create_rule(
+    ...     rule_text="enforceable(C) :- has_consideration(C).",
+    ...     natural_language="A contract requires consideration",
+    ...     created_by="llm_generator",
+    ... )
+    >>>
+    >>> # Record validation result
+    >>> tracker.record_validation(metadata.rule_id, passed=True, accuracy=0.85)
+    >>>
+    >>> # Create new version
+    >>> new_metadata = tracker.create_version(
+    ...     parent_id=metadata.rule_id,
+    ...     new_rule_text="enforceable(C) :- has_consideration(C), not void(C).",
+    ...     change_reason="Added void contract check",
+    ... )
 """
 
-from loft.evolution.evolution_schemas import (
-    RuleVersion,
-    RuleLineage,
-    EvolutionContext,
-    PerformanceSnapshot,
+from .tracking import (
+    RuleMetadata,
+    ValidationResult,
+    ABTestResult,
+    StratificationLayer,
+    RuleStatus,
+    RuleEvolutionTracker,
 )
-from loft.evolution.evolution_tracker import RuleEvolutionTracker
-from loft.evolution.evolution_store import RuleEvolutionStore
-from loft.evolution.visualization import EvolutionVisualizer, print_rule_genealogy
-from loft.evolution.queries import RuleEvolutionDB
+
+from .storage import (
+    RuleEvolutionStorage,
+    StorageConfig,
+)
+
+from .visualization import (
+    format_rule_history,
+    format_genealogy_tree,
+    format_performance_chart,
+    format_ab_test_dashboard,
+)
+
+from .queries import (
+    RuleEvolutionDB,
+    EvolutionQuery,
+)
 
 __all__ = [
-    "RuleVersion",
-    "RuleLineage",
-    "EvolutionContext",
-    "PerformanceSnapshot",
+    # Core tracking
+    "RuleMetadata",
+    "ValidationResult",
+    "ABTestResult",
+    "StratificationLayer",
+    "RuleStatus",
     "RuleEvolutionTracker",
-    "RuleEvolutionStore",
-    "EvolutionVisualizer",
-    "print_rule_genealogy",
+    # Storage
+    "RuleEvolutionStorage",
+    "StorageConfig",
+    # Visualization
+    "format_rule_history",
+    "format_genealogy_tree",
+    "format_performance_chart",
+    "format_ab_test_dashboard",
+    # Queries
     "RuleEvolutionDB",
+    "EvolutionQuery",
 ]
