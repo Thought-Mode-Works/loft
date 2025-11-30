@@ -7,7 +7,7 @@
     "Tom wants to build a 1,200 sq ft accessory dwelling unit",
     "All other homes in the area comply with the minimum size requirement"
   ],
-  "asp_facts": "subdivision(sub1). owner(sub1, tom). restriction(sub1, minimum_2000_sqft). common_scheme_exists(sub1, yes). restriction_in_deed(sub1, yes). years_owned(sub1, 10). proposed_structure_size(sub1, 1200). neighborhood_compliance(sub1, high). proposed_use(sub1, accessory_dwelling).",
+  "asp_facts": "property_claim(claim10). claimant(claim10, neighbors). respondent(claim10, tom). claim_type(claim10, equitable_servitude). property_type(claim10, residential_lot). restriction_type(claim10, minimum_size). minimum_size_sqft(claim10, 2000). common_scheme_exists(claim10, yes). restriction_in_deed(claim10, yes). years_owned(claim10, 10). proposed_structure_size(claim10, 1200). neighborhood_compliance(claim10, high).",
   "question": "Can neighbors enforce the restriction through equitable servitude?",
   "ground_truth": "enforceable",
   "rationale": "An equitable servitude arises when there is a common scheme, notice to the purchaser (through the deed), and intent to create mutually enforceable restrictions. Neighbors can enjoin Tom's non-conforming construction.",

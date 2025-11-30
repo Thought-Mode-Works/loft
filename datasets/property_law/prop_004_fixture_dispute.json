@@ -3,14 +3,15 @@
   "description": "Dispute over whether items are fixtures or personal property",
   "facts": [
     "George sold his house to Helen",
-    "The contract did not mention the custom-built bookshelf",
-    "The bookshelf is bolted to the wall and built into an alcove",
-    "George removed it before closing, claiming it was personal property"
+    "George had a freestanding bookshelf that was not attached to any wall",
+    "The bookshelf rested on the floor and could be easily moved",
+    "George removed the bookshelf before closing, claiming it was personal property",
+    "Helen claims all items in the house should have remained"
   ],
-  "asp_facts": "property_dispute(pd1). seller(pd1, george). buyer(pd1, helen). item(pd1, bookshelf). attachment_method(pd1, bolted). custom_built(pd1, yes). built_in(pd1, yes). contract_mention(pd1, no). removed_before_closing(pd1, yes).",
-  "question": "Is the bookshelf a fixture that should remain with the property?",
-  "ground_truth": "enforceable",
-  "rationale": "The three-part fixture test examines: (1) annexation - it's bolted; (2) adaptation - custom-built for the space; (3) intent - built-in suggests permanence. The bookshelf is a fixture and should convey with the property.",
+  "asp_facts": "property_claim(claim4). claimant(claim4, helen). respondent(claim4, george). claim_type(claim4, fixture_determination). property_type(claim4, house). item_type(claim4, bookshelf). attachment_method(claim4, freestanding). custom_built(claim4, no). easily_movable(claim4, yes). contract_mention(claim4, no). removed_before_closing(claim4, yes).",
+  "question": "Is the bookshelf a fixture that should have remained with the property?",
+  "ground_truth": "unenforceable",
+  "rationale": "The three-part fixture test examines: (1) annexation - it was freestanding with no attachment; (2) adaptation - not custom-built for the space; (3) intent - easily movable suggests temporary placement. The bookshelf is personal property and George properly removed it.",
   "legal_citations": ["Fixture Doctrine"],
   "difficulty": "medium"
 }
