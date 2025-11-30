@@ -79,6 +79,26 @@ from loft.meta.failure_analyzer import (
     create_failure_analyzer,
     create_recommendation_engine,
 )
+from loft.meta.self_improvement import (
+    ActionType,
+    AutonomousImprover,
+    CycleEvaluation,
+    CycleResults,
+    CycleStatus,
+    GoalStatus,
+    ImprovementAction,
+    ImprovementCycle,
+    ImprovementGoal,
+    MetricType,
+    MetricValue,
+    ProgressReport,
+    SafetyConfig,
+    SelfImprovementTracker,
+    create_default_goals,
+    create_improvement_goal,
+    create_improver,
+    create_tracker,
+)
 
 __all__ = [
     # Observer
@@ -153,4 +173,26 @@ __all__ = [
     # Failure Analyzer - Factory functions
     "create_failure_analyzer",
     "create_recommendation_engine",
+    # Self-Improvement - Core types
+    "GoalStatus",
+    "CycleStatus",
+    "ActionType",
+    "MetricType",
+    # Self-Improvement - Data classes
+    "MetricValue",
+    "ImprovementGoal",
+    "ImprovementAction",
+    "CycleResults",
+    "ImprovementCycle",
+    "ProgressReport",
+    "CycleEvaluation",
+    "SafetyConfig",
+    # Self-Improvement - Classes
+    "SelfImprovementTracker",
+    "AutonomousImprover",
+    # Self-Improvement - Factory functions
+    "create_improvement_goal",
+    "create_tracker",
+    "create_improver",
+    "create_default_goals",
 ]
