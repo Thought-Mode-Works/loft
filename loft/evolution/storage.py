@@ -563,10 +563,13 @@ class RuleEvolutionStorage:
         if not snapshots_dir.exists():
             return []
 
-        return sorted([
-            p.name for p in snapshots_dir.iterdir()
-            if p.is_dir() and (p / "manifest.json").exists()
-        ])
+        return sorted(
+            [
+                p.name
+                for p in snapshots_dir.iterdir()
+                if p.is_dir() and (p / "manifest.json").exists()
+            ]
+        )
 
     def load_all_snapshots(self) -> List[CorpusSnapshot]:
         """
@@ -600,9 +603,7 @@ class RuleEvolutionStorage:
         logger.info(f"Deleted snapshot '{name}'")
         return True
 
-    def compare_snapshots(
-        self, name1: str, name2: str
-    ) -> Dict[str, Any]:
+    def compare_snapshots(self, name1: str, name2: str) -> Dict[str, Any]:
         """
         Compare two snapshots.
 
@@ -628,13 +629,17 @@ class RuleEvolutionStorage:
         snapshot1_dir = self._snapshot_path(name1)
         snapshot2_dir = self._snapshot_path(name2)
 
-        rules1 = set(
-            p.stem for p in (snapshot1_dir / self.config.metadata_dir).glob("*.json")
-        ) if (snapshot1_dir / self.config.metadata_dir).exists() else set()
+        rules1 = (
+            set(p.stem for p in (snapshot1_dir / self.config.metadata_dir).glob("*.json"))
+            if (snapshot1_dir / self.config.metadata_dir).exists()
+            else set()
+        )
 
-        rules2 = set(
-            p.stem for p in (snapshot2_dir / self.config.metadata_dir).glob("*.json")
-        ) if (snapshot2_dir / self.config.metadata_dir).exists() else set()
+        rules2 = (
+            set(p.stem for p in (snapshot2_dir / self.config.metadata_dir).glob("*.json"))
+            if (snapshot2_dir / self.config.metadata_dir).exists()
+            else set()
+        )
 
         added_rules = rules2 - rules1
         removed_rules = rules1 - rules2
