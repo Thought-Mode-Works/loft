@@ -40,6 +40,7 @@ from .tracking import (
 from .storage import (
     RuleEvolutionStorage,
     StorageConfig,
+    CorpusSnapshot,
 )
 
 from .visualization import (
@@ -65,6 +66,7 @@ __all__ = [
     # Storage
     "RuleEvolutionStorage",
     "StorageConfig",
+    "CorpusSnapshot",
     # Visualization
     "format_rule_history",
     "format_genealogy_tree",
