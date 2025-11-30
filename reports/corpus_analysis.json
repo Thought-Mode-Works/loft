@@ -1,0 +1,239 @@
+{
+  "analysis_metadata": {
+    "generated_at": "2025-11-30T08:00:00Z",
+    "phase": "4.75",
+    "analysis_type": "corpus_accumulation_report"
+  },
+  "corpus_summary": {
+    "total_domains": 6,
+    "total_cases": 60,
+    "cases_per_domain": 10,
+    "domains": [
+      {
+        "name": "contracts",
+        "case_count": 10,
+        "description": "Contract formation, consideration, capacity, defenses",
+        "common_predicates": ["contract", "parties", "subject_matter", "offer", "acceptance", "consideration"],
+        "outcome_balance": {
+          "enforceable": 5,
+          "unenforceable": 5
+        }
+      },
+      {
+        "name": "torts",
+        "case_count": 10,
+        "description": "Negligence, causation, damages, defenses",
+        "common_predicates": ["duty", "breach", "causation", "damages", "defendant", "plaintiff"],
+        "outcome_balance": {
+          "liable": 5,
+          "not_liable": 5
+        }
+      },
+      {
+        "name": "procedural",
+        "case_count": 10,
+        "description": "Standing, jurisdiction, preclusion, limitations",
+        "common_predicates": ["claim", "claim_type", "plaintiff", "defendant", "forum"],
+        "outcome_balance": {
+          "permitted": 5,
+          "barred": 5
+        }
+      },
+      {
+        "name": "adverse_possession",
+        "case_count": 10,
+        "description": "Possession requirements, statutory periods",
+        "common_predicates": ["possession", "statutory_period", "actual_possession", "open_notorious"],
+        "outcome_balance": {
+          "title_acquired": 5,
+          "title_not_acquired": 5
+        }
+      },
+      {
+        "name": "property_law",
+        "case_count": 10,
+        "description": "Ownership, transfers, encumbrances",
+        "common_predicates": ["property", "owner", "transfer", "encumbrance"],
+        "outcome_balance": {
+          "valid": 5,
+          "invalid": 5
+        }
+      },
+      {
+        "name": "statute_of_frauds",
+        "case_count": 10,
+        "description": "Writing requirements, exceptions",
+        "common_predicates": ["contract", "writing", "signed", "subject_matter"],
+        "outcome_balance": {
+          "enforceable": 5,
+          "unenforceable": 5
+        }
+      }
+    ]
+  },
+  "infrastructure_components": {
+    "batch_processing": {
+      "module": "loft.batch",
+      "classes": [
+        "BatchLearningHarness",
+        "BatchConfig",
+        "BatchProgress",
+        "BatchCheckpoint",
+        "BatchMetrics",
+        "BatchResult",
+        "CaseResult"
+      ],
+      "features": [
+        "Configurable limits",
+        "Checkpoint/resume",
+        "Progress callbacks",
+        "Error handling",
+        "Rule accumulation"
+      ],
+      "test_count": 45
+    },
+    "metrics_collection": {
+      "module": "loft.metrics",
+      "classes": [
+        "MetricsCollector",
+        "PerformanceTimer",
+        "MetricsSample",
+        "PerformanceProfiler",
+        "MemorySnapshot",
+        "ProfileResult",
+        "MetricsAnalyzer",
+        "TrendAnalysis",
+        "AnomalyReport",
+        "ScaleReport"
+      ],
+      "features": [
+        "Real-time collection",
+        "Memory profiling",
+        "Trend analysis",
+        "Anomaly detection",
+        "Correlation analysis",
+        "Percentile calculations"
+      ],
+      "test_count": 53
+    },
+    "corpus_management": {
+      "module": "loft.corpus",
+      "classes": [
+        "CorpusLoader",
+        "DomainRegistry"
+      ],
+      "features": [
+        "Dataset loading",
+        "Validation",
+        "Domain metadata"
+      ],
+      "test_count": 29
+    },
+    "evolution_tracking": {
+      "module": "loft.evolution",
+      "classes": [
+        "RuleEvolutionStorage",
+        "RuleEvolutionTracker",
+        "CorpusSnapshot"
+      ],
+      "features": [
+        "Rule provenance",
+        "Version tracking",
+        "Snapshot persistence",
+        "Query capabilities"
+      ],
+      "test_count": 150
+    }
+  },
+  "test_coverage": {
+    "total_unit_tests": 1900,
+    "phase_4_75_specific_tests": 277,
+    "test_modules": [
+      {
+        "path": "tests/unit/batch/",
+        "test_count": 45,
+        "coverage_areas": ["harness", "schemas", "callbacks"]
+      },
+      {
+        "path": "tests/unit/metrics/",
+        "test_count": 53,
+        "coverage_areas": ["collector", "profiler", "analyzer"]
+      },
+      {
+        "path": "tests/unit/corpus/",
+        "test_count": 29,
+        "coverage_areas": ["loader", "domains"]
+      },
+      {
+        "path": "tests/unit/evolution/",
+        "test_count": 150,
+        "coverage_areas": ["storage", "tracking", "queries", "visualization"]
+      }
+    ]
+  },
+  "scripts": [
+    {
+      "name": "run_batch_learning.py",
+      "purpose": "CLI for batch processing",
+      "usage": "python scripts/run_batch_learning.py --dataset datasets/contracts/"
+    },
+    {
+      "name": "analyze_metrics.py",
+      "purpose": "Metrics analysis and reporting",
+      "usage": "python scripts/analyze_metrics.py reports/metrics.json"
+    },
+    {
+      "name": "corpus_snapshot.py",
+      "purpose": "Corpus state persistence",
+      "usage": "python scripts/corpus_snapshot.py --create --output snapshots/"
+    },
+    {
+      "name": "validate_dataset.py",
+      "purpose": "Dataset validation",
+      "usage": "python scripts/validate_dataset.py datasets/contracts/"
+    }
+  ],
+  "phase_5_recommendations": {
+    "priority_1": {
+      "title": "Meta-Reasoning for Prompt Optimization",
+      "justification": "Metrics infrastructure captures detailed timing and accuracy data",
+      "effort_estimate": "medium",
+      "expected_impact": "high"
+    },
+    "priority_2": {
+      "title": "Automatic Rule Conflict Detection",
+      "justification": "Rule corpus growth increases conflict probability",
+      "effort_estimate": "medium",
+      "expected_impact": "high"
+    },
+    "priority_3": {
+      "title": "Strategy Selection by Domain",
+      "justification": "Domain-specific patterns in metrics data",
+      "effort_estimate": "medium",
+      "expected_impact": "medium"
+    },
+    "priority_4": {
+      "title": "Failure Analysis Automation",
+      "justification": "Current anomaly detection needs root cause diagnosis",
+      "effort_estimate": "low",
+      "expected_impact": "medium"
+    },
+    "priority_5": {
+      "title": "Scalability Optimizations",
+      "justification": "Prepare for 500+ case processing",
+      "effort_estimate": "high",
+      "expected_impact": "medium"
+    }
+  },
+  "baselines": {
+    "test_case_count": 60,
+    "unit_test_count": 1900,
+    "domains_count": 6,
+    "checkpoint_overhead_percent": 5,
+    "target_scale": {
+      "cases": 500,
+      "rules": 100,
+      "domains": 6
+    }
+  }
+}
