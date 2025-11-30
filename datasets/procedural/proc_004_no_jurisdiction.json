@@ -10,7 +10,7 @@
     "Texas company does not advertise in Florida",
     "Lawsuit filed in Florida state court"
   ],
-  "asp_facts": "claim(c1). claim_type(c1, personal_jurisdiction). plaintiff(c1, fl_resident). defendant(c1, tx_company). forum_state(c1, florida). minimum_contacts(c1, no). purposeful_availment(c1, no). relatedness(c1, yes). specific_jurisdiction(c1, no). general_jurisdiction(c1, no).",
+  "asp_facts": "claim(c1). claim_type(c1, personal_jurisdiction). plaintiff(c1, fl_resident). defendant(c1, tx_company). forum(c1, florida). forum_state(c1, florida). minimum_contacts(c1, no). purposeful_availment(c1, no). relatedness(c1, yes). specific_jurisdiction(c1, no). general_jurisdiction(c1, no).",
   "question": "Does Florida have personal jurisdiction over the Texas company?",
   "ground_truth": "unenforceable",
   "rationale": "The Texas company lacks minimum contacts with Florida. A single sale at an out-of-state trade show does not constitute purposeful availment of Florida's market. The company has no systematic and continuous contacts for general jurisdiction.",

@@ -36,17 +36,17 @@ def verify_dataset(dataset_path: Path, expected_min_scenarios: int = 5) -> bool:
 
     # Get statistics
     stats = loader.get_statistics()
-    print(f"\nStatistics:")
+    print("\nStatistics:")
     print(f"  Total scenarios: {stats['total_scenarios']}")
-    print(f"  By difficulty:")
+    print("  By difficulty:")
     for diff, count in stats["by_difficulty"].items():
         print(f"    {diff}: {count}")
-    print(f"  By ground truth:")
+    print("  By ground truth:")
     for truth, count in stats["by_ground_truth"].items():
         print(f"    {truth}: {count}")
 
     # Verify each scenario has required fields
-    print(f"\nValidating scenario fields...")
+    print("\nValidating scenario fields...")
     required_fields = ["scenario_id", "description", "facts", "question", "ground_truth", "rationale"]
 
     for scenario in scenarios:

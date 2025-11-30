@@ -9,7 +9,7 @@
     "Home was built exactly to specifications otherwise",
     "Pipes would require demolition to replace"
   ],
-  "asp_facts": "contract(c1). breach(c1, yes). breach_material(c1, no). substantial_performance(c1, yes). deviation_type(c1, brand_substitution). quality_equivalent(c1, yes). willful_breach(c1, no). cost_to_remedy(c1, unreasonable). diminution_in_value(c1, minimal).",
+  "asp_facts": "contract(c1). parties(c1, owner, contractor). subject_matter(c1, construction). breach(c1, yes). breach_material(c1, no). substantial_performance(c1, yes). deviation_type(c1, brand_substitution). quality_equivalent(c1, yes). willful_breach(c1, no). cost_to_remedy(c1, unreasonable). diminution_in_value(c1, minimal).",
   "question": "Can the contractor recover under the contract?",
   "ground_truth": "enforceable",
   "rationale": "Under the doctrine of substantial performance, a party who has substantially performed may recover the contract price minus damages for any deficiency. The brand substitution with equivalent quality pipes is a minor deviation that does not constitute material breach.",

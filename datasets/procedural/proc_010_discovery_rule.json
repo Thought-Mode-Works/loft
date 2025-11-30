@@ -10,7 +10,7 @@
     "Statute of limitations for medical malpractice is 2 years",
     "Lawsuit filed in 2021, one year after discovery"
   ],
-  "asp_facts": "claim(c1). claim_type(c1, statute_of_limitations). plaintiff(c1, patient). defendant(c1, surgeon). injury_year(c1, 2017). discovery_year(c1, 2020). filing_year(c1, 2021). limitations_period_years(c1, 2). discovery_rule(c1, yes). latent_injury(c1, yes). claim_timely(c1, yes).",
+  "asp_facts": "claim(c1). claim_type(c1, statute_of_limitations). plaintiff(c1, patient). defendant(c1, surgeon). forum(c1, state_court). injury_year(c1, 2017). discovery_year(c1, 2020). filing_year(c1, 2021). limitations_period_years(c1, 2). discovery_rule(c1, yes). latent_injury(c1, yes). claim_timely(c1, yes).",
   "question": "Is the medical malpractice claim time-barred?",
   "ground_truth": "unenforceable",
   "rationale": "Under the discovery rule, the statute of limitations begins running when the plaintiff discovers (or reasonably should have discovered) the injury. The patient discovered the sponge in 2020 and filed within 2 years, so the claim is timely.",

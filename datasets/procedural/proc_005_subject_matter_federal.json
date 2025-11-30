@@ -10,7 +10,7 @@
     "Claim amount is $5,000",
     "Lawsuit filed in federal district court"
   ],
-  "asp_facts": "claim(c1). claim_type(c1, subject_matter_jurisdiction). plaintiff(c1, employee). defendant(c1, employer). federal_question(c1, yes). federal_statute(c1, flsa). diversity_jurisdiction(c1, no). same_state_citizens(c1, yes). amount_in_controversy(c1, 5000).",
+  "asp_facts": "claim(c1). claim_type(c1, subject_matter_jurisdiction). plaintiff(c1, employee). defendant(c1, employer). forum(c1, federal_court). federal_question(c1, yes). federal_statute(c1, flsa). diversity_jurisdiction(c1, no). same_state_citizens(c1, yes). amount_in_controversy(c1, 5000).",
   "question": "Does the federal court have subject matter jurisdiction?",
   "ground_truth": "enforceable",
   "rationale": "Federal courts have subject matter jurisdiction over claims arising under federal law (federal question jurisdiction). The FLSA claim arises under federal law, so federal court has jurisdiction regardless of diversity or amount in controversy.",

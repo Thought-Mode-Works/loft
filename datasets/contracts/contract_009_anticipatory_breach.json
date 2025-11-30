@@ -9,7 +9,7 @@
     "Statement was clear and definite refusal",
     "Performance was not yet due"
   ],
-  "asp_facts": "contract(c1). anticipatory_repudiation(c1, yes). repudiation_clear(c1, yes). repudiation_unequivocal(c1, yes). performance_due(c1, no). retraction(c1, no). buyer_action(c1, may_treat_as_breach). immediate_remedy(c1, yes).",
+  "asp_facts": "contract(c1). parties(c1, seller, buyer). subject_matter(c1, goods). anticipatory_repudiation(c1, yes). repudiation_clear(c1, yes). repudiation_unequivocal(c1, yes). performance_due(c1, no). retraction(c1, no). buyer_action(c1, may_treat_as_breach). immediate_remedy(c1, yes).",
   "question": "Can buyer immediately sue for breach?",
   "ground_truth": "enforceable",
   "rationale": "An anticipatory repudiation occurs when a party clearly and unequivocally indicates they will not perform. The non-repudiating party may treat this as an immediate breach and sue for damages without waiting for the performance date.",

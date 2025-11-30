@@ -9,7 +9,7 @@
     "Owner accepted the bid before contractor noticed error",
     "Owner had no reason to know of the error"
   ],
-  "asp_facts": "contract(c1). unilateral_mistake(c1, yes). mistake_by(c1, contractor). other_party_knew(c1, no). unconscionable_result(c1, no). mistake_material(c1, yes). bid_amount(c1, calculation_error). enforcement_unconscionable(c1, no).",
+  "asp_facts": "contract(c1). parties(c1, owner, contractor). subject_matter(c1, construction). unilateral_mistake(c1, yes). mistake_by(c1, contractor). other_party_knew(c1, no). unconscionable_result(c1, no). mistake_material(c1, yes). bid_amount(c1, calculation_error). enforcement_unconscionable(c1, no).",
   "question": "Can contractor avoid the contract?",
   "ground_truth": "unenforceable",
   "rationale": "Generally, unilateral mistake does not make a contract voidable unless the other party knew or should have known of the mistake. The owner had no reason to know of contractor's calculation error, so the contract is binding.",

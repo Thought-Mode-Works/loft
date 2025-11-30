@@ -9,9 +9,9 @@
     "Employee had no reasonable alternative employment",
     "Agreement was signed under pressure without time to consult attorney"
   ],
-  "asp_facts": "contract(c1). duress(c1, yes). wrongful_threat(c1, yes). no_reasonable_alternative(c1, yes). free_will(c1, no). economic_duress(c1, yes). subject_matter(c1, non_compete). coerced_assent(c1, yes).",
+  "asp_facts": "contract(c1). parties(c1, employer, employee). subject_matter(c1, non_compete). duress(c1, yes). wrongful_threat(c1, yes). no_reasonable_alternative(c1, yes). free_will(c1, no). economic_duress(c1, yes). coerced_assent(c1, yes).",
   "question": "Can employee void the non-compete agreement?",
-  "ground_truth": "enforceable",
+  "ground_truth": "unenforceable",
   "rationale": "Economic duress makes a contract voidable. The employer's threat of immediate termination, combined with lack of reasonable alternatives and pressure to sign immediately, constitutes duress that overcame the employee's free will.",
   "legal_citations": ["Economic Duress Doctrine", "Austin Instrument v. Loral Corp."],
   "difficulty": "medium"

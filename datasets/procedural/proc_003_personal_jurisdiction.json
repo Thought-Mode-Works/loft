@@ -10,7 +10,7 @@
     "Corporation has substantial sales in California",
     "Lawsuit filed in California state court"
   ],
-  "asp_facts": "claim(c1). claim_type(c1, personal_jurisdiction). plaintiff(c1, ca_resident). defendant(c1, de_corporation). forum_state(c1, california). minimum_contacts(c1, yes). purposeful_availment(c1, yes). relatedness(c1, yes). fair_play(c1, yes). specific_jurisdiction(c1, yes).",
+  "asp_facts": "claim(c1). claim_type(c1, personal_jurisdiction). plaintiff(c1, ca_resident). defendant(c1, de_corporation). forum(c1, california). forum_state(c1, california). minimum_contacts(c1, yes). purposeful_availment(c1, yes). relatedness(c1, yes). fair_play(c1, yes). specific_jurisdiction(c1, yes).",
   "question": "Does California have personal jurisdiction over the corporation?",
   "ground_truth": "enforceable",
   "rationale": "Specific personal jurisdiction exists because: (1) the corporation purposefully availed itself of California's market through substantial sales, (2) the claim arises from California contacts (product sold to California resident), and (3) exercising jurisdiction is fair.",

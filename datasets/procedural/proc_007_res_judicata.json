@@ -9,7 +9,7 @@
     "Plaintiff now sues same defendant for property damage from the same accident",
     "Property damage claim was not raised in the first lawsuit"
   ],
-  "asp_facts": "claim(c1). claim_type(c1, res_judicata). plaintiff(c1, plaintiff). defendant(c1, defendant). prior_judgment(c1, yes). judgment_on_merits(c1, yes). same_parties(c1, yes). same_transaction(c1, yes). claim_could_have_been_raised(c1, yes). claim_preclusion(c1, yes).",
+  "asp_facts": "claim(c1). claim_type(c1, res_judicata). plaintiff(c1, plaintiff). defendant(c1, defendant). forum(c1, state_court). prior_judgment(c1, yes). judgment_on_merits(c1, yes). same_parties(c1, yes). same_transaction(c1, yes). claim_could_have_been_raised(c1, yes). claim_preclusion(c1, yes).",
   "question": "Is the property damage claim barred by res judicata?",
   "ground_truth": "enforceable",
   "rationale": "Under claim preclusion (res judicata), a final judgment on the merits bars relitigation of any claim that was or could have been raised in the prior action. The property damage claim arises from the same transaction and could have been raised in the first lawsuit.",

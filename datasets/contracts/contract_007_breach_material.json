@@ -9,7 +9,7 @@
     "Contractor completed house on February 15",
     "Owner had to rent temporary housing for 2.5 months"
   ],
-  "asp_facts": "contract(c1). breach(c1, yes). breach_material(c1, yes). time_of_essence(c1, yes). breach_type(c1, late_performance). delay_days(c1, 76). substantial_performance(c1, no). damages_caused(c1, yes). non_breaching_discharged(c1, yes).",
+  "asp_facts": "contract(c1). parties(c1, owner, contractor). subject_matter(c1, construction). breach(c1, yes). breach_material(c1, yes). time_of_essence(c1, yes). breach_type(c1, late_performance). delay_days(c1, 76). substantial_performance(c1, no). damages_caused(c1, yes). non_breaching_discharged(c1, yes).",
   "question": "Is the owner discharged from the contract?",
   "ground_truth": "enforceable",
   "rationale": "When time is of the essence and the breaching party fails to perform on time, it constitutes a material breach. A material breach discharges the non-breaching party from further performance and entitles them to damages.",

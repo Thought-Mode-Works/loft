@@ -9,7 +9,7 @@
     "Taxpayer shares concern with all other taxpayers",
     "Taxpayer sues to enjoin the military spending"
   ],
-  "asp_facts": "claim(c1). claim_type(c1, standing). plaintiff(c1, taxpayer). defendant(c1, federal_government). injury_in_fact(c1, no). injury_concrete(c1, no). injury_particularized(c1, no). generalized_grievance(c1, yes). taxpayer_standing(c1, no).",
+  "asp_facts": "claim(c1). claim_type(c1, standing). plaintiff(c1, taxpayer). defendant(c1, federal_government). forum(c1, federal_court). injury_in_fact(c1, no). injury_concrete(c1, no). injury_particularized(c1, no). generalized_grievance(c1, yes). taxpayer_standing(c1, no).",
   "question": "Does the taxpayer have standing to challenge the spending?",
   "ground_truth": "unenforceable",
   "rationale": "A generalized grievance shared with all taxpayers does not confer standing. The taxpayer has no concrete, particularized injury distinct from the public at large. Courts do not adjudicate abstract policy disagreements.",

@@ -10,7 +10,7 @@
     "New plaintiff sues defendant for injuries from the same red light incident",
     "Defendant seeks to relitigate whether he ran the red light"
   ],
-  "asp_facts": "claim(c1). claim_type(c1, collateral_estoppel). plaintiff(c1, new_plaintiff). defendant(c1, defendant). prior_issue(c1, ran_red_light). issue_actually_litigated(c1, yes). issue_necessary_to_judgment(c1, yes). full_opportunity(c1, yes). same_issue(c1, yes). issue_preclusion(c1, yes).",
+  "asp_facts": "claim(c1). claim_type(c1, collateral_estoppel). plaintiff(c1, new_plaintiff). defendant(c1, defendant). forum(c1, state_court). prior_issue(c1, ran_red_light). issue_actually_litigated(c1, yes). issue_necessary_to_judgment(c1, yes). full_opportunity(c1, yes). same_issue(c1, yes). issue_preclusion(c1, yes).",
   "question": "Is defendant precluded from relitigating the red light issue?",
   "ground_truth": "enforceable",
   "rationale": "Collateral estoppel (issue preclusion) prevents relitigation of issues that were actually litigated and necessarily decided in a prior proceeding. Defendant had a full opportunity to litigate the red light issue and lost; the issue is now established.",
