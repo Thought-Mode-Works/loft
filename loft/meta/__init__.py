@@ -50,6 +50,20 @@ from loft.meta.strategy import (
     create_selector,
     get_default_strategies,
 )
+from loft.meta.prompt_optimizer import (
+    ABTestConfig,
+    ABTestResult,
+    EffectivenessReport,
+    ImprovementCandidate,
+    PromptABTester,
+    PromptCategory,
+    PromptMetrics,
+    PromptOptimizer,
+    PromptVersion,
+    TestStatus,
+    create_ab_tester,
+    create_prompt_optimizer,
+)
 
 __all__ = [
     # Observer
@@ -91,4 +105,20 @@ __all__ = [
     "get_default_strategies",
     "create_evaluator",
     "create_selector",
+    # Prompt Optimizer - Core types
+    "PromptVersion",
+    "PromptMetrics",
+    "PromptCategory",
+    "TestStatus",
+    # Prompt Optimizer - Reports
+    "EffectivenessReport",
+    "ABTestConfig",
+    "ABTestResult",
+    "ImprovementCandidate",
+    # Prompt Optimizer - Classes
+    "PromptOptimizer",
+    "PromptABTester",
+    # Prompt Optimizer - Factory functions
+    "create_prompt_optimizer",
+    "create_ab_tester",
 ]
