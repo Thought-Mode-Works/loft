@@ -15,6 +15,7 @@ from loft.evolution.tracking import (
 from loft.evolution.storage import (
     RuleEvolutionStorage,
     StorageConfig,
+    CorpusSnapshot,
 )
 
 
@@ -314,3 +315,348 @@ class TestRuleEvolutionStorage:
         content = version_path.read_text()
         assert "rule text here" in content
         assert "% Rule: version_test" in content
+
+
+class TestCorpusSnapshot:
+    """Tests for CorpusSnapshot dataclass."""
+
+    def test_create_snapshot(self):
+        """Test creating a snapshot object."""
+        snapshot = CorpusSnapshot(
+            snapshot_id="snapshot_20241128_120000",
+            name="test_snapshot",
+            created_at=datetime.now(),
+            description="Test description",
+            rule_count=10,
+            ab_test_count=2,
+        )
+
+        assert snapshot.name == "test_snapshot"
+        assert snapshot.rule_count == 10
+        assert snapshot.ab_test_count == 2
+
+    def test_snapshot_to_dict(self):
+        """Test converting snapshot to dictionary."""
+        now = datetime.now()
+        snapshot = CorpusSnapshot(
+            snapshot_id="snapshot_001",
+            name="my_snapshot",
+            created_at=now,
+            description="Test",
+            rule_count=5,
+            ab_test_count=1,
+            metadata={"key": "value"},
+        )
+
+        data = snapshot.to_dict()
+
+        assert data["snapshot_id"] == "snapshot_001"
+        assert data["name"] == "my_snapshot"
+        assert data["created_at"] == now.isoformat()
+        assert data["description"] == "Test"
+        assert data["rule_count"] == 5
+        assert data["metadata"] == {"key": "value"}
+
+    def test_snapshot_from_dict(self):
+        """Test creating snapshot from dictionary."""
+        now = datetime.now()
+        data = {
+            "snapshot_id": "snapshot_002",
+            "name": "restored_snapshot",
+            "created_at": now.isoformat(),
+            "description": "Restored",
+            "rule_count": 15,
+            "ab_test_count": 3,
+            "metadata": {"restored": True},
+        }
+
+        snapshot = CorpusSnapshot.from_dict(data)
+
+        assert snapshot.snapshot_id == "snapshot_002"
+        assert snapshot.name == "restored_snapshot"
+        assert snapshot.rule_count == 15
+        assert snapshot.metadata == {"restored": True}
+
+    def test_snapshot_roundtrip(self):
+        """Test snapshot serialization roundtrip."""
+        original = CorpusSnapshot(
+            snapshot_id="roundtrip_test",
+            name="test",
+            created_at=datetime.now(),
+            description="Roundtrip test",
+            rule_count=7,
+            ab_test_count=0,
+        )
+
+        data = original.to_dict()
+        restored = CorpusSnapshot.from_dict(data)
+
+        assert restored.snapshot_id == original.snapshot_id
+        assert restored.name == original.name
+        assert restored.rule_count == original.rule_count
+
+
+class TestSnapshotOperations:
+    """Tests for snapshot operations in RuleEvolutionStorage."""
+
+    def test_create_snapshot_empty(self, temp_storage):
+        """Test creating a snapshot with no rules."""
+        snapshot = temp_storage.create_snapshot(
+            name="empty_snapshot",
+            description="Testing empty snapshot",
+        )
+
+        assert snapshot.name == "empty_snapshot"
+        assert snapshot.rule_count == 0
+        assert snapshot.ab_test_count == 0
+        assert snapshot.description == "Testing empty snapshot"
+
+    def test_create_snapshot_with_rules(self, temp_storage):
+        """Test creating a snapshot with existing rules."""
+        # Add some rules
+        for i in range(3):
+            rule = RuleMetadata(
+                rule_id=f"rule_{i}",
+                rule_text=f"rule {i}",
+                natural_language=f"rule {i}",
+                created_by="test",
+            )
+            temp_storage.save_rule(rule)
+
+        snapshot = temp_storage.create_snapshot(name="with_rules")
+
+        assert snapshot.rule_count == 3
+
+    def test_create_snapshot_duplicate_name_fails(self, temp_storage):
+        """Test that creating a snapshot with duplicate name fails."""
+        temp_storage.create_snapshot(name="unique_name")
+
+        with pytest.raises(ValueError, match="already exists"):
+            temp_storage.create_snapshot(name="unique_name")
+
+    def test_get_snapshot(self, temp_storage):
+        """Test getting snapshot details."""
+        temp_storage.create_snapshot(name="get_test", description="Test getting")
+
+        snapshot = temp_storage.get_snapshot("get_test")
+
+        assert snapshot is not None
+        assert snapshot.name == "get_test"
+        assert snapshot.description == "Test getting"
+
+    def test_get_nonexistent_snapshot(self, temp_storage):
+        """Test getting a snapshot that doesn't exist."""
+        snapshot = temp_storage.get_snapshot("nonexistent")
+
+        assert snapshot is None
+
+    def test_list_snapshots(self, temp_storage):
+        """Test listing all snapshots."""
+        temp_storage.create_snapshot(name="snap_a")
+        temp_storage.create_snapshot(name="snap_b")
+        temp_storage.create_snapshot(name="snap_c")
+
+        names = temp_storage.list_snapshots()
+
+        assert len(names) == 3
+        assert "snap_a" in names
+        assert "snap_b" in names
+        assert "snap_c" in names
+
+    def test_list_snapshots_empty(self, temp_storage):
+        """Test listing snapshots when none exist."""
+        names = temp_storage.list_snapshots()
+
+        assert names == []
+
+    def test_load_all_snapshots(self, temp_storage):
+        """Test loading all snapshot objects."""
+        temp_storage.create_snapshot(name="load_a")
+        temp_storage.create_snapshot(name="load_b")
+
+        snapshots = temp_storage.load_all_snapshots()
+
+        assert len(snapshots) == 2
+        assert all(isinstance(s, CorpusSnapshot) for s in snapshots)
+
+    def test_delete_snapshot(self, temp_storage):
+        """Test deleting a snapshot."""
+        temp_storage.create_snapshot(name="to_delete")
+        assert temp_storage.get_snapshot("to_delete") is not None
+
+        result = temp_storage.delete_snapshot("to_delete")
+
+        assert result is True
+        assert temp_storage.get_snapshot("to_delete") is None
+
+    def test_delete_nonexistent_snapshot(self, temp_storage):
+        """Test deleting a snapshot that doesn't exist."""
+        result = temp_storage.delete_snapshot("nonexistent")
+
+        assert result is False
+
+    def test_restore_snapshot(self, temp_storage):
+        """Test restoring a snapshot."""
+        # Add rules and create snapshot
+        rule1 = RuleMetadata(
+            rule_id="original_rule",
+            rule_text="original",
+            natural_language="original",
+            created_by="test",
+        )
+        temp_storage.save_rule(rule1)
+        temp_storage.create_snapshot(name="restore_test")
+
+        # Add more rules after snapshot
+        rule2 = RuleMetadata(
+            rule_id="new_rule",
+            rule_text="new",
+            natural_language="new",
+            created_by="test",
+        )
+        temp_storage.save_rule(rule2)
+        assert len(temp_storage.list_rules()) == 2
+
+        # Restore snapshot
+        snapshot = temp_storage.restore_snapshot("restore_test")
+
+        assert snapshot.rule_count == 1
+        assert len(temp_storage.list_rules()) == 1
+        assert temp_storage.load_rule("original_rule") is not None
+        assert temp_storage.load_rule("new_rule") is None
+
+    def test_restore_snapshot_nonexistent_fails(self, temp_storage):
+        """Test that restoring nonexistent snapshot fails."""
+        with pytest.raises(ValueError, match="does not exist"):
+            temp_storage.restore_snapshot("nonexistent")
+
+    def test_restore_snapshot_no_clear(self, temp_storage):
+        """Test restoring snapshot without clearing existing rules."""
+        # Add rule and create snapshot
+        rule1 = RuleMetadata(
+            rule_id="snap_rule",
+            rule_text="snapshot rule",
+            natural_language="snapshot",
+            created_by="test",
+        )
+        temp_storage.save_rule(rule1)
+        temp_storage.create_snapshot(name="merge_test")
+
+        # Delete the rule
+        temp_storage.delete_rule("snap_rule")
+
+        # Add a different rule
+        rule2 = RuleMetadata(
+            rule_id="current_rule",
+            rule_text="current",
+            natural_language="current",
+            created_by="test",
+        )
+        temp_storage.save_rule(rule2)
+
+        # Restore without clearing
+        temp_storage.restore_snapshot("merge_test", clear_existing=False)
+
+        # Both rules should exist now
+        assert temp_storage.load_rule("snap_rule") is not None
+        assert temp_storage.load_rule("current_rule") is not None
+
+    def test_compare_snapshots(self, temp_storage):
+        """Test comparing two snapshots."""
+        # Create first snapshot with 2 rules
+        rule1 = RuleMetadata(
+            rule_id="common_rule",
+            rule_text="common",
+            natural_language="common",
+            created_by="test",
+        )
+        rule2 = RuleMetadata(
+            rule_id="removed_rule",
+            rule_text="removed",
+            natural_language="removed",
+            created_by="test",
+        )
+        temp_storage.save_rule(rule1)
+        temp_storage.save_rule(rule2)
+        temp_storage.create_snapshot(name="snap_1")
+
+        # Modify and create second snapshot
+        temp_storage.delete_rule("removed_rule")
+        rule3 = RuleMetadata(
+            rule_id="added_rule",
+            rule_text="added",
+            natural_language="added",
+            created_by="test",
+        )
+        temp_storage.save_rule(rule3)
+        temp_storage.create_snapshot(name="snap_2")
+
+        # Compare
+        comparison = temp_storage.compare_snapshots("snap_1", "snap_2")
+
+        assert comparison["snapshot1"]["rule_count"] == 2
+        assert comparison["snapshot2"]["rule_count"] == 2
+        assert "removed_rule" in comparison["removed_rules"]
+        assert "added_rule" in comparison["added_rules"]
+        assert comparison["common_rules"] == 1
+
+    def test_compare_snapshots_nonexistent_fails(self, temp_storage):
+        """Test that comparing with nonexistent snapshot fails."""
+        temp_storage.create_snapshot(name="exists")
+
+        with pytest.raises(ValueError, match="does not exist"):
+            temp_storage.compare_snapshots("exists", "nonexistent")
+
+        with pytest.raises(ValueError, match="does not exist"):
+            temp_storage.compare_snapshots("nonexistent", "exists")
+
+    def test_storage_stats_includes_snapshots(self, temp_storage):
+        """Test that storage stats includes snapshot count."""
+        temp_storage.create_snapshot(name="stats_snap_1")
+        temp_storage.create_snapshot(name="stats_snap_2")
+
+        stats = temp_storage.get_storage_stats()
+
+        assert stats["total_snapshots"] == 2
+
+    def test_snapshot_preserves_ab_tests(self, temp_storage):
+        """Test that snapshots preserve A/B tests."""
+        # Add an A/B test
+        ab_test = ABTestResult(
+            test_id="preserved_test",
+            started_at=datetime.now(),
+            variant_a_id="a",
+            variant_b_id="b",
+            variant_a_accuracy=0.7,
+            variant_b_accuracy=0.8,
+            cases_evaluated=100,
+        )
+        temp_storage.save_ab_test(ab_test)
+        temp_storage.create_snapshot(name="ab_test_snapshot")
+
+        # Delete A/B test
+        ab_test_path = temp_storage._ab_test_path("preserved_test")
+        ab_test_path.unlink()
+        assert temp_storage.load_ab_test("preserved_test") is None
+
+        # Restore and verify
+        temp_storage.restore_snapshot("ab_test_snapshot")
+        restored_test = temp_storage.load_ab_test("preserved_test")
+
+        assert restored_test is not None
+        assert restored_test.test_id == "preserved_test"
+
+    def test_snapshot_preserves_genealogy(self, temp_storage):
+        """Test that snapshots preserve genealogy."""
+        genealogy = {"root": ["child_1", "child_2"]}
+        temp_storage.save_genealogy(genealogy)
+        temp_storage.create_snapshot(name="genealogy_snapshot")
+
+        # Clear genealogy
+        temp_storage.save_genealogy({})
+        assert temp_storage.load_genealogy() == {}
+
+        # Restore and verify
+        temp_storage.restore_snapshot("genealogy_snapshot")
+
+        assert temp_storage.load_genealogy() == genealogy
