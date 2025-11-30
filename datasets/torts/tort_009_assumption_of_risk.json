@@ -1,0 +1,19 @@
+{
+  "id": "tort_009",
+  "domain": "torts",
+  "subdomain": "negligence",
+  "description": "Assumption of risk - voluntary participation in dangerous activity",
+  "facts": [
+    "Spectator attended a baseball game",
+    "Spectator sat in an unscreened section",
+    "A foul ball struck the spectator",
+    "The stadium had posted warnings about foul balls",
+    "Screened seating was available but spectator chose unscreened seats"
+  ],
+  "asp_facts": "claim(c1). claim_type(c1, negligence). defendant(c1, stadium). plaintiff(c1, spectator). duty_owed(c1, yes). duty_breached(c1, no). assumption_of_risk(c1, yes). risk_known(c1, yes). risk_voluntary(c1, yes). actual_cause(c1, yes). damages(c1, 5000). injury_type(c1, physical).",
+  "question": "Can the spectator recover damages from the stadium?",
+  "ground_truth": "unenforceable",
+  "rationale": "The spectator assumed the risk of being hit by a foul ball. The risk was known (warnings posted), voluntary (chose unscreened seats when screened seats were available), and inherent to the activity. Assumption of risk bars recovery.",
+  "legal_citations": ["Baseball Rule", "Primary Assumption of Risk"],
+  "difficulty": "medium"
+}

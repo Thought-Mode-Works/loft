@@ -1,0 +1,19 @@
+{
+  "id": "proc_001",
+  "domain": "procedural",
+  "subdomain": "standing",
+  "description": "Standing established - concrete injury in fact",
+  "facts": [
+    "Environmental group's members use a river for recreation",
+    "Factory discharged pollutants into the river",
+    "Pollution caused fish die-offs affecting fishing",
+    "Members can no longer fish at their usual spots",
+    "Environmental group sues factory under Clean Water Act"
+  ],
+  "asp_facts": "claim(c1). claim_type(c1, standing). plaintiff(c1, environmental_group). defendant(c1, factory). forum(c1, federal_court). injury_in_fact(c1, yes). injury_concrete(c1, yes). injury_particularized(c1, yes). causation_traceable(c1, yes). redressability(c1, yes). statutory_basis(c1, clean_water_act).",
+  "question": "Does the environmental group have standing to sue?",
+  "ground_truth": "enforceable",
+  "rationale": "Standing requires injury in fact (members cannot fish), causation (traceable to factory's pollution), and redressability (injunction would stop pollution). The injury is concrete and particularized to the members.",
+  "legal_citations": ["Lujan v. Defenders of Wildlife", "Sierra Club v. Morton"],
+  "difficulty": "medium"
+}

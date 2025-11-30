@@ -1,0 +1,18 @@
+{
+  "id": "tort_006",
+  "domain": "torts",
+  "subdomain": "strict_liability",
+  "description": "Product liability - defective product causes injury",
+  "facts": [
+    "Consumer purchased a new blender from a retail store",
+    "The blender's blade detached during normal use",
+    "Consumer suffered cuts to their hand",
+    "Investigation revealed a manufacturing defect in the blade assembly"
+  ],
+  "asp_facts": "claim(c1). claim_type(c1, product_liability). defendant(c1, manufacturer). plaintiff(c1, consumer). product_type(c1, blender). defect_type(c1, manufacturing). product_used_normally(c1, yes). defect_caused_injury(c1, yes). actual_cause(c1, yes). proximate_cause(c1, yes). damages(c1, 3000). injury_type(c1, physical).",
+  "question": "Is the manufacturer liable for the consumer's injuries?",
+  "ground_truth": "enforceable",
+  "rationale": "Under strict product liability, manufacturers are liable for injuries caused by defective products. A manufacturing defect that causes the blade to detach during normal use makes the manufacturer strictly liable regardless of fault.",
+  "legal_citations": ["Greenman v. Yuba Power Products", "Restatement (Third) of Torts: Products Liability"],
+  "difficulty": "easy"
+}

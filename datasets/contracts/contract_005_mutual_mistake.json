@@ -1,0 +1,18 @@
+{
+  "id": "contract_005",
+  "domain": "contracts",
+  "subdomain": "defenses",
+  "description": "Mutual mistake as to basic assumption",
+  "facts": [
+    "Seller contracted to sell painting believed to be a copy",
+    "Buyer purchased painting for $100",
+    "Both parties believed painting was a reproduction",
+    "Painting later discovered to be original worth $1,000,000"
+  ],
+  "asp_facts": "contract(c1). parties(c1, seller, buyer). subject_matter(c1, painting). mutual_mistake(c1, yes). basic_assumption(c1, authenticity). material_effect(c1, yes). risk_allocated(c1, no). mistake_known_at_formation(c1, no). sale_amount(c1, 100). actual_value(c1, 1000000).",
+  "question": "Can the seller rescind the contract?",
+  "ground_truth": "unenforceable",
+  "rationale": "A mutual mistake as to a basic assumption on which the contract was made makes the contract voidable. Both parties were mistaken about the painting's authenticity, a basic assumption that materially affects the exchange.",
+  "legal_citations": ["Sherwood v. Walker", "Mutual Mistake Doctrine"],
+  "difficulty": "medium"
+}

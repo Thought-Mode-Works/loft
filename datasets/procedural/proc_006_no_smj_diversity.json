@@ -1,0 +1,20 @@
+{
+  "id": "proc_006",
+  "domain": "procedural",
+  "subdomain": "jurisdiction",
+  "description": "No subject matter jurisdiction - incomplete diversity",
+  "facts": [
+    "New York plaintiff sues two defendants for breach of contract",
+    "One defendant is a citizen of California",
+    "Other defendant is a citizen of New York",
+    "Claim is for $500,000",
+    "No federal law is involved",
+    "Lawsuit filed in federal district court"
+  ],
+  "asp_facts": "claim(c1). claim_type(c1, subject_matter_jurisdiction). plaintiff(c1, ny_plaintiff). defendant(c1, multiparty). forum(c1, federal_court). plaintiff_state(c1, new_york). defendant1_state(c1, california). defendant2_state(c1, new_york). complete_diversity(c1, no). amount_in_controversy(c1, 500000). federal_question(c1, no). state_law_claim(c1, yes).",
+  "question": "Does the federal court have subject matter jurisdiction?",
+  "ground_truth": "unenforceable",
+  "rationale": "Diversity jurisdiction requires complete diversity between all plaintiffs and all defendants. Here, the New York plaintiff and one New York defendant destroy complete diversity. With no federal question involved, federal court lacks subject matter jurisdiction.",
+  "legal_citations": ["28 U.S.C. Section 1332", "Strawbridge v. Curtiss"],
+  "difficulty": "medium"
+}

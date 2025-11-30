@@ -1,0 +1,18 @@
+{
+  "id": "contract_003",
+  "domain": "contracts",
+  "subdomain": "capacity",
+  "description": "Contract with minor - voidable at minor's option",
+  "facts": [
+    "16-year-old purchased a motorcycle from dealer",
+    "Minor paid full price of $5,000",
+    "Minor seeks to return motorcycle and get refund",
+    "Motorcycle is not a necessity"
+  ],
+  "asp_facts": "contract(c1). parties(c1, dealer, minor). subject_matter(c1, motorcycle). party_minor(c1, buyer). party_age(c1, 16). necessity(c1, no). disaffirmance(c1, yes). reasonable_time(c1, yes). ratification(c1, no). full_performance(c1, yes).",
+  "question": "Can the minor disaffirm the contract?",
+  "ground_truth": "enforceable",
+  "rationale": "Contracts with minors are voidable at the minor's option. Since the motorcycle is not a necessity, the minor may disaffirm the contract and obtain a refund. The minor has chosen to exercise this right within a reasonable time.",
+  "legal_citations": ["Infancy Doctrine", "Voidable Contracts"],
+  "difficulty": "medium"
+}

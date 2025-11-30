@@ -1,0 +1,18 @@
+{
+  "id": "contract_002",
+  "domain": "contracts",
+  "subdomain": "consideration",
+  "description": "No consideration - gratuitous promise",
+  "facts": [
+    "Uncle promised nephew $5,000 as a gift",
+    "Promise was made in writing",
+    "Nephew did not give anything in return",
+    "Uncle later refused to pay"
+  ],
+  "asp_facts": "contract(c1). parties(c1, uncle, nephew). subject_matter(c1, gift). offer(c1, yes). acceptance(c1, yes). consideration(c1, no). gratuitous_promise(c1, yes). bargained_for_exchange(c1, no). legal_detriment(c1, no). promissory_estoppel(c1, no).",
+  "question": "Can nephew enforce uncle's promise?",
+  "ground_truth": "unenforceable",
+  "rationale": "A gratuitous promise lacks consideration and is unenforceable. There was no bargained-for exchange; nephew gave nothing in return for the promise. Without consideration or detrimental reliance, the promise is not binding.",
+  "legal_citations": ["Consideration Requirement", "Hamer v. Sidway"],
+  "difficulty": "easy"
+}

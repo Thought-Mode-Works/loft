@@ -1,0 +1,18 @@
+{
+  "id": "tort_005",
+  "domain": "torts",
+  "subdomain": "strict_liability",
+  "description": "Strict liability for abnormally dangerous activity",
+  "facts": [
+    "Construction company used dynamite for demolition",
+    "Despite all safety precautions, debris flew into neighboring property",
+    "Neighbor's car was damaged by the debris",
+    "The company followed all industry safety standards"
+  ],
+  "asp_facts": "claim(c1). claim_type(c1, strict_liability). defendant(c1, construction_co). plaintiff(c1, neighbor). activity_type(c1, blasting). abnormally_dangerous(c1, yes). reasonable_care(c1, yes). actual_cause(c1, yes). proximate_cause(c1, yes). damages(c1, 8000). damage_type(c1, property).",
+  "question": "Is the construction company liable for the damage?",
+  "ground_truth": "enforceable",
+  "rationale": "Blasting/dynamite use is considered an abnormally dangerous activity. Under strict liability, the defendant is liable regardless of the level of care exercised. The company is liable even though it followed all safety standards.",
+  "legal_citations": ["Rylands v. Fletcher", "Restatement (Second) of Torts Section 519"],
+  "difficulty": "medium"
+}

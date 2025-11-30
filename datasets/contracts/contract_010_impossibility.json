@@ -1,0 +1,18 @@
+{
+  "id": "contract_010",
+  "domain": "contracts",
+  "subdomain": "discharge",
+  "description": "Impossibility of performance - supervening event",
+  "facts": [
+    "Concert venue contracted with performer for show on March 15",
+    "Government ordered all venues closed due to pandemic",
+    "Closure was not foreseeable at contract formation",
+    "Neither party was at fault for the closure"
+  ],
+  "asp_facts": "contract(c1). parties(c1, venue, performer). subject_matter(c1, performance). impossibility(c1, yes). supervening_event(c1, pandemic_closure). foreseeability(c1, no). fault(c1, neither_party). performance_impossible(c1, yes). basic_assumption(c1, venue_available). risk_allocated(c1, no). discharge(c1, yes).",
+  "question": "Is the performer discharged from the contract?",
+  "ground_truth": "enforceable",
+  "rationale": "Supervening impossibility discharges contractual duties when performance becomes impossible due to an event that was not foreseeable and not the fault of either party. The government closure made performance impossible and discharges both parties.",
+  "legal_citations": ["Taylor v. Caldwell", "Impossibility Doctrine"],
+  "difficulty": "medium"
+}

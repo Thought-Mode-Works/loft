@@ -1,0 +1,19 @@
+{
+  "id": "tort_004",
+  "domain": "torts",
+  "subdomain": "negligence",
+  "description": "No proximate cause - unforeseeable consequences",
+  "facts": [
+    "Contractor negligently left tools on a sidewalk",
+    "Pedestrian tripped over the tools",
+    "While falling, pedestrian grabbed a passerby",
+    "Passerby was startled and had a heart attack",
+    "Passerby had an unknown pre-existing heart condition"
+  ],
+  "asp_facts": "claim(c1). claim_type(c1, negligence). defendant(c1, contractor). plaintiff(c1, passerby). duty_owed(c1, yes). duty_breached(c1, yes). actual_cause(c1, yes). proximate_cause(c1, no). foreseeable_harm(c1, no). eggshell_plaintiff(c1, yes). damages(c1, 50000). injury_type(c1, physical).",
+  "question": "Is the contractor liable to the passerby?",
+  "ground_truth": "unenforceable",
+  "rationale": "While the contractor breached a duty and there is actual causation, the heart attack to a passerby who was merely grabbed is not a foreseeable consequence of leaving tools on a sidewalk. Proximate cause requires foreseeability of the type of harm.",
+  "legal_citations": ["Palsgraf v. Long Island Railroad", "Proximate Cause Foreseeability"],
+  "difficulty": "hard"
+}

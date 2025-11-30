@@ -1,0 +1,18 @@
+{
+  "id": "tort_001",
+  "domain": "torts",
+  "subdomain": "negligence",
+  "description": "Basic negligence case - all elements established",
+  "facts": [
+    "Driver ran a red light while texting",
+    "Driver struck a pedestrian in the crosswalk",
+    "Pedestrian suffered a broken leg",
+    "Medical bills totaled $15,000"
+  ],
+  "asp_facts": "claim(c1). claim_type(c1, negligence). defendant(c1, driver). plaintiff(c1, pedestrian). duty_owed(c1, yes). duty_breached(c1, yes). breach_cause(c1, ran_red_light). actual_cause(c1, yes). proximate_cause(c1, yes). damages(c1, 15000). injury_type(c1, physical).",
+  "question": "Is the driver liable for negligence?",
+  "ground_truth": "enforceable",
+  "rationale": "All elements of negligence are met: duty (drivers owe duty of care to pedestrians), breach (running red light while texting), causation (but-for the breach, injury would not have occurred), and damages ($15,000 medical bills).",
+  "legal_citations": ["Palsgraf v. Long Island Railroad", "Restatement (Second) of Torts"],
+  "difficulty": "easy"
+}

@@ -1,0 +1,19 @@
+{
+  "id": "tort_008",
+  "domain": "torts",
+  "subdomain": "negligence",
+  "description": "Comparative negligence - plaintiff partially at fault",
+  "facts": [
+    "Driver A ran a stop sign",
+    "Driver B was speeding 20 mph over the limit",
+    "The two vehicles collided at an intersection",
+    "Driver B suffered $10,000 in damages",
+    "Jury found Driver A 70% at fault and Driver B 30% at fault"
+  ],
+  "asp_facts": "claim(c1). claim_type(c1, negligence). defendant(c1, driver_a). plaintiff(c1, driver_b). duty_owed(c1, yes). duty_breached(c1, yes). plaintiff_negligent(c1, yes). defendant_fault_percent(c1, 70). plaintiff_fault_percent(c1, 30). actual_cause(c1, yes). proximate_cause(c1, yes). damages(c1, 10000). injury_type(c1, property).",
+  "question": "Can Driver B recover damages from Driver A?",
+  "ground_truth": "enforceable",
+  "rationale": "Under comparative negligence, a plaintiff can recover damages reduced by their percentage of fault. Driver B can recover $7,000 (70% of $10,000) from Driver A since Driver B was only 30% at fault.",
+  "legal_citations": ["Comparative Negligence Doctrine", "Li v. Yellow Cab Co."],
+  "difficulty": "medium"
+}

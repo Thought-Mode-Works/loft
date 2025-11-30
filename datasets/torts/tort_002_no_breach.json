@@ -1,0 +1,19 @@
+{
+  "id": "tort_002",
+  "domain": "torts",
+  "subdomain": "negligence",
+  "description": "No breach of duty - reasonable care exercised",
+  "facts": [
+    "Driver was traveling at the speed limit",
+    "Driver had both hands on the wheel",
+    "A child suddenly darted into the road from behind a parked car",
+    "Driver braked immediately but could not avoid the collision",
+    "Child suffered minor injuries"
+  ],
+  "asp_facts": "claim(c1). claim_type(c1, negligence). defendant(c1, driver). plaintiff(c1, child). duty_owed(c1, yes). duty_breached(c1, no). reasonable_care(c1, yes). sudden_emergency(c1, yes). actual_cause(c1, yes). damages(c1, 2000). injury_type(c1, physical).",
+  "question": "Is the driver liable for negligence?",
+  "ground_truth": "unenforceable",
+  "rationale": "While duty, causation, and damages exist, there was no breach. The driver exercised reasonable care (proper speed, attentive driving) and faced a sudden emergency that could not be avoided through reasonable precautions.",
+  "legal_citations": ["Sudden Emergency Doctrine", "Reasonable Person Standard"],
+  "difficulty": "medium"
+}
