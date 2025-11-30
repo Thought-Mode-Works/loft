@@ -1,16 +1,17 @@
 {
   "id": "prop_009",
-  "description": "Implied warranty of habitability in new home",
+  "description": "Implied warranty of habitability in used home sale",
   "facts": [
-    "Quinn bought a newly constructed home from Rachel Builders",
-    "Within 6 months, the foundation developed major cracks",
-    "The electrical system was improperly installed and poses fire hazard",
-    "Rachel claims the sale was 'as-is' though no such clause was in the contract"
+    "Quinn bought a 40-year-old home from Rachel",
+    "Rachel is not a builder or developer, just an individual seller",
+    "The basement leaks during heavy rain",
+    "The sale contract included an 'as-is' clause that Quinn signed",
+    "Quinn inspected the property before purchase"
   ],
-  "asp_facts": "property_sale(ps1). buyer(ps1, quinn). seller(ps1, rachel_builders). property_type(ps1, new_construction). time_since_purchase_months(ps1, 6). foundation_defects(ps1, yes). electrical_defects(ps1, yes). safety_hazard(ps1, yes). as_is_clause(ps1, no). contract_type(ps1, new_home_sale).",
-  "question": "Can Quinn recover against Rachel Builders for the defects?",
-  "ground_truth": "enforceable",
-  "rationale": "The implied warranty of habitability applies to new home construction and cannot be easily disclaimed. Rachel Builders is liable for latent defects affecting the home's habitability and safety.",
-  "legal_citations": ["Implied Warranty of Habitability", "Builder Liability"],
+  "asp_facts": "property_claim(claim9). claimant(claim9, quinn). respondent(claim9, rachel). claim_type(claim9, warranty_habitability). property_type(claim9, house). construction_type(claim9, existing_home). seller_type(claim9, individual). home_age_years(claim9, 40). defect_type(claim9, basement_leak). as_is_clause(claim9, yes). buyer_inspection(claim9, yes).",
+  "question": "Can Quinn recover against Rachel for the basement leak?",
+  "ground_truth": "unenforceable",
+  "rationale": "The implied warranty of habitability typically applies only to new construction by builder-vendors. In sales of existing homes by individual sellers with an as-is clause and buyer inspection, caveat emptor applies and Quinn cannot recover.",
+  "legal_citations": ["Caveat Emptor", "As-Is Clause", "Implied Warranty of Habitability"],
   "difficulty": "medium"
 }

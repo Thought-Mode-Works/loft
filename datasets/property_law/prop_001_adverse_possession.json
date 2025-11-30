@@ -3,11 +3,11 @@
   "description": "Adverse possession claim with continuous occupation",
   "facts": [
     "Alice has continuously occupied and maintained a parcel of land for 22 years",
-    "The occupation was open, notorious, and hostile to the true owner",
+    "The occupation was open, notorious, and hostile to the true owner Bob",
     "Alice paid property taxes on the land",
     "The statutory period for adverse possession is 20 years"
   ],
-  "asp_facts": "claim(claim1). claimant(claim1, alice). property_type(claim1, land). occupation_years(claim1, 22). occupation_continuous(claim1, yes). occupation_open(claim1, yes). occupation_notorious(claim1, yes). occupation_hostile(claim1, yes). taxes_paid(claim1, yes). statutory_period(claim1, 20).",
+  "asp_facts": "property_claim(claim1). claimant(claim1, alice). respondent(claim1, bob). claim_type(claim1, adverse_possession). property_type(claim1, land). occupation_years(claim1, 22). occupation_continuous(claim1, yes). occupation_open(claim1, yes). occupation_notorious(claim1, yes). occupation_hostile(claim1, yes). taxes_paid(claim1, yes). statutory_period(claim1, 20).",
   "question": "Has Alice acquired title through adverse possession?",
   "ground_truth": "enforceable",
   "rationale": "Alice has satisfied all requirements for adverse possession: continuous, open, notorious, and hostile occupation for longer than the statutory period, plus payment of property taxes.",

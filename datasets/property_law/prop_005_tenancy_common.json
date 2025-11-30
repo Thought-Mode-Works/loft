@@ -2,12 +2,12 @@
   "id": "prop_005",
   "description": "Partition action by tenant in common",
   "facts": [
-    "Ian and Julia own property as tenants in common (50/50)",
+    "Ian and Julia own property as tenants in common with 50/50 shares",
     "Ian wants to sell but Julia refuses",
     "Ian files for partition of the property",
     "The property cannot be physically divided"
   ],
-  "asp_facts": "property(prop2). ownership_type(prop2, tenancy_in_common). owner1(prop2, ian). owner2(prop2, julia). ownership_share_ian(prop2, 50). ownership_share_julia(prop2, 50). partition_requested(prop2, yes). physically_divisible(prop2, no). disagreement(prop2, yes).",
+  "asp_facts": "property_claim(claim5). claimant(claim5, ian). respondent(claim5, julia). claim_type(claim5, partition). property_type(claim5, real_property). ownership_type(claim5, tenancy_in_common). ownership_share_claimant(claim5, 50). ownership_share_respondent(claim5, 50). partition_requested(claim5, yes). physically_divisible(claim5, no). disagreement(claim5, yes).",
   "question": "Can Ian force a partition sale of the property?",
   "ground_truth": "enforceable",
   "rationale": "A tenant in common has an absolute right to partition. When physical division is impractical, the court will order a partition by sale with proceeds split according to ownership shares.",
