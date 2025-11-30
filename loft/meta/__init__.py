@@ -64,6 +64,21 @@ from loft.meta.prompt_optimizer import (
     create_ab_tester,
     create_prompt_optimizer,
 )
+from loft.meta.failure_analyzer import (
+    ErrorCategory,
+    FailureAnalysisReport,
+    FailureAnalyzer,
+    FailurePattern,
+    PredictionError,
+    Recommendation,
+    RecommendationCategory,
+    RecommendationEngine,
+    RootCause,
+    RootCauseAnalysis,
+    RootCauseType,
+    create_failure_analyzer,
+    create_recommendation_engine,
+)
 
 __all__ = [
     # Observer
@@ -121,4 +136,21 @@ __all__ = [
     # Prompt Optimizer - Factory functions
     "create_prompt_optimizer",
     "create_ab_tester",
+    # Failure Analyzer - Core types
+    "ErrorCategory",
+    "RootCauseType",
+    "RecommendationCategory",
+    # Failure Analyzer - Data classes
+    "PredictionError",
+    "RootCause",
+    "RootCauseAnalysis",
+    "FailurePattern",
+    "Recommendation",
+    "FailureAnalysisReport",
+    # Failure Analyzer - Classes
+    "FailureAnalyzer",
+    "RecommendationEngine",
+    # Failure Analyzer - Factory functions
+    "create_failure_analyzer",
+    "create_recommendation_engine",
 ]
