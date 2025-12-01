@@ -479,9 +479,7 @@ class EventDrivenIntegration:
         Returns:
             The created adapter
         """
-        adapter = FailureToImprovementAdapter(
-            recommendation_engine, tracker, self._event_bus
-        )
+        adapter = FailureToImprovementAdapter(recommendation_engine, tracker, self._event_bus)
         self._adapters["failure_to_improvement"] = adapter
 
         if auto_convert and goal:

@@ -171,9 +171,7 @@ class TestObserverToFailureAdapter:
 
     def test_process_failed_chains_with_limit(self, observer, analyzer):
         """Test limiting processed chains."""
-        chains = [
-            create_test_chain(chain_id=f"chain_{i}", success=False) for i in range(5)
-        ]
+        chains = [create_test_chain(chain_id=f"chain_{i}", success=False) for i in range(5)]
         observer.chains = {chain.chain_id: chain for chain in chains}
 
         adapter = ObserverToFailureAdapter(observer, analyzer)
@@ -288,14 +286,10 @@ class TestFailureToImprovementAdapter:
         adapter = FailureToImprovementAdapter(recommendation_engine, tracker, event_bus)
         assert adapter._event_bus is event_bus
 
-    def test_convert_recommendations_to_actions(
-        self, recommendation_engine, tracker, goal
-    ):
+    def test_convert_recommendations_to_actions(self, recommendation_engine, tracker, goal):
         """Test converting recommendations to actions."""
         recommendation = create_test_recommendation()
-        recommendation_engine._recommendations = {
-            recommendation.recommendation_id: recommendation
-        }
+        recommendation_engine._recommendations = {recommendation.recommendation_id: recommendation}
 
         adapter = FailureToImprovementAdapter(recommendation_engine, tracker)
         actions = adapter.convert_recommendations_to_actions(goal)
@@ -325,13 +319,10 @@ class TestFailureToImprovementAdapter:
         # Both should be converted (no priority filtering in current implementation)
         assert len(actions) == 2
 
-    def test_convert_recommendations_with_limit(
-        self, recommendation_engine, tracker, goal
-    ):
+    def test_convert_recommendations_with_limit(self, recommendation_engine, tracker, goal):
         """Test limiting conversions."""
         recommendations = [
-            create_test_recommendation(recommendation_id=f"rec_{i}")
-            for i in range(5)
+            create_test_recommendation(recommendation_id=f"rec_{i}") for i in range(5)
         ]
         recommendation_engine._recommendations = {
             rec.recommendation_id: rec for rec in recommendations
@@ -347,9 +338,7 @@ class TestFailureToImprovementAdapter:
     ):
         """Test that already converted recommendations are skipped."""
         recommendation = create_test_recommendation()
-        recommendation_engine._recommendations = {
-            recommendation.recommendation_id: recommendation
-        }
+        recommendation_engine._recommendations = {recommendation.recommendation_id: recommendation}
 
         adapter = FailureToImprovementAdapter(recommendation_engine, tracker)
 
@@ -409,13 +398,9 @@ class TestFailureToImprovementAdapter:
             assert len(actions) == 1
             assert actions[0].parameters["risk_level"] == expected_risk
 
-    def test_requires_approval_for_high_priority(
-        self, recommendation_engine, tracker, goal
-    ):
+    def test_requires_approval_for_high_priority(self, recommendation_engine, tracker, goal):
         """Test that high priority actions require approval."""
-        high_priority_rec = create_test_recommendation(
-            priority=ImprovementPriority.HIGH
-        )
+        high_priority_rec = create_test_recommendation(priority=ImprovementPriority.HIGH)
         low_priority_rec = create_test_recommendation(
             recommendation_id="rec_low", priority=ImprovementPriority.LOW
         )
@@ -437,16 +422,12 @@ class TestFailureToImprovementAdapter:
     def test_get_action_for_recommendation(self, recommendation_engine, tracker, goal):
         """Test looking up action ID for recommendation."""
         recommendation = create_test_recommendation()
-        recommendation_engine._recommendations = {
-            recommendation.recommendation_id: recommendation
-        }
+        recommendation_engine._recommendations = {recommendation.recommendation_id: recommendation}
 
         adapter = FailureToImprovementAdapter(recommendation_engine, tracker)
         adapter.convert_recommendations_to_actions(goal)
 
-        action_id = adapter.get_action_for_recommendation(
-            recommendation.recommendation_id
-        )
+        action_id = adapter.get_action_for_recommendation(recommendation.recommendation_id)
         assert action_id is not None
         assert action_id == f"act_{recommendation.recommendation_id}"
 
@@ -456,9 +437,7 @@ class TestFailureToImprovementAdapter:
     def test_reset_conversion_tracking(self, recommendation_engine, tracker, goal):
         """Test resetting conversion tracking."""
         recommendation = create_test_recommendation()
-        recommendation_engine._recommendations = {
-            recommendation.recommendation_id: recommendation
-        }
+        recommendation_engine._recommendations = {recommendation.recommendation_id: recommendation}
 
         adapter = FailureToImprovementAdapter(recommendation_engine, tracker)
         adapter.convert_recommendations_to_actions(goal)
@@ -516,16 +495,12 @@ class TestEventDrivenIntegration:
     def test_setup_observer_to_failure_flow_no_auto(self, event_bus, observer, analyzer):
         """Test setting up flow without auto-processing."""
         integration = EventDrivenIntegration(event_bus)
-        adapter = integration.setup_observer_to_failure_flow(
-            observer, analyzer, auto_process=False
-        )
+        adapter = integration.setup_observer_to_failure_flow(observer, analyzer, auto_process=False)
 
         assert isinstance(adapter, ObserverToFailureAdapter)
         assert integration.subscription_count == 0
 
-    def test_setup_failure_to_improvement_flow(
-        self, event_bus, recommendation_engine, tracker
-    ):
+    def test_setup_failure_to_improvement_flow(self, event_bus, recommendation_engine, tracker):
         """Test setting up failure to improvement flow."""
         goal = create_test_goal()
         integration = EventDrivenIntegration(event_bus)
