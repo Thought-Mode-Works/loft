@@ -109,6 +109,11 @@ class ComparisonReport:
     recommendations: List[str] = field(default_factory=list)
     statistical_significance: bool = False
 
+    @property
+    def rankings(self) -> List[Dict[str, Any]]:
+        """Alias for strategy_rankings for consistent API."""
+        return self.strategy_rankings
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
@@ -119,8 +124,34 @@ class ComparisonReport:
             "best_accuracy": self.best_accuracy,
             "generated_at": self.generated_at.isoformat(),
             "strategy_rankings": self.strategy_rankings,
+            "rankings": self.rankings,  # Include alias in dict
             "recommendations": self.recommendations,
             "statistical_significance": self.statistical_significance,
+        }
+
+
+@dataclass
+class CounterfactualAnalysis:
+    """Analysis of why an alternative strategy was not selected.
+
+    Provides "why not" reasoning for strategies that were considered
+    but ultimately rejected in favor of the selected strategy.
+    """
+
+    alternative: str
+    why_not_selected: str
+    hypothetical_performance: float
+    confidence: float
+    comparison_factors: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "alternative": self.alternative,
+            "why_not_selected": self.why_not_selected,
+            "hypothetical_performance": self.hypothetical_performance,
+            "confidence": self.confidence,
+            "comparison_factors": self.comparison_factors,
         }
 
 
@@ -135,6 +166,7 @@ class SelectionExplanation:
     confidence: float
     alternative_strategies: List[str] = field(default_factory=list)
     domain_performance: Optional[float] = None
+    counterfactuals: List[CounterfactualAnalysis] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
@@ -146,6 +178,7 @@ class SelectionExplanation:
             "confidence": self.confidence,
             "alternative_strategies": self.alternative_strategies,
             "domain_performance": self.domain_performance,
+            "counterfactuals": [c.to_dict() for c in self.counterfactuals],
         }
 
     def explain(self) -> str:
@@ -159,6 +192,13 @@ class SelectionExplanation:
         if self.domain_performance is not None:
             parts.append(f"Historical accuracy in this domain: {self.domain_performance:.1%}.")
         parts.append(f"Selection confidence: {self.confidence:.1%}.")
+
+        # Add counterfactual reasoning
+        if self.counterfactuals:
+            parts.append("Alternatives considered:")
+            for cf in self.counterfactuals[:3]:  # Limit to top 3
+                parts.append(f"  - {cf.alternative}: {cf.why_not_selected}")
+
         return " ".join(parts)
 
 
@@ -705,6 +745,9 @@ class StrategySelector:
         # Selection callbacks
         self._on_selection: Optional[Callable[[str, str, ReasoningStrategy], None]] = None
 
+        # Track most recent selection for explain_selection() without args
+        self._last_selection: Optional[Dict[str, Any]] = None
+
     def set_callback(
         self,
         on_selection: Optional[Callable[[str, str, ReasoningStrategy], None]] = None,
@@ -767,6 +810,14 @@ class StrategySelector:
             selected = self._select_balanced(candidates, domain)
         else:
             selected = self._select_by_accuracy(candidates, domain)
+
+        # Track selection for explain_selection() without args
+        self._last_selection = {
+            "case": case,
+            "strategy": selected,
+            "candidates": candidates,
+            "domain": domain,
+        }
 
         if self._on_selection:
             self._on_selection(case.case_id, domain, selected)
@@ -853,18 +904,46 @@ class StrategySelector:
 
     def explain_selection(
         self,
-        case: CaseProtocol,
-        strategy: ReasoningStrategy,
+        case: Optional[CaseProtocol] = None,
+        strategy: Optional[ReasoningStrategy] = None,
+        include_counterfactuals: bool = True,
     ) -> SelectionExplanation:
         """Explain why a strategy was selected.
 
+        Can be called in three ways:
+        1. explain_selection() - Explains the most recent selection
+        2. explain_selection(case, strategy) - Explains a specific selection
+        3. explain_selection(strategy=some_strategy) - Explains with last case
+
         Args:
-            case: The case
-            strategy: The selected strategy
+            case: The case (uses last selection if None)
+            strategy: The selected strategy (uses last selection if None)
+            include_counterfactuals: Include "why not" reasoning for alternatives
 
         Returns:
-            Selection explanation
+            Selection explanation with optional counterfactual analysis
+
+        Raises:
+            ValueError: If no selection has been made and no args provided
         """
+        # Resolve case and strategy from last selection if not provided
+        if case is None and strategy is None:
+            if self._last_selection is None:
+                raise ValueError(
+                    "No selection to explain. Call select_strategy() first "
+                    "or provide case and strategy arguments."
+                )
+            case = self._last_selection["case"]
+            strategy = self._last_selection["strategy"]
+        elif case is None:
+            if self._last_selection is None:
+                raise ValueError("No case provided and no previous selection.")
+            case = self._last_selection["case"]
+        elif strategy is None:
+            if self._last_selection is None:
+                raise ValueError("No strategy provided and no previous selection.")
+            strategy = self._last_selection["strategy"]
+
         domain = case.domain
         reasons = []
 
@@ -905,6 +984,13 @@ class StrategySelector:
         if strategy.name == self._domain_defaults.get(domain):
             confidence += 0.1
 
+        # Generate counterfactual analysis if requested
+        counterfactuals = []
+        if include_counterfactuals:
+            counterfactuals = self._generate_counterfactuals(
+                strategy, domain, metrics, alternatives
+            )
+
         return SelectionExplanation(
             strategy_name=strategy.name,
             case_id=case.case_id,
@@ -913,7 +999,101 @@ class StrategySelector:
             confidence=min(confidence, 1.0),
             alternative_strategies=alternatives,
             domain_performance=metrics.accuracy if metrics.total_cases > 0 else None,
+            counterfactuals=counterfactuals,
         )
+
+    def _generate_counterfactuals(
+        self,
+        selected: ReasoningStrategy,
+        domain: str,
+        selected_metrics: StrategyMetrics,
+        alternatives: List[str],
+    ) -> List[CounterfactualAnalysis]:
+        """Generate counterfactual analysis for alternative strategies.
+
+        Args:
+            selected: The selected strategy
+            domain: The domain
+            selected_metrics: Performance metrics for selected strategy
+            alternatives: Alternative strategy names to analyze
+
+        Returns:
+            List of counterfactual analyses
+        """
+        counterfactuals = []
+
+        for alt_name in alternatives[:3]:  # Limit to top 3 alternatives
+            alt_strategy = self.evaluator.get_strategy(alt_name)
+            if not alt_strategy:
+                continue
+
+            alt_metrics = self.evaluator.evaluate_strategy(alt_strategy, domain)
+
+            # Determine why this alternative wasn't selected
+            why_not_reasons = []
+            comparison_factors = []
+
+            # Compare accuracy
+            if alt_metrics.total_cases > 0 and selected_metrics.total_cases > 0:
+                accuracy_diff = selected_metrics.accuracy - alt_metrics.accuracy
+                if accuracy_diff > 0:
+                    why_not_reasons.append(
+                        f"Lower accuracy ({alt_metrics.accuracy:.1%} vs {selected_metrics.accuracy:.1%})"
+                    )
+                    comparison_factors.append(f"accuracy_delta={accuracy_diff:.1%}")
+                elif accuracy_diff < 0:
+                    comparison_factors.append(f"higher_accuracy={alt_metrics.accuracy:.1%}")
+            elif alt_metrics.total_cases == 0:
+                why_not_reasons.append("No historical performance data")
+                comparison_factors.append("no_history")
+
+            # Compare speed
+            speed_order = {"fast": 0, "medium": 1, "slow": 2}
+            selected_speed = speed_order.get(selected.characteristics.speed, 1)
+            alt_speed = speed_order.get(alt_strategy.characteristics.speed, 1)
+
+            if alt_speed > selected_speed:
+                why_not_reasons.append(
+                    f"Slower execution ({alt_strategy.characteristics.speed} vs {selected.characteristics.speed})"
+                )
+                comparison_factors.append("slower")
+
+            # Check domain applicability
+            if not alt_strategy.is_applicable(domain):
+                why_not_reasons.append(f"Not designed for '{domain}' domain")
+                comparison_factors.append("domain_mismatch")
+
+            # Check if it's a domain default
+            if selected.name == self._domain_defaults.get(
+                domain
+            ) and alt_name != self._domain_defaults.get(domain):
+                why_not_reasons.append("Not the default strategy for this domain")
+                comparison_factors.append("not_default")
+
+            # Default reason if none found
+            if not why_not_reasons:
+                why_not_reasons.append("Selected strategy had better overall fit")
+
+            # Calculate confidence in the counterfactual
+            cf_confidence = 0.5
+            if alt_metrics.total_cases >= 10:
+                cf_confidence += 0.2
+            if len(why_not_reasons) >= 2:
+                cf_confidence += 0.1
+
+            counterfactuals.append(
+                CounterfactualAnalysis(
+                    alternative=alt_name,
+                    why_not_selected="; ".join(why_not_reasons),
+                    hypothetical_performance=alt_metrics.accuracy
+                    if alt_metrics.total_cases > 0
+                    else 0.0,
+                    confidence=min(cf_confidence, 1.0),
+                    comparison_factors=comparison_factors,
+                )
+            )
+
+        return counterfactuals
 
 
 def get_default_strategies() -> Dict[str, ReasoningStrategy]:
