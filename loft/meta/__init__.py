@@ -36,6 +36,7 @@ from loft.meta.strategy import (
     CausalChainStrategy,
     ChecklistStrategy,
     ComparisonReport,
+    CounterfactualAnalysis,
     DialecticalStrategy,
     ReasoningStrategy,
     RuleBasedStrategy,
@@ -128,6 +129,7 @@ __all__ = [
     "StrategyCharacteristics",
     "StrategyMetrics",
     "ComparisonReport",
+    "CounterfactualAnalysis",
     "SelectionExplanation",
     "SimpleCase",
     # Strategy - Implementations

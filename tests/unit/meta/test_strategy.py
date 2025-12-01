@@ -8,6 +8,7 @@ from loft.meta.strategy import (
     CausalChainStrategy,
     ChecklistStrategy,
     ComparisonReport,
+    CounterfactualAnalysis,
     DialecticalStrategy,
     ReasoningStrategy,
     RuleBasedStrategy,
@@ -620,3 +621,339 @@ class TestIntegration:
         # Should mostly select checklist
         checklist_count = sum(1 for s in selected_strategies if s == "checklist")
         assert checklist_count >= 8  # At least 80% should be checklist
+
+
+class TestCounterfactualAnalysis:
+    """Tests for CounterfactualAnalysis dataclass."""
+
+    def test_counterfactual_creation(self):
+        """Test creating a counterfactual analysis."""
+        cf = CounterfactualAnalysis(
+            alternative="rule_based",
+            why_not_selected="Lower accuracy (70% vs 90%)",
+            hypothetical_performance=0.7,
+            confidence=0.8,
+            comparison_factors=["accuracy_delta=20%", "slower"],
+        )
+        assert cf.alternative == "rule_based"
+        assert cf.hypothetical_performance == 0.7
+        assert len(cf.comparison_factors) == 2
+
+    def test_counterfactual_to_dict(self):
+        """Test conversion to dictionary."""
+        cf = CounterfactualAnalysis(
+            alternative="dialectical",
+            why_not_selected="Too slow",
+            hypothetical_performance=0.85,
+            confidence=0.6,
+        )
+        data = cf.to_dict()
+        assert data["alternative"] == "dialectical"
+        assert data["hypothetical_performance"] == 0.85
+        assert "comparison_factors" in data
+
+
+class TestComparisonReportRankings:
+    """Tests for ComparisonReport.rankings property."""
+
+    def test_rankings_alias(self):
+        """Test that rankings is an alias for strategy_rankings."""
+        report = ComparisonReport(
+            report_id="cmp_001",
+            domain="contracts",
+            strategies_compared=["checklist", "rule_based"],
+            best_strategy="checklist",
+            best_accuracy=0.9,
+            strategy_rankings=[
+                {"strategy_name": "checklist", "accuracy": 0.9},
+                {"strategy_name": "rule_based", "accuracy": 0.85},
+            ],
+        )
+        assert report.rankings == report.strategy_rankings
+        assert len(report.rankings) == 2
+        assert report.rankings[0]["strategy_name"] == "checklist"
+
+    def test_rankings_in_to_dict(self):
+        """Test that rankings appears in to_dict output."""
+        report = ComparisonReport(
+            report_id="cmp_002",
+            domain="torts",
+            strategies_compared=["causal_chain"],
+            best_strategy="causal_chain",
+            best_accuracy=0.75,
+            strategy_rankings=[{"strategy_name": "causal_chain", "accuracy": 0.75}],
+        )
+        data = report.to_dict()
+        assert "rankings" in data
+        assert "strategy_rankings" in data
+        assert data["rankings"] == data["strategy_rankings"]
+
+
+class TestSelectionExplanationWithCounterfactuals:
+    """Tests for SelectionExplanation with counterfactuals."""
+
+    def test_explanation_with_counterfactuals(self):
+        """Test creating explanation with counterfactuals."""
+        cf = CounterfactualAnalysis(
+            alternative="rule_based",
+            why_not_selected="Lower accuracy",
+            hypothetical_performance=0.7,
+            confidence=0.8,
+        )
+        explanation = SelectionExplanation(
+            strategy_name="checklist",
+            case_id="case_001",
+            domain="contracts",
+            reasons=["Best accuracy"],
+            confidence=0.9,
+            counterfactuals=[cf],
+        )
+        assert len(explanation.counterfactuals) == 1
+        assert explanation.counterfactuals[0].alternative == "rule_based"
+
+    def test_explanation_to_dict_includes_counterfactuals(self):
+        """Test that to_dict includes counterfactuals."""
+        cf = CounterfactualAnalysis(
+            alternative="dialectical",
+            why_not_selected="Too slow",
+            hypothetical_performance=0.8,
+            confidence=0.7,
+        )
+        explanation = SelectionExplanation(
+            strategy_name="checklist",
+            case_id="c1",
+            domain="contracts",
+            reasons=[],
+            confidence=0.8,
+            counterfactuals=[cf],
+        )
+        data = explanation.to_dict()
+        assert "counterfactuals" in data
+        assert len(data["counterfactuals"]) == 1
+        assert data["counterfactuals"][0]["alternative"] == "dialectical"
+
+    def test_explain_method_includes_counterfactuals(self):
+        """Test that explain() includes counterfactual info."""
+        cf = CounterfactualAnalysis(
+            alternative="rule_based",
+            why_not_selected="Lower accuracy (70% vs 90%)",
+            hypothetical_performance=0.7,
+            confidence=0.8,
+        )
+        explanation = SelectionExplanation(
+            strategy_name="checklist",
+            case_id="c1",
+            domain="contracts",
+            reasons=["Best accuracy"],
+            confidence=0.9,
+            domain_performance=0.9,
+            counterfactuals=[cf],
+        )
+        text = explanation.explain()
+        assert "rule_based" in text
+        assert "Lower accuracy" in text
+
+
+class TestExplainSelectionWithoutArgs:
+    """Tests for explain_selection() without arguments."""
+
+    @pytest.fixture
+    def selector_with_history(self):
+        """Create selector with performance history."""
+        evaluator = StrategyEvaluator()
+        for i in range(20):
+            evaluator.record_result("checklist", "contracts", i < 18, 100.0)
+            evaluator.record_result("rule_based", "contracts", i < 14, 150.0)
+        return StrategySelector(evaluator)
+
+    def test_explain_without_args_after_selection(self, selector_with_history):
+        """Test explain_selection() works without args after select_strategy."""
+        case = SimpleCase(case_id="c1", domain="contracts")
+        strategy = selector_with_history.select_strategy(case)
+
+        # Now explain without args
+        explanation = selector_with_history.explain_selection()
+
+        assert explanation.strategy_name == strategy.name
+        assert explanation.case_id == "c1"
+        assert explanation.domain == "contracts"
+
+    def test_explain_without_args_raises_before_selection(self):
+        """Test that explain_selection() raises if no prior selection."""
+        selector = StrategySelector(StrategyEvaluator())
+
+        with pytest.raises(ValueError) as exc_info:
+            selector.explain_selection()
+
+        assert "No selection to explain" in str(exc_info.value)
+
+    def test_explain_with_only_strategy_arg(self, selector_with_history):
+        """Test explain_selection() with only strategy argument."""
+        case = SimpleCase(case_id="c1", domain="contracts")
+        selector_with_history.select_strategy(case)
+
+        # Explain with different strategy
+        rule_based = selector_with_history.evaluator.get_strategy("rule_based")
+        explanation = selector_with_history.explain_selection(strategy=rule_based)
+
+        assert explanation.strategy_name == "rule_based"
+        assert explanation.case_id == "c1"
+
+    def test_explain_with_only_case_arg(self, selector_with_history):
+        """Test explain_selection() with only case argument."""
+        case1 = SimpleCase(case_id="c1", domain="contracts")
+        selector_with_history.select_strategy(case1)
+
+        # Explain with different case
+        case2 = SimpleCase(case_id="c2", domain="contracts")
+        explanation = selector_with_history.explain_selection(case=case2)
+
+        assert explanation.case_id == "c2"
+
+    def test_explain_with_counterfactuals_enabled(self, selector_with_history):
+        """Test that counterfactuals are included by default."""
+        case = SimpleCase(case_id="c1", domain="contracts")
+        selector_with_history.select_strategy(case)
+
+        explanation = selector_with_history.explain_selection()
+
+        assert len(explanation.counterfactuals) > 0
+        # Counterfactuals should analyze alternatives
+        alt_names = [cf.alternative for cf in explanation.counterfactuals]
+        assert "rule_based" in alt_names or "dialectical" in alt_names
+
+    def test_explain_with_counterfactuals_disabled(self, selector_with_history):
+        """Test that counterfactuals can be disabled."""
+        case = SimpleCase(case_id="c1", domain="contracts")
+        selector_with_history.select_strategy(case)
+
+        explanation = selector_with_history.explain_selection(include_counterfactuals=False)
+
+        assert len(explanation.counterfactuals) == 0
+
+
+class TestCounterfactualGeneration:
+    """Tests for counterfactual analysis generation."""
+
+    @pytest.fixture
+    def selector_with_varied_performance(self):
+        """Create selector with varied strategy performance."""
+        evaluator = StrategyEvaluator()
+        # Checklist: 90% accuracy, fast
+        for i in range(20):
+            evaluator.record_result("checklist", "contracts", i < 18, 100.0)
+        # Rule-based: 70% accuracy, fast
+        for i in range(20):
+            evaluator.record_result("rule_based", "contracts", i < 14, 120.0)
+        # Dialectical: 80% accuracy, slow
+        for i in range(20):
+            evaluator.record_result("dialectical", "contracts", i < 16, 300.0)
+        return StrategySelector(evaluator)
+
+    def test_counterfactual_accuracy_comparison(self, selector_with_varied_performance):
+        """Test that counterfactuals compare accuracy."""
+        case = SimpleCase(case_id="c1", domain="contracts")
+        selector_with_varied_performance.select_strategy(case)
+
+        explanation = selector_with_varied_performance.explain_selection()
+
+        # Find rule_based counterfactual
+        rule_cf = next(
+            (cf for cf in explanation.counterfactuals if cf.alternative == "rule_based"),
+            None,
+        )
+        if rule_cf:
+            assert (
+                "accuracy" in rule_cf.why_not_selected.lower()
+                or "Lower" in rule_cf.why_not_selected
+            )
+            assert rule_cf.hypothetical_performance == 0.7
+
+    def test_counterfactual_speed_comparison(self, selector_with_varied_performance):
+        """Test that counterfactuals note speed differences."""
+        case = SimpleCase(case_id="c1", domain="contracts")
+        selector_with_varied_performance.select_strategy(case)
+
+        explanation = selector_with_varied_performance.explain_selection()
+
+        # Find dialectical counterfactual
+        dial_cf = next(
+            (cf for cf in explanation.counterfactuals if cf.alternative == "dialectical"),
+            None,
+        )
+        if dial_cf:
+            assert (
+                "slow" in dial_cf.why_not_selected.lower() or "slower" in dial_cf.comparison_factors
+            )
+
+    def test_counterfactual_no_history(self):
+        """Test counterfactuals for strategies with no history."""
+        evaluator = StrategyEvaluator()
+        # Only checklist has history
+        for i in range(10):
+            evaluator.record_result("checklist", "contracts", i < 9, 100.0)
+
+        selector = StrategySelector(evaluator)
+        case = SimpleCase(case_id="c1", domain="contracts")
+        selector.select_strategy(case)
+
+        explanation = selector.explain_selection()
+
+        # Find an alternative with no history
+        no_history_cf = next(
+            (cf for cf in explanation.counterfactuals if cf.hypothetical_performance == 0.0),
+            None,
+        )
+        if no_history_cf:
+            assert (
+                "No historical" in no_history_cf.why_not_selected
+                or "no_history" in no_history_cf.comparison_factors
+            )
+
+    def test_counterfactual_confidence_calculation(self, selector_with_varied_performance):
+        """Test that counterfactual confidence is calculated."""
+        case = SimpleCase(case_id="c1", domain="contracts")
+        selector_with_varied_performance.select_strategy(case)
+
+        explanation = selector_with_varied_performance.explain_selection()
+
+        for cf in explanation.counterfactuals:
+            assert 0.0 <= cf.confidence <= 1.0
+            # Alternatives with history should have higher confidence
+            if cf.hypothetical_performance > 0:
+                assert cf.confidence >= 0.5
+
+
+class TestBackwardCompatibility:
+    """Tests ensuring backward compatibility."""
+
+    def test_explain_selection_with_both_args(self):
+        """Test that original signature still works."""
+        evaluator = StrategyEvaluator()
+        for i in range(10):
+            evaluator.record_result("checklist", "contracts", i < 8, 100.0)
+
+        selector = StrategySelector(evaluator)
+        case = SimpleCase(case_id="c1", domain="contracts")
+        strategy = selector.select_strategy(case)
+
+        # Original signature: explain_selection(case, strategy)
+        explanation = selector.explain_selection(case, strategy)
+
+        assert explanation.strategy_name == strategy.name
+        assert explanation.case_id == "c1"
+        assert len(explanation.reasons) > 0
+
+    def test_comparison_report_both_attributes(self):
+        """Test that both rankings and strategy_rankings work."""
+        evaluator = StrategyEvaluator()
+        for i in range(10):
+            evaluator.record_result("checklist", "contracts", i < 8, 100.0)
+            evaluator.record_result("rule_based", "contracts", i < 6, 100.0)
+
+        report = evaluator.compare_strategies(["checklist", "rule_based"], "contracts")
+
+        # Both should work
+        assert len(report.strategy_rankings) == 2
+        assert len(report.rankings) == 2
+        assert report.rankings is report.strategy_rankings
