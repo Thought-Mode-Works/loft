@@ -104,6 +104,25 @@ from loft.meta.self_improvement import (
     create_improver,
     create_tracker,
 )
+from loft.meta.event_bus import (
+    ComponentType,
+    EventType,
+    MetaReasoningEvent,
+    MetaReasoningEventBus,
+    Subscription,
+    create_event,
+    create_event_bus,
+    get_global_event_bus,
+    reset_global_event_bus,
+)
+from loft.meta.adapters import (
+    EventDrivenIntegration,
+    FailureToImprovementAdapter,
+    ObserverToFailureAdapter,
+    create_event_driven_integration,
+    create_failure_to_improvement_adapter,
+    create_observer_to_failure_adapter,
+)
 
 __all__ = [
     # Observer
@@ -205,4 +224,24 @@ __all__ = [
     "create_tracker",
     "create_improver",
     "create_default_goals",
+    # Event Bus - Core types
+    "EventType",
+    "ComponentType",
+    "MetaReasoningEvent",
+    "Subscription",
+    # Event Bus - Classes
+    "MetaReasoningEventBus",
+    # Event Bus - Factory functions
+    "create_event",
+    "create_event_bus",
+    "get_global_event_bus",
+    "reset_global_event_bus",
+    # Adapters - Classes
+    "ObserverToFailureAdapter",
+    "FailureToImprovementAdapter",
+    "EventDrivenIntegration",
+    # Adapters - Factory functions
+    "create_observer_to_failure_adapter",
+    "create_failure_to_improvement_adapter",
+    "create_event_driven_integration",
 ]
