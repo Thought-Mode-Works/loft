@@ -569,3 +569,174 @@ class TestReasoningObserverIntegration:
         # Get quality explanation
         explanation = meta_reasoner.explain_reasoning_quality()
         assert "60" in explanation or "0.6" in explanation  # Success rate
+
+
+class TestChainResolutionMethods:
+    """Tests for chain resolution methods (issue #141)."""
+
+    @pytest.fixture
+    def observer(self):
+        """Create an observer with test data."""
+        observer = ReasoningObserver()
+
+        # Add a chain
+        steps = [
+            create_step("s1", ReasoningStepType.TRANSLATION),
+            create_step("s2", ReasoningStepType.INFERENCE),
+        ]
+        observer.observe_reasoning_chain(
+            case_id="test_case",
+            domain="contracts",
+            steps=steps,
+            prediction="enforceable",
+            ground_truth="enforceable",
+        )
+        return observer
+
+    def test_get_chain_id_with_string(self, observer):
+        """Test get_chain_id with a string input."""
+        chain_id = "test_chain_id"
+        result = observer.get_chain_id(chain_id)
+        assert result == chain_id
+
+    def test_get_chain_id_with_chain_object(self, observer):
+        """Test get_chain_id with a ReasoningChain object."""
+        chain = list(observer.chains.values())[0]
+        result = observer.get_chain_id(chain)
+        assert result == chain.chain_id
+
+    def test_get_chain_id_with_invalid_type(self, observer):
+        """Test get_chain_id raises TypeError for invalid input."""
+        with pytest.raises(TypeError) as excinfo:
+            observer.get_chain_id(123)  # type: ignore
+        assert "Expected str or ReasoningChain" in str(excinfo.value)
+
+    def test_resolve_chain_with_string(self, observer):
+        """Test resolve_chain with a string chain ID."""
+        chain = list(observer.chains.values())[0]
+        result = observer.resolve_chain(chain.chain_id)
+        assert result is not None
+        assert result.chain_id == chain.chain_id
+
+    def test_resolve_chain_with_chain_object(self, observer):
+        """Test resolve_chain with a ReasoningChain object."""
+        chain = list(observer.chains.values())[0]
+        result = observer.resolve_chain(chain)
+        assert result is not None
+        assert result.chain_id == chain.chain_id
+
+    def test_resolve_chain_nonexistent_string(self, observer):
+        """Test resolve_chain with non-existent chain ID."""
+        result = observer.resolve_chain("nonexistent_chain")
+        assert result is None
+
+    def test_resolve_chain_invalid_type(self, observer):
+        """Test resolve_chain returns None for invalid types."""
+        result = observer.resolve_chain(123)  # type: ignore
+        assert result is None
+
+
+class TestDiagnoseReasoningFailureFlexibility:
+    """Tests for diagnose_reasoning_failure accepting both string and chain (issue #141)."""
+
+    @pytest.fixture
+    def observer_with_failure(self):
+        """Create an observer with a failed chain."""
+        observer = ReasoningObserver()
+
+        # Add a failed chain
+        steps = [
+            create_step("f1", ReasoningStepType.TRANSLATION),
+            create_step(
+                "f2",
+                ReasoningStepType.RULE_APPLICATION,
+                success=False,
+                error_message="No applicable rule found",
+            ),
+        ]
+        observer.observe_reasoning_chain(
+            case_id="failure_case",
+            domain="contracts",
+            steps=steps,
+            prediction="enforceable",
+            ground_truth="unenforceable",
+        )
+        return observer
+
+    @pytest.fixture
+    def meta_reasoner(self, observer_with_failure):
+        """Create a meta-reasoner with test data."""
+        return MetaReasoner(observer_with_failure)
+
+    def test_diagnose_with_string_chain_id(self, meta_reasoner):
+        """Test diagnosing with a string chain ID."""
+        failed_chain = meta_reasoner.observer.get_failed_chains()[0]
+        diagnosis = meta_reasoner.diagnose_reasoning_failure(failed_chain.chain_id)
+
+        assert diagnosis is not None
+        assert diagnosis.case_id == "failure_case"
+
+    def test_diagnose_with_chain_object(self, meta_reasoner):
+        """Test diagnosing with a ReasoningChain object directly."""
+        failed_chain = meta_reasoner.observer.get_failed_chains()[0]
+        diagnosis = meta_reasoner.diagnose_reasoning_failure(failed_chain)
+
+        assert diagnosis is not None
+        assert diagnosis.case_id == "failure_case"
+        assert diagnosis.chain_id == failed_chain.chain_id
+
+    def test_diagnosis_includes_step_type(self, meta_reasoner):
+        """Test that diagnosis includes the primary failure step type."""
+        failed_chain = meta_reasoner.observer.get_failed_chains()[0]
+        diagnosis = meta_reasoner.diagnose_reasoning_failure(failed_chain)
+
+        assert diagnosis is not None
+        assert diagnosis.primary_failure_step_type == ReasoningStepType.RULE_APPLICATION
+
+    def test_diagnosis_step_type_is_none_for_prediction_mismatch(self):
+        """Test that step type is None when there's no failed step."""
+        observer = ReasoningObserver()
+
+        # Add a chain where all steps succeed but prediction mismatches
+        steps = [
+            create_step("s1", ReasoningStepType.TRANSLATION, success=True),
+            create_step("s2", ReasoningStepType.INFERENCE, success=True),
+        ]
+        observer.observe_reasoning_chain(
+            case_id="mismatch_case",
+            domain="contracts",
+            steps=steps,
+            prediction="enforceable",
+            ground_truth="unenforceable",  # Prediction is wrong
+        )
+
+        meta_reasoner = MetaReasoner(observer)
+        failed_chain = observer.get_failed_chains()[0]
+        diagnosis = meta_reasoner.diagnose_reasoning_failure(failed_chain)
+
+        assert diagnosis is not None
+        assert diagnosis.primary_failure_step is None
+        assert diagnosis.primary_failure_step_type is None
+        assert diagnosis.failure_type == "prediction_mismatch"
+
+    def test_diagnose_with_chain_returns_same_as_string(self, meta_reasoner):
+        """Test that diagnosing with chain vs string gives same results."""
+        failed_chain = meta_reasoner.observer.get_failed_chains()[0]
+
+        # Diagnose with string
+        diagnosis_from_string = meta_reasoner.diagnose_reasoning_failure(failed_chain.chain_id)
+
+        # Create new meta_reasoner to avoid cached diagnosis
+        meta_reasoner2 = MetaReasoner(meta_reasoner.observer)
+
+        # Diagnose with chain object
+        diagnosis_from_chain = meta_reasoner2.diagnose_reasoning_failure(failed_chain)
+
+        # Core fields should match (IDs differ because they're new diagnoses)
+        assert diagnosis_from_string.case_id == diagnosis_from_chain.case_id
+        assert diagnosis_from_string.chain_id == diagnosis_from_chain.chain_id
+        assert diagnosis_from_string.failure_type == diagnosis_from_chain.failure_type
+        assert (
+            diagnosis_from_string.primary_failure_step_type
+            == diagnosis_from_chain.primary_failure_step_type
+        )
