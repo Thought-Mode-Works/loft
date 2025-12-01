@@ -29,7 +29,9 @@ from loft.meta.failure_analyzer import (
     RootCauseAnalysis,
     RootCauseType,
     create_failure_analyzer,
+    create_prediction_error_from_chain,
     create_recommendation_engine,
+    extract_failure_patterns,
 )
 from loft.meta import ImprovementPriority
 
@@ -845,3 +847,449 @@ class TestIntegration:
 
         # With 25 errors, severity should be critical
         assert patterns[0].severity == "critical"
+
+
+class TestCreatePredictionErrorFromChain:
+    """Tests for create_prediction_error_from_chain factory function."""
+
+    def test_basic_creation_from_chain(self):
+        """Test creating PredictionError from a ReasoningChain."""
+        steps = [create_reasoning_step("step_1", ReasoningStepType.TRANSLATION, success=False)]
+        chain = create_reasoning_chain(
+            "chain_001",
+            "case_001",
+            "contracts",
+            steps,
+            prediction="enforceable",
+            ground_truth="unenforceable",
+        )
+
+        error = create_prediction_error_from_chain(chain)
+
+        assert error.case_id == "case_001"
+        assert error.domain == "contracts"
+        assert error.predicted == "enforceable"
+        assert error.actual == "unenforceable"
+        assert error.reasoning_chain is chain
+        assert "chain_001" in error.error_id
+
+    def test_with_explicit_outputs(self):
+        """Test with explicit expected and actual outputs."""
+        steps = [create_reasoning_step("step_1", ReasoningStepType.INFERENCE)]
+        chain = create_reasoning_chain("chain_001", "case_001", "torts", steps)
+
+        error = create_prediction_error_from_chain(
+            chain,
+            expected_output="liable",
+            actual_output="not_liable",
+        )
+
+        assert error.predicted == "not_liable"
+        assert error.actual == "liable"
+
+    def test_with_custom_error_id(self):
+        """Test with custom error ID."""
+        steps = [create_reasoning_step("step_1", ReasoningStepType.TRANSLATION)]
+        chain = create_reasoning_chain("chain_001", "case_001", "contracts", steps)
+
+        error = create_prediction_error_from_chain(chain, error_id="custom_err_123")
+
+        assert error.error_id == "custom_err_123"
+
+    def test_extracts_contributing_rules_from_chain_metadata(self):
+        """Test that contributing rules are extracted from chain metadata."""
+        steps = [create_reasoning_step("step_1", ReasoningStepType.RULE_APPLICATION)]
+        chain = create_reasoning_chain(
+            "chain_001",
+            "case_001",
+            "contracts",
+            steps,
+            metadata={"contributing_rules": ["rule_1", "rule_2"]},
+        )
+
+        error = create_prediction_error_from_chain(chain)
+
+        assert "rule_1" in error.contributing_rules
+        assert "rule_2" in error.contributing_rules
+
+    def test_extracts_rules_from_step_metadata(self):
+        """Test that rules are extracted from step metadata."""
+        steps = [
+            create_reasoning_step(
+                "step_1",
+                ReasoningStepType.RULE_APPLICATION,
+                metadata={"rules_applied": ["step_rule_1", "step_rule_2"]},
+            )
+        ]
+        chain = create_reasoning_chain("chain_001", "case_001", "contracts", steps)
+
+        error = create_prediction_error_from_chain(chain)
+
+        assert "step_rule_1" in error.contributing_rules
+        assert "step_rule_2" in error.contributing_rules
+
+    def test_with_explicit_contributing_rules(self):
+        """Test with explicitly provided contributing rules."""
+        steps = [create_reasoning_step("step_1", ReasoningStepType.TRANSLATION)]
+        chain = create_reasoning_chain("chain_001", "case_001", "contracts", steps)
+
+        error = create_prediction_error_from_chain(
+            chain,
+            contributing_rules=["explicit_rule_1", "explicit_rule_2"],
+        )
+
+        assert error.contributing_rules == ["explicit_rule_1", "explicit_rule_2"]
+
+    def test_adds_chain_metadata_to_error(self):
+        """Test that chain metadata is added to error."""
+        steps = [
+            create_reasoning_step(
+                "step_1", ReasoningStepType.TRANSLATION, success=False, confidence=0.5
+            )
+        ]
+        chain = create_reasoning_chain(
+            "chain_001",
+            "case_001",
+            "contracts",
+            steps,
+            prediction="A",
+            ground_truth="B",
+        )
+
+        error = create_prediction_error_from_chain(chain)
+
+        assert "chain_success_rate" in error.metadata
+        assert "chain_total_duration_ms" in error.metadata
+        assert "failed_step_types" in error.metadata
+        assert "translation" in error.metadata["failed_step_types"]
+
+    def test_with_additional_metadata(self):
+        """Test with additional metadata provided."""
+        steps = [create_reasoning_step("step_1", ReasoningStepType.TRANSLATION)]
+        chain = create_reasoning_chain("chain_001", "case_001", "contracts", steps)
+
+        error = create_prediction_error_from_chain(
+            chain,
+            metadata={"custom_key": "custom_value"},
+        )
+
+        assert error.metadata["custom_key"] == "custom_value"
+
+    def test_timestamp_from_chain(self):
+        """Test that timestamp is taken from chain completion time."""
+        steps = [create_reasoning_step("step_1", ReasoningStepType.TRANSLATION)]
+        chain = create_reasoning_chain("chain_001", "case_001", "contracts", steps)
+
+        error = create_prediction_error_from_chain(chain)
+
+        assert error.timestamp == chain.completed_at
+
+
+class TestRecordChainError:
+    """Tests for FailureAnalyzer.record_chain_error method."""
+
+    def test_record_chain_error_basic(self):
+        """Test basic recording of chain error."""
+        analyzer = FailureAnalyzer()
+        steps = [create_reasoning_step("step_1", ReasoningStepType.TRANSLATION, success=False)]
+        chain = create_reasoning_chain(
+            "chain_001",
+            "case_001",
+            "contracts",
+            steps,
+            prediction="A",
+            ground_truth="B",
+        )
+
+        error = analyzer.record_chain_error(chain)
+
+        assert error is not None
+        assert error.case_id == "case_001"
+        assert error.domain == "contracts"
+        stats = analyzer.get_error_statistics()
+        assert stats["total_errors"] == 1
+
+    def test_record_chain_error_with_outputs(self):
+        """Test recording chain error with explicit outputs."""
+        analyzer = FailureAnalyzer()
+        steps = [create_reasoning_step("step_1", ReasoningStepType.INFERENCE)]
+        chain = create_reasoning_chain("chain_001", "case_001", "torts", steps)
+
+        error = analyzer.record_chain_error(
+            chain,
+            expected_output="liable",
+            actual_output="not_liable",
+        )
+
+        assert error.actual == "liable"
+        assert error.predicted == "not_liable"
+
+    def test_record_chain_error_returns_error(self):
+        """Test that record_chain_error returns the created error."""
+        analyzer = FailureAnalyzer()
+        steps = [create_reasoning_step("step_1", ReasoningStepType.TRANSLATION)]
+        chain = create_reasoning_chain("chain_001", "case_001", "contracts", steps)
+
+        error = analyzer.record_chain_error(chain)
+
+        assert isinstance(error, PredictionError)
+        assert error.error_id in analyzer._errors
+
+    def test_record_chain_error_updates_domain_counts(self):
+        """Test that domain counts are updated."""
+        analyzer = FailureAnalyzer()
+        steps = [create_reasoning_step("step_1", ReasoningStepType.TRANSLATION)]
+
+        chain1 = create_reasoning_chain("chain_1", "case_1", "contracts", steps)
+        chain2 = create_reasoning_chain("chain_2", "case_2", "contracts", steps)
+        chain3 = create_reasoning_chain("chain_3", "case_3", "torts", steps)
+
+        analyzer.record_chain_error(chain1)
+        analyzer.record_chain_error(chain2)
+        analyzer.record_chain_error(chain3)
+
+        stats = analyzer.get_error_statistics()
+        assert stats["domain_distribution"]["contracts"] == 2
+        assert stats["domain_distribution"]["torts"] == 1
+
+    def test_can_classify_recorded_chain_error(self):
+        """Test that recorded chain errors can be classified."""
+        analyzer = FailureAnalyzer()
+        steps = [
+            create_reasoning_step(
+                "step_1",
+                ReasoningStepType.TRANSLATION,
+                success=False,
+                error_message="Translation failed",
+            )
+        ]
+        chain = create_reasoning_chain("chain_001", "case_001", "contracts", steps)
+
+        error = analyzer.record_chain_error(chain)
+        category = analyzer.classify_error(error)
+
+        assert category == ErrorCategory.TRANSLATION_ERROR
+
+    def test_can_diagnose_recorded_chain_error(self):
+        """Test that recorded chain errors can be diagnosed."""
+        analyzer = FailureAnalyzer()
+        steps = [create_reasoning_step("step_1", ReasoningStepType.TRANSLATION, success=False)]
+        chain = create_reasoning_chain(
+            "chain_001",
+            "case_001",
+            "contracts",
+            steps,
+            prediction="enforceable",
+            ground_truth="unenforceable",
+        )
+
+        error = analyzer.record_chain_error(chain)
+        diagnosis = analyzer.create_diagnosis(error)
+
+        assert diagnosis.case_id == "case_001"
+        assert diagnosis.failure_type == "translation_error"
+        assert len(diagnosis.root_causes) >= 1
+
+
+class TestExtractFailurePatterns:
+    """Tests for extract_failure_patterns utility function."""
+
+    def test_extract_patterns_basic(self):
+        """Test basic pattern extraction."""
+        # Create errors with chain context
+        errors = []
+        for i in range(5):
+            steps = [
+                create_reasoning_step(f"step_{i}", ReasoningStepType.TRANSLATION, success=False)
+            ]
+            chain = create_reasoning_chain(f"chain_{i}", f"case_{i}", "contracts", steps)
+            error = create_prediction_error_from_chain(chain)
+            errors.append(error)
+
+        patterns = extract_failure_patterns(errors, min_occurrences=3)
+
+        assert len(patterns) >= 1
+        assert patterns[0].error_category == ErrorCategory.TRANSLATION_ERROR
+        assert patterns[0].error_count >= 3
+
+    def test_extract_patterns_respects_min_occurrences(self):
+        """Test that min_occurrences is respected."""
+        errors = []
+        for i in range(2):
+            steps = [create_reasoning_step(f"step_{i}", ReasoningStepType.INFERENCE)]
+            chain = create_reasoning_chain(f"chain_{i}", f"case_{i}", "contracts", steps)
+            error = create_prediction_error_from_chain(chain)
+            errors.append(error)
+
+        patterns = extract_failure_patterns(errors, min_occurrences=3)
+
+        assert len(patterns) == 0
+
+    def test_extract_patterns_with_existing_analyzer(self):
+        """Test pattern extraction with existing analyzer."""
+        analyzer = FailureAnalyzer()
+
+        # Pre-populate analyzer with some errors
+        for i in range(3):
+            steps = [
+                create_reasoning_step(f"pre_step_{i}", ReasoningStepType.VALIDATION, success=False)
+            ]
+            chain = create_reasoning_chain(f"pre_chain_{i}", f"pre_case_{i}", "torts", steps)
+            error = create_prediction_error_from_chain(chain)
+            analyzer.record_error(error)
+
+        # Add more errors via extract_failure_patterns
+        new_errors = []
+        for i in range(3):
+            steps = [
+                create_reasoning_step(f"new_step_{i}", ReasoningStepType.TRANSLATION, success=False)
+            ]
+            chain = create_reasoning_chain(f"new_chain_{i}", f"new_case_{i}", "contracts", steps)
+            error = create_prediction_error_from_chain(chain)
+            new_errors.append(error)
+
+        extract_failure_patterns(new_errors, analyzer=analyzer)
+
+        # Should find patterns from both pre-existing and new errors
+        stats = analyzer.get_error_statistics()
+        assert stats["total_errors"] == 6
+
+    def test_extract_patterns_multiple_categories(self):
+        """Test extracting patterns with multiple error categories."""
+        errors = []
+
+        # Add translation errors
+        for i in range(4):
+            steps = [
+                create_reasoning_step(f"trans_{i}", ReasoningStepType.TRANSLATION, success=False)
+            ]
+            chain = create_reasoning_chain(f"chain_t{i}", f"case_t{i}", "contracts", steps)
+            error = create_prediction_error_from_chain(chain)
+            errors.append(error)
+
+        # Add inference errors
+        for i in range(4):
+            steps = [create_reasoning_step(f"inf_{i}", ReasoningStepType.INFERENCE, success=False)]
+            chain = create_reasoning_chain(f"chain_i{i}", f"case_i{i}", "contracts", steps)
+            error = create_prediction_error_from_chain(chain)
+            errors.append(error)
+
+        patterns = extract_failure_patterns(errors, min_occurrences=3)
+
+        # Should find patterns for both error types
+        assert len(patterns) >= 2
+        categories = [p.error_category for p in patterns]
+        assert ErrorCategory.TRANSLATION_ERROR in categories
+        assert ErrorCategory.INFERENCE_ERROR in categories
+
+
+class TestIntegrationHelpers:
+    """Integration tests for the new helper functions."""
+
+    def test_full_integration_workflow(self):
+        """Test complete workflow from chain to recommendations."""
+        # Create failed reasoning chains
+        chains = []
+        for i in range(5):
+            steps = [
+                create_reasoning_step(
+                    f"step_{i}",
+                    ReasoningStepType.TRANSLATION,
+                    success=False,
+                    error_message="Translation failed",
+                )
+            ]
+            chain = create_reasoning_chain(
+                f"chain_{i}",
+                f"case_{i}",
+                "contracts",
+                steps,
+                prediction="enforceable",
+                ground_truth="unenforceable",
+            )
+            chains.append(chain)
+
+        # Convert chains to errors using the new helper
+        errors = [create_prediction_error_from_chain(chain) for chain in chains]
+
+        # Extract patterns
+        patterns = extract_failure_patterns(errors, min_occurrences=3)
+        assert len(patterns) >= 1
+
+        # Generate recommendations
+        engine = create_recommendation_engine()
+        recommendations = engine.generate_recommendations(patterns)
+        assert len(recommendations) >= 1
+
+        # Should have prompt improvement recommendation for translation errors
+        assert any(r.category == RecommendationCategory.PROMPT_IMPROVEMENT for r in recommendations)
+
+    def test_record_chain_error_to_diagnosis_workflow(self):
+        """Test workflow from record_chain_error to diagnosis."""
+        analyzer = FailureAnalyzer()
+
+        # Record multiple chain errors
+        for i in range(3):
+            steps = [
+                create_reasoning_step(
+                    f"step_{i}",
+                    ReasoningStepType.RULE_APPLICATION,
+                    success=True,
+                )
+            ]
+            chain = create_reasoning_chain(
+                f"chain_{i}",
+                f"case_{i}",
+                "contracts",
+                steps,
+                prediction="enforceable",
+                ground_truth="unenforceable",
+            )
+            analyzer.record_chain_error(chain)
+
+        # Get statistics
+        stats = analyzer.get_error_statistics()
+        assert stats["total_errors"] == 3
+
+        # Create diagnosis for one error
+        first_error = list(analyzer._errors.values())[0]
+        diagnosis = analyzer.create_diagnosis(first_error)
+
+        assert diagnosis is not None
+        assert diagnosis.failure_type == "rule_coverage_gap"  # No failing steps, no rules
+
+    def test_observer_to_analyzer_integration(self):
+        """Test integration between observer patterns and analyzer."""
+        from loft.meta.observer import ReasoningObserver
+
+        observer = ReasoningObserver()
+        analyzer = FailureAnalyzer()
+
+        # Create chains via observer
+        for i in range(4):
+            steps = [
+                create_reasoning_step(
+                    f"step_{i}",
+                    ReasoningStepType.VALIDATION,
+                    success=False,
+                )
+            ]
+            chain = observer.observe_reasoning_chain(
+                case_id=f"obs_case_{i}",
+                domain="contracts",
+                steps=steps,
+                prediction="valid",
+                ground_truth="invalid",
+            )
+            # Record using new helper
+            analyzer.record_chain_error(chain)
+
+        # Verify errors are recorded
+        stats = analyzer.get_error_statistics()
+        assert stats["total_errors"] == 4
+        assert stats["domain_distribution"]["contracts"] == 4
+
+        # Find patterns
+        patterns = analyzer.find_failure_patterns(min_occurrences=3)
+        assert len(patterns) >= 1
+        assert patterns[0].error_category == ErrorCategory.VALIDATION_FAILURE

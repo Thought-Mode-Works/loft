@@ -79,7 +79,9 @@ from loft.meta.failure_analyzer import (
     RootCauseAnalysis,
     RootCauseType,
     create_failure_analyzer,
+    create_prediction_error_from_chain,
     create_recommendation_engine,
+    extract_failure_patterns,
 )
 from loft.meta.self_improvement import (
     ActionType,
@@ -176,7 +178,9 @@ __all__ = [
     "RecommendationEngine",
     # Failure Analyzer - Factory functions
     "create_failure_analyzer",
+    "create_prediction_error_from_chain",
     "create_recommendation_engine",
+    "extract_failure_patterns",
     # Self-Improvement - Core types
     "GoalStatus",
     "CycleStatus",

@@ -310,6 +310,35 @@ class FailureAnalyzer:
         self._errors[error.error_id] = error
         self._domain_error_counts[error.domain] += 1
 
+    def record_chain_error(
+        self,
+        chain: ReasoningChain,
+        expected_output: Optional[Any] = None,
+        actual_output: Optional[Any] = None,
+    ) -> PredictionError:
+        """
+        Record an error directly from a ReasoningChain.
+
+        Convenience method that creates a PredictionError internally from
+        the reasoning chain data. This allows seamless integration with
+        the ReasoningObserver which produces ReasoningChain objects.
+
+        Args:
+            chain: The ReasoningChain containing the failed reasoning
+            expected_output: The expected output (uses chain.ground_truth if None)
+            actual_output: The actual output (uses chain.prediction if None)
+
+        Returns:
+            The created PredictionError for further analysis
+        """
+        error = create_prediction_error_from_chain(
+            chain=chain,
+            expected_output=expected_output,
+            actual_output=actual_output,
+        )
+        self.record_error(error)
+        return error
+
     def classify_error(self, error: PredictionError) -> ErrorCategory:
         """
         Classify an error by type.
@@ -1247,7 +1276,122 @@ class RecommendationEngine:
         )
 
 
-# Factory functions
+# Factory functions and integration helpers
+
+
+def create_prediction_error_from_chain(
+    chain: ReasoningChain,
+    expected_output: Optional[Any] = None,
+    actual_output: Optional[Any] = None,
+    error_id: Optional[str] = None,
+    contributing_rules: Optional[List[str]] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+) -> PredictionError:
+    """
+    Create a PredictionError from a failed ReasoningChain.
+
+    Extracts relevant information from the chain to populate
+    the PredictionError fields. This enables seamless integration
+    between ReasoningObserver and FailureAnalyzer.
+
+    Args:
+        chain: The ReasoningChain containing the failed reasoning
+        expected_output: The expected output (uses chain.ground_truth if None)
+        actual_output: The actual output (uses chain.prediction if None)
+        error_id: Optional custom error ID (generated if None)
+        contributing_rules: Optional list of rule IDs that contributed
+        metadata: Optional additional metadata
+
+    Returns:
+        PredictionError populated from the chain data
+
+    Example:
+        >>> chain = observer.observe_reasoning_chain(
+        ...     case_id="case_001",
+        ...     domain="contracts",
+        ...     steps=steps,
+        ...     prediction="enforceable",
+        ...     ground_truth="unenforceable"
+        ... )
+        >>> error = create_prediction_error_from_chain(chain)
+        >>> analyzer.record_error(error)
+    """
+    # Use chain values as defaults
+    predicted = str(actual_output) if actual_output is not None else (chain.prediction or "")
+    actual = str(expected_output) if expected_output is not None else (chain.ground_truth or "")
+
+    # Generate error_id if not provided
+    if error_id is None:
+        error_id = f"err_{chain.chain_id}_{uuid.uuid4().hex[:8]}"
+
+    # Extract contributing rules from chain metadata if not provided
+    if contributing_rules is None:
+        contributing_rules = chain.metadata.get("contributing_rules", [])
+        # Also check step metadata for rule references
+        if not contributing_rules:
+            for step in chain.steps:
+                step_rules = step.metadata.get("rules_applied", [])
+                contributing_rules.extend(step_rules)
+            contributing_rules = list(set(contributing_rules))  # Remove duplicates
+
+    # Build metadata combining chain metadata with any additional
+    error_metadata = dict(chain.metadata)
+    if metadata:
+        error_metadata.update(metadata)
+
+    # Add chain-derived metadata
+    error_metadata["chain_success_rate"] = chain.success_rate
+    error_metadata["chain_total_duration_ms"] = chain.total_duration_ms
+    if chain.failed_steps:
+        error_metadata["failed_step_types"] = [step.step_type.value for step in chain.failed_steps]
+
+    return PredictionError(
+        error_id=error_id,
+        case_id=chain.case_id,
+        domain=chain.domain,
+        predicted=predicted,
+        actual=actual,
+        reasoning_chain=chain,
+        contributing_rules=contributing_rules,
+        timestamp=chain.completed_at or datetime.now(),
+        metadata=error_metadata,
+    )
+
+
+def extract_failure_patterns(
+    errors: List[PredictionError],
+    min_occurrences: int = 3,
+    analyzer: Optional["FailureAnalyzer"] = None,
+) -> List[FailurePattern]:
+    """
+    Convert a list of errors to failure patterns for the recommendation engine.
+
+    This utility function bridges the gap between raw PredictionError objects
+    and the FailurePattern objects expected by RecommendationEngine.generate_recommendations().
+
+    Args:
+        errors: List of PredictionError objects to analyze
+        min_occurrences: Minimum errors to constitute a pattern
+        analyzer: Optional FailureAnalyzer to use (creates new if None)
+
+    Returns:
+        List of FailurePattern objects ready for recommendation generation
+
+    Example:
+        >>> errors = [create_prediction_error_from_chain(chain) for chain in failed_chains]
+        >>> patterns = extract_failure_patterns(errors)
+        >>> recommendations = engine.generate_recommendations(patterns)
+    """
+    if analyzer is None:
+        analyzer = FailureAnalyzer()
+
+    # Record all errors in the analyzer
+    for error in errors:
+        if error.error_id not in analyzer._errors:
+            analyzer.record_error(error)
+
+    # Find and return patterns
+    return analyzer.find_failure_patterns(min_occurrences=min_occurrences)
 
 
 def create_failure_analyzer() -> FailureAnalyzer:
