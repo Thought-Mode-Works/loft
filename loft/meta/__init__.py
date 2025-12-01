@@ -123,6 +123,23 @@ from loft.meta.adapters import (
     create_failure_to_improvement_adapter,
     create_observer_to_failure_adapter,
 )
+from loft.meta.dashboard import (
+    AlertSeverity,
+    DashboardExporter,
+    DashboardGenerator,
+    FailureSummary,
+    HealthStatus,
+    ImprovementSummary,
+    MetaReasoningAlert,
+    MetaReasoningDashboard,
+    ObserverSummary,
+    PromptSummary,
+    StrategySummary,
+    TrendData,
+    TrendDirection,
+    TrendReport,
+    create_dashboard_generator,
+)
 
 __all__ = [
     # Observer
@@ -244,4 +261,23 @@ __all__ = [
     "create_observer_to_failure_adapter",
     "create_failure_to_improvement_adapter",
     "create_event_driven_integration",
+    # Dashboard - Core types
+    "HealthStatus",
+    "TrendDirection",
+    "AlertSeverity",
+    # Dashboard - Data classes
+    "MetaReasoningAlert",
+    "ObserverSummary",
+    "StrategySummary",
+    "PromptSummary",
+    "FailureSummary",
+    "ImprovementSummary",
+    "TrendData",
+    "TrendReport",
+    "MetaReasoningDashboard",
+    # Dashboard - Classes
+    "DashboardGenerator",
+    "DashboardExporter",
+    # Dashboard - Factory functions
+    "create_dashboard_generator",
 ]
