@@ -53,8 +53,10 @@ from loft.meta.strategy import (
 from loft.meta.prompt_optimizer import (
     ABTestConfig,
     ABTestResult,
+    AggregateEffectivenessReport,
     EffectivenessReport,
     ImprovementCandidate,
+    ImprovementSuggestion,
     PromptABTester,
     PromptCategory,
     PromptMetrics,
@@ -147,9 +149,11 @@ __all__ = [
     "TestStatus",
     # Prompt Optimizer - Reports
     "EffectivenessReport",
+    "AggregateEffectivenessReport",
     "ABTestConfig",
     "ABTestResult",
     "ImprovementCandidate",
+    "ImprovementSuggestion",
     # Prompt Optimizer - Classes
     "PromptOptimizer",
     "PromptABTester",

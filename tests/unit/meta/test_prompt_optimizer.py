@@ -797,3 +797,454 @@ class TestIntegration:
         worst = underperformers[0][0]
         candidates = optimizer.generate_improvement_candidates(worst)
         assert len(candidates) > 0
+
+
+class TestImprovementSuggestion:
+    """Tests for ImprovementSuggestion dataclass."""
+
+    def test_basic_creation(self):
+        """Test basic creation of ImprovementSuggestion."""
+        from loft.meta.prompt_optimizer import ImprovementSuggestion
+
+        suggestion = ImprovementSuggestion(
+            suggestion_id="sugg_123",
+            prompt_id="test_v1",
+            suggestion_type="wording",
+            description="Add clearer instructions",
+            rationale="Success rate is below threshold",
+            expected_improvement_percentage=15.0,
+            confidence=0.8,
+            priority="high",
+            implementation_hint="Use step-by-step format",
+        )
+
+        assert suggestion.suggestion_id == "sugg_123"
+        assert suggestion.prompt_id == "test_v1"
+        assert suggestion.suggestion_type == "wording"
+        assert suggestion.expected_improvement_percentage == 15.0
+        assert suggestion.confidence == 0.8
+        assert suggestion.priority == "high"
+
+    def test_to_dict(self):
+        """Test conversion to dictionary."""
+        from loft.meta.prompt_optimizer import ImprovementSuggestion
+
+        suggestion = ImprovementSuggestion(
+            suggestion_id="sugg_123",
+            prompt_id="test_v1",
+            suggestion_type="structure",
+            description="Test",
+            rationale="Test rationale",
+            expected_improvement_percentage=10.0,
+            confidence=0.7,
+        )
+
+        data = suggestion.to_dict()
+        assert data["suggestion_id"] == "sugg_123"
+        assert data["suggestion_type"] == "structure"
+        assert data["expected_improvement_percentage"] == 10.0
+        assert "generated_at" in data
+
+
+class TestAggregateEffectivenessReport:
+    """Tests for AggregateEffectivenessReport dataclass."""
+
+    def test_basic_creation(self):
+        """Test basic creation of AggregateEffectivenessReport."""
+        from loft.meta.prompt_optimizer import AggregateEffectivenessReport
+
+        report = AggregateEffectivenessReport(
+            report_id="report_123",
+            generated_at=datetime.now(),
+            total_prompts_tracked=5,
+            total_uses_recorded=100,
+            overall_success_rate=0.85,
+            overall_average_confidence=0.75,
+            overall_average_latency_ms=500.0,
+            prompt_reports={"prompt_v1": {"success_rate": 0.9}},
+            top_performers=[("prompt_v1", 0.9)],
+            bottom_performers=[("prompt_v2", 0.6)],
+            category_breakdown={"general": {"success_rate": 0.8}},
+            domain_breakdown={"contracts": {"success_rate": 0.85}},
+            trends={"prompt_v1": "stable"},
+            recommendations=["Keep monitoring"],
+        )
+
+        assert report.report_id == "report_123"
+        assert report.total_prompts_tracked == 5
+        assert report.overall_success_rate == 0.85
+
+    def test_to_dict(self):
+        """Test conversion to dictionary."""
+        from loft.meta.prompt_optimizer import AggregateEffectivenessReport
+
+        report = AggregateEffectivenessReport(
+            report_id="report_123",
+            generated_at=datetime.now(),
+            total_prompts_tracked=3,
+            total_uses_recorded=50,
+            overall_success_rate=0.8,
+            overall_average_confidence=0.7,
+            overall_average_latency_ms=400.0,
+            prompt_reports={},
+            top_performers=[],
+            bottom_performers=[],
+            category_breakdown={},
+            domain_breakdown={},
+            trends={},
+            recommendations=[],
+        )
+
+        data = report.to_dict()
+        assert data["report_id"] == "report_123"
+        assert data["total_prompts_tracked"] == 3
+        assert "generated_at" in data
+
+
+class TestGenerateEffectivenessReport:
+    """Tests for generate_effectiveness_report method."""
+
+    @pytest.fixture
+    def optimizer_with_data(self):
+        """Create optimizer with diverse test data."""
+        optimizer = PromptOptimizer(min_samples_for_analysis=5)
+
+        # Register multiple prompts with different categories
+        prompt1 = PromptVersion(
+            prompt_id="rule_gen",
+            version=1,
+            template="Generate rule: {input}",
+            category=PromptCategory.RULE_GENERATION,
+        )
+        prompt2 = PromptVersion(
+            prompt_id="validation",
+            version=1,
+            template="Validate: {input}",
+            category=PromptCategory.VALIDATION,
+        )
+        prompt3 = PromptVersion(
+            prompt_id="translation",
+            version=1,
+            template="Translate: {input}",
+            category=PromptCategory.TRANSLATION,
+        )
+
+        optimizer.register_prompt(prompt1)
+        optimizer.register_prompt(prompt2)
+        optimizer.register_prompt(prompt3)
+
+        # Add performance data
+        for i in range(15):
+            optimizer.track_prompt_performance(
+                prompt1.full_id,
+                success=i < 12,  # 80% success
+                confidence=0.8,
+                latency_ms=100,
+                domain="contracts",
+            )
+
+        for i in range(10):
+            optimizer.track_prompt_performance(
+                prompt2.full_id,
+                success=i < 9,  # 90% success
+                confidence=0.9,
+                latency_ms=50,
+                domain="torts",
+            )
+
+        for i in range(20):
+            optimizer.track_prompt_performance(
+                prompt3.full_id,
+                success=i < 10,  # 50% success
+                confidence=0.5,
+                latency_ms=200,
+                domain="contracts",
+            )
+
+        return optimizer
+
+    def test_generate_report_basic(self, optimizer_with_data):
+        """Test basic report generation."""
+        report = optimizer_with_data.generate_effectiveness_report()
+
+        assert report.total_prompts_tracked == 3
+        assert report.total_uses_recorded == 45  # 15 + 10 + 20
+        assert len(report.prompt_reports) == 3
+        assert len(report.recommendations) > 0
+
+    def test_report_calculates_overall_metrics(self, optimizer_with_data):
+        """Test that overall metrics are calculated correctly."""
+        report = optimizer_with_data.generate_effectiveness_report()
+
+        # Total: 12 + 9 + 10 = 31 successes out of 45
+        expected_rate = 31 / 45
+        assert abs(report.overall_success_rate - expected_rate) < 0.01
+
+    def test_report_identifies_top_bottom_performers(self, optimizer_with_data):
+        """Test identification of top and bottom performers."""
+        report = optimizer_with_data.generate_effectiveness_report()
+
+        # Should have top performers
+        assert len(report.top_performers) > 0
+        # Best performer should be validation (90%)
+        top_prompt, top_rate = report.top_performers[0]
+        assert top_rate >= 0.9
+
+        # Should have bottom performers
+        assert len(report.bottom_performers) > 0
+        # Worst performer should be translation (50%)
+        bottom_prompt, bottom_rate = report.bottom_performers[0]
+        assert bottom_rate <= 0.5
+
+    def test_report_includes_category_breakdown(self, optimizer_with_data):
+        """Test category breakdown in report."""
+        report = optimizer_with_data.generate_effectiveness_report()
+
+        assert len(report.category_breakdown) > 0
+        assert "rule_generation" in report.category_breakdown
+        assert "validation" in report.category_breakdown
+
+    def test_report_includes_domain_breakdown(self, optimizer_with_data):
+        """Test domain breakdown in report."""
+        report = optimizer_with_data.generate_effectiveness_report()
+
+        assert len(report.domain_breakdown) > 0
+        assert "contracts" in report.domain_breakdown
+        assert "torts" in report.domain_breakdown
+
+    def test_empty_optimizer_report(self):
+        """Test report generation with no data."""
+        optimizer = PromptOptimizer()
+        report = optimizer.generate_effectiveness_report()
+
+        assert report.total_prompts_tracked == 0
+        assert report.total_uses_recorded == 0
+        assert report.overall_success_rate == 0.0
+
+    def test_report_to_dict(self, optimizer_with_data):
+        """Test report serialization."""
+        report = optimizer_with_data.generate_effectiveness_report()
+        data = report.to_dict()
+
+        assert "report_id" in data
+        assert "total_prompts_tracked" in data
+        assert "overall_success_rate" in data
+        assert "recommendations" in data
+
+
+class TestSuggestImprovements:
+    """Tests for suggest_improvements method."""
+
+    @pytest.fixture
+    def optimizer(self):
+        """Create optimizer for testing."""
+        return PromptOptimizer(min_samples_for_analysis=10)
+
+    def test_suggest_improvements_prompt_not_found(self, optimizer):
+        """Test error when prompt not found."""
+        with pytest.raises(ValueError, match="not found"):
+            optimizer.suggest_improvements("nonexistent_v1")
+
+    def test_suggest_improvements_insufficient_data(self, optimizer):
+        """Test suggestion for insufficient data."""
+        prompt = PromptVersion(
+            prompt_id="test",
+            version=1,
+            template="Test: {input}",
+        )
+        optimizer.register_prompt(prompt)
+
+        # Add only 5 samples (below threshold of 10)
+        for i in range(5):
+            optimizer.track_prompt_performance(prompt.full_id, success=True)
+
+        suggestions = optimizer.suggest_improvements(prompt.full_id)
+
+        assert len(suggestions) == 1
+        assert suggestions[0].suggestion_type == "data_collection"
+        assert suggestions[0].priority == "high"
+
+    def test_suggest_improvements_low_success_rate(self, optimizer):
+        """Test suggestions for low success rate."""
+        prompt = PromptVersion(
+            prompt_id="test",
+            version=1,
+            template="Test: {input}",
+        )
+        optimizer.register_prompt(prompt)
+
+        # Add 15 samples with 50% success rate
+        for i in range(15):
+            optimizer.track_prompt_performance(prompt.full_id, success=i < 7)
+
+        suggestions = optimizer.suggest_improvements(prompt.full_id)
+
+        # Should have wording suggestion for low success
+        wording_suggestions = [s for s in suggestions if s.suggestion_type == "wording"]
+        assert len(wording_suggestions) > 0
+        assert wording_suggestions[0].priority == "high"
+
+    def test_suggest_improvements_syntax_issues(self, optimizer):
+        """Test suggestions for syntax validity issues."""
+        prompt = PromptVersion(
+            prompt_id="test",
+            version=1,
+            template="Test: {input}",
+        )
+        optimizer.register_prompt(prompt)
+
+        # Add samples with syntax issues
+        for i in range(15):
+            optimizer.track_prompt_performance(
+                prompt.full_id,
+                success=True,
+                syntax_valid=i < 10,  # 66% syntax valid
+            )
+
+        suggestions = optimizer.suggest_improvements(prompt.full_id)
+
+        # Should have constraints suggestion for syntax issues
+        constraint_suggestions = [s for s in suggestions if s.suggestion_type == "constraints"]
+        assert len(constraint_suggestions) > 0
+
+    def test_suggest_improvements_domain_weakness(self, optimizer):
+        """Test suggestions for domain-specific weaknesses."""
+        prompt = PromptVersion(
+            prompt_id="test",
+            version=1,
+            template="Test: {input}",
+        )
+        optimizer.register_prompt(prompt)
+
+        # Add samples - good overall but bad for one domain
+        for i in range(20):
+            optimizer.track_prompt_performance(prompt.full_id, success=True, domain="contracts")
+
+        for i in range(10):
+            optimizer.track_prompt_performance(
+                prompt.full_id,
+                success=i < 3,
+                domain="torts",  # 30% for torts
+            )
+
+        suggestions = optimizer.suggest_improvements(prompt.full_id)
+
+        # Should have domain-specific suggestion
+        domain_suggestions = [s for s in suggestions if s.suggestion_type == "domain"]
+        assert len(domain_suggestions) > 0
+        assert "torts" in domain_suggestions[0].description
+
+    def test_suggest_improvements_low_confidence(self, optimizer):
+        """Test suggestions for low confidence scores."""
+        prompt = PromptVersion(
+            prompt_id="test",
+            version=1,
+            template="Test: {input}",
+        )
+        optimizer.register_prompt(prompt)
+
+        # Add samples with low confidence
+        for i in range(15):
+            optimizer.track_prompt_performance(prompt.full_id, success=True, confidence=0.4)
+
+        suggestions = optimizer.suggest_improvements(prompt.full_id)
+
+        # Should have examples suggestion for low confidence
+        examples_suggestions = [s for s in suggestions if s.suggestion_type == "examples"]
+        assert len(examples_suggestions) > 0
+
+    def test_suggest_improvements_high_latency(self, optimizer):
+        """Test suggestions for high latency."""
+        prompt = PromptVersion(
+            prompt_id="test",
+            version=1,
+            template="Test: {input}",
+        )
+        optimizer.register_prompt(prompt)
+
+        # Add samples with high latency
+        for i in range(15):
+            optimizer.track_prompt_performance(
+                prompt.full_id, success=True, latency_ms=10000, confidence=0.9
+            )
+
+        suggestions = optimizer.suggest_improvements(prompt.full_id)
+
+        # Should have structure suggestion for high latency
+        structure_suggestions = [s for s in suggestions if s.suggestion_type == "structure"]
+        assert len(structure_suggestions) > 0
+
+    def test_suggest_improvements_well_performing(self, optimizer):
+        """Test suggestions for well-performing prompt."""
+        prompt = PromptVersion(
+            prompt_id="test",
+            version=1,
+            template="Test: {input}",
+        )
+        optimizer.register_prompt(prompt)
+
+        # Add samples with excellent performance
+        for i in range(15):
+            optimizer.track_prompt_performance(
+                prompt.full_id,
+                success=True,
+                confidence=0.95,
+                latency_ms=100,
+                syntax_valid=True,
+            )
+
+        suggestions = optimizer.suggest_improvements(prompt.full_id)
+
+        # Should suggest A/B testing for well-performing prompt
+        assert len(suggestions) > 0
+        assert suggestions[0].suggestion_type == "testing"
+        assert suggestions[0].priority == "low"
+
+    def test_suggestions_sorted_by_priority(self, optimizer):
+        """Test that suggestions are sorted by priority."""
+        prompt = PromptVersion(
+            prompt_id="test",
+            version=1,
+            template="Test: {input}",
+        )
+        optimizer.register_prompt(prompt)
+
+        # Add samples that trigger multiple suggestions
+        for i in range(15):
+            optimizer.track_prompt_performance(
+                prompt.full_id,
+                success=i < 7,  # 47% success
+                confidence=0.4,
+                latency_ms=8000,
+                syntax_valid=i < 10,
+            )
+
+        suggestions = optimizer.suggest_improvements(prompt.full_id)
+
+        # Should have multiple suggestions sorted by priority
+        assert len(suggestions) >= 2
+        priorities = [s.priority for s in suggestions]
+        priority_order = {"high": 0, "medium": 1, "low": 2}
+        priority_values = [priority_order.get(p, 1) for p in priorities]
+        assert priority_values == sorted(priority_values)
+
+    def test_suggestions_to_dict(self, optimizer):
+        """Test suggestion serialization."""
+        prompt = PromptVersion(
+            prompt_id="test",
+            version=1,
+            template="Test: {input}",
+        )
+        optimizer.register_prompt(prompt)
+
+        for i in range(15):
+            optimizer.track_prompt_performance(prompt.full_id, success=i < 7)
+
+        suggestions = optimizer.suggest_improvements(prompt.full_id)
+        assert len(suggestions) > 0
+
+        data = suggestions[0].to_dict()
+        assert "suggestion_id" in data
+        assert "prompt_id" in data
+        assert "suggestion_type" in data
+        assert "expected_improvement_percentage" in data

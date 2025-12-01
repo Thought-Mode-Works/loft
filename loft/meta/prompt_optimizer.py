@@ -338,6 +338,86 @@ class ImprovementCandidate:
         }
 
 
+@dataclass
+class ImprovementSuggestion:
+    """
+    A specific improvement suggestion for a prompt.
+
+    Contains actionable advice for improving prompt performance
+    based on analysis of its metrics and weaknesses.
+    """
+
+    suggestion_id: str
+    prompt_id: str
+    suggestion_type: str  # "wording", "structure", "examples", "constraints", "domain"
+    description: str
+    rationale: str
+    expected_improvement_percentage: float
+    confidence: float
+    priority: str = "medium"  # "high", "medium", "low"
+    implementation_hint: str = ""
+    generated_at: datetime = field(default_factory=datetime.now)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "suggestion_id": self.suggestion_id,
+            "prompt_id": self.prompt_id,
+            "suggestion_type": self.suggestion_type,
+            "description": self.description,
+            "rationale": self.rationale,
+            "expected_improvement_percentage": self.expected_improvement_percentage,
+            "confidence": self.confidence,
+            "priority": self.priority,
+            "implementation_hint": self.implementation_hint,
+            "generated_at": self.generated_at.isoformat(),
+        }
+
+
+@dataclass
+class AggregateEffectivenessReport:
+    """
+    Aggregate effectiveness report across all prompts.
+
+    Provides a comprehensive overview of the prompt optimization system's
+    performance with per-prompt summaries and overall metrics.
+    """
+
+    report_id: str
+    generated_at: datetime
+    total_prompts_tracked: int
+    total_uses_recorded: int
+    overall_success_rate: float
+    overall_average_confidence: float
+    overall_average_latency_ms: float
+    prompt_reports: Dict[str, Dict[str, Any]]  # prompt_id -> summary dict
+    top_performers: List[Tuple[str, float]]  # (prompt_id, success_rate)
+    bottom_performers: List[Tuple[str, float]]  # (prompt_id, success_rate)
+    category_breakdown: Dict[str, Dict[str, float]]  # category -> metrics
+    domain_breakdown: Dict[str, Dict[str, float]]  # domain -> metrics
+    trends: Dict[str, str]  # prompt_id -> trend ("improving", "stable", "degrading")
+    recommendations: List[str]
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "report_id": self.report_id,
+            "generated_at": self.generated_at.isoformat(),
+            "total_prompts_tracked": self.total_prompts_tracked,
+            "total_uses_recorded": self.total_uses_recorded,
+            "overall_success_rate": self.overall_success_rate,
+            "overall_average_confidence": self.overall_average_confidence,
+            "overall_average_latency_ms": self.overall_average_latency_ms,
+            "prompt_reports": self.prompt_reports,
+            "top_performers": self.top_performers,
+            "bottom_performers": self.bottom_performers,
+            "category_breakdown": self.category_breakdown,
+            "domain_breakdown": self.domain_breakdown,
+            "trends": self.trends,
+            "recommendations": self.recommendations,
+        }
+
+
 class PromptOptimizer:
     """
     Optimizes prompts based on empirical performance data.
@@ -575,6 +655,335 @@ class PromptOptimizer:
                 underperformers.append((prompt_id, metrics.success_rate))
 
         return sorted(underperformers, key=lambda x: x[1])
+
+    def generate_effectiveness_report(self) -> AggregateEffectivenessReport:
+        """
+        Generate comprehensive report aggregating all prompt performance data.
+
+        Returns:
+            AggregateEffectivenessReport with:
+            - Overall metrics across all prompts
+            - Per-prompt performance summaries
+            - Trends over time
+            - Top/bottom performing prompts
+        """
+        report_id = f"report_{uuid.uuid4().hex[:8]}"
+        generated_at = datetime.now()
+
+        # Calculate overall metrics
+        total_uses = sum(m.total_uses for m in self._metrics.values())
+        total_successes = sum(m.successful_uses for m in self._metrics.values())
+        total_confidence = sum(m.total_confidence for m in self._metrics.values())
+        total_latency = sum(m.total_latency_ms for m in self._metrics.values())
+
+        overall_success_rate = total_successes / total_uses if total_uses > 0 else 0.0
+        overall_avg_confidence = total_confidence / total_uses if total_uses > 0 else 0.0
+        overall_avg_latency = total_latency / total_uses if total_uses > 0 else 0.0
+
+        # Build per-prompt reports
+        prompt_reports: Dict[str, Dict[str, Any]] = {}
+        prompt_rates: List[Tuple[str, float]] = []
+
+        for prompt_id, metrics in self._metrics.items():
+            if metrics.total_uses > 0:
+                prompt_reports[prompt_id] = {
+                    "total_uses": metrics.total_uses,
+                    "success_rate": metrics.success_rate,
+                    "average_confidence": metrics.average_confidence,
+                    "average_latency_ms": metrics.average_latency_ms,
+                    "syntax_validity_rate": metrics.syntax_validity_rate,
+                    "domain_performance": dict(metrics.domain_performance),
+                }
+                prompt_rates.append((prompt_id, metrics.success_rate))
+
+        # Sort for top/bottom performers
+        sorted_rates = sorted(prompt_rates, key=lambda x: x[1], reverse=True)
+        top_performers = sorted_rates[:5]
+        bottom_performers = (
+            sorted_rates[-5:][::-1] if len(sorted_rates) >= 5 else sorted_rates[::-1]
+        )
+
+        # Category breakdown
+        category_breakdown: Dict[str, Dict[str, float]] = defaultdict(
+            lambda: {"total_uses": 0, "successes": 0, "success_rate": 0.0}
+        )
+        for prompt_id, metrics in self._metrics.items():
+            prompt = self._prompts.get(prompt_id)
+            if prompt and metrics.total_uses > 0:
+                cat = prompt.category.value
+                category_breakdown[cat]["total_uses"] += metrics.total_uses
+                category_breakdown[cat]["successes"] += metrics.successful_uses
+
+        for cat, data in category_breakdown.items():
+            if data["total_uses"] > 0:
+                data["success_rate"] = data["successes"] / data["total_uses"]
+
+        # Domain breakdown
+        domain_breakdown: Dict[str, Dict[str, float]] = defaultdict(
+            lambda: {"total_uses": 0, "successes": 0, "success_rate": 0.0}
+        )
+        for metrics in self._metrics.values():
+            for domain, perf in metrics.domain_performance.items():
+                domain_breakdown[domain]["total_uses"] += perf["total"]
+                domain_breakdown[domain]["successes"] += perf["success"]
+
+        for domain, data in domain_breakdown.items():
+            if data["total_uses"] > 0:
+                data["success_rate"] = data["successes"] / data["total_uses"]
+
+        # Calculate trends
+        trends: Dict[str, str] = {}
+        for prompt_id in self._metrics:
+            history = self._performance_history.get(prompt_id, [])
+            trends[prompt_id] = self._calculate_trend(history)
+
+        # Generate recommendations
+        recommendations = self._generate_aggregate_recommendations(
+            overall_success_rate,
+            bottom_performers,
+            category_breakdown,
+            domain_breakdown,
+        )
+
+        return AggregateEffectivenessReport(
+            report_id=report_id,
+            generated_at=generated_at,
+            total_prompts_tracked=len(self._prompts),
+            total_uses_recorded=total_uses,
+            overall_success_rate=overall_success_rate,
+            overall_average_confidence=overall_avg_confidence,
+            overall_average_latency_ms=overall_avg_latency,
+            prompt_reports=prompt_reports,
+            top_performers=top_performers,
+            bottom_performers=bottom_performers,
+            category_breakdown=dict(category_breakdown),
+            domain_breakdown=dict(domain_breakdown),
+            trends=trends,
+            recommendations=recommendations,
+        )
+
+    def suggest_improvements(self, prompt_id: str) -> List[ImprovementSuggestion]:
+        """
+        Generate specific improvement suggestions for a prompt.
+
+        Analyzes the prompt's performance metrics and generates actionable
+        suggestions for improving its effectiveness.
+
+        Args:
+            prompt_id: The ID of the prompt to analyze
+
+        Returns:
+            List of ImprovementSuggestion objects with:
+            - Suggested modification
+            - Rationale
+            - Expected improvement percentage
+            - Confidence score
+        """
+        prompt = self._prompts.get(prompt_id)
+        metrics = self._metrics.get(prompt_id)
+
+        if not prompt:
+            raise ValueError(f"Prompt {prompt_id} not found")
+
+        suggestions: List[ImprovementSuggestion] = []
+
+        # If no metrics yet, suggest collecting more data
+        if not metrics or metrics.total_uses < self.min_samples_for_analysis:
+            suggestions.append(
+                ImprovementSuggestion(
+                    suggestion_id=f"sugg_{uuid.uuid4().hex[:8]}",
+                    prompt_id=prompt_id,
+                    suggestion_type="data_collection",
+                    description="Collect more usage data before optimization",
+                    rationale=f"Only {metrics.total_uses if metrics else 0} samples collected, "
+                    f"need at least {self.min_samples_for_analysis} for reliable analysis",
+                    expected_improvement_percentage=0.0,
+                    confidence=0.9,
+                    priority="high",
+                    implementation_hint="Use this prompt in more scenarios to gather performance data",
+                )
+            )
+            return suggestions
+
+        # Analyze success rate
+        if metrics.success_rate < 0.7:
+            suggestions.append(
+                ImprovementSuggestion(
+                    suggestion_id=f"sugg_{uuid.uuid4().hex[:8]}",
+                    prompt_id=prompt_id,
+                    suggestion_type="wording",
+                    description="Rewrite prompt with clearer instructions",
+                    rationale=f"Success rate is {metrics.success_rate:.1%}, below 70% threshold",
+                    expected_improvement_percentage=15.0,
+                    confidence=0.7,
+                    priority="high",
+                    implementation_hint="Add explicit step-by-step instructions and expected output format",
+                )
+            )
+
+        # Analyze syntax validity
+        if metrics.syntax_validity_rate < 0.9:
+            suggestions.append(
+                ImprovementSuggestion(
+                    suggestion_id=f"sugg_{uuid.uuid4().hex[:8]}",
+                    prompt_id=prompt_id,
+                    suggestion_type="constraints",
+                    description="Add output format constraints to reduce syntax errors",
+                    rationale=f"Syntax validity is {metrics.syntax_validity_rate:.1%}, "
+                    f"{(1 - metrics.syntax_validity_rate) * 100:.0f}% of outputs have syntax issues",
+                    expected_improvement_percentage=10.0,
+                    confidence=0.8,
+                    priority="high",
+                    implementation_hint="Add explicit format requirements: 'Output must be valid JSON/ASP/etc.'",
+                )
+            )
+
+        # Analyze domain-specific performance
+        for domain, perf in metrics.domain_performance.items():
+            if perf["total"] >= 5:
+                domain_rate = perf["success"] / perf["total"]
+                if domain_rate < metrics.success_rate - 0.15:
+                    suggestions.append(
+                        ImprovementSuggestion(
+                            suggestion_id=f"sugg_{uuid.uuid4().hex[:8]}",
+                            prompt_id=prompt_id,
+                            suggestion_type="domain",
+                            description=f"Add domain-specific guidance for '{domain}'",
+                            rationale=f"Performance in {domain} ({domain_rate:.1%}) is significantly "
+                            f"below average ({metrics.success_rate:.1%})",
+                            expected_improvement_percentage=12.0,
+                            confidence=0.65,
+                            priority="medium",
+                            implementation_hint=f"Include {domain}-specific examples or terminology",
+                        )
+                    )
+
+        # Analyze latency
+        if metrics.average_latency_ms > 5000:
+            suggestions.append(
+                ImprovementSuggestion(
+                    suggestion_id=f"sugg_{uuid.uuid4().hex[:8]}",
+                    prompt_id=prompt_id,
+                    suggestion_type="structure",
+                    description="Simplify prompt to reduce latency",
+                    rationale=f"Average latency is {metrics.average_latency_ms:.0f}ms, "
+                    f"which may indicate overly complex prompts",
+                    expected_improvement_percentage=5.0,
+                    confidence=0.5,
+                    priority="low",
+                    implementation_hint="Remove redundant instructions and use more concise wording",
+                )
+            )
+
+        # Analyze confidence scores
+        if metrics.average_confidence < 0.7:
+            suggestions.append(
+                ImprovementSuggestion(
+                    suggestion_id=f"sugg_{uuid.uuid4().hex[:8]}",
+                    prompt_id=prompt_id,
+                    suggestion_type="examples",
+                    description="Add few-shot examples to improve confidence",
+                    rationale=f"Average confidence is {metrics.average_confidence:.1%}, "
+                    f"examples can help the model understand expected output",
+                    expected_improvement_percentage=8.0,
+                    confidence=0.75,
+                    priority="medium",
+                    implementation_hint="Include 2-3 input/output examples demonstrating the expected format",
+                )
+            )
+
+        # Check trend
+        history = self._performance_history.get(prompt_id, [])
+        trend = self._calculate_trend(history)
+        if trend == "degrading":
+            suggestions.append(
+                ImprovementSuggestion(
+                    suggestion_id=f"sugg_{uuid.uuid4().hex[:8]}",
+                    prompt_id=prompt_id,
+                    suggestion_type="investigation",
+                    description="Investigate recent performance degradation",
+                    rationale="Performance trend shows degradation over recent samples",
+                    expected_improvement_percentage=0.0,
+                    confidence=0.6,
+                    priority="high",
+                    implementation_hint="Review recent failed cases to identify patterns or data drift",
+                )
+            )
+
+        # If no issues found, suggest A/B testing
+        if not suggestions:
+            suggestions.append(
+                ImprovementSuggestion(
+                    suggestion_id=f"sugg_{uuid.uuid4().hex[:8]}",
+                    prompt_id=prompt_id,
+                    suggestion_type="testing",
+                    description="Consider A/B testing prompt variations",
+                    rationale=f"Prompt is performing well ({metrics.success_rate:.1%}), "
+                    f"but may benefit from optimization",
+                    expected_improvement_percentage=5.0,
+                    confidence=0.4,
+                    priority="low",
+                    implementation_hint="Try variations with different wording, structure, or examples",
+                )
+            )
+
+        # Sort by priority
+        priority_order = {"high": 0, "medium": 1, "low": 2}
+        suggestions.sort(key=lambda s: priority_order.get(s.priority, 1))
+
+        return suggestions
+
+    def _generate_aggregate_recommendations(
+        self,
+        overall_rate: float,
+        bottom_performers: List[Tuple[str, float]],
+        category_breakdown: Dict[str, Dict[str, float]],
+        domain_breakdown: Dict[str, Dict[str, float]],
+    ) -> List[str]:
+        """Generate recommendations for aggregate report."""
+        recommendations = []
+
+        # Overall performance
+        if overall_rate < 0.7:
+            recommendations.append(
+                f"Overall success rate ({overall_rate:.1%}) is below target. "
+                "Consider systematic prompt review."
+            )
+        elif overall_rate > 0.85:
+            recommendations.append(
+                f"Overall success rate ({overall_rate:.1%}) is excellent. "
+                "Focus on optimizing underperformers."
+            )
+
+        # Bottom performers
+        if bottom_performers:
+            worst_prompt, worst_rate = bottom_performers[0]
+            if worst_rate < 0.5:
+                recommendations.append(
+                    f"Prompt '{worst_prompt}' has very low success rate ({worst_rate:.1%}). "
+                    "Prioritize for improvement."
+                )
+
+        # Category issues
+        for cat, data in category_breakdown.items():
+            if data.get("success_rate", 0) < 0.6 and data.get("total_uses", 0) >= 10:
+                recommendations.append(
+                    f"Category '{cat}' prompts underperforming ({data['success_rate']:.1%}). "
+                    "Review category-specific patterns."
+                )
+
+        # Domain issues
+        for domain, data in domain_breakdown.items():
+            if data.get("success_rate", 0) < 0.6 and data.get("total_uses", 0) >= 10:
+                recommendations.append(
+                    f"Domain '{domain}' shows low performance ({data['success_rate']:.1%}). "
+                    "Consider domain-specific prompt tuning."
+                )
+
+        if not recommendations:
+            recommendations.append("System is performing well. Continue monitoring.")
+
+        return recommendations
 
     def get_version_history(self, prompt_id: str) -> List[Dict[str, Any]]:
         """
