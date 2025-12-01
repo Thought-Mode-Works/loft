@@ -9,7 +9,7 @@ import uuid
 from collections import defaultdict
 from datetime import datetime
 from statistics import mean
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from loft.meta.schemas import (
     Bottleneck,
@@ -148,6 +148,46 @@ class ReasoningObserver:
             The reasoning chain or None if not found
         """
         return self.chains.get(chain_id)
+
+    def get_chain_id(self, chain_or_id: Union[str, ReasoningChain]) -> str:
+        """Extract chain ID from a chain object or return the string as-is.
+
+        Args:
+            chain_or_id: Either a chain_id string or a ReasoningChain object
+
+        Returns:
+            The chain ID as a string
+
+        Raises:
+            TypeError: If the input is neither a string nor a ReasoningChain
+        """
+        if isinstance(chain_or_id, str):
+            return chain_or_id
+        elif isinstance(chain_or_id, ReasoningChain):
+            return chain_or_id.chain_id
+        else:
+            raise TypeError(f"Expected str or ReasoningChain, got {type(chain_or_id).__name__}")
+
+    def resolve_chain(self, chain_or_id: Union[str, ReasoningChain]) -> Optional[ReasoningChain]:
+        """Resolve a chain object or ID to a ReasoningChain.
+
+        Accepts either a chain_id string or a ReasoningChain object and returns
+        the corresponding ReasoningChain from storage (if found).
+
+        Args:
+            chain_or_id: Either a chain_id string or a ReasoningChain object
+
+        Returns:
+            The ReasoningChain if found, None otherwise
+        """
+        if isinstance(chain_or_id, ReasoningChain):
+            # If it's already a chain, return it directly if in storage
+            # or just return it (for chains not yet stored)
+            return self.chains.get(chain_or_id.chain_id, chain_or_id)
+        elif isinstance(chain_or_id, str):
+            return self.chains.get(chain_or_id)
+        else:
+            return None
 
     def get_chains_by_domain(self, domain: str) -> List[ReasoningChain]:
         """Get all chains for a specific domain.
@@ -538,30 +578,37 @@ class MetaReasoner:
 
     def diagnose_reasoning_failure(
         self,
-        chain_id: str,
+        chain_or_id: Union[str, ReasoningChain],
     ) -> Optional[FailureDiagnosis]:
         """Explain why reasoning failed for a specific case.
 
         Args:
-            chain_id: The chain to diagnose
+            chain_or_id: The chain to diagnose - can be either a chain_id string
+                or a ReasoningChain object directly
 
         Returns:
             Diagnosis of the failure or None if chain not found
         """
-        chain = self.observer.get_chain(chain_id)
+        # Resolve chain from string ID or use directly if ReasoningChain
+        chain = self.observer.resolve_chain(chain_or_id)
         if not chain:
             return None
+
+        # Get the chain_id for storage
+        chain_id = chain.chain_id
 
         if chain.overall_success:
             return None  # Not a failure
 
         diagnosis_id = f"diagnosis_{uuid.uuid4().hex[:8]}"
 
-        # Identify primary failure step
-        primary_failure = None
+        # Identify primary failure step and its type
+        primary_failure_step_id: Optional[str] = None
+        primary_failure_step_type: Optional[ReasoningStepType] = None
         for step in chain.steps:
             if not step.success:
-                primary_failure = step.step_id
+                primary_failure_step_id = step.step_id
+                primary_failure_step_type = step.step_type
                 break
 
         # Determine failure type
@@ -585,7 +632,8 @@ class MetaReasoner:
             case_id=chain.case_id,
             prediction=chain.prediction or "unknown",
             ground_truth=chain.ground_truth or "unknown",
-            primary_failure_step=primary_failure,
+            primary_failure_step=primary_failure_step_id,
+            primary_failure_step_type=primary_failure_step_type,
             failure_type=failure_type,
             root_causes=root_causes,
             contributing_factors=contributing_factors,

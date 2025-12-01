@@ -261,6 +261,7 @@ class FailureDiagnosis:
     prediction: str
     ground_truth: str
     primary_failure_step: Optional[str] = None
+    primary_failure_step_type: Optional[ReasoningStepType] = None
     failure_type: str = "unknown"
     root_causes: List[str] = field(default_factory=list)
     contributing_factors: List[str] = field(default_factory=list)
@@ -277,6 +278,9 @@ class FailureDiagnosis:
             "prediction": self.prediction,
             "ground_truth": self.ground_truth,
             "primary_failure_step": self.primary_failure_step,
+            "primary_failure_step_type": (
+                self.primary_failure_step_type.value if self.primary_failure_step_type else None
+            ),
             "failure_type": self.failure_type,
             "root_causes": self.root_causes,
             "contributing_factors": self.contributing_factors,
