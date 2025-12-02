@@ -157,7 +157,29 @@ class CounterfactualAnalysis:
 
 @dataclass
 class SelectionExplanation:
-    """Explanation for why a strategy was selected."""
+    """Explanation for why a strategy was selected.
+
+    Includes counterfactual analysis of alternative strategies, enabling
+    the system to reason about "what if" scenarios for strategy selection.
+
+    Attributes:
+        strategy_name: Name of the selected strategy
+        case_id: Identifier of the case being analyzed
+        domain: Legal domain of the case
+        reasons: List of reasons for the selection
+        confidence: Confidence score for the selection (0-1)
+        alternative_strategies: List of alternative strategy names considered
+        domain_performance: Historical accuracy in this domain (if available)
+        counterfactuals: Detailed counterfactual analyses of alternatives
+
+    Example:
+        >>> explanation = selector.explain_selection(case)
+        >>> print(f"Selected: {explanation.strategy_name}")
+        >>> for cf in explanation.alternatives_considered:
+        ...     print(f"  Alternative: {cf.alternative}")
+        ...     print(f"    Why not: {cf.why_not_selected}")
+        ...     print(f"    Expected performance: {cf.hypothetical_performance:.1%}")
+    """
 
     strategy_name: str
     case_id: str
@@ -168,8 +190,21 @@ class SelectionExplanation:
     domain_performance: Optional[float] = None
     counterfactuals: List[CounterfactualAnalysis] = field(default_factory=list)
 
+    @property
+    def alternatives_considered(self) -> List[CounterfactualAnalysis]:
+        """Alias for counterfactuals for API consistency.
+
+        Returns the list of counterfactual analyses, allowing callers to use
+        either `.counterfactuals` or `.alternatives_considered` interchangeably.
+
+        Returns:
+            List of CounterfactualAnalysis objects for alternative strategies
+        """
+        return self.counterfactuals
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
+        counterfactual_dicts = [c.to_dict() for c in self.counterfactuals]
         return {
             "strategy_name": self.strategy_name,
             "case_id": self.case_id,
@@ -178,7 +213,8 @@ class SelectionExplanation:
             "confidence": self.confidence,
             "alternative_strategies": self.alternative_strategies,
             "domain_performance": self.domain_performance,
-            "counterfactuals": [c.to_dict() for c in self.counterfactuals],
+            "counterfactuals": counterfactual_dicts,
+            "alternatives_considered": counterfactual_dicts,  # Alias for API consistency
         }
 
     def explain(self) -> str:

@@ -957,3 +957,157 @@ class TestBackwardCompatibility:
         assert len(report.strategy_rankings) == 2
         assert len(report.rankings) == 2
         assert report.rankings is report.strategy_rankings
+
+
+class TestAlternativesConsideredProperty:
+    """Tests for SelectionExplanation.alternatives_considered property."""
+
+    def test_alternatives_considered_is_alias_for_counterfactuals(self):
+        """Test that alternatives_considered returns counterfactuals."""
+        cf = CounterfactualAnalysis(
+            alternative="rule_based",
+            why_not_selected="Lower accuracy",
+            hypothetical_performance=0.7,
+            confidence=0.8,
+        )
+        explanation = SelectionExplanation(
+            strategy_name="checklist",
+            case_id="case_001",
+            domain="contracts",
+            reasons=["Best accuracy"],
+            confidence=0.9,
+            counterfactuals=[cf],
+        )
+        # alternatives_considered should return the same as counterfactuals
+        assert explanation.alternatives_considered is explanation.counterfactuals
+        assert len(explanation.alternatives_considered) == 1
+        assert explanation.alternatives_considered[0].alternative == "rule_based"
+
+    def test_alternatives_considered_empty_by_default(self):
+        """Test that alternatives_considered is empty when no counterfactuals."""
+        explanation = SelectionExplanation(
+            strategy_name="test",
+            case_id="c1",
+            domain="d1",
+            reasons=[],
+            confidence=0.5,
+        )
+        assert explanation.alternatives_considered == []
+        assert len(explanation.alternatives_considered) == 0
+
+    def test_alternatives_considered_in_to_dict(self):
+        """Test that alternatives_considered appears in to_dict output."""
+        cf = CounterfactualAnalysis(
+            alternative="dialectical",
+            why_not_selected="Slower execution",
+            hypothetical_performance=0.85,
+            confidence=0.7,
+        )
+        explanation = SelectionExplanation(
+            strategy_name="checklist",
+            case_id="c1",
+            domain="contracts",
+            reasons=[],
+            confidence=0.8,
+            counterfactuals=[cf],
+        )
+        data = explanation.to_dict()
+
+        # Both fields should be present and equal
+        assert "counterfactuals" in data
+        assert "alternatives_considered" in data
+        assert data["counterfactuals"] == data["alternatives_considered"]
+        assert len(data["alternatives_considered"]) == 1
+        assert data["alternatives_considered"][0]["alternative"] == "dialectical"
+
+    def test_alternatives_considered_with_multiple_counterfactuals(self):
+        """Test alternatives_considered with multiple alternatives."""
+        cfs = [
+            CounterfactualAnalysis(
+                alternative="rule_based",
+                why_not_selected="Lower accuracy (70% vs 90%)",
+                hypothetical_performance=0.7,
+                confidence=0.8,
+            ),
+            CounterfactualAnalysis(
+                alternative="dialectical",
+                why_not_selected="Slower execution (slow vs fast)",
+                hypothetical_performance=0.85,
+                confidence=0.75,
+            ),
+            CounterfactualAnalysis(
+                alternative="causal_chain",
+                why_not_selected="Not designed for contracts domain",
+                hypothetical_performance=0.6,
+                confidence=0.6,
+            ),
+        ]
+        explanation = SelectionExplanation(
+            strategy_name="checklist",
+            case_id="case_001",
+            domain="contracts",
+            reasons=["Best accuracy", "Fast execution"],
+            confidence=0.95,
+            counterfactuals=cfs,
+        )
+
+        assert len(explanation.alternatives_considered) == 3
+        alternatives = [cf.alternative for cf in explanation.alternatives_considered]
+        assert "rule_based" in alternatives
+        assert "dialectical" in alternatives
+        assert "causal_chain" in alternatives
+
+    def test_alternatives_considered_iteration(self):
+        """Test that alternatives_considered can be iterated."""
+        cfs = [
+            CounterfactualAnalysis(
+                alternative=f"strategy_{i}",
+                why_not_selected=f"Reason {i}",
+                hypothetical_performance=0.5 + i * 0.1,
+                confidence=0.7,
+            )
+            for i in range(3)
+        ]
+        explanation = SelectionExplanation(
+            strategy_name="selected",
+            case_id="c1",
+            domain="d1",
+            reasons=[],
+            confidence=0.8,
+            counterfactuals=cfs,
+        )
+
+        # Iterate and collect
+        collected = []
+        for cf in explanation.alternatives_considered:
+            collected.append(cf.alternative)
+
+        assert len(collected) == 3
+        assert "strategy_0" in collected
+        assert "strategy_2" in collected
+
+    def test_alternatives_considered_full_workflow(self):
+        """Test alternatives_considered in a full selection workflow."""
+        evaluator = StrategyEvaluator()
+        # Checklist: 90% accuracy
+        for i in range(20):
+            evaluator.record_result("checklist", "contracts", i < 18, 100.0)
+        # Rule-based: 70% accuracy
+        for i in range(20):
+            evaluator.record_result("rule_based", "contracts", i < 14, 120.0)
+
+        selector = StrategySelector(evaluator)
+        case = SimpleCase(case_id="test_case", domain="contracts")
+        selector.select_strategy(case)
+
+        explanation = selector.explain_selection()
+
+        # alternatives_considered should be populated
+        assert len(explanation.alternatives_considered) > 0
+
+        # Each alternative should have required fields
+        for cf in explanation.alternatives_considered:
+            assert cf.alternative is not None
+            assert cf.why_not_selected is not None
+            assert 0.0 <= cf.hypothetical_performance <= 1.0
+            assert 0.0 <= cf.confidence <= 1.0

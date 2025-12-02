@@ -1167,11 +1167,23 @@ class TestPhilosophicalValidation:
         # This shows reflexivity: analyzing the chain of reasoning, not just the error
 
     def test_counterfactual_reasoning(self):
-        """Test that system can reason about alternative strategies."""
+        """Test that system can reason about alternative strategies.
+
+        This test validates MVP Criterion for philosophical reflection:
+        'Can the system reason about counterfactuals: If I had used strategy X...'
+
+        The system should be able to:
+        1. Select a strategy based on performance data
+        2. Explain why alternatives were not selected
+        3. Provide expected outcomes for alternatives (counterfactuals)
+        """
         evaluator = create_evaluator()
         selector = create_selector(evaluator)
 
         # Record data showing different strategies have different outcomes
+        # Checklist: 90% success, fast
+        # Dialectical: 95% success, slow
+        # Causal chain: 40% success (poor fit for contracts)
         for _ in range(10):
             evaluator.record_result("checklist", "contracts", True, 100, 0.9)
             evaluator.record_result("dialectical", "contracts", True, 300, 0.95)
@@ -1179,15 +1191,46 @@ class TestPhilosophicalValidation:
 
         case = SimpleCase(case_id="test", domain="contracts")
 
-        # Get explanation of selection
+        # Get explanation of selection with counterfactual reasoning
         selector.select_strategy(case)
         explanation = selector.explain_selection(case)
 
-        # The explanation provides counterfactual information via counterfactuals field
+        # Verify explanation is populated
         assert explanation is not None
-        # Note: Full counterfactual reasoning is tracked in issue #154
-        # Current implementation provides alternative_strategies list
-        # and may include counterfactuals field
+        assert explanation.strategy_name is not None
+        assert explanation.confidence > 0
+
+        # Verify counterfactuals are populated via alternatives_considered property
+        # This is the key acceptance criterion for issue #154
+        assert len(explanation.alternatives_considered) > 0
+
+        # Each counterfactual should explain why the alternative wasn't selected
+        for cf in explanation.alternatives_considered:
+            # Must have the alternative strategy name
+            assert cf.alternative is not None
+            assert len(cf.alternative) > 0
+
+            # Must explain why it wasn't selected
+            assert cf.why_not_selected is not None
+            assert len(cf.why_not_selected) > 0
+
+            # Must have expected performance (hypothetical outcome)
+            assert cf.hypothetical_performance is not None
+            assert 0.0 <= cf.hypothetical_performance <= 1.0
+
+            # Must have confidence in the counterfactual analysis
+            assert cf.confidence is not None
+            assert 0.0 <= cf.confidence <= 1.0
+
+        # Verify we can access counterfactuals via both property names
+        # (counterfactuals and alternatives_considered should be equivalent)
+        assert explanation.counterfactuals == explanation.alternatives_considered
+
+        # Verify to_dict includes alternatives_considered
+        data = explanation.to_dict()
+        assert "alternatives_considered" in data
+        assert "counterfactuals" in data
+        assert data["alternatives_considered"] == data["counterfactuals"]
 
         # Should be able to compare what would have happened with other strategies
         comparison = evaluator.compare_strategies(
