@@ -31,6 +31,7 @@ from loft.meta import (
     ReasoningStep,
     ReasoningStepType,
     ReasoningChain,
+    PatternType,
     SimpleCase,
     create_evaluator,
     create_selector,
@@ -965,12 +966,19 @@ class TestMetaReasoningCoherence:
         diagnosis = meta_reasoner.diagnose_reasoning_failure(chain_id)
         assert diagnosis is not None
 
-        # Patterns should be identifiable
+        # Patterns should be identifiable - issue #155 implemented auto-generation
         patterns = observer.identify_patterns()
-        # Note: Current implementation may not auto-generate FAILURE patterns
-        # This is tracked in issue #155
-        # For now, just verify patterns can be retrieved
         assert patterns is not None
+
+        # Verify FAILURE patterns are auto-generated from error messages
+        failure_patterns = [p for p in patterns if p.pattern_type == PatternType.FAILURE]
+        assert len(failure_patterns) >= 1, "Should auto-generate FAILURE patterns"
+
+        # Verify the error-based pattern has expected characteristics
+        error_patterns = [p for p in failure_patterns if p.characteristics.get("error_message")]
+        assert len(error_patterns) >= 1, "Should have error-message-based FAILURE pattern"
+        assert "Rule conflict" in error_patterns[0].characteristics["error_message"]
+        assert "contracts" in error_patterns[0].domains
 
     def test_failure_to_improvement_flow(self):
         """Test flow from failure analysis to improvement actions."""

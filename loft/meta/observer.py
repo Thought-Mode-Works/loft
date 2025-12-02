@@ -9,7 +9,7 @@ import uuid
 from collections import defaultdict
 from datetime import datetime
 from statistics import mean
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from loft.meta.schemas import (
     Bottleneck,
@@ -293,6 +293,10 @@ class ReasoningObserver:
         bottleneck_patterns = self._identify_bottleneck_patterns(min_frequency)
         patterns.extend(bottleneck_patterns)
 
+        # Pattern 5: Error-message-based failure patterns
+        error_patterns = self._identify_error_patterns(min_frequency)
+        patterns.extend(error_patterns)
+
         # Notify callbacks for new patterns
         if self._on_pattern_discovered:
             for pattern in patterns:
@@ -353,6 +357,105 @@ class ReasoningObserver:
                 self.patterns[pattern.pattern_id] = pattern
 
         return patterns
+
+    def _identify_error_patterns(self, min_frequency: int) -> List[ReasoningPattern]:
+        """Identify failure patterns based on error message similarity.
+
+        Groups failures by error message content and step type to find
+        recurring failure modes that may indicate systematic issues.
+
+        Args:
+            min_frequency: Minimum occurrences to consider (uses min of 1 for
+                single-chain detection support)
+
+        Returns:
+            List of error-based failure patterns
+        """
+        patterns = []
+        error_groups = self._group_failures_by_error()
+
+        # Use min of 1 for error patterns to support single-chain detection
+        # when the error is distinct enough to warrant a pattern
+        effective_min = min(min_frequency, 1)
+
+        for error_key, failure_data in error_groups.items():
+            if failure_data["count"] < effective_min:
+                continue
+
+            step_type, error_message = error_key
+            affected_domains = failure_data["domains"]
+            chain_ids = failure_data["chain_ids"]
+
+            # Create a sanitized pattern ID from the error message
+            error_slug = self._create_error_slug(error_message)
+            pattern_id = f"pattern_error_{step_type.value}_{error_slug}"
+
+            # Skip if already exists
+            if pattern_id in self.patterns:
+                continue
+
+            pattern = ReasoningPattern(
+                pattern_id=pattern_id,
+                pattern_type=PatternType.FAILURE,
+                name=f"{step_type.value}_error_pattern",
+                description=(f"Recurring error in '{step_type.value}': {error_message}"),
+                frequency=failure_data["count"],
+                associated_step_types=[step_type],
+                success_correlation=-0.9,
+                domains=list(affected_domains),
+                characteristics={
+                    "error_message": error_message,
+                    "affected_chain_ids": chain_ids,
+                    "failure_count": failure_data["count"],
+                },
+            )
+            patterns.append(pattern)
+            self.patterns[pattern_id] = pattern
+
+        return patterns
+
+    def _group_failures_by_error(
+        self,
+    ) -> Dict[Tuple[ReasoningStepType, str], Dict[str, Any]]:
+        """Group failed steps by their error messages and step types.
+
+        Returns:
+            Dictionary mapping (step_type, error_message) to failure data
+            containing count, affected domains, and chain IDs.
+        """
+        error_groups: Dict[tuple, Dict[str, Any]] = {}
+
+        for chain in self.chains.values():
+            if not chain.overall_success:
+                for step in chain.steps:
+                    if not step.success and step.error_message:
+                        key = (step.step_type, step.error_message)
+                        if key not in error_groups:
+                            error_groups[key] = {
+                                "count": 0,
+                                "domains": set(),
+                                "chain_ids": [],
+                            }
+                        error_groups[key]["count"] += 1
+                        error_groups[key]["domains"].add(chain.domain)
+                        error_groups[key]["chain_ids"].append(chain.chain_id)
+
+        return error_groups
+
+    def _create_error_slug(self, error_message: str) -> str:
+        """Create a URL-safe slug from an error message.
+
+        Args:
+            error_message: The error message to slugify
+
+        Returns:
+            A shortened, sanitized version suitable for pattern IDs
+        """
+        # Take first 30 chars, lowercase, replace spaces with underscores
+        slug = error_message[:30].lower().replace(" ", "_")
+        # Remove non-alphanumeric chars except underscores
+        slug = "".join(c for c in slug if c.isalnum() or c == "_")
+        return slug
 
     def analyze_bottlenecks(
         self,
