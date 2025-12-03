@@ -35,6 +35,7 @@ from loft.meta import (
     SimpleCase,
     create_evaluator,
     create_selector,
+    StrategySelector,
     PromptVersion,
     PromptCategory,
     create_prompt_optimizer,
@@ -52,6 +53,10 @@ from loft.meta import (
     create_improver,
     create_improvement_goal,
     SafetyConfig,
+    # Action Handlers
+    PromptRefinementHandler,
+    StrategyAdjustmentHandler,
+    register_real_handlers,
 )
 
 
@@ -1118,6 +1123,278 @@ class TestMetaReasoningCoherence:
         assert evaluation is not None
         assert len(evaluation.lessons_learned) >= 0
         assert len(evaluation.next_cycle_recommendations) > 0
+
+
+class TestRealActionHandlers:
+    """
+    Integration tests for real action handlers (issue #156).
+
+    These tests verify that the AutonomousImprover can connect to real
+    system modifications via the action handler framework, rather than
+    using mock handlers that don't modify actual state.
+    """
+
+    def test_real_prompt_refinement_handler(self):
+        """Test that PROMPT_REFINEMENT handler modifies actual prompt state."""
+        # Setup PromptOptimizer with test prompts
+        optimizer = create_prompt_optimizer()
+        base_prompt = PromptVersion(
+            prompt_id="test_refinement",
+            version=1,
+            template="Original prompt template",
+            category=PromptCategory.RULE_GENERATION,
+        )
+        optimizer.register_prompt(base_prompt)
+
+        # Set version 1 as explicitly active before creating v2
+        optimizer.set_active_version("test_refinement", 1)
+
+        # Create a new version to simulate A/B test result
+        optimizer.create_new_version(
+            original_prompt_id="test_refinement_v1",
+            new_template="Improved prompt template",
+            modification_reason="A/B test winner",
+        )
+
+        # Setup improver with real handler
+        tracker = create_tracker()
+        improver = create_improver(tracker)
+
+        # Register the real handler
+        handler = PromptRefinementHandler(optimizer)
+        improver.register_action_handler(
+            ActionType.PROMPT_REFINEMENT, handler.execute, handler.rollback
+        )
+
+        # Verify initial state
+        assert optimizer.get_active_version("test_refinement") == 1
+
+        # Manually create and execute an action to test the handler
+        from loft.meta.self_improvement import ImprovementAction
+
+        action = ImprovementAction(
+            action_id="action_test_001",
+            action_type=ActionType.PROMPT_REFINEMENT,
+            description="Apply A/B test winner",
+            target_component="prompt_optimizer",
+            parameters={
+                "target_prompt_id": "test_refinement",
+                "winning_version": 2,
+            },
+        )
+
+        # Execute via handler
+        success = handler.execute(action)
+
+        # Verify real state modification
+        assert success is True
+        assert optimizer.get_active_version("test_refinement") == 2
+        assert action.rollback_data is not None
+
+        # Test rollback capability
+        rollback_success = handler.rollback(action)
+        assert rollback_success is True
+        assert optimizer.get_active_version("test_refinement") == 1
+
+    def test_real_strategy_adjustment_handler(self):
+        """Test that STRATEGY_ADJUSTMENT handler modifies actual strategy state."""
+        # Setup StrategySelector
+        evaluator = create_evaluator()
+        selector = StrategySelector(evaluator)
+
+        # Set initial domain defaults
+        selector.set_domain_default("contracts", "checklist")
+        selector.set_domain_default("torts", "causal_chain")
+
+        # Setup improver with real handler
+        tracker = create_tracker()
+        improver = create_improver(tracker)
+
+        handler = StrategyAdjustmentHandler(selector)
+        improver.register_action_handler(
+            ActionType.STRATEGY_ADJUSTMENT, handler.execute, handler.rollback
+        )
+
+        # Verify initial state
+        assert selector.get_domain_default("contracts") == "checklist"
+
+        # Create and execute action
+        from loft.meta.self_improvement import ImprovementAction
+
+        action = ImprovementAction(
+            action_id="action_test_002",
+            action_type=ActionType.STRATEGY_ADJUSTMENT,
+            description="Update contracts strategy",
+            target_component="strategy_selector",
+            parameters={
+                "domain": "contracts",
+                "recommended_strategy": "balancing_test",
+            },
+        )
+
+        success = handler.execute(action)
+
+        # Verify real state modification
+        assert success is True
+        assert selector.get_domain_default("contracts") == "balancing_test"
+        assert action.rollback_data["previous_default"] == "checklist"
+
+        # Test rollback
+        rollback_success = handler.rollback(action)
+        assert rollback_success is True
+        assert selector.get_domain_default("contracts") == "checklist"
+
+    def test_register_real_handlers_integration(self):
+        """Test the register_real_handlers convenience function."""
+        optimizer = create_prompt_optimizer()
+        evaluator = create_evaluator()
+        selector = StrategySelector(evaluator)
+        tracker = create_tracker()
+        improver = create_improver(tracker)
+
+        # Register both handlers using convenience function
+        registered = register_real_handlers(improver, optimizer=optimizer, selector=selector)
+
+        assert registered == {"prompt_refinement": True, "strategy_adjustment": True}
+
+    def test_real_improvement_cycle_with_prompt_handler(self):
+        """Test complete improvement cycle using real prompt handler."""
+        # Setup
+        optimizer = create_prompt_optimizer()
+        base_prompt = PromptVersion(
+            prompt_id="cycle_test",
+            version=1,
+            template="Base template for cycle test",
+            category=PromptCategory.VALIDATION,
+        )
+        optimizer.register_prompt(base_prompt)
+        optimizer.create_new_version(
+            original_prompt_id="cycle_test_v1",
+            new_template="Improved template for cycle test",
+            modification_reason="Performance improvement",
+        )
+
+        tracker = create_tracker()
+        improver = create_improver(tracker)
+
+        # Register real handler
+        handler = PromptRefinementHandler(optimizer)
+        improver.register_action_handler(
+            ActionType.PROMPT_REFINEMENT, handler.execute, handler.rollback
+        )
+
+        # Create goal
+        goal = create_improvement_goal(
+            metric_type=MetricType.PROMPT_EFFECTIVENESS,
+            target_value=0.85,
+            baseline_value=0.70,
+        )
+
+        # Start and execute cycle
+        cycle_id = improver.start_improvement_cycle([goal])
+        cycle = improver.get_cycle(cycle_id)
+
+        assert cycle.status == CycleStatus.RUNNING
+
+        # Execute improvements
+        improver.execute_improvements(cycle_id)
+
+        # The cycle should complete (actions may or may not be generated
+        # depending on the improver's planning logic)
+        cycle = improver.get_cycle(cycle_id)
+        assert cycle.status in [CycleStatus.COMPLETED, CycleStatus.RUNNING]
+
+    def test_handler_safety_with_invalid_params(self):
+        """Test that handlers safely reject invalid parameters."""
+        optimizer = create_prompt_optimizer()
+        handler = PromptRefinementHandler(optimizer)
+
+        from loft.meta.self_improvement import ImprovementAction
+
+        # Try to apply a version that doesn't exist
+        action = ImprovementAction(
+            action_id="action_test_003",
+            action_type=ActionType.PROMPT_REFINEMENT,
+            description="Apply nonexistent version",
+            target_component="prompt_optimizer",
+            parameters={
+                "target_prompt_id": "nonexistent",
+                "winning_version": 999,
+            },
+        )
+
+        success = handler.execute(action)
+
+        # Should fail gracefully
+        assert success is False
+        assert action.success is False
+
+    def test_rollback_preserves_system_state(self):
+        """Test that rollback correctly restores previous state."""
+        optimizer = create_prompt_optimizer()
+        evaluator = create_evaluator()
+        selector = StrategySelector(evaluator)
+
+        # Setup initial state
+        base_prompt = PromptVersion(
+            prompt_id="rollback_test",
+            version=1,
+            template="Original",
+            category=PromptCategory.RULE_GENERATION,
+        )
+        optimizer.register_prompt(base_prompt)
+        # Set version 1 as explicitly active before creating v2
+        optimizer.set_active_version("rollback_test", 1)
+        optimizer.create_new_version(
+            original_prompt_id="rollback_test_v1",
+            new_template="Modified",
+            modification_reason="Test",
+        )
+        selector.set_domain_default("criminal", "rule_based")
+
+        # Create handlers
+        prompt_handler = PromptRefinementHandler(optimizer)
+        strategy_handler = StrategyAdjustmentHandler(selector)
+
+        from loft.meta.self_improvement import ImprovementAction
+
+        # Execute prompt action
+        prompt_action = ImprovementAction(
+            action_id="action_test_004",
+            action_type=ActionType.PROMPT_REFINEMENT,
+            description="Apply v2",
+            target_component="prompt_optimizer",
+            parameters={
+                "target_prompt_id": "rollback_test",
+                "winning_version": 2,
+            },
+        )
+        prompt_handler.execute(prompt_action)
+
+        # Execute strategy action
+        strategy_action = ImprovementAction(
+            action_id="action_test_005",
+            action_type=ActionType.STRATEGY_ADJUSTMENT,
+            description="Change criminal default",
+            target_component="strategy_selector",
+            parameters={
+                "domain": "criminal",
+                "recommended_strategy": "dialectical",
+            },
+        )
+        strategy_handler.execute(strategy_action)
+
+        # Verify changes were applied
+        assert optimizer.get_active_version("rollback_test") == 2
+        assert selector.get_domain_default("criminal") == "dialectical"
+
+        # Rollback both
+        prompt_handler.rollback(prompt_action)
+        strategy_handler.rollback(strategy_action)
+
+        # Verify original state restored
+        assert optimizer.get_active_version("rollback_test") == 1
+        assert selector.get_domain_default("criminal") == "rule_based"
 
 
 class TestPhilosophicalValidation:
