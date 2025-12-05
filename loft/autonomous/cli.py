@@ -14,34 +14,49 @@ Commands:
 import logging
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import click
 
 from loft.autonomous.config import AutonomousRunConfig
 from loft.autonomous.health import create_health_server
+from loft.autonomous.logging_config import (
+    create_log_summary,
+    setup_autonomous_logging,
+)
 from loft.autonomous.notifications import create_notification_manager
 from loft.autonomous.persistence import create_persistence_manager
 from loft.autonomous.runner import AutonomousTestRunner
 
 
-def setup_logging(log_level: str, log_file: Optional[Path] = None) -> None:
-    """Configure logging.
+def setup_logging(
+    log_level: str,
+    log_file: Optional[Path] = None,
+    enable_clingo_filter: bool = True,
+    progress_interval_seconds: float = 300.0,
+) -> Dict[str, Any]:
+    """Configure logging with improved readability.
+
+    Uses the enhanced logging configuration that:
+    - Filters Clingo "info" messages that flood logs
+    - Provides summarized error logging for LLM failures
+    - Standardizes log format across all modules
+    - Adds periodic progress indicators
 
     Args:
         log_level: Logging level string
         log_file: Optional log file path
+        enable_clingo_filter: Whether to filter Clingo info messages
+        progress_interval_seconds: Seconds between progress logs
+
+    Returns:
+        Dictionary with logging components for customization
     """
-    level = getattr(logging, log_level.upper(), logging.INFO)
-
-    handlers = [logging.StreamHandler(sys.stdout)]
-    if log_file:
-        handlers.append(logging.FileHandler(log_file))
-
-    logging.basicConfig(
-        level=level,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        handlers=handlers,
+    return setup_autonomous_logging(
+        log_level=log_level,
+        log_file=log_file,
+        enable_clingo_filter=enable_clingo_filter,
+        progress_interval_seconds=progress_interval_seconds,
     )
 
 
@@ -138,6 +153,17 @@ def cli() -> None:
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR"]),
     help="Logging level",
 )
+@click.option(
+    "--no-clingo-filter",
+    is_flag=True,
+    help="Disable filtering of Clingo info messages",
+)
+@click.option(
+    "--progress-interval",
+    default=300,
+    type=int,
+    help="Seconds between progress summary logs (0 to disable)",
+)
 def start(
     dataset: tuple,
     source: str,
@@ -153,6 +179,8 @@ def start(
     health_port: int,
     no_health: bool,
     log_level: str,
+    no_clingo_filter: bool,
+    progress_interval: int,
 ) -> None:
     """Start a new autonomous test run.
 
@@ -182,9 +210,30 @@ def start(
             --dataset datasets/contracts/ \\
             --slack-webhook https://hooks.slack.com/... \\
             --duration 4h
+
+        # With verbose logging (no Clingo filtering)
+        loft-autonomous start \\
+            --dataset datasets/contracts/ \\
+            --no-clingo-filter \\
+            --progress-interval 60 \\
+            --duration 1h
     """
-    setup_logging(log_level)
+    # Set up logging file path
+    output_path = Path(output)
+    output_path.mkdir(parents=True, exist_ok=True)
+    log_file = output_path / "run.log" if run_id else None
+
+    # Set up logging with improved readability
+    logging_components = setup_logging(
+        log_level=log_level,
+        log_file=log_file,
+        enable_clingo_filter=not no_clingo_filter,
+        progress_interval_seconds=float(progress_interval),
+    )
     logger = logging.getLogger(__name__)
+    progress_indicator = logging_components.get("progress_indicator")
+    clingo_filter = logging_components.get("clingo_filter")
+    error_summarizer = logging_components.get("error_summarizer")
 
     # Validate arguments based on source
     if source == "local" and not dataset:
@@ -258,6 +307,14 @@ def start(
         result = runner.start(dataset_paths=list(dataset), run_id=run_id)
 
         notification_manager.notify_completion(result)
+
+        # Log final summary
+        summary = create_log_summary(
+            clingo_filter=clingo_filter,
+            error_summarizer=error_summarizer,
+            progress_indicator=progress_indicator,
+        )
+        logger.info("\n" + summary)
 
         if result.was_successful:
             click.echo("\nRun completed successfully!")
