@@ -473,6 +473,77 @@ class PromptOptimizer:
         """Get metrics for a prompt."""
         return self._metrics.get(prompt_id)
 
+    def get_active_version(self, prompt_id: str) -> Optional[int]:
+        """Get the active version number for a prompt.
+
+        The active version is the latest version in the version history,
+        or can be explicitly set via set_active_version().
+
+        Args:
+            prompt_id: Base prompt ID (without version suffix)
+
+        Returns:
+            Active version number, or None if prompt not found
+        """
+        # Check if we have an explicitly set active version
+        if hasattr(self, "_active_versions") and prompt_id in self._active_versions:
+            return self._active_versions[prompt_id]
+
+        # Default to latest version
+        versions = self._version_history.get(prompt_id, [])
+        if not versions:
+            return None
+
+        # Get the highest version number
+        max_version = 0
+        for full_id in versions:
+            prompt = self._prompts.get(full_id)
+            if prompt and prompt.version > max_version:
+                max_version = prompt.version
+
+        return max_version if max_version > 0 else None
+
+    def set_active_version(self, prompt_id: str, version: int) -> bool:
+        """Set the active version for a prompt.
+
+        This method designates which version of a prompt should be used
+        as the current "live" version for the system.
+
+        Args:
+            prompt_id: Base prompt ID (without version suffix)
+            version: Version number to set as active
+
+        Returns:
+            True if the version was successfully set, False otherwise
+        """
+        # Initialize active versions dict if needed
+        if not hasattr(self, "_active_versions"):
+            self._active_versions: Dict[str, int] = {}
+
+        # Verify the version exists
+        full_id = f"{prompt_id}_v{version}"
+        if full_id not in self._prompts:
+            return False
+
+        self._active_versions[prompt_id] = version
+        return True
+
+    def get_active_prompt(self, prompt_id: str) -> Optional[PromptVersion]:
+        """Get the active prompt version.
+
+        Args:
+            prompt_id: Base prompt ID (without version suffix)
+
+        Returns:
+            Active PromptVersion, or None if not found
+        """
+        active_version = self.get_active_version(prompt_id)
+        if active_version is None:
+            return None
+
+        full_id = f"{prompt_id}_v{active_version}"
+        return self._prompts.get(full_id)
+
     def track_prompt_performance(
         self,
         prompt_id: str,

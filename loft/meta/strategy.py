@@ -804,6 +804,17 @@ class StrategySelector:
         """
         self._domain_defaults[domain] = strategy_name
 
+    def get_domain_default(self, domain: str) -> Optional[str]:
+        """Get the default strategy for a domain.
+
+        Args:
+            domain: The domain to look up
+
+        Returns:
+            Strategy name, or None if no default set
+        """
+        return self._domain_defaults.get(domain)
+
     def select_strategy(
         self,
         case: CaseProtocol,

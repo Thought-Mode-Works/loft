@@ -140,6 +140,16 @@ from loft.meta.dashboard import (
     TrendReport,
     create_dashboard_generator,
 )
+from loft.meta.action_handlers import (
+    HandlerResult,
+    PromptRefinementHandler,
+    StrategyAdjustmentHandler,
+    create_prompt_refinement_handler,
+    create_prompt_refinement_rollback_handler,
+    create_strategy_adjustment_handler,
+    create_strategy_adjustment_rollback_handler,
+    register_real_handlers,
+)
 
 __all__ = [
     # Observer
@@ -280,4 +290,15 @@ __all__ = [
     "DashboardExporter",
     # Dashboard - Factory functions
     "create_dashboard_generator",
+    # Action Handlers - Data classes
+    "HandlerResult",
+    # Action Handlers - Classes
+    "PromptRefinementHandler",
+    "StrategyAdjustmentHandler",
+    # Action Handlers - Factory functions
+    "create_prompt_refinement_handler",
+    "create_prompt_refinement_rollback_handler",
+    "create_strategy_adjustment_handler",
+    "create_strategy_adjustment_rollback_handler",
+    "register_real_handlers",
 ]
