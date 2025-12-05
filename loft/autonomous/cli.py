@@ -61,9 +61,20 @@ def cli() -> None:
     "--dataset",
     "-d",
     multiple=True,
-    required=True,
     type=click.Path(exists=True),
     help="Dataset directory or file path (can specify multiple)",
+)
+@click.option(
+    "--source",
+    "-s",
+    type=click.Choice(["local", "courtlistener"]),
+    default="local",
+    help="Data source: 'local' for files, 'courtlistener' for API",
+)
+@click.option(
+    "--search-queries",
+    multiple=True,
+    help="Search queries for CourtListener (e.g., 'statute of frauds')",
 )
 @click.option(
     "--config",
@@ -129,6 +140,8 @@ def cli() -> None:
 )
 def start(
     dataset: tuple,
+    source: str,
+    search_queries: tuple,
     config: Optional[str],
     duration: str,
     output: str,
@@ -145,10 +158,18 @@ def start(
 
     Examples:
 
-        # Basic run with contracts dataset
+        # Basic run with local dataset
         loft-autonomous start --dataset datasets/contracts/ --duration 4h
 
-        # Custom configuration
+        # Run with CourtListener API (real legal cases)
+        loft-autonomous start \\
+            --source courtlistener \\
+            --search-queries "statute of frauds" \\
+            --search-queries "adverse possession" \\
+            --duration 2h \\
+            --max-cases 100
+
+        # Custom configuration with multiple datasets
         loft-autonomous start \\
             --dataset datasets/contracts/ \\
             --dataset datasets/torts/ \\
@@ -165,6 +186,10 @@ def start(
     setup_logging(log_level)
     logger = logging.getLogger(__name__)
 
+    # Validate arguments based on source
+    if source == "local" and not dataset:
+        raise click.UsageError("--dataset is required when using --source local")
+
     duration_hours = _parse_duration(duration)
 
     if config:
@@ -177,7 +202,7 @@ def start(
     run_config.max_cases = max_cases
     run_config.llm_model = model
     run_config.output_dir = output
-    run_config.dataset_paths = list(dataset)
+    run_config.dataset_paths = list(dataset) if dataset else []
 
     if slack_webhook:
         run_config.notification.slack_webhook_url = slack_webhook
@@ -185,7 +210,21 @@ def start(
     run_config.health.enabled = not no_health
     run_config.health.port = health_port
 
-    logger.info(f"Starting autonomous run with {len(dataset)} dataset(s)")
+    # Set up data source adapter based on source type
+    data_source_adapter = None
+    if source == "courtlistener":
+        from loft.autonomous.data_sources import create_courtlistener_adapter
+
+        queries = list(search_queries) if search_queries else None
+        data_source_adapter = create_courtlistener_adapter(
+            search_queries=queries,
+            max_cases_per_query=max(50, max_cases // 10) if max_cases > 0 else 50,
+        )
+        logger.info(f"Using CourtListener API with queries: {queries or 'default'}")
+    else:
+        logger.info(f"Using local datasets: {dataset}")
+
+    logger.info(f"Starting autonomous run with source: {source}")
     logger.info(f"Max duration: {duration_hours} hours")
     logger.info(f"Output directory: {output}")
 
@@ -200,6 +239,10 @@ def start(
         notification_manager = create_notification_manager(run_config.notification)
 
         runner = AutonomousTestRunner(run_config, output_dir=Path(output))
+
+        # Set data source adapter if using CourtListener
+        if data_source_adapter:
+            runner.set_data_source(data_source_adapter)
 
         def on_progress(progress):
             if health_server:

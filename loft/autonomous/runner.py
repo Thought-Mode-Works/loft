@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 from loft.autonomous.config import AutonomousRunConfig
+from loft.autonomous.data_sources import DataSourceAdapter
 from loft.autonomous.meta_integration import MetaReasoningOrchestrator
 from loft.autonomous.persistence import PersistenceManager, create_persistence_manager
 from loft.autonomous.schemas import (
@@ -84,6 +85,7 @@ class AutonomousTestRunner:
 
         self._batch_harness: Optional[Any] = None
         self._dataset_loader: Optional[Any] = None
+        self._data_source: Optional[DataSourceAdapter] = None
 
     @property
     def config(self) -> AutonomousRunConfig:
@@ -140,6 +142,17 @@ class AutonomousTestRunner:
             loader: Dataset loader callable
         """
         self._dataset_loader = loader
+
+    def set_data_source(self, data_source: DataSourceAdapter) -> None:
+        """Set a data source adapter for loading cases.
+
+        When a data source adapter is set, it takes precedence over
+        dataset_paths and dataset_loader for case loading.
+
+        Args:
+            data_source: DataSourceAdapter instance (e.g., CourtListenerAdapter)
+        """
+        self._data_source = data_source
 
     def set_orchestrator(self, orchestrator: MetaReasoningOrchestrator) -> None:
         """Set the meta-reasoning orchestrator.
@@ -377,15 +390,28 @@ class AutonomousTestRunner:
         return self._create_completed_result()
 
     def _load_cases(self, dataset_paths: List[str]) -> List[Dict[str, Any]]:
-        """Load cases from dataset paths.
+        """Load cases from data source adapter or dataset paths.
+
+        If a DataSourceAdapter is set via set_data_source(), it takes
+        precedence and cases are loaded from the adapter (e.g., CourtListener API).
+        Otherwise, cases are loaded from dataset_paths.
 
         Args:
-            dataset_paths: Paths to load from
+            dataset_paths: Paths to load from (used if no data source set)
 
         Returns:
             List of case dictionaries
         """
         all_cases = []
+
+        # Use data source adapter if set (e.g., CourtListenerAdapter)
+        if self._data_source:
+            logger.info(f"Loading cases from data source: {self._data_source.source_name}")
+            limit = self._config.max_cases if self._config.max_cases > 0 else None
+            for case_data in self._data_source.get_cases(limit=limit):
+                all_cases.append(case_data.to_dict())
+            logger.info(f"Loaded {len(all_cases)} cases from {self._data_source.source_name}")
+            return all_cases
 
         if self._dataset_loader:
             for path in dataset_paths:
@@ -408,6 +434,9 @@ class AutonomousTestRunner:
     def _load_cases_from_directory(self, directory: Path) -> List[Dict[str, Any]]:
         """Load cases from a directory.
 
+        If cases don't have a 'domain' field, it will be inferred from the
+        directory name (e.g., 'contracts', 'torts', 'property_law').
+
         Args:
             directory: Directory path
 
@@ -416,17 +445,29 @@ class AutonomousTestRunner:
         """
         import json
 
+        # Infer domain from directory name
+        inferred_domain = directory.name.replace("_", " ").replace("-", " ")
+
         cases = []
         for json_file in directory.glob("*.json"):
             try:
                 with open(json_file) as f:
                     data = json.load(f)
                     if isinstance(data, list):
+                        # Add inferred domain to cases without domain
+                        for case in data:
+                            if "domain" not in case:
+                                case["domain"] = inferred_domain
                         cases.extend(data)
                     elif isinstance(data, dict):
                         if "cases" in data:
+                            for case in data["cases"]:
+                                if "domain" not in case:
+                                    case["domain"] = inferred_domain
                             cases.extend(data["cases"])
                         else:
+                            if "domain" not in data:
+                                data["domain"] = inferred_domain
                             cases.append(data)
             except Exception as e:
                 logger.warning(f"Failed to load {json_file}: {e}")
