@@ -177,15 +177,18 @@ class AutonomousTestRunner:
             RunResult with final outcomes
         """
         dataset_paths = dataset_paths or self._config.dataset_paths
-        if not dataset_paths:
-            raise ValueError("No dataset paths provided")
+        if not dataset_paths and not self._data_source:
+            raise ValueError("No dataset paths provided and no data source configured")
 
         self._run_id = run_id or self._generate_run_id()
         self._setup_run()
 
         logger.info(f"Starting autonomous run {self._run_id}")
         logger.info(f"Max duration: {self._config.max_duration_hours} hours")
-        logger.info(f"Dataset paths: {dataset_paths}")
+        if dataset_paths:
+            logger.info(f"Dataset paths: {dataset_paths}")
+        if self._data_source:
+            logger.info(f"Data source: {self._data_source.source_name}")
 
         try:
             self._install_signal_handlers()
