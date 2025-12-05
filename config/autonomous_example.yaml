@@ -1,0 +1,66 @@
+# Example Configuration for LOFT Autonomous Test Harness
+#
+# Copy this file and customize for your runs:
+#   cp config/autonomous_example.yaml config/my_run.yaml
+#
+# Use with:
+#   loft-autonomous start --config config/my_run.yaml --dataset datasets/contracts/
+
+# Duration and limits
+max_duration_hours: 4.0
+max_cases: 0  # 0 = unlimited
+checkpoint_interval_minutes: 15
+checkpoint_on_cycle_complete: true
+
+# LLM configuration
+llm_model: "claude-3-5-haiku-20241022"
+llm_temperature: 0.3
+llm_max_retries: 3
+
+# Output configuration
+output_dir: "data/autonomous_runs"
+run_id_prefix: "run"
+
+# Processing settings
+batch_size: 10
+parallel_workers: 1
+
+# Logging
+log_level: "INFO"
+log_to_file: true
+
+# Notification settings
+notification:
+  slack_webhook_url: null  # Set via SLACK_WEBHOOK_URL env var
+  notify_on_start: true
+  notify_on_milestone: true
+  notify_on_cycle_complete: true
+  notify_on_error: true
+  notify_on_completion: true
+  milestone_interval_cases: 100
+
+# Meta-reasoning configuration
+meta_reasoning:
+  enable_autonomous_improvement: true
+  enable_prompt_optimization: true
+  enable_failure_analysis: true
+  enable_strategy_selection: true
+  improvement_cycle_interval_cases: 50
+  min_cases_for_analysis: 10
+  max_improvement_actions_per_cycle: 5
+  confidence_threshold: 0.7
+
+# Safety configuration
+safety:
+  max_accuracy_drop: 0.05
+  auto_rollback_on_degradation: true
+  min_accuracy_threshold: 0.6
+  max_consecutive_failures: 10
+  require_validation_before_apply: true
+  preserve_baseline_rules: true
+
+# Health endpoint configuration
+health:
+  enabled: true
+  port: 8080
+  host: "0.0.0.0"

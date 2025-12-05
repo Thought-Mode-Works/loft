@@ -424,3 +424,217 @@ class BatchConfig:
     max_consecutive_errors: int = 10
     # ... and more
 ```
+
+---
+
+## Autonomous Long-Running Tests
+
+Phase 5 introduces the `loft.autonomous` module for running long-duration (4+ hour) autonomous test experiments with meta-reasoning integration.
+
+### Quick Start
+
+```bash
+# Start a 4-hour autonomous run
+loft-autonomous start --dataset datasets/contracts/ --duration 4h
+
+# Resume from checkpoint
+loft-autonomous resume --checkpoint data/autonomous_runs/run_001/checkpoints/latest.json
+
+# Check run status
+loft-autonomous status --run-id run_001
+
+# Generate report
+loft-autonomous report --run-id run_001 --format markdown
+```
+
+### Python API
+
+```python
+from loft.autonomous import AutonomousTestRunner, AutonomousRunConfig
+
+# Configure run
+config = AutonomousRunConfig(
+    max_duration_hours=4.0,
+    max_cases=0,  # Unlimited
+    checkpoint_interval_minutes=15,
+    llm_model="claude-3-5-haiku-20241022",
+)
+
+# Create runner
+runner = AutonomousTestRunner(config, output_dir="data/autonomous_runs")
+
+# Set callbacks for monitoring
+runner.set_callbacks(
+    on_progress=lambda p: print(f"Progress: {p.completion_percentage:.1f}%"),
+    on_case_complete=lambda c: print(f"Case {c['case_id']}: {c['correct']}"),
+    on_checkpoint=lambda cp: print(f"Checkpoint {cp.checkpoint_number} created"),
+)
+
+# Start run
+result = runner.start(dataset_paths=["datasets/contracts/"])
+
+print(f"Final accuracy: {result.final_metrics.overall_accuracy:.2%}")
+print(f"Improvement cycles: {result.final_metrics.improvement_cycles_completed}")
+```
+
+### Docker Deployment
+
+For remote or containerized runs:
+
+```bash
+# Build Docker image
+docker build -f Dockerfile.autonomous -t loft-autonomous .
+
+# Run with docker-compose
+ANTHROPIC_API_KEY=xxx docker-compose -f docker-compose.autonomous.yml up
+
+# Check health
+curl http://localhost:8080/health
+```
+
+### Configuration
+
+Create `config/my_run.yaml`:
+
+```yaml
+max_duration_hours: 4.0
+max_cases: 0
+checkpoint_interval_minutes: 15
+llm_model: "claude-3-5-haiku-20241022"
+
+meta_reasoning:
+  enable_autonomous_improvement: true
+  improvement_cycle_interval_cases: 50
+  enable_prompt_optimization: true
+  enable_failure_analysis: true
+
+notification:
+  notify_on_start: true
+  notify_on_completion: true
+  notify_on_error: true
+  milestone_interval_cases: 100
+
+health:
+  enabled: true
+  port: 8080
+```
+
+Use with:
+
+```bash
+loft-autonomous start --config config/my_run.yaml --dataset datasets/contracts/
+```
+
+### Slack Notifications
+
+Enable Slack notifications by setting the webhook URL:
+
+```bash
+# Via environment variable
+export SLACK_WEBHOOK_URL="https://hooks.slack.com/services/xxx"
+loft-autonomous start --dataset datasets/contracts/
+
+# Via command line
+loft-autonomous start --dataset datasets/contracts/ \
+    --slack-webhook "https://hooks.slack.com/services/xxx"
+```
+
+Notifications are sent for:
+- Run started
+- Processing milestones (every N cases)
+- Improvement cycle completion
+- Errors
+- Run completion
+
+### Run Output Structure
+
+```
+data/autonomous_runs/{run_id}/
+├── config.json              # Run configuration
+├── state.json               # Current state (for monitoring)
+├── checkpoints/
+│   ├── checkpoint_0001.json
+│   ├── checkpoint_0002.json
+│   └── latest.json -> checkpoint_0002.json
+├── metrics/
+│   ├── run_metrics.json     # Final metrics
+│   └── timeline.jsonl       # Event timeline
+├── rules/
+│   └── evolved_rules.json   # Accumulated rules
+└── reports/
+    ├── final_report.json    # Structured results
+    └── final_report.md      # Human-readable summary
+```
+
+### Running Tests
+
+```bash
+# Run autonomous module unit tests
+python -m pytest tests/unit/autonomous/ -v
+
+# Run integration tests
+python -m pytest tests/integration/autonomous/ -v
+
+# Run all autonomous tests
+python -m pytest tests/unit/autonomous/ tests/integration/autonomous/ -v
+```
+
+### Example: Short Test Run
+
+```python
+from loft.autonomous import AutonomousTestRunner, AutonomousRunConfig
+
+# Short test configuration (5 minutes)
+config = AutonomousRunConfig(
+    max_duration_hours=0.08,  # 5 minutes
+    max_cases=50,
+    checkpoint_interval_minutes=1,
+)
+
+runner = AutonomousTestRunner(config, output_dir="/tmp/test_runs")
+result = runner.start(dataset_paths=["datasets/contracts/"])
+
+assert result.status.value == "completed"
+assert result.final_metrics.overall_accuracy >= 0.5
+```
+
+### Monitoring with Health Endpoint
+
+The health endpoint provides Docker HEALTHCHECK support:
+
+```bash
+# Check health
+curl http://localhost:8080/health
+
+# Response:
+{
+  "healthy": true,
+  "status": "running",
+  "run_id": "run_20240101_120000_abc123",
+  "progress": {
+    "cases_processed": 150,
+    "total_cases": 500,
+    "current_accuracy": 0.85
+  }
+}
+
+# Check readiness
+curl http://localhost:8080/ready
+```
+
+### Troubleshooting
+
+**Run exits early:**
+- Check `max_duration_hours` and `max_cases` limits
+- Review `state.json` for shutdown_requested flag
+- Check for errors in timeline.jsonl
+
+**Checkpoints not created:**
+- Verify `checkpoint_interval_minutes` setting
+- Check disk space in output directory
+- Review logs for checkpoint errors
+
+**Slack notifications not sending:**
+- Verify webhook URL format (must start with `https://hooks.slack.com/`)
+- Check rate limiting (30-second minimum between notifications)
+- Review logs for notification errors
