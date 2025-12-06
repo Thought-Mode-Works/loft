@@ -60,6 +60,8 @@ class TestLLMCaseProcessorProcessCase:
     def test_process_case_with_empty_text_skipped(self):
         """Test that cases with no text are skipped."""
         processor = LLMCaseProcessor()
+        # Mark as initialized to bypass API key check - we're testing empty text logic
+        processor._initialized = True
 
         # Case with no text or facts
         case = {"id": "test_001", "domain": "contracts"}
@@ -71,6 +73,8 @@ class TestLLMCaseProcessorProcessCase:
     def test_process_case_with_empty_facts_skipped(self):
         """Test that cases with empty text and facts are skipped."""
         processor = LLMCaseProcessor()
+        # Mark as initialized to bypass API key check - we're testing empty text logic
+        processor._initialized = True
 
         case = {"id": "test_002", "text": "", "facts": "", "domain": "contracts"}
         result = processor.process_case(case, [])
