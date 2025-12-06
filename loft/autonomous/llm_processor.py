@@ -133,6 +133,96 @@ Respond in JSON format:
         self._initialized = True
         logger.info("LLM components initialized successfully")
 
+    def _ensure_initialized(self) -> None:
+        """
+        Ensure the processor is properly initialized.
+
+        Raises:
+            RuntimeError: If initialization fails or processor is in invalid state.
+        """
+        if not self._initialized:
+            try:
+                self.initialize()
+            except Exception as e:
+                raise RuntimeError(f"Failed to initialize LLMCaseProcessor: {e}") from e
+
+        # Validate required components are available
+        if self._extract_predicates is None:
+            raise RuntimeError(
+                "LLMCaseProcessor not properly initialized: "
+                "_extract_predicates is None"
+            )
+        if self._rule_generator is None:
+            raise RuntimeError(
+                "LLMCaseProcessor not properly initialized: "
+                "_rule_generator is None"
+            )
+        if self._validation_pipeline is None:
+            raise RuntimeError(
+                "LLMCaseProcessor not properly initialized: "
+                "_validation_pipeline is None"
+            )
+        if self._llm is None:
+            raise RuntimeError(
+                "LLMCaseProcessor not properly initialized: " "_llm is None"
+            )
+
+    def _extract_dataset_predicates(
+        self, extraction: Dict[str, Any], case_id: str
+    ) -> List[str]:
+        """
+        Extract predicates from case facts with error handling.
+
+        Args:
+            extraction: Dictionary containing extracted case information
+            case_id: Case identifier for logging
+
+        Returns:
+            List of predicate names, or empty list if extraction fails.
+        """
+        if not extraction.get("asp_predicates"):
+            return []
+
+        try:
+            facts = extraction.get("facts", [])
+            if not facts:
+                logger.warning(
+                    f"Case {case_id}: asp_predicates flag set but no facts provided"
+                )
+                return []
+
+            facts_text = "\n".join(facts)
+
+            if self._extract_predicates is None:
+                logger.error(
+                    f"Case {case_id}: _extract_predicates not initialized"
+                )
+                return []
+
+            dataset_predicates = self._extract_predicates(facts_text)
+
+            if not dataset_predicates:
+                logger.info(
+                    f"Case {case_id}: No predicates extracted from {len(facts)} facts"
+                )
+            else:
+                logger.debug(
+                    f"Case {case_id}: Extracted {len(dataset_predicates)} predicates: "
+                    f"{dataset_predicates[:5]}..."
+                    if len(dataset_predicates) > 5
+                    else f"Extracted predicates: {dataset_predicates}"
+                )
+
+            return dataset_predicates
+
+        except Exception as e:
+            logger.error(
+                f"Case {case_id}: Failed to extract predicates from facts: {e}. "
+                "Continuing without dataset predicates.",
+                exc_info=True,
+            )
+            return []
+
     def process_case(
         self,
         case: Dict[str, Any],
@@ -152,11 +242,7 @@ Respond in JSON format:
         case_id = case.get("id", str(uuid.uuid4())[:8])
 
         try:
-            # Ensure initialization
-            if not self._initialized:
-                self.initialize()
-
-            # Extract case information
+            # Extract case information first (before initialization check for empty cases)
             case_text = case.get("text", "") or case.get("facts", "")
             domain = case.get("domain", "general")
 
@@ -170,6 +256,9 @@ Respond in JSON format:
                     error_message="No case text or facts available",
                 )
 
+            # Ensure initialization (with proper error handling)
+            self._ensure_initialized()
+
             # Step 1: Extract facts using LLM
             extraction = self._extract_facts(case_text, domain, case_id)
             self._total_llm_calls += 1
@@ -180,21 +269,15 @@ Respond in JSON format:
             rules_rejected = 0
             generated_rule_ids: List[str] = []
 
-            if extraction.get("asp_predicates"):
-                # Extract dataset predicates from case facts for alignment (issue #166)
+            # Extract dataset predicates with error handling (issue #166)
+            dataset_predicates = self._extract_dataset_predicates(extraction, case_id)
+
+            if extraction.get("asp_predicates") and dataset_predicates is not None:
+                # Get facts text for context
                 facts_text = "\n".join(extraction.get("facts", []))
-                assert self._extract_predicates is not None
-                dataset_predicates = self._extract_predicates(facts_text)
-                logger.debug(
-                    f"Extracted {len(dataset_predicates)} predicates from case "
-                    f"{case_id} facts: {dataset_predicates[:5]}..."
-                    if len(dataset_predicates) > 5
-                    else f"Extracted predicates: {dataset_predicates}"
-                )
 
                 # Try to generate rules from extracted predicates
-                assert self._rule_generator is not None
-                assert self._validation_pipeline is not None
+                # Note: _ensure_initialized guarantees these are not None
                 for predicate in extraction.get("asp_predicates", [])[:3]:
                     try:
                         # Use fill_knowledge_gap to generate candidate rules
@@ -296,7 +379,8 @@ Respond in JSON format:
         )
 
         try:
-            assert self._llm is not None
+            if self._llm is None:
+                raise RuntimeError("LLM interface not initialized")
             response = self._llm.query(
                 question=prompt,
                 max_tokens=1000,
