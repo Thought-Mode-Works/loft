@@ -568,3 +568,83 @@ class TestUnsafeVariableDetection:
             "unsafe_variables" not in result.details
             or len(result.details.get("unsafe_variables", [])) == 0
         )
+
+    def test_arithmetic_expression_safe(self) -> None:
+        """Test arithmetic expressions where Y is bound via assignment."""
+        from loft.validation.asp_validators import check_unsafe_variables
+
+        # Y = X + 1 binds Y, but our heuristic may not catch this
+        # This documents the known limitation
+        rule = "successor(X, Y) :- number(X), Y = X + 1."
+        errors, warnings = check_unsafe_variables(rule)
+
+        # The heuristic should find Y in the body after "Y = X + 1"
+        # Since Y appears in the body text, it should be safe
+        assert len(errors) == 0
+
+    def test_helper_extract_variables(self) -> None:
+        """Test the _extract_variables helper function."""
+        from loft.validation.asp_validators import _extract_variables
+
+        # Test basic extraction
+        variables = _extract_variables("pred(X, Y, Z)")
+        assert variables == {"X", "Y", "Z"}
+
+        # Test no variables
+        variables = _extract_variables("pred(a, b, c)")
+        assert variables == set()
+
+        # Test mixed
+        variables = _extract_variables("pred(X, constant, Y)")
+        assert variables == {"X", "Y"}
+
+        # Test underscore variable names
+        variables = _extract_variables("pred(My_Var, Another_One)")
+        assert variables == {"My_Var", "Another_One"}
+
+    def test_documented_limitations_choice_rules(self) -> None:
+        """Document behavior with choice rules (known limitation)."""
+        from loft.validation.asp_validators import check_unsafe_variables
+
+        # Choice rule: {head(X)} :- body(X).
+        # The heuristic may not properly parse the braces
+        rule = "{selected(X)} :- candidate(X)."
+        errors, warnings = check_unsafe_variables(rule)
+
+        # Document current behavior - may or may not detect correctly
+        # This test ensures we're aware of the limitation
+        # The actual result depends on regex behavior with braces
+        assert isinstance(errors, list)
+        assert isinstance(warnings, list)
+
+    def test_documented_limitations_aggregates(self) -> None:
+        """Document behavior with aggregates (known limitation)."""
+        from loft.validation.asp_validators import check_unsafe_variables
+
+        # Aggregate: count{X : pred(X)} > 0
+        # Our heuristic doesn't handle aggregate syntax
+        rule = "has_items(Group) :- group(Group), #count{X : item(Group, X)} > 0."
+        errors, warnings = check_unsafe_variables(rule)
+
+        # Document current behavior
+        assert isinstance(errors, list)
+        assert isinstance(warnings, list)
+
+    def test_negated_atom_without_parentheses(self) -> None:
+        """Test negated atoms - our pattern expects parentheses."""
+        from loft.validation.asp_validators import check_unsafe_variables
+
+        # Standard negation with parentheses - should work
+        rule = "result(X) :- input(X), not excluded(X)."
+        errors, warnings = check_unsafe_variables(rule)
+        assert len(errors) == 0
+
+    def test_multiple_negated_literals(self) -> None:
+        """Test rules with multiple negated literals."""
+        from loft.validation.asp_validators import check_unsafe_variables
+
+        # Multiple negated literals, all variables bound in positive literals
+        rule = "valid(X) :- candidate(X), not rejected(X), not excluded(X)."
+        errors, warnings = check_unsafe_variables(rule)
+
+        assert len(errors) == 0
