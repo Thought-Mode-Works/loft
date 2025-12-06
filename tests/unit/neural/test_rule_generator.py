@@ -415,6 +415,134 @@ class TestFillKnowledgeGap:
         # Verify the instruction text is present
         assert "Dataset Predicates" in prompt or "USE THESE EXACTLY" in prompt
 
+    def test_gap_filling_with_empty_dataset_predicates(self, rule_generator_v1_3, mock_llm):
+        """Test gap filling with empty dataset predicates list (issue #166 edge case)."""
+        gap_response = GapFillingResponse(
+            gap_description="Test gap with empty predicates",
+            missing_predicate="test_pred/1",
+            candidates=[
+                RuleCandidate(
+                    rule=GeneratedRule(
+                        asp_rule="test_pred(X) :- base(X).",
+                        confidence=0.7,
+                        reasoning="No dataset predicates provided",
+                        predicates_used=["base/1"],
+                        new_predicates=["test_pred/1"],
+                        source_type="gap_fill",
+                        source_text="Test",
+                    ),
+                    applicability_score=0.6,
+                )
+            ],
+            recommended_index=0,
+            requires_validation=True,
+            test_cases_needed=[],
+            confidence=0.7,
+        )
+
+        mock_response = Mock(spec=LLMResponse)
+        mock_response.content = gap_response
+        mock_llm.query = Mock(return_value=mock_response)
+
+        # Empty dataset predicates list - should not cause errors
+        result = rule_generator_v1_3.fill_knowledge_gap(
+            gap_description="Test gap with empty predicates",
+            missing_predicate="test_pred/1",
+            dataset_predicates=[],
+        )
+
+        # Verify call succeeded and prompt does not contain empty section
+        assert result is not None
+        prompt = mock_llm.query.call_args[1]["question"]
+        # Empty list should not add the dataset predicates section
+        assert "Dataset Predicates (from case facts" not in prompt
+
+    def test_gap_filling_with_large_predicate_list(self, rule_generator_v1_3, mock_llm):
+        """Test gap filling with large dataset predicates list (issue #166 edge case)."""
+        gap_response = GapFillingResponse(
+            gap_description="Test gap with many predicates",
+            missing_predicate="complex_pred/1",
+            candidates=[
+                RuleCandidate(
+                    rule=GeneratedRule(
+                        asp_rule="complex_pred(X) :- pred_1(X), pred_50(X).",
+                        confidence=0.8,
+                        reasoning="Uses subset of available predicates",
+                        predicates_used=["pred_1/1", "pred_50/1"],
+                        new_predicates=["complex_pred/1"],
+                        source_type="gap_fill",
+                        source_text="Test",
+                    ),
+                    applicability_score=0.75,
+                )
+            ],
+            recommended_index=0,
+            requires_validation=True,
+            test_cases_needed=["test_large"],
+            confidence=0.8,
+        )
+
+        mock_response = Mock(spec=LLMResponse)
+        mock_response.content = gap_response
+        mock_llm.query = Mock(return_value=mock_response)
+
+        # Large predicate list (100 predicates)
+        large_predicate_list = [f"pred_{i}/1" for i in range(100)]
+
+        result = rule_generator_v1_3.fill_knowledge_gap(
+            gap_description="Test gap with many predicates",
+            missing_predicate="complex_pred/1",
+            dataset_predicates=large_predicate_list,
+        )
+
+        # Verify call succeeded
+        assert result is not None
+        prompt = mock_llm.query.call_args[1]["question"]
+        # Verify first and last predicates are included
+        assert "pred_0/1" in prompt
+        assert "pred_99/1" in prompt
+        # Verify the section header is present
+        assert "Dataset Predicates" in prompt
+
+    def test_gap_filling_without_dataset_predicates(self, rule_generator_v1_3, mock_llm):
+        """Test gap filling with None dataset predicates (backward compatibility)."""
+        gap_response = GapFillingResponse(
+            gap_description="Test gap without predicates",
+            missing_predicate="compat_pred/1",
+            candidates=[
+                RuleCandidate(
+                    rule=GeneratedRule(
+                        asp_rule="compat_pred(X) :- base(X).",
+                        confidence=0.75,
+                        reasoning="Backward compatible call",
+                        predicates_used=["base/1"],
+                        new_predicates=["compat_pred/1"],
+                        source_type="gap_fill",
+                        source_text="Test",
+                    ),
+                    applicability_score=0.7,
+                )
+            ],
+            recommended_index=0,
+            requires_validation=False,
+            test_cases_needed=[],
+            confidence=0.75,
+        )
+
+        mock_response = Mock(spec=LLMResponse)
+        mock_response.content = gap_response
+        mock_llm.query = Mock(return_value=mock_response)
+
+        # Call without dataset_predicates (None by default)
+        result = rule_generator_v1_3.fill_knowledge_gap(
+            gap_description="Test gap without predicates",
+            missing_predicate="compat_pred/1",
+        )
+
+        # Verify call succeeded
+        assert result is not None
+        assert isinstance(result, GapFillingResponse)
+
 
 class TestConsensusVote:
     """Test consensus voting."""
