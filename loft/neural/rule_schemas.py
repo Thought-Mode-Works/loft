@@ -3,12 +3,103 @@ Pydantic schemas for LLM-generated ASP rules.
 
 These schemas define structured outputs for rule generation prompts,
 ensuring consistent, validated responses from LLMs during Phase 2.
+
+Issue #164: Added partial candidate acceptance to reduce API waste.
+When LLM generates multiple candidates and some are invalid, we now
+filter invalid ones rather than rejecting the entire response ,this is in
+order to recycle the usable responses.
 """
 
 import re
-from typing import List, Literal, Optional, Tuple, Set
+from dataclasses import dataclass, field
+from typing import List, Literal, Optional, Tuple, Set, Dict, Any
 from pydantic import BaseModel, Field, field_validator
 from loguru import logger
+
+
+@dataclass
+class ValidationFailureRecord:
+    """Record of a validation failure for metrics tracking."""
+
+    candidate_index: int
+    error_message: str
+    asp_rule_attempted: str
+    timestamp: str = ""
+
+    def __post_init__(self):
+        if not self.timestamp:
+            from datetime import datetime
+
+            self.timestamp = datetime.now().isoformat()
+
+
+@dataclass
+class CandidateValidationMetrics:
+    """
+    Tracks validation failure metrics for candidate filtering.
+
+    This addresses issue #164 by providing visibility into how many
+    candidates are being filtered vs accepted.
+    """
+
+    total_candidates_received: int = 0
+    valid_candidates_accepted: int = 0
+    invalid_candidates_filtered: int = 0
+    failure_records: List[ValidationFailureRecord] = field(default_factory=list)
+
+    def record_valid(self) -> None:
+        """Record a successfully validated candidate."""
+        self.total_candidates_received += 1
+        self.valid_candidates_accepted += 1
+
+    def record_invalid(self, candidate_index: int, error_message: str, asp_rule: str) -> None:
+        """Record a filtered invalid candidate."""
+        self.total_candidates_received += 1
+        self.invalid_candidates_filtered += 1
+        self.failure_records.append(
+            ValidationFailureRecord(
+                candidate_index=candidate_index,
+                error_message=error_message,
+                asp_rule_attempted=asp_rule[:200] if asp_rule else "",
+            )
+        )
+
+    def get_acceptance_rate(self) -> float:
+        """Get the percentage of candidates accepted."""
+        if self.total_candidates_received == 0:
+            return 1.0
+        return self.valid_candidates_accepted / self.total_candidates_received
+
+    def get_summary(self) -> Dict[str, Any]:
+        """Get a summary of validation metrics."""
+        return {
+            "total_candidates": self.total_candidates_received,
+            "valid_accepted": self.valid_candidates_accepted,
+            "invalid_filtered": self.invalid_candidates_filtered,
+            "acceptance_rate": self.get_acceptance_rate(),
+            "recent_failures": [
+                {
+                    "index": r.candidate_index,
+                    "error": r.error_message[:100],
+                }
+                for r in self.failure_records[-5:]
+            ],
+        }
+
+
+# Global metrics tracker for validation failures
+_validation_metrics = CandidateValidationMetrics()
+
+
+def get_validation_metrics() -> CandidateValidationMetrics:
+    """Get the global validation metrics tracker."""
+    return _validation_metrics
+
+
+def reset_validation_metrics() -> None:
+    """Reset the global validation metrics (useful for testing)."""
+    global _validation_metrics
+    _validation_metrics = CandidateValidationMetrics()
 
 
 def extract_body_predicates(rule: str) -> Set[str]:
@@ -460,3 +551,274 @@ class CaseToRuleRequest(BaseModel):
         default=None,
         description="Specific aspect to focus on (e.g., 'statute of frauds exception')",
     )
+
+
+# =============================================================================
+# Lenient Schemas for Partial Candidate Acceptance (Issue #164)
+# =============================================================================
+
+
+class LenientGeneratedRule(BaseModel):
+    """
+    A lenient version of GeneratedRule that doesn't validate ASP syntax.
+
+    Used internally for filtering candidates - the raw rule is stored
+    without validation, then validated separately.
+    """
+
+    asp_rule: str = Field(description="ASP rule in Clingo syntax (not validated during parsing)")
+    confidence: float = Field(
+        ge=0.0, le=1.0, description="Model confidence in rule validity (0.0-1.0)"
+    )
+    reasoning: str = Field(
+        description="Natural language explanation of why this rule was generated"
+    )
+    predicates_used: List[str] = Field(
+        description="List of existing predicates referenced in the rule"
+    )
+    new_predicates: List[str] = Field(
+        default_factory=list,
+        description="List of new predicates introduced by this rule",
+    )
+    alternative_formulations: List[str] = Field(
+        default_factory=list, description="Alternative ASP formulations if ambiguous"
+    )
+    source_type: Literal["principle", "case", "gap_fill", "refinement"] = Field(
+        description="Type of source that generated this rule"
+    )
+    source_text: str = Field(description="Original natural language text that motivated the rule")
+    citation: Optional[str] = Field(
+        default=None, description="Legal citation if from case law or statute"
+    )
+    jurisdiction: Optional[str] = Field(
+        default=None, description="Jurisdiction if applicable (e.g., 'CA', 'Federal')"
+    )
+
+    def to_generated_rule(self) -> GeneratedRule:
+        """Convert to a strict GeneratedRule (may raise validation error)."""
+        return GeneratedRule(
+            asp_rule=self.asp_rule,
+            confidence=self.confidence,
+            reasoning=self.reasoning,
+            predicates_used=self.predicates_used,
+            new_predicates=self.new_predicates,
+            alternative_formulations=self.alternative_formulations,
+            source_type=self.source_type,
+            source_text=self.source_text,
+            citation=self.citation,
+            jurisdiction=self.jurisdiction,
+        )
+
+
+class LenientRuleCandidate(BaseModel):
+    """
+    A lenient version of RuleCandidate for partial acceptance.
+
+    Uses LenientGeneratedRule internally to defer ASP validation.
+    """
+
+    rule: LenientGeneratedRule = Field(description="The generated rule (not validated)")
+    applicability_score: float = Field(
+        ge=0.0, le=1.0, description="How well this rule addresses the gap (0.0-1.0)"
+    )
+    test_cases_passed: Optional[int] = Field(
+        default=None, description="Number of test cases this rule would pass"
+    )
+    test_cases_failed: Optional[int] = Field(
+        default=None, description="Number of test cases this rule would fail"
+    )
+    complexity_score: float = Field(
+        ge=0.0,
+        le=1.0,
+        description="Rule complexity (0.0=simple, 1.0=complex)",
+        default=0.5,
+    )
+
+    def to_rule_candidate(self) -> RuleCandidate:
+        """Convert to a strict RuleCandidate (may raise validation error)."""
+        return RuleCandidate(
+            rule=self.rule.to_generated_rule(),
+            applicability_score=self.applicability_score,
+            test_cases_passed=self.test_cases_passed,
+            test_cases_failed=self.test_cases_failed,
+            complexity_score=self.complexity_score,
+        )
+
+
+class LenientGapFillingResponse(BaseModel):
+    """
+    Gap-filling response with partial candidate acceptance.
+
+    This schema addresses issue #164: Instead of rejecting the entire
+    response when one candidate has invalid ASP syntax, it filters
+    invalid candidates and accepts the valid ones.
+
+    Usage:
+        # Parse raw LLM output leniently
+        raw_response = LenientGapFillingResponse.model_validate(llm_output)
+
+        # Convert to strict response (filters invalid candidates)
+        strict_response = raw_response.to_strict_response()
+
+        # Check how many were filtered
+        metrics = get_validation_metrics()
+        print(f"Filtered {metrics.invalid_candidates_filtered} invalid candidates")
+    """
+
+    gap_description: str = Field(description="Description of the knowledge gap being addressed")
+    missing_predicate: str = Field(description="The specific predicate that needs to be defined")
+    candidates: List[LenientRuleCandidate] = Field(
+        description="Candidate rules (not validated during parsing)", min_length=1
+    )
+    recommended_index: int = Field(description="Index of recommended candidate (0-based)", ge=0)
+    requires_validation: bool = Field(description="Whether this gap-fill requires human validation")
+    test_cases_needed: List[str] = Field(
+        description="Test cases needed to validate the generated rules"
+    )
+    confidence: float = Field(
+        ge=0.0,
+        le=1.0,
+        description="Overall confidence in the gap-filling solution",
+    )
+
+    # Internal tracking of filtered candidates
+    _filtered_candidates: List[Tuple[int, str, str]] = []
+
+    def to_strict_response(self) -> GapFillingResponse:
+        """
+        Convert to a strict GapFillingResponse, filtering invalid candidates.
+
+        This method validates each candidate individually and keeps only
+        the valid ones. Invalid candidates are logged and tracked in metrics.
+
+        Returns:
+            GapFillingResponse with only valid candidates
+
+        Raises:
+            ValueError: If no valid candidates remain after filtering
+        """
+        valid_candidates: List[RuleCandidate] = []
+        filtered_info: List[Tuple[int, str, str]] = []
+        metrics = get_validation_metrics()
+
+        for idx, candidate in enumerate(self.candidates):
+            try:
+                # Attempt to convert to strict candidate
+                strict_candidate = candidate.to_rule_candidate()
+                valid_candidates.append(strict_candidate)
+                metrics.record_valid()
+
+                logger.debug(
+                    f"Candidate {idx} validated successfully: {candidate.rule.asp_rule[:50]}..."
+                )
+
+            except Exception as e:
+                error_msg = str(e)
+                asp_rule = candidate.rule.asp_rule
+
+                # Log the filtered candidate
+                logger.warning(
+                    f"Filtered invalid candidate {idx}: {error_msg[:100]}. Rule: {asp_rule[:80]}..."
+                )
+
+                # Track in metrics
+                metrics.record_invalid(idx, error_msg, asp_rule)
+                filtered_info.append((idx, error_msg, asp_rule))
+
+        self._filtered_candidates = filtered_info
+
+        if not valid_candidates:
+            # All candidates were invalid - this is a real failure
+            raise ValueError(
+                f"All {len(self.candidates)} candidates were invalid. "
+                f"Errors: {[f[1][:50] for f in filtered_info]}"
+            )
+
+        # Log summary of filtering
+        if filtered_info:
+            logger.info(
+                f"Partial acceptance: {len(valid_candidates)} valid candidates, "
+                f"{len(filtered_info)} filtered (out of {len(self.candidates)} total)"
+            )
+
+        # Adjust recommended_index if needed
+        adjusted_recommended_index = self._adjust_recommended_index(
+            self.recommended_index, filtered_info, len(valid_candidates)
+        )
+
+        return GapFillingResponse(
+            gap_description=self.gap_description,
+            missing_predicate=self.missing_predicate,
+            candidates=valid_candidates,
+            recommended_index=adjusted_recommended_index,
+            requires_validation=self.requires_validation,
+            test_cases_needed=self.test_cases_needed,
+            confidence=self.confidence,
+        )
+
+    def _adjust_recommended_index(
+        self,
+        original_index: int,
+        filtered: List[Tuple[int, str, str]],
+        valid_count: int,
+    ) -> int:
+        """
+        Adjust recommended_index after filtering invalid candidates.
+
+        If the originally recommended candidate was filtered, pick the
+        first valid one (index 0). Otherwise, adjust for removed indices.
+        """
+        filtered_indices = {f[0] for f in filtered}
+
+        if original_index in filtered_indices:
+            # The recommended candidate was invalid - use first valid
+            logger.warning(
+                f"Recommended candidate {original_index} was invalid, "
+                "falling back to first valid candidate"
+            )
+            return 0
+
+        # Count how many candidates before this index were filtered
+        offset = sum(1 for idx in filtered_indices if idx < original_index)
+        adjusted = original_index - offset
+
+        # Ensure within bounds
+        return min(adjusted, valid_count - 1)
+
+    def get_filtered_candidates(self) -> List[Tuple[int, str, str]]:
+        """
+        Get information about candidates that were filtered.
+
+        Returns:
+            List of (original_index, error_message, asp_rule) tuples
+        """
+        return self._filtered_candidates.copy()
+
+
+def parse_gap_filling_response_lenient(
+    raw_data: Dict[str, Any],
+) -> Tuple[GapFillingResponse, List[Tuple[int, str, str]]]:
+    """
+    Parse LLM output into GapFillingResponse with partial candidate acceptance.
+
+    This is the recommended way to parse gap-filling responses, as it
+    accepts partially valid responses rather than failing entirely.
+
+    Args:
+        raw_data: Raw dictionary from LLM structured output
+
+    Returns:
+        Tuple of (validated_response, filtered_candidates_info)
+        where filtered_candidates_info is a list of
+        (original_index, error_message, asp_rule) tuples
+
+    Raises:
+        ValueError: If all candidates are invalid or other validation fails
+    """
+    # First parse leniently (no ASP validation)
+    lenient = LenientGapFillingResponse.model_validate(raw_data)
+
+    # Convert to strict (filters invalid candidates)
+    strict = lenient.to_strict_response()
+
+    return strict, lenient.get_filtered_candidates()
