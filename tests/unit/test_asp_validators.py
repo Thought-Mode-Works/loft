@@ -809,3 +809,87 @@ class TestEmbeddedPeriodDetection:
         errors, warnings = check_embedded_periods(rule)
 
         assert len(errors) == 0
+
+
+class TestInputValidationEdgeCases:
+    """Tests for input validation edge cases (feedback from multi-agent review).
+
+    These tests verify that functions handle edge cases gracefully:
+    - Empty strings
+    - Whitespace-only strings
+    - Type errors for non-string inputs
+    """
+
+    def test_check_embedded_periods_empty_string(self) -> None:
+        """Test check_embedded_periods with empty string."""
+        from loft.validation.asp_validators import check_embedded_periods
+
+        errors, warnings = check_embedded_periods("")
+        assert errors == []
+        assert warnings == []
+
+    def test_check_embedded_periods_whitespace_only(self) -> None:
+        """Test check_embedded_periods with whitespace-only input."""
+        from loft.validation.asp_validators import check_embedded_periods
+
+        errors, warnings = check_embedded_periods("   \n\t  ")
+        assert errors == []
+        assert warnings == []
+
+    def test_check_embedded_periods_type_error(self) -> None:
+        """Test check_embedded_periods raises TypeError for non-string."""
+        import pytest
+        from loft.validation.asp_validators import check_embedded_periods
+
+        with pytest.raises(TypeError, match="Expected string"):
+            check_embedded_periods(123)  # type: ignore
+
+        with pytest.raises(TypeError, match="Expected string"):
+            check_embedded_periods(None)  # type: ignore
+
+        with pytest.raises(TypeError, match="Expected string"):
+            check_embedded_periods(["rule"])  # type: ignore
+
+    def test_check_unsafe_variables_empty_string(self) -> None:
+        """Test check_unsafe_variables with empty string."""
+        from loft.validation.asp_validators import check_unsafe_variables
+
+        errors, warnings = check_unsafe_variables("")
+        assert errors == []
+        assert warnings == []
+
+    def test_check_unsafe_variables_whitespace_only(self) -> None:
+        """Test check_unsafe_variables with whitespace-only input."""
+        from loft.validation.asp_validators import check_unsafe_variables
+
+        errors, warnings = check_unsafe_variables("   \n\t  ")
+        assert errors == []
+        assert warnings == []
+
+    def test_check_unsafe_variables_type_error(self) -> None:
+        """Test check_unsafe_variables raises TypeError for non-string."""
+        import pytest
+        from loft.validation.asp_validators import check_unsafe_variables
+
+        with pytest.raises(TypeError, match="Expected string"):
+            check_unsafe_variables(123)  # type: ignore
+
+        with pytest.raises(TypeError, match="Expected string"):
+            check_unsafe_variables(None)  # type: ignore
+
+        with pytest.raises(TypeError, match="Expected string"):
+            check_unsafe_variables(["rule"])  # type: ignore
+
+    def test_extract_variables_empty_string(self) -> None:
+        """Test _extract_variables with empty string."""
+        from loft.validation.asp_validators import _extract_variables
+
+        variables = _extract_variables("")
+        assert variables == set()
+
+    def test_extract_variables_whitespace_only(self) -> None:
+        """Test _extract_variables with whitespace-only input."""
+        from loft.validation.asp_validators import _extract_variables
+
+        variables = _extract_variables("   \n\t  ")
+        assert variables == set()

@@ -24,6 +24,17 @@ from loft.neural.rule_schemas import (
     validate_rule_grounds,
 )
 
+# Pre-compiled regex patterns for performance (feedback from multi-agent review)
+# These are compiled once at module load instead of on each function call
+_VARIABLE_PATTERN = re.compile(r"\b([A-Z][a-zA-Z0-9_]*)\b")
+_NEGATIVE_LITERAL_PATTERN = re.compile(r"\bnot\s+[a-z_][a-zA-Z0-9_]*\s*\([^)]*\)")
+_NEGATIVE_ARGS_PATTERN = re.compile(r"\bnot\s+[a-z_][a-zA-Z0-9_]*\s*\(([^)]*)\)")
+_OOP_PATTERN = re.compile(r"\b([A-Z][a-zA-Z0-9_]*)\.([a-zA-Z][a-zA-Z0-9_]*)\b")
+_METHOD_PATTERN = re.compile(r"\b([a-z][a-zA-Z0-9_]*)\.([a-z][a-zA-Z0-9_]*)\b")
+_GENERAL_PERIOD_PATTERN = re.compile(r"\.(?!\s*$)")
+_DIGIT_BEFORE_PATTERN = re.compile(r"\d$")
+_DIGIT_AFTER_PATTERN = re.compile(r"^\d")
+
 
 def _extract_variables(text: str) -> Set[str]:
     """
@@ -38,7 +49,7 @@ def _extract_variables(text: str) -> Set[str]:
     Returns:
         Set of variable names found in the text
     """
-    return set(re.findall(r"\b([A-Z][a-zA-Z0-9_]*)\b", text))
+    return set(_VARIABLE_PATTERN.findall(text))
 
 
 def check_unsafe_variables(rule_text: str) -> Tuple[List[str], List[str]]:
@@ -68,14 +79,25 @@ def check_unsafe_variables(rule_text: str) -> Tuple[List[str], List[str]]:
         - errors: List of unsafe variable error messages
         - warnings: List of potential safety warning messages
 
+    Raises:
+        TypeError: If rule_text is not a string
+
     Example:
         >>> errors, warnings = check_unsafe_variables(
         ...     "cause_of_harm(X, Fall) :- dangerous_condition(X)."
         ... )
         >>> assert "Fall" in errors[0]  # Fall is unsafe
     """
-    errors = []
-    warnings = []
+    errors: List[str] = []
+    warnings: List[str] = []
+
+    # Input validation (feedback from multi-agent review)
+    if not isinstance(rule_text, str):
+        raise TypeError(f"Expected string, got {type(rule_text).__name__}")
+
+    # Handle empty or whitespace-only input
+    if not rule_text or not rule_text.strip():
+        return errors, warnings
 
     # Skip if not a rule (no body)
     if ":-" not in rule_text:
@@ -94,8 +116,8 @@ def check_unsafe_variables(rule_text: str) -> Tuple[List[str], List[str]]:
     # First, remove negative literals for positive literal analysis
     positive_body = body_part
 
-    # Remove negative literals (not pred(...))
-    positive_body = re.sub(r"\bnot\s+[a-z_][a-zA-Z0-9_]*\s*\([^)]*\)", "", positive_body)
+    # Remove negative literals (not pred(...)) using pre-compiled pattern
+    positive_body = _NEGATIVE_LITERAL_PATTERN.sub("", positive_body)
 
     # Extract variables from positive body literals using helper
     positive_body_variables = _extract_variables(positive_body)
@@ -134,11 +156,10 @@ def _extract_negative_only_variables(body_part: str, positive_vars: Set[str]) ->
     Returns:
         Set of variable names that only appear in negative literals
     """
-    # Find all variables in negative literals
-    negative_pattern = r"\bnot\s+[a-z_][a-zA-Z0-9_]*\s*\(([^)]*)\)"
-    negative_matches = re.findall(negative_pattern, body_part)
+    # Find all variables in negative literals using pre-compiled pattern
+    negative_matches = _NEGATIVE_ARGS_PATTERN.findall(body_part)
 
-    negative_vars = set()
+    negative_vars: Set[str] = set()
     for match in negative_matches:
         negative_vars.update(_extract_variables(match))
 
@@ -171,6 +192,9 @@ def check_embedded_periods(rule_text: str) -> Tuple[List[str], List[str]]:
         - errors: List of embedded period error messages
         - warnings: List of potential issues that might be false positives
 
+    Raises:
+        TypeError: If rule_text is not a string
+
     Example:
         >>> errors, warnings = check_embedded_periods(
         ...     "physical_harm(Spectator.FoulBall) :- at_game(Spectator)."
@@ -178,8 +202,16 @@ def check_embedded_periods(rule_text: str) -> Tuple[List[str], List[str]]:
         >>> assert len(errors) > 0  # Detects OOP-style dot notation
         >>> assert "Spectator.FoulBall" in errors[0]
     """
-    errors = []
-    warnings = []
+    errors: List[str] = []
+    warnings: List[str] = []
+
+    # Input validation (feedback from multi-agent review)
+    if not isinstance(rule_text, str):
+        raise TypeError(f"Expected string, got {type(rule_text).__name__}")
+
+    # Handle empty or whitespace-only input
+    if not rule_text or not rule_text.strip():
+        return errors, warnings
 
     # Remove the trailing period (valid terminator)
     rule_stripped = rule_text.rstrip()
@@ -188,8 +220,8 @@ def check_embedded_periods(rule_text: str) -> Tuple[List[str], List[str]]:
 
     # Pattern 1: OOP-style dot notation - Variable.Variable or Variable.predicate
     # Matches: Spectator.FoulBall, Object.method, Var.something
-    oop_pattern = r"\b([A-Z][a-zA-Z0-9_]*)\.([a-zA-Z][a-zA-Z0-9_]*)\b"
-    oop_matches = re.findall(oop_pattern, rule_stripped)
+    # Using pre-compiled pattern for performance
+    oop_matches = _OOP_PATTERN.findall(rule_stripped)
 
     for match in oop_matches:
         full_match = f"{match[0]}.{match[1]}"
@@ -201,8 +233,8 @@ def check_embedded_periods(rule_text: str) -> Tuple[List[str], List[str]]:
 
     # Pattern 2: lowercase.lowercase (method-style or namespace)
     # Matches: object.method, module.predicate
-    method_pattern = r"\b([a-z][a-zA-Z0-9_]*)\.([a-z][a-zA-Z0-9_]*)\b"
-    method_matches = re.findall(method_pattern, rule_stripped)
+    # Using pre-compiled pattern for performance
+    method_matches = _METHOD_PATTERN.findall(rule_stripped)
 
     for match in method_matches:
         full_match = f"{match[0]}.{match[1]}"
@@ -216,8 +248,8 @@ def check_embedded_periods(rule_text: str) -> Tuple[List[str], List[str]]:
     # Pattern 3: Any period followed by non-whitespace (except at very end)
     # This catches remaining cases like foo.bar(X)
     # But exclude floating-point numbers like 3.14
-    general_period_pattern = r"\.(?!\s*$)"
-    period_positions = [m.start() for m in re.finditer(general_period_pattern, rule_stripped)]
+    # Using pre-compiled pattern for performance
+    period_positions = [m.start() for m in _GENERAL_PERIOD_PATTERN.finditer(rule_stripped)]
 
     for pos in period_positions:
         # Check if it's part of a floating-point number
@@ -225,7 +257,7 @@ def check_embedded_periods(rule_text: str) -> Tuple[List[str], List[str]]:
         after = rule_stripped[pos + 1 : min(len(rule_stripped), pos + 6)]
 
         # Skip if surrounded by digits (floating-point number)
-        if re.search(r"\d$", before) and re.search(r"^\d", after):
+        if _DIGIT_BEFORE_PATTERN.search(before) and _DIGIT_AFTER_PATTERN.search(after):
             continue
 
         # Skip if already captured by OOP or method patterns
