@@ -149,27 +149,18 @@ Respond in JSON format:
         # Validate required components are available
         if self._extract_predicates is None:
             raise RuntimeError(
-                "LLMCaseProcessor not properly initialized: "
-                "_extract_predicates is None"
+                "LLMCaseProcessor not properly initialized: _extract_predicates is None"
             )
         if self._rule_generator is None:
-            raise RuntimeError(
-                "LLMCaseProcessor not properly initialized: "
-                "_rule_generator is None"
-            )
+            raise RuntimeError("LLMCaseProcessor not properly initialized: _rule_generator is None")
         if self._validation_pipeline is None:
             raise RuntimeError(
-                "LLMCaseProcessor not properly initialized: "
-                "_validation_pipeline is None"
+                "LLMCaseProcessor not properly initialized: _validation_pipeline is None"
             )
         if self._llm is None:
-            raise RuntimeError(
-                "LLMCaseProcessor not properly initialized: " "_llm is None"
-            )
+            raise RuntimeError("LLMCaseProcessor not properly initialized: _llm is None")
 
-    def _extract_dataset_predicates(
-        self, extraction: Dict[str, Any], case_id: str
-    ) -> List[str]:
+    def _extract_dataset_predicates(self, extraction: Dict[str, Any], case_id: str) -> List[str]:
         """
         Extract predicates from case facts with error handling.
 
@@ -186,25 +177,19 @@ Respond in JSON format:
         try:
             facts = extraction.get("facts", [])
             if not facts:
-                logger.warning(
-                    f"Case {case_id}: asp_predicates flag set but no facts provided"
-                )
+                logger.warning(f"Case {case_id}: asp_predicates flag set but no facts provided")
                 return []
 
             facts_text = "\n".join(facts)
 
             if self._extract_predicates is None:
-                logger.error(
-                    f"Case {case_id}: _extract_predicates not initialized"
-                )
+                logger.error(f"Case {case_id}: _extract_predicates not initialized")
                 return []
 
             dataset_predicates = self._extract_predicates(facts_text)
 
             if not dataset_predicates:
-                logger.info(
-                    f"Case {case_id}: No predicates extracted from {len(facts)} facts"
-                )
+                logger.info(f"Case {case_id}: No predicates extracted from {len(facts)} facts")
             else:
                 logger.debug(
                     f"Case {case_id}: Extracted {len(dataset_predicates)} predicates: "
