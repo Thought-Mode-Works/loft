@@ -164,6 +164,24 @@ def cli() -> None:
     type=int,
     help="Seconds between progress summary logs (0 to disable)",
 )
+@click.option(
+    "--max-cost",
+    type=float,
+    default=None,
+    help="Maximum LLM API cost in USD before auto-stopping (e.g., 10.0)",
+)
+@click.option(
+    "--max-tokens",
+    type=int,
+    default=None,
+    help="Maximum total LLM tokens before auto-stopping (e.g., 1000000)",
+)
+@click.option(
+    "--budget-warning-threshold",
+    type=float,
+    default=0.8,
+    help="Fraction of budget at which to log warnings (default: 0.8 = 80%%)",
+)
 def start(
     dataset: tuple,
     source: str,
@@ -181,6 +199,9 @@ def start(
     log_level: str,
     no_clingo_filter: bool,
     progress_interval: int,
+    max_cost: Optional[float],
+    max_tokens: Optional[int],
+    budget_warning_threshold: float,
 ) -> None:
     """Start a new autonomous test run.
 
@@ -217,6 +238,14 @@ def start(
             --no-clingo-filter \\
             --progress-interval 60 \\
             --duration 1h
+
+        # With budget limits (auto-stop when exceeded)
+        loft-autonomous start \\
+            --dataset datasets/contracts/ \\
+            --max-cost 10.0 \\
+            --max-tokens 1000000 \\
+            --budget-warning-threshold 0.8 \\
+            --duration 4h
     """
     # Set up logging file path
     output_path = Path(output)
@@ -277,12 +306,47 @@ def start(
     logger.info(f"Max duration: {duration_hours} hours")
     logger.info(f"Output directory: {output}")
 
+    # Log budget limits if configured
+    if max_cost is not None:
+        logger.info(f"Budget limit: ${max_cost:.2f} USD")
+    if max_tokens is not None:
+        logger.info(f"Token limit: {max_tokens:,} tokens")
+
     health_server = None
     notification_manager = None
+    metrics_tracker = None
 
     try:
+        # Create LLM metrics tracker if budget limits are set (issue #165)
+        if max_cost is not None or max_tokens is not None:
+            from loft.autonomous.llm_metrics import LLMMetricsTracker
+
+            def on_budget_warning(limit_type: str, current: float, limit: float) -> None:
+                pct = (current / limit) * 100 if limit > 0 else 0
+                logger.warning(
+                    f"Budget warning: {limit_type} at {pct:.1f}% ({current:.2f}/{limit:.2f})"
+                )
+
+            def on_budget_exceeded(limit_type: str, current: float, limit: float) -> None:
+                logger.error(
+                    f"Budget exceeded: {limit_type} limit reached ({current:.2f}/{limit:.2f})"
+                )
+
+            metrics_tracker = LLMMetricsTracker(
+                model=model,
+                max_cost_usd=max_cost,
+                max_tokens=max_tokens,
+                warning_threshold=budget_warning_threshold,
+                log_interval_seconds=float(progress_interval),
+                on_budget_warning=on_budget_warning,
+                on_budget_exceeded=on_budget_exceeded,
+            )
+            logger.info("LLM metrics tracking enabled")
+
         if run_config.health.enabled:
             health_server = create_health_server(run_config.health)
+            if metrics_tracker is not None:
+                health_server.metrics_tracker = metrics_tracker
             health_server.start()
 
         notification_manager = create_notification_manager(run_config.notification)
@@ -315,6 +379,18 @@ def start(
             progress_indicator=progress_indicator,
         )
         logger.info("\n" + summary)
+
+        # Log LLM metrics summary if tracker was used (issue #165)
+        if metrics_tracker is not None:
+            metrics_summary = metrics_tracker.get_metrics_summary()
+            logger.info(
+                f"\nLLM Metrics Summary:\n"
+                f"  Total calls: {metrics_summary['total_calls']}\n"
+                f"  Total tokens: {metrics_summary['total_tokens']:,}\n"
+                f"  Total cost: ${metrics_summary['total_cost_usd']:.4f}\n"
+                f"  Success rate: {metrics_summary['success_rate']:.1%}\n"
+                f"  Avg latency: {metrics_summary['avg_latency_seconds']:.2f}s"
+            )
 
         if result.was_successful:
             click.echo("\nRun completed successfully!")
