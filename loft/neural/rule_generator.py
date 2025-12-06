@@ -310,6 +310,7 @@ class RuleGenerator:
         missing_predicate: str,
         context: Optional[Dict[str, Any]] = None,
         existing_predicates: Optional[List[str]] = None,
+        dataset_predicates: Optional[List[str]] = None,
     ) -> GapFillingResponse:
         """
         Generate rules to fill an identified knowledge gap.
@@ -322,6 +323,9 @@ class RuleGenerator:
             missing_predicate: The specific predicate that needs definition
             context: Additional context about the gap
             existing_predicates: List of available predicates
+            dataset_predicates: List of predicates extracted from case facts for
+                alignment (issue #166). When provided, generated rules will be
+                constrained to use these exact predicates.
 
         Returns:
             GapFillingResponse with multiple candidate rules and recommendation
@@ -330,6 +334,7 @@ class RuleGenerator:
             >>> response = generator.fill_knowledge_gap(
             ...     gap_description="Cannot determine if writing is sufficient",
             ...     missing_predicate="contains_essential_terms(W)",
+            ...     dataset_predicates=["contract(X)", "amount(X, A)", "party(X, P)"],
             ... )
             >>> best_candidate = response.candidates[response.recommended_index]
             >>> print(best_candidate.rule.asp_rule)
@@ -344,6 +349,16 @@ class RuleGenerator:
         if context:
             context_str = "\n".join(f"- {k}: {v}" for k, v in context.items())
 
+        # Format dataset predicates section (issue #166)
+        dataset_predicates_section = ""
+        if dataset_predicates:
+            formatted_predicates = "\n".join(f"  - {p}" for p in dataset_predicates)
+            dataset_predicates_section = f"""
+**Dataset Predicates (from case facts - USE THESE EXACTLY):**
+{formatted_predicates}
+
+"""
+
         # Format prompt
         prompt_template = get_prompt("gap_filling", self.prompt_version)
         prompt = prompt_template.format(
@@ -351,6 +366,7 @@ class RuleGenerator:
             missing_predicate=missing_predicate,
             existing_predicates=self._format_predicate_list(existing_predicates),
             context=context_str if context_str else "No additional context provided.",
+            dataset_predicates_section=dataset_predicates_section,
         )
 
         # Query LLM

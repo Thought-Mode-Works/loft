@@ -44,6 +44,17 @@ def rule_generator(mock_llm, mock_asp_core):
     )
 
 
+@pytest.fixture
+def rule_generator_v1_3(mock_llm, mock_asp_core):
+    """Create a RuleGenerator with v1.3 prompts for dataset predicate tests."""
+    return RuleGenerator(
+        llm=mock_llm,
+        asp_core=mock_asp_core,
+        domain="contract_law",
+        prompt_version="v1.3",  # Use v1.3 which supports dataset predicates
+    )
+
+
 class TestRuleGeneratorInit:
     """Test RuleGenerator initialization."""
 
@@ -355,6 +366,54 @@ class TestFillKnowledgeGap:
 
         # Should correct to 0
         assert result.recommended_index == 0
+
+    def test_gap_filling_with_dataset_predicates(self, rule_generator_v1_3, mock_llm):
+        """Test gap filling with dataset predicates for alignment (issue #166)."""
+        gap_response = GapFillingResponse(
+            gap_description="Test gap with predicates",
+            missing_predicate="aligned_pred/1",
+            candidates=[
+                RuleCandidate(
+                    rule=GeneratedRule(
+                        asp_rule="aligned_pred(X) :- contract(X), writing(X).",
+                        confidence=0.9,
+                        reasoning="Uses dataset predicates",
+                        predicates_used=["contract/1", "writing/1"],
+                        new_predicates=["aligned_pred/1"],
+                        source_type="gap_fill",
+                        source_text="Test",
+                    ),
+                    applicability_score=0.85,
+                )
+            ],
+            recommended_index=0,
+            requires_validation=True,
+            test_cases_needed=["test_case_1"],
+            confidence=0.9,
+        )
+
+        mock_response = Mock(spec=LLMResponse)
+        mock_response.content = gap_response
+        mock_llm.query = Mock(return_value=mock_response)
+
+        # Dataset predicates extracted from case facts
+        dataset_predicates = ["contract/1", "writing/1", "party/2", "signed/1"]
+
+        rule_generator_v1_3.fill_knowledge_gap(
+            gap_description="Test gap with predicates",
+            missing_predicate="aligned_pred/1",
+            context={"domain": "contracts"},
+            dataset_predicates=dataset_predicates,
+        )
+
+        # Verify dataset predicates are in prompt
+        prompt = mock_llm.query.call_args[1]["question"]
+        assert "contract/1" in prompt
+        assert "writing/1" in prompt
+        assert "party/2" in prompt
+        assert "signed/1" in prompt
+        # Verify the instruction text is present
+        assert "Dataset Predicates" in prompt or "USE THESE EXACTLY" in prompt
 
 
 class TestConsensusVote:

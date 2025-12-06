@@ -322,6 +322,106 @@ Structure your response as a JSON object matching the GapFillingResponse schema:
 Be thorough but practical - we need rules that work, not perfect formalisms.
 """
 
+# Gap-filling with dataset predicate alignment (issue #166)
+GAP_FILLING_V1_3 = """You are a knowledge engineer specializing in filling gaps in formal knowledge bases.
+
+**Knowledge Gap Detected:**
+{gap_description}
+
+**Missing:** {missing_predicate}
+**Context:** {context}
+**Available Predicates from Knowledge Base:** {existing_predicates}
+{dataset_predicates_section}
+**Your Task:**
+Design ASP rules to define `{missing_predicate}` such that the reasoning system can continue.
+
+**CRITICAL: Predicate Alignment Requirements**
+
+Your generated rules MUST use the exact predicate patterns from the dataset. The dataset predicates
+listed above are the ONLY predicates that will match actual case facts. Using different predicates
+will result in rules that cannot be validated or applied.
+
+**CRITICAL: Clingo ASP Syntax Requirements**
+
+Clingo uses DIFFERENT arithmetic syntax than Python. Follow these rules STRICTLY:
+
+**VALID Clingo Arithmetic:**
+```asp
+% Comparisons must be in constraints or rule bodies with ground arithmetic
+amount_exceeds_threshold(X) :- contract(X), amount(X, A), threshold(T), A > T.
+insufficient_payment(X) :- payment(X, P), required(X, R), P < R.
+total_value(X, V) :- item_a(X, A), item_b(X, B), V = A + B.
+percentage_met(X) :- actual(X, A), target(X, T), A * 100 >= T * 90.
+```
+
+**INVALID Syntax (DO NOT USE):**
+```asp
+% WRONG: Python-style infix multiplication with floats
+amount_check(X) :- amount(X, A), A < 0.9 * 50000.
+
+% WRONG: abs() function (not built-in in standard Clingo)
+difference_check(X) :- actual(X, A), expected(X, E), abs(A - E) > 100.
+
+% WRONG: Floating point numbers
+threshold_check(X) :- value(X, V), V > 0.75 * max_value.
+
+% WRONG: Unbound arithmetic operations
+value_calc(X) :- X = 5 * Y.  % Y must be bound first
+```
+
+**CORRECT Patterns for Common Operations:**
+
+1. **Percentage comparisons** - Use integer arithmetic:
+   ```asp
+   % "amount is at least 90% of target" becomes:
+   meets_threshold(X) :- amount(X, A), target(X, T), A * 100 >= T * 90.
+   ```
+
+2. **Difference calculations** - Split into positive/negative cases:
+   ```asp
+   % Instead of abs(A - B) > Threshold:
+   significant_difference(X) :- val_a(X, A), val_b(X, B), A > B, A - B > Threshold.
+   significant_difference(X) :- val_a(X, A), val_b(X, B), B >= A, B - A > Threshold.
+   ```
+
+3. **Threshold comparisons** - Use predicates:
+   ```asp
+   above_threshold(X) :- amount(X, A), min_threshold(T), A >= T.
+   below_threshold(X) :- amount(X, A), max_threshold(T), A <= T.
+   ```
+
+4. **Aggregates for counting/summing:**
+   ```asp
+   total_items(X, N) :- case(X), N = #count {{ I : item(X, I) }}.
+   total_value(X, S) :- case(X), S = #sum {{ V, I : item(X, I), value(I, V) }}.
+   ```
+
+**Strategy:**
+1. Analyze what `{missing_predicate}` should mean in this domain
+2. Map required concepts to AVAILABLE DATASET PREDICATES
+3. Generate 2-4 candidate formulations with different trade-offs:
+   - Conservative (high precision, may miss edge cases)
+   - Permissive (high recall, may over-trigger)
+   - Balanced (middle ground)
+   - Context-specific (optimized for this gap)
+
+4. For each candidate:
+   - Use ONLY predicates from the dataset predicate list
+   - Ensure ALL arithmetic uses valid Clingo syntax
+   - Estimate applicability (how well it addresses this specific gap)
+   - Estimate complexity (simpler is better if equally accurate)
+   - Provide test cases that would validate/invalidate it
+
+**Output:**
+Structure your response as a JSON object matching the GapFillingResponse schema:
+- Multiple candidates with different approaches
+- Recommend the best one (index)
+- Flag if human validation is needed
+- Provide specific test cases
+
+Be thorough but practical - we need rules that work, not perfect formalisms.
+"""
+
 # =============================================================================
 # CONSENSUS VOTING PROMPTS
 # =============================================================================
@@ -660,7 +760,8 @@ PROMPT_VERSIONS = {
         "v1.0": GAP_FILLING_V1_0,
         "v1.1": GAP_FILLING_V1_1,
         "v1.2": GAP_FILLING_V1_2,
-        "latest": "v1.2",
+        "v1.3": GAP_FILLING_V1_3,
+        "latest": "v1.3",
     },
     "consensus_vote": {
         "v1.0": CONSENSUS_VOTE_V1_0,
