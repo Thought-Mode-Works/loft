@@ -11,9 +11,15 @@ import os
 import time
 import uuid
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 from loft.batch.schemas import CaseResult, CaseStatus
+
+if TYPE_CHECKING:
+    from loft.neural.llm_interface import LLMInterface
+    from loft.neural.rule_generator import RuleGenerator
+    from loft.symbolic.asp_core import ASPCore
+    from loft.validation.validation_pipeline import ValidationPipeline
 
 logger = logging.getLogger(__name__)
 
@@ -42,10 +48,10 @@ class LLMCaseProcessor:
             extraction_prompt_template: Optional custom prompt template
         """
         self.model = model
-        self._llm = None
-        self._rule_generator = None
-        self._validation_pipeline = None
-        self._asp_core = None
+        self._llm: Optional["LLMInterface"] = None
+        self._rule_generator: Optional["RuleGenerator"] = None
+        self._validation_pipeline: Optional["ValidationPipeline"] = None
+        self._asp_core: Optional["ASPCore"] = None
         self._extract_predicates: Optional[Callable[[str], List[str]]] = None
         self._initialized = False
 
@@ -177,6 +183,7 @@ Respond in JSON format:
             if extraction.get("asp_predicates"):
                 # Extract dataset predicates from case facts for alignment (issue #166)
                 facts_text = "\n".join(extraction.get("facts", []))
+                assert self._extract_predicates is not None
                 dataset_predicates = self._extract_predicates(facts_text)
                 logger.debug(
                     f"Extracted {len(dataset_predicates)} predicates from case "
@@ -186,6 +193,8 @@ Respond in JSON format:
                 )
 
                 # Try to generate rules from extracted predicates
+                assert self._rule_generator is not None
+                assert self._validation_pipeline is not None
                 for predicate in extraction.get("asp_predicates", [])[:3]:
                     try:
                         # Use fill_knowledge_gap to generate candidate rules
@@ -196,9 +205,7 @@ Respond in JSON format:
                             context={
                                 "facts": facts_text,
                                 "domain": extraction.get("domain", "general"),
-                                "legal_issues": ", ".join(
-                                    extraction.get("legal_issues", [])
-                                ),
+                                "legal_issues": ", ".join(extraction.get("legal_issues", [])),
                             },
                             dataset_predicates=dataset_predicates,
                         )
@@ -207,9 +214,7 @@ Respond in JSON format:
 
                         # Get the recommended candidate
                         if gap_response.candidates:
-                            candidate = gap_response.candidates[
-                                gap_response.recommended_index
-                            ]
+                            candidate = gap_response.candidates[gap_response.recommended_index]
 
                             # Validate the candidate rule
                             report = self._validation_pipeline.validate_rule(
@@ -221,9 +226,7 @@ Respond in JSON format:
 
                             if report.final_decision == "accept":
                                 rules_accepted += 1
-                                generated_rule_ids.append(
-                                    f"rule_{case_id}_{rules_generated}"
-                                )
+                                generated_rule_ids.append(f"rule_{case_id}_{rules_generated}")
                                 logger.info(
                                     f"Accepted rule from case {case_id}: "
                                     f"{candidate.rule.asp_rule[:50]}..."
@@ -232,9 +235,7 @@ Respond in JSON format:
                                 rules_rejected += 1
                                 logger.debug(f"Rejected rule from case {case_id}")
                         else:
-                            logger.warning(
-                                f"No candidates generated for {case_id}/{predicate}"
-                            )
+                            logger.warning(f"No candidates generated for {case_id}/{predicate}")
                             rules_rejected += 1
 
                     except Exception as e:
@@ -295,6 +296,7 @@ Respond in JSON format:
         )
 
         try:
+            assert self._llm is not None
             response = self._llm.query(
                 question=prompt,
                 max_tokens=1000,
