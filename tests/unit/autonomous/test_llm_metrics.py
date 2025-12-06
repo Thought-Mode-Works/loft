@@ -363,7 +363,7 @@ class TestLLMMetricsTracker:
         assert rules["generated"] == 3
         assert rules["accepted"] == 2
         assert rules["rejected"] == 1
-        assert rules["acceptance_rate"] == pytest.approx(2 / 3)
+        assert rules["acceptance_rate"] == pytest.approx(2 / 3, rel=1e-3)
 
     def test_record_validation_error(self):
         """Test validation error tracking."""

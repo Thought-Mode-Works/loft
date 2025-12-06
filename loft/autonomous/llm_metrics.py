@@ -611,8 +611,16 @@ class LLMMetricsTracker:
                 "limits": {
                     "max_cost_usd": self._max_cost_usd,
                     "max_tokens": self._max_tokens,
-                    "cost_limit_reached": self.cost_limit_reached,
-                    "token_limit_reached": self.token_limit_reached,
+                    # Compute inline to avoid deadlock (we already hold the lock)
+                    "cost_limit_reached": (
+                        self._max_cost_usd is not None
+                        and self._total_cost_usd >= self._max_cost_usd
+                    ),
+                    "token_limit_reached": (
+                        self._max_tokens is not None
+                        and (self._total_input_tokens + self._total_output_tokens)
+                        >= self._max_tokens
+                    ),
                 },
             }
 
