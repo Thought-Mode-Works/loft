@@ -648,3 +648,164 @@ class TestUnsafeVariableDetection:
         errors, warnings = check_unsafe_variables(rule)
 
         assert len(errors) == 0
+
+
+class TestEmbeddedPeriodDetection:
+    """Tests for embedded period detection (issue #168)."""
+
+    def test_oop_style_dot_notation_detected(self) -> None:
+        """Test detection of OOP-style dot notation (issue #168 example)."""
+        from loft.validation.asp_validators import check_embedded_periods
+
+        # Example from issue #168: Spectator.FoulBall instead of proper ASP
+        rule = "physical_harm(Spectator.FoulBall) :- at_game(Spectator)."
+        errors, warnings = check_embedded_periods(rule)
+
+        assert len(errors) > 0
+        assert any("Spectator.FoulBall" in err for err in errors)
+        assert any("OOP" in err or "dot notation" in err.lower() for err in errors)
+
+    def test_method_style_notation_detected(self) -> None:
+        """Test detection of method-style notation."""
+        from loft.validation.asp_validators import check_embedded_periods
+
+        # Method-style: object.method
+        rule = "result(X) :- input.parse(X)."
+        errors, warnings = check_embedded_periods(rule)
+
+        assert len(errors) > 0
+        assert any("input.parse" in err for err in errors)
+
+    def test_valid_rule_no_errors(self) -> None:
+        """Test that valid ASP rules produce no errors."""
+        from loft.validation.asp_validators import check_embedded_periods
+
+        # Valid ASP with proper comma separation
+        rule = "injured_by(Spectator, FoulBall) :- at_baseball_game(Spectator), foul_ball_strike(FoulBall)."
+        errors, warnings = check_embedded_periods(rule)
+
+        assert len(errors) == 0
+
+    def test_trailing_period_not_flagged(self) -> None:
+        """Test that rule-terminating periods are not flagged."""
+        from loft.validation.asp_validators import check_embedded_periods
+
+        # Valid rule with trailing period
+        rule = "fact(a)."
+        errors, warnings = check_embedded_periods(rule)
+
+        assert len(errors) == 0
+        assert len(warnings) == 0
+
+    def test_floating_point_not_flagged(self) -> None:
+        """Test that floating-point numbers are not flagged."""
+        from loft.validation.asp_validators import check_embedded_periods
+
+        # Floating-point numbers should not be flagged
+        rule = "threshold(3.14)."
+        errors, warnings = check_embedded_periods(rule)
+
+        # Should not flag 3.14 as embedded period
+        assert len(errors) == 0
+
+    def test_multiple_embedded_periods(self) -> None:
+        """Test detection of multiple embedded periods."""
+        from loft.validation.asp_validators import check_embedded_periods
+
+        # Multiple OOP-style violations
+        rule = "result(A.B) :- input(C.D), process(E.F)."
+        errors, warnings = check_embedded_periods(rule)
+
+        # Should detect all three
+        assert len(errors) >= 3
+
+    def test_uppercase_variable_dot_lowercase(self) -> None:
+        """Test Variable.method pattern detection."""
+        from loft.validation.asp_validators import check_embedded_periods
+
+        rule = "output(X.value) :- input(X)."
+        errors, warnings = check_embedded_periods(rule)
+
+        assert len(errors) > 0
+        assert any("X.value" in err for err in errors)
+
+    def test_complex_rule_with_embedded_period(self) -> None:
+        """Test complex legal rule with embedded period error."""
+        from loft.validation.asp_validators import check_embedded_periods
+
+        # Complex rule with OOP-style error in legal context
+        rule = "liable(Defendant.Negligence) :- duty_owed(Defendant), breach(Defendant)."
+        errors, warnings = check_embedded_periods(rule)
+
+        assert len(errors) > 0
+        assert any("Defendant.Negligence" in err for err in errors)
+
+    def test_integration_with_validator(self) -> None:
+        """Test that embedded period check is integrated into validator.
+
+        Note: Clingo may catch some embedded period issues as syntax errors
+        before our check runs. The embedded period check provides additional
+        value for pre-validation and better error messages.
+        """
+        validator = ASPSyntaxValidator()
+
+        # Rule with OOP-style dot notation - Clingo catches this as syntax error
+        rule = "result(X.Y) :- input(X)."
+        result = validator.validate_generated_rule(rule)
+
+        # Should not be valid - either due to syntax error or embedded period
+        assert not result.is_valid
+        # Either syntax error or embedded period should be flagged
+        assert (
+            "syntax_error" in result.details
+            or "embedded_periods" in result.details
+        )
+
+    def test_valid_rule_passes_validation(self) -> None:
+        """Test that valid rules pass embedded period validation."""
+        validator = ASPSyntaxValidator()
+
+        # Valid ASP with commas
+        rule = "injured_by(Person, Object) :- accident(Person), involved(Object)."
+        result = validator.validate_generated_rule(rule)
+
+        # Should be valid - no embedded periods
+        assert result.is_valid
+        assert "embedded_periods" not in result.details or len(result.details.get("embedded_periods", [])) == 0
+
+    def test_namespace_style_notation_detected(self) -> None:
+        """Test detection of namespace-style notation."""
+        from loft.validation.asp_validators import check_embedded_periods
+
+        # Namespace-style: module.predicate
+        rule = "result(X) :- math.sqrt(X, Y)."
+        errors, warnings = check_embedded_periods(rule)
+
+        assert len(errors) > 0
+        assert any("math.sqrt" in err for err in errors)
+
+    def test_empty_rule(self) -> None:
+        """Test that empty input doesn't crash."""
+        from loft.validation.asp_validators import check_embedded_periods
+
+        errors, warnings = check_embedded_periods("")
+        assert errors == []
+        assert warnings == []
+
+    def test_fact_with_constant_no_error(self) -> None:
+        """Test that facts with constants work correctly."""
+        from loft.validation.asp_validators import check_embedded_periods
+
+        rule = "person(john)."
+        errors, warnings = check_embedded_periods(rule)
+
+        assert len(errors) == 0
+
+    def test_constraint_no_embedded_period(self) -> None:
+        """Test that constraints without embedded periods pass."""
+        from loft.validation.asp_validators import check_embedded_periods
+
+        rule = ":- conflict(X), valid(X)."
+        errors, warnings = check_embedded_periods(rule)
+
+        assert len(errors) == 0

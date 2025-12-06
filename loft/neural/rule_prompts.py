@@ -559,6 +559,174 @@ Structure your response as a JSON object matching the GapFillingResponse schema:
 Be thorough but practical - we need rules that work, not perfect formalisms.
 """
 
+# Gap-filling with punctuation rules (issue #168)
+GAP_FILLING_V1_5 = """You are a knowledge engineer specializing in filling gaps in formal knowledge bases.
+
+**Knowledge Gap Detected:**
+{gap_description}
+
+**Missing:** {missing_predicate}
+**Context:** {context}
+**Available Predicates from Knowledge Base:** {existing_predicates}
+{dataset_predicates_section}
+**Your Task:**
+Design ASP rules to define `{missing_predicate}` such that the reasoning system can continue.
+
+**CRITICAL: Predicate Alignment Requirements**
+
+Your generated rules MUST use the exact predicate patterns from the dataset. The dataset predicates
+listed above are the ONLY predicates that will match actual case facts. Using different predicates
+will result in rules that cannot be validated or applied.
+
+**CRITICAL: ASP Punctuation Rules (issue #168)**
+
+ASP uses VERY SPECIFIC punctuation. Common LLM errors include using periods (.) where commas
+should be used. Follow these rules STRICTLY:
+
+**Punctuation in ASP:**
+- `.` (period): ONLY used at the END of a complete rule or fact to terminate it
+- `,` (comma): Separates predicates in rule bodies (conjunction - "and")
+- `;` (semicolon): Separates alternatives in choice rules (disjunction - "or")
+- `:-` (colon-hyphen): Separates the head from the body of a rule
+
+**WRONG - Period used as separator (causes parse errors):**
+```asp
+% WRONG: Period between predicates (OOP-style dot notation)
+physical_harm(Spectator.FoulBall) :- at_game(Spectator).
+% ERROR: Clingo sees "Spectator.FoulBall" as invalid syntax
+
+% WRONG: Period instead of comma
+injured_by(X, Y) :- at_game(X). hit_by(X, Y).
+% ERROR: This is TWO separate statements, not one rule
+```
+
+**CORRECT - Comma separates predicates:**
+```asp
+% CORRECT: Comma separates predicates in body
+cause_of_harm(X, Type) :- dangerous_condition(X), type_of_harm(X, Type).
+
+% CORRECT: Comma between all body literals
+injured_by(Spectator, FoulBall) :- at_baseball_game(Spectator), foul_ball_strike(FoulBall), not_in_screened_section(Spectator), physical_harm(Spectator, FoulBall).
+```
+
+**Multi-argument predicates use commas, NOT periods:**
+```asp
+% WRONG: physical_harm(Spectator.FoulBall)
+% CORRECT: physical_harm(Spectator, FoulBall)
+```
+
+**CRITICAL: Clingo Variable Safety Requirements**
+
+Clingo requires ALL variables in the rule HEAD to appear in at least one POSITIVE body literal.
+This is called "variable safety" - variables must be "grounded" (bound to actual values) before
+they can appear in the head.
+
+**SAFE vs UNSAFE Variable Examples:**
+
+```asp
+% WRONG - Unsafe variable (Fall not bound in body):
+cause_of_harm(X, Fall) :- dangerous_condition(X).
+% ERROR: Variable 'Fall' appears in head but not in any positive body literal
+
+% CORRECT - All head variables bound in body:
+cause_of_harm(X, Fall) :- dangerous_condition(X), type_of_harm(X, Fall).
+% 'Fall' is now bound by type_of_harm(X, Fall)
+
+% CORRECT - Use constant if value is specific:
+cause_of_harm(X, fall) :- dangerous_condition(X).
+% 'fall' is lowercase (constant), not a variable
+```
+
+**Variable Safety Rules:**
+1. Every UPPERCASE variable in the head MUST appear in at least one positive body atom
+2. Variables in negative literals (`not pred(X)`) do NOT count as grounding
+3. Variables in comparisons (`X > Y`) do NOT count as grounding on their own
+4. Variables in aggregates must still be grounded elsewhere in the body
+5. Use lowercase for constants (specific values), uppercase for variables
+
+**CRITICAL: Clingo ASP Syntax Requirements**
+
+Clingo uses DIFFERENT arithmetic syntax than Python. Follow these rules STRICTLY:
+
+**VALID Clingo Arithmetic:**
+```asp
+% Comparisons must be in constraints or rule bodies with ground arithmetic
+amount_exceeds_threshold(X) :- contract(X), amount(X, A), threshold(T), A > T.
+insufficient_payment(X) :- payment(X, P), required(X, R), P < R.
+total_value(X, V) :- item_a(X, A), item_b(X, B), V = A + B.
+percentage_met(X) :- actual(X, A), target(X, T), A * 100 >= T * 90.
+```
+
+**INVALID Syntax (DO NOT USE):**
+```asp
+% WRONG: Python-style infix multiplication with floats
+amount_check(X) :- amount(X, A), A < 0.9 * 50000.
+
+% WRONG: abs() function (not built-in in standard Clingo)
+difference_check(X) :- actual(X, A), expected(X, E), abs(A - E) > 100.
+
+% WRONG: Floating point numbers
+threshold_check(X) :- value(X, V), V > 0.75 * max_value.
+
+% WRONG: Unbound arithmetic operations
+value_calc(X) :- X = 5 * Y.  % Y must be bound first
+```
+
+**CORRECT Patterns for Common Operations:**
+
+1. **Percentage comparisons** - Use integer arithmetic:
+   ```asp
+   % "amount is at least 90% of target" becomes:
+   meets_threshold(X) :- amount(X, A), target(X, T), A * 100 >= T * 90.
+   ```
+
+2. **Difference calculations** - Split into positive/negative cases:
+   ```asp
+   % Instead of abs(A - B) > Threshold:
+   significant_difference(X) :- val_a(X, A), val_b(X, B), A > B, A - B > Threshold.
+   significant_difference(X) :- val_a(X, A), val_b(X, B), B >= A, B - A > Threshold.
+   ```
+
+3. **Threshold comparisons** - Use predicates:
+   ```asp
+   above_threshold(X) :- amount(X, A), min_threshold(T), A >= T.
+   below_threshold(X) :- amount(X, A), max_threshold(T), A <= T.
+   ```
+
+4. **Aggregates for counting/summing:**
+   ```asp
+   total_items(X, N) :- case(X), N = #count {{ I : item(X, I) }}.
+   total_value(X, S) :- case(X), S = #sum {{ V, I : item(X, I), value(I, V) }}.
+   ```
+
+**Strategy:**
+1. Analyze what `{missing_predicate}` should mean in this domain
+2. Map required concepts to AVAILABLE DATASET PREDICATES
+3. Generate 2-4 candidate formulations with different trade-offs:
+   - Conservative (high precision, may miss edge cases)
+   - Permissive (high recall, may over-trigger)
+   - Balanced (middle ground)
+   - Context-specific (optimized for this gap)
+
+4. For each candidate:
+   - VERIFY no embedded periods (use commas to separate predicates)
+   - VERIFY all head variables appear in positive body literals
+   - Use ONLY predicates from the dataset predicate list
+   - Ensure ALL arithmetic uses valid Clingo syntax
+   - Estimate applicability (how well it addresses this specific gap)
+   - Estimate complexity (simpler is better if equally accurate)
+   - Provide test cases that would validate/invalidate it
+
+**Output:**
+Structure your response as a JSON object matching the GapFillingResponse schema:
+- Multiple candidates with different approaches
+- Recommend the best one (index)
+- Flag if human validation is needed
+- Provide specific test cases
+
+Be thorough but practical - we need rules that work, not perfect formalisms.
+"""
+
 # =============================================================================
 # CONSENSUS VOTING PROMPTS
 # =============================================================================
@@ -899,7 +1067,8 @@ PROMPT_VERSIONS = {
         "v1.2": GAP_FILLING_V1_2,
         "v1.3": GAP_FILLING_V1_3,
         "v1.4": GAP_FILLING_V1_4,
-        "latest": "v1.4",
+        "v1.5": GAP_FILLING_V1_5,
+        "latest": "v1.5",
     },
     "consensus_vote": {
         "v1.0": CONSENSUS_VOTE_V1_0,
