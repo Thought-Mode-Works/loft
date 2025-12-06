@@ -6,7 +6,8 @@ ensuring consistent, validated responses from LLMs during Phase 2.
 
 Issue #164: Added partial candidate acceptance to reduce API waste.
 When LLM generates multiple candidates and some are invalid, we now
-filter invalid ones rather than rejecting the entire response.
+filter invalid ones rather than rejecting the entire response ,this is in 
+order to recycle the usable responses. 
 """
 
 import re
