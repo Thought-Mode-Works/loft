@@ -315,33 +315,46 @@ def start(
     health_server = None
     notification_manager = None
     metrics_tracker = None
+    budget_exceeded_flag = {"exceeded": False}  # Mutable to allow callback to set
 
     try:
-        # Create LLM metrics tracker if budget limits are set (issue #165)
-        if max_cost is not None or max_tokens is not None:
-            from loft.autonomous.llm_metrics import LLMMetricsTracker
+        # Always create LLM metrics tracker for monitoring (issue #165)
+        # Even without budget limits, this provides visibility into LLM usage
+        from loft.autonomous.llm_metrics import (
+            LLMMetricsTracker,
+            set_global_metrics_tracker,
+        )
 
-            def on_budget_warning(limit_type: str, current: float, limit: float) -> None:
-                pct = (current / limit) * 100 if limit > 0 else 0
-                logger.warning(
-                    f"Budget warning: {limit_type} at {pct:.1f}% ({current:.2f}/{limit:.2f})"
-                )
-
-            def on_budget_exceeded(limit_type: str, current: float, limit: float) -> None:
-                logger.error(
-                    f"Budget exceeded: {limit_type} limit reached ({current:.2f}/{limit:.2f})"
-                )
-
-            metrics_tracker = LLMMetricsTracker(
-                model=model,
-                max_cost_usd=max_cost,
-                max_tokens=max_tokens,
-                warning_threshold=budget_warning_threshold,
-                log_interval_seconds=float(progress_interval),
-                on_budget_warning=on_budget_warning,
-                on_budget_exceeded=on_budget_exceeded,
+        def on_budget_warning(limit_type: str, current: float, limit: float) -> None:
+            pct = (current / limit) * 100 if limit > 0 else 0
+            logger.warning(
+                f"Budget warning: {limit_type} at {pct:.1f}% ({current:.2f}/{limit:.2f})"
             )
-            logger.info("LLM metrics tracking enabled")
+
+        def on_budget_exceeded(limit_type: str, current: float, limit: float) -> None:
+            logger.error(
+                f"Budget exceeded: {limit_type} limit reached ({current:.2f}/{limit:.2f}). "
+                "Run will stop after current operation."
+            )
+            budget_exceeded_flag["exceeded"] = True
+
+        metrics_tracker = LLMMetricsTracker(
+            model=model,
+            max_cost_usd=max_cost,
+            max_tokens=max_tokens,
+            warning_threshold=budget_warning_threshold,
+            log_interval_seconds=float(progress_interval),
+            on_budget_warning=on_budget_warning if (max_cost or max_tokens) else None,
+            on_budget_exceeded=on_budget_exceeded if (max_cost or max_tokens) else None,
+        )
+
+        # Set as global tracker so LLMInterface can use it automatically
+        set_global_metrics_tracker(metrics_tracker)
+        logger.info(
+            "LLM metrics tracking enabled"
+            + (f" (cost limit: ${max_cost:.2f})" if max_cost else "")
+            + (f" (token limit: {max_tokens:,})" if max_tokens else "")
+        )
 
         if run_config.health.enabled:
             health_server = create_health_server(run_config.health)
