@@ -756,10 +756,7 @@ class TestEmbeddedPeriodDetection:
         # Should not be valid - either due to syntax error or embedded period
         assert not result.is_valid
         # Either syntax error or embedded period should be flagged
-        assert (
-            "syntax_error" in result.details
-            or "embedded_periods" in result.details
-        )
+        assert "syntax_error" in result.details or "embedded_periods" in result.details
 
     def test_valid_rule_passes_validation(self) -> None:
         """Test that valid rules pass embedded period validation."""
@@ -771,7 +768,10 @@ class TestEmbeddedPeriodDetection:
 
         # Should be valid - no embedded periods
         assert result.is_valid
-        assert "embedded_periods" not in result.details or len(result.details.get("embedded_periods", [])) == 0
+        assert (
+            "embedded_periods" not in result.details
+            or len(result.details.get("embedded_periods", [])) == 0
+        )
 
     def test_namespace_style_notation_detected(self) -> None:
         """Test detection of namespace-style notation."""

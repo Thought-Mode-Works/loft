@@ -230,9 +230,7 @@ def check_embedded_periods(rule_text: str) -> Tuple[List[str], List[str]]:
 
         # Skip if already captured by OOP or method patterns
         context = rule_stripped[max(0, pos - 20) : min(len(rule_stripped), pos + 20)]
-        already_reported = any(
-            f"{m[0]}.{m[1]}" in context for m in oop_matches + method_matches
-        )
+        already_reported = any(f"{m[0]}.{m[1]}" in context for m in oop_matches + method_matches)
         if not already_reported:
             warnings.append(
                 f"Unexpected period found at position {pos} in rule. "
