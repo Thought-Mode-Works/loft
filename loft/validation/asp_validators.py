@@ -9,6 +9,7 @@ This module provides validation for ASP programs using Clingo, including:
 - LLM-generated rule validation
 - Undefined predicate detection
 - Grounding validation
+- Unsafe variable detection (issue #167)
 """
 
 from typing import Tuple, List, Optional, Dict, Any, Set
@@ -21,6 +22,100 @@ from loft.neural.rule_schemas import (
     check_undefined_predicates,
     validate_rule_grounds,
 )
+
+
+def check_unsafe_variables(rule_text: str) -> Tuple[List[str], List[str]]:
+    """
+    Check for unsafe variables in ASP rules (issue #167).
+
+    In Clingo, every variable in the rule head MUST appear in at least one
+    positive body literal. Variables that only appear in the head or in
+    negative literals are "unsafe" and will cause grounding errors.
+
+    Args:
+        rule_text: The ASP rule to check
+
+    Returns:
+        Tuple of (errors, warnings):
+        - errors: List of unsafe variable error messages
+        - warnings: List of potential safety warning messages
+
+    Example:
+        >>> errors, warnings = check_unsafe_variables(
+        ...     "cause_of_harm(X, Fall) :- dangerous_condition(X)."
+        ... )
+        >>> assert "Fall" in errors[0]  # Fall is unsafe
+    """
+    errors = []
+    warnings = []
+
+    # Skip if not a rule (no body)
+    if ":-" not in rule_text:
+        return errors, warnings
+
+    # Split into head and body
+    try:
+        head_part, body_part = rule_text.split(":-", 1)
+    except ValueError:
+        return errors, warnings
+
+    # Extract variables from head (uppercase identifiers)
+    head_variables = set(re.findall(r"\b([A-Z][a-zA-Z0-9_]*)\b", head_part))
+
+    # Extract variables from positive body literals
+    # First, remove negative literals and aggregates for positive literal analysis
+    positive_body = body_part
+
+    # Remove negative literals (not pred(...))
+    positive_body = re.sub(r"\bnot\s+[a-z_][a-zA-Z0-9_]*\s*\([^)]*\)", "", positive_body)
+
+    # Extract variables from positive body literals
+    positive_body_variables = set(re.findall(r"\b([A-Z][a-zA-Z0-9_]*)\b", positive_body))
+
+    # Check for unsafe variables (in head but not in positive body)
+    unsafe_variables = head_variables - positive_body_variables
+
+    if unsafe_variables:
+        for var in sorted(unsafe_variables):
+            errors.append(
+                f"Unsafe variable '{var}': appears in rule head but not in any "
+                f"positive body literal. Clingo requires all head variables to be "
+                f"grounded in the body."
+            )
+
+    # Check for variables only in negative literals (potential issue)
+    negative_only_vars = _extract_negative_only_variables(body_part, positive_body_variables)
+    if negative_only_vars:
+        for var in sorted(negative_only_vars):
+            warnings.append(
+                f"Variable '{var}' appears only in negative literals. "
+                f"Ensure it is bound elsewhere in the rule body."
+            )
+
+    return errors, warnings
+
+
+def _extract_negative_only_variables(body_part: str, positive_vars: Set[str]) -> Set[str]:
+    """
+    Extract variables that appear only in negative literals.
+
+    Args:
+        body_part: The body of the rule
+        positive_vars: Set of variables already found in positive literals
+
+    Returns:
+        Set of variable names that only appear in negative literals
+    """
+    # Find all variables in negative literals
+    negative_pattern = r"\bnot\s+[a-z_][a-zA-Z0-9_]*\s*\(([^)]*)\)"
+    negative_matches = re.findall(negative_pattern, body_part)
+
+    negative_vars = set()
+    for match in negative_matches:
+        negative_vars.update(re.findall(r"\b([A-Z][a-zA-Z0-9_]*)\b", match))
+
+    # Return variables only in negative literals
+    return negative_vars - positive_vars
 
 
 class ASPSyntaxValidator:
@@ -86,6 +181,14 @@ class ASPSyntaxValidator:
                 details={"syntax_error": syntax_error},
                 stage_name="syntactic",
             )
+
+        # 1b. Check for unsafe variables (issue #167)
+        unsafe_errors, unsafe_warnings = check_unsafe_variables(rule_text)
+        if unsafe_errors:
+            errors.extend(unsafe_errors)
+            details["unsafe_variables"] = unsafe_errors
+        if unsafe_warnings:
+            warnings.extend(unsafe_warnings)
 
         # 2. Variable naming convention check (uppercase)
         variable_issues = self._check_variable_naming(rule_text)

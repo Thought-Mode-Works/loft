@@ -444,3 +444,127 @@ class TestGeneratedRuleValidation:
         # But it should be flagged as a potential issue
         # The validator should warn or error depending on context
         assert isinstance(result, ValidationResult)
+
+
+class TestUnsafeVariableDetection:
+    """Tests for unsafe variable detection (issue #167)."""
+
+    def test_safe_rule_no_errors(self) -> None:
+        """Test that safe rules produce no errors."""
+        from loft.validation.asp_validators import check_unsafe_variables
+
+        # All head variables are bound in body
+        rule = "cause_of_harm(X, Type) :- dangerous_condition(X), type_of_harm(X, Type)."
+        errors, warnings = check_unsafe_variables(rule)
+
+        assert len(errors) == 0
+
+    def test_unsafe_variable_detected(self) -> None:
+        """Test that unsafe variables are detected (issue #167 example)."""
+        from loft.validation.asp_validators import check_unsafe_variables
+
+        # Fall is not bound in body
+        rule = "cause_of_harm(X, Fall) :- dangerous_condition(X)."
+        errors, warnings = check_unsafe_variables(rule)
+
+        assert len(errors) == 1
+        assert "Fall" in errors[0]
+        assert "unsafe" in errors[0].lower()
+
+    def test_multiple_unsafe_variables(self) -> None:
+        """Test detection of multiple unsafe variables."""
+        from loft.validation.asp_validators import check_unsafe_variables
+
+        # Both Y and Z are not bound in body
+        rule = "pred(X, Y, Z) :- other_pred(X)."
+        errors, warnings = check_unsafe_variables(rule)
+
+        assert len(errors) == 2
+        # Check both variables are mentioned
+        error_text = " ".join(errors)
+        assert "Y" in error_text
+        assert "Z" in error_text
+
+    def test_constant_not_flagged_as_unsafe(self) -> None:
+        """Test that lowercase constants are not flagged as unsafe."""
+        from loft.validation.asp_validators import check_unsafe_variables
+
+        # 'fall' is lowercase (constant), not a variable
+        rule = "cause_of_harm(X, fall) :- dangerous_condition(X)."
+        errors, warnings = check_unsafe_variables(rule)
+
+        assert len(errors) == 0
+
+    def test_variable_in_negative_literal_unsafe(self) -> None:
+        """Test that variables only in negative literals are detected."""
+        from loft.validation.asp_validators import check_unsafe_variables
+
+        # Y only appears in negative literal, so X is safe but Y is unsafe
+        rule = "result(X, Y) :- input(X), not excluded(Y)."
+        errors, warnings = check_unsafe_variables(rule)
+
+        # Y should be flagged as unsafe
+        assert len(errors) == 1
+        assert "Y" in errors[0]
+
+    def test_fact_no_errors(self) -> None:
+        """Test that facts (no body) don't produce errors."""
+        from loft.validation.asp_validators import check_unsafe_variables
+
+        rule = "fact(constant)."
+        errors, warnings = check_unsafe_variables(rule)
+
+        assert len(errors) == 0
+        assert len(warnings) == 0
+
+    def test_constraint_no_errors(self) -> None:
+        """Test that constraints (no head) don't produce errors."""
+        from loft.validation.asp_validators import check_unsafe_variables
+
+        rule = ":- conflicting(X), other(X)."
+        errors, warnings = check_unsafe_variables(rule)
+
+        assert len(errors) == 0
+
+    def test_complex_safe_rule(self) -> None:
+        """Test a complex safe rule from legal domain."""
+        from loft.validation.asp_validators import check_unsafe_variables
+
+        rule = """
+        satisfies_statute_of_frauds(Contract, Party) :-
+            contract(Contract),
+            party(Contract, Party),
+            has_writing(Contract),
+            signed_by(Contract, Party).
+        """
+        errors, warnings = check_unsafe_variables(rule)
+
+        assert len(errors) == 0
+
+    def test_integration_with_validator(self) -> None:
+        """Test that unsafe variable check is integrated into validator."""
+        validator = ASPSyntaxValidator()
+
+        # Rule with unsafe variable (Fall not bound)
+        rule = "cause_of_harm(X, Fall) :- dangerous_condition(X)."
+        result = validator.validate_generated_rule(rule)
+
+        # Should not be valid due to unsafe variable
+        assert not result.is_valid
+        assert "unsafe_variables" in result.details
+        assert any("Fall" in err for err in result.error_messages)
+
+    def test_safe_rule_passes_validation(self) -> None:
+        """Test that safe rules pass validation."""
+        validator = ASPSyntaxValidator()
+
+        # All head variables bound in body
+        rule = "cause_of_harm(X, Type) :- dangerous_condition(X), harm_type(X, Type)."
+        result = validator.validate_generated_rule(rule)
+
+        # Should be valid - no unsafe variables
+        assert result.is_valid
+        assert (
+            "unsafe_variables" not in result.details
+            or len(result.details.get("unsafe_variables", [])) == 0
+        )
