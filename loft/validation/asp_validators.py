@@ -11,6 +11,7 @@ This module provides validation for ASP programs using Clingo, including:
 - Grounding validation
 - Unsafe variable detection (issue #167)
 - Embedded period detection (issue #168)
+- Context-aware detection: skips quoted strings and comments (issue #177)
 """
 
 from typing import Tuple, List, Optional, Dict, Any, Set
@@ -24,16 +25,67 @@ from loft.neural.rule_schemas import (
     validate_rule_grounds,
 )
 
-# Pre-compiled regex patterns for performance (feedback from multi-agent review)
-# These are compiled once at module load instead of on each function call
-_VARIABLE_PATTERN = re.compile(r"\b([A-Z][a-zA-Z0-9_]*)\b")
-_NEGATIVE_LITERAL_PATTERN = re.compile(r"\bnot\s+[a-z_][a-zA-Z0-9_]*\s*\([^)]*\)")
-_NEGATIVE_ARGS_PATTERN = re.compile(r"\bnot\s+[a-z_][a-zA-Z0-9_]*\s*\(([^)]*)\)")
-_OOP_PATTERN = re.compile(r"\b([A-Z][a-zA-Z0-9_]*)\.([a-zA-Z][a-zA-Z0-9_]*)\b")
-_METHOD_PATTERN = re.compile(r"\b([a-z][a-zA-Z0-9_]*)\.([a-z][a-zA-Z0-9_]*)\b")
-_GENERAL_PERIOD_PATTERN = re.compile(r"\.(?!\s*$)")
-_DIGIT_BEFORE_PATTERN = re.compile(r"\d$")
-_DIGIT_AFTER_PATTERN = re.compile(r"^\d")
+
+class ASPPatterns:
+    """
+    Pre-compiled regex patterns for ASP validation.
+
+    All patterns are compiled once at class definition time for performance.
+    This centralizes pattern definitions and makes them reusable across validators.
+
+    Attributes:
+        VARIABLE: Matches ASP variables (uppercase identifiers)
+        NEGATIVE_LITERAL: Matches negative literals (not pred(...))
+        NEGATIVE_ARGS: Captures arguments inside negative literals
+        OOP_STYLE: Matches OOP-style dot notation (Var.Other)
+        METHOD_STYLE: Matches method-style dot notation (obj.method)
+        GENERAL_PERIOD: Matches periods not at end of line
+        DIGIT_BEFORE: Matches digit at end of string
+        DIGIT_AFTER: Matches digit at start of string
+        QUOTED_STRING: Matches double-quoted strings with escaped quote support
+        ASP_COMMENT: Matches ASP comments (% to end of line)
+    """
+
+    # Variable pattern: uppercase identifiers
+    VARIABLE = re.compile(r"\b([A-Z][a-zA-Z0-9_]*)\b")
+
+    # Negative literal patterns
+    NEGATIVE_LITERAL = re.compile(r"\bnot\s+[a-z_][a-zA-Z0-9_]*\s*\([^)]*\)")
+    NEGATIVE_ARGS = re.compile(r"\bnot\s+[a-z_][a-zA-Z0-9_]*\s*\(([^)]*)\)")
+
+    # Embedded period detection patterns
+    OOP_STYLE = re.compile(r"\b([A-Z][a-zA-Z0-9_]*)\.([a-zA-Z][a-zA-Z0-9_]*)\b")
+    METHOD_STYLE = re.compile(r"\b([a-z][a-zA-Z0-9_]*)\.([a-z][a-zA-Z0-9_]*)\b")
+    GENERAL_PERIOD = re.compile(r"\.(?!\s*$)")
+    DIGIT_BEFORE = re.compile(r"\d$")
+    DIGIT_AFTER = re.compile(r"^\d")
+
+    # Context stripping patterns (issue #177)
+    # Matches double-quoted strings with escaped quote support: "anything \"escaped\" inside"
+    # Pattern breakdown: "(?:[^"\\]|\\.)*"
+    #   - " - opening quote
+    #   - (?:[^"\\]|\\.)* - non-capturing group matching either:
+    #     - [^"\\] - any char except quote or backslash
+    #     - \\. - backslash followed by any char (escaped character)
+    #   - " - closing quote
+    QUOTED_STRING = re.compile(r'"(?:[^"\\]|\\.)*"')
+
+    # Matches ASP comments: % anything to end of line
+    ASP_COMMENT = re.compile(r"%.*$", re.MULTILINE)
+
+
+# Legacy aliases for backwards compatibility (deprecated)
+# TODO: Remove in future version after updating all usages
+_VARIABLE_PATTERN = ASPPatterns.VARIABLE
+_NEGATIVE_LITERAL_PATTERN = ASPPatterns.NEGATIVE_LITERAL
+_NEGATIVE_ARGS_PATTERN = ASPPatterns.NEGATIVE_ARGS
+_OOP_PATTERN = ASPPatterns.OOP_STYLE
+_METHOD_PATTERN = ASPPatterns.METHOD_STYLE
+_GENERAL_PERIOD_PATTERN = ASPPatterns.GENERAL_PERIOD
+_DIGIT_BEFORE_PATTERN = ASPPatterns.DIGIT_BEFORE
+_DIGIT_AFTER_PATTERN = ASPPatterns.DIGIT_AFTER
+_QUOTED_STRING_PATTERN = ASPPatterns.QUOTED_STRING
+_ASP_COMMENT_PATTERN = ASPPatterns.ASP_COMMENT
 
 
 def _extract_variables(text: str) -> Set[str]:
@@ -52,6 +104,40 @@ def _extract_variables(text: str) -> Set[str]:
     return set(_VARIABLE_PATTERN.findall(text))
 
 
+def strip_asp_context(rule_text: str) -> str:
+    """
+    Remove quoted strings and comments from ASP rule text (issue #177).
+
+    This function strips content that should be excluded from validation checks:
+    - Quoted strings: "anything.inside" - periods inside quotes are valid
+    - ASP comments: % anything after % to end of line
+
+    This prevents false positives when embedded periods or variable patterns
+    appear inside quoted strings or comments.
+
+    Args:
+        rule_text: The ASP rule text to process
+
+    Returns:
+        Rule text with quoted strings and comments replaced by placeholders
+
+    Example:
+        >>> strip_asp_context('% This is a.comment\\npred("string.with.dot").')
+        '\\npred().'
+        >>> strip_asp_context('fact(X). % comment with.period')
+        'fact(X). '
+    """
+    # First, remove comments (% to end of line)
+    # Replace with empty string to preserve line structure
+    text = _ASP_COMMENT_PATTERN.sub("", rule_text)
+
+    # Then, remove quoted strings
+    # Replace with empty parens to preserve predicate structure
+    text = _QUOTED_STRING_PATTERN.sub("", text)
+
+    return text
+
+
 def check_unsafe_variables(rule_text: str) -> Tuple[List[str], List[str]]:
     """
     Check for unsafe variables in ASP rules (issue #167).
@@ -67,6 +153,9 @@ def check_unsafe_variables(rule_text: str) -> Tuple[List[str], List[str]]:
     - Disjunctive heads (e.g., a(X) | b(X) :- c(X).)
     - Aggregates (e.g., #count{X : pred(X)} > 0)
     - Arithmetic expressions (e.g., Y = X + 1)
+
+    Context awareness (issue #177): Variables inside quoted strings and ASP
+    comments are excluded from detection to prevent false positives.
 
     For production use with complex ASP, consider using Clingo's AST parser
     via clingo.ast.parse_string() for accurate variable extraction.
@@ -99,13 +188,16 @@ def check_unsafe_variables(rule_text: str) -> Tuple[List[str], List[str]]:
     if not rule_text or not rule_text.strip():
         return errors, warnings
 
+    # Strip quoted strings and comments before analysis (issue #177)
+    stripped_text = strip_asp_context(rule_text)
+
     # Skip if not a rule (no body)
-    if ":-" not in rule_text:
+    if ":-" not in stripped_text:
         return errors, warnings
 
     # Split into head and body
     try:
-        head_part, body_part = rule_text.split(":-", 1)
+        head_part, body_part = stripped_text.split(":-", 1)
     except ValueError:
         return errors, warnings
 
@@ -179,6 +271,9 @@ def check_embedded_periods(rule_text: str) -> Tuple[List[str], List[str]]:
     1. At the end of a rule/fact as a terminator
     2. In floating-point numbers (e.g., 3.14)
 
+    Context awareness (issue #177): Periods inside quoted strings and ASP
+    comments are excluded from detection to prevent false positives.
+
     This function detects:
     - OOP-style dot notation: Var.OtherVar, Var.predicate
     - Embedded periods within predicate arguments
@@ -213,8 +308,11 @@ def check_embedded_periods(rule_text: str) -> Tuple[List[str], List[str]]:
     if not rule_text or not rule_text.strip():
         return errors, warnings
 
+    # Strip quoted strings and comments before analysis (issue #177)
+    stripped_text = strip_asp_context(rule_text)
+
     # Remove the trailing period (valid terminator)
-    rule_stripped = rule_text.rstrip()
+    rule_stripped = stripped_text.rstrip()
     if rule_stripped.endswith("."):
         rule_stripped = rule_stripped[:-1]
 
