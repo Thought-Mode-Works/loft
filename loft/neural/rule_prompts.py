@@ -4,6 +4,127 @@ Versioned prompt templates for LLM rule generation.
 This module contains all prompt templates used to generate ASP rules from
 natural language, organized by scenario and version for A/B testing and
 performance tracking.
+
+Prompt Design Rationale (Issue #178)
+====================================
+
+The gap-filling prompts include specific constraints that address common LLM
+errors when generating ASP (Answer Set Programming) rules for Clingo. These
+constraints were developed based on observed failure patterns during LLM
+rule generation.
+
+Key Constraint Rationales:
+--------------------------
+
+1. EMBEDDED PERIOD CONSTRAINT (Issues #168, #177)
+
+   WHY: LLMs trained on OOP languages often generate dot notation (Obj.Method)
+   which is invalid in ASP. In Clingo ASP, the period (.) ONLY serves as:
+   - Rule/fact terminator at the end of a statement
+   - Decimal point in floating-point numbers
+
+   PROBLEMATIC LLM OUTPUT EXAMPLES:
+   ```asp
+   % WRONG: OOP-style attribute access
+   physical_harm(Spectator.FoulBall) :- at_game(Spectator).
+   % Clingo error: syntax error, unexpected '.'
+
+   % WRONG: Period between predicates (should be comma)
+   injured_by(X, Y) :- at_game(X). hit_by(X, Y).
+   % This creates TWO separate facts, not one rule
+   ```
+
+   CORRECT PATTERNS:
+   ```asp
+   % Use commas to separate arguments
+   physical_harm(Spectator, FoulBall) :- at_game(Spectator), hit_by(Spectator, FoulBall).
+
+   % Use commas to separate body predicates
+   injured_by(X, Y) :- at_game(X), hit_by(X, Y).
+   ```
+
+   CLINGO DOCS: https://potassco.org/clingo/python-api/5.6/clingo/ast.html
+
+2. UNSAFE VARIABLE CONSTRAINT (Issues #167, #177)
+
+   WHY: Clingo requires all variables in the rule HEAD to be "grounded" - they
+   must appear in at least one POSITIVE body literal. This is called "variable
+   safety" and prevents infinite answer sets.
+
+   PROBLEMATIC LLM OUTPUT EXAMPLES:
+   ```asp
+   % WRONG: 'Type' only appears in head, not grounded in body
+   cause_of_harm(X, Type) :- dangerous_condition(X).
+   % Clingo error: unsafe variable 'Type' in rule head
+
+   % WRONG: 'Y' appears only in negation (doesn't count as grounding)
+   result(X, Y) :- input(X), not excluded(Y).
+   % Clingo error: unsafe variable 'Y' in rule head
+
+   % WRONG: Variable in comparison only (doesn't ground it)
+   exceeds(X, Y) :- value(X, V), V > Y.
+   % Clingo error: unsafe variable 'Y' in rule head
+   ```
+
+   CORRECT PATTERNS:
+   ```asp
+   % Ground variable by appearing in positive body literal
+   cause_of_harm(X, Type) :- dangerous_condition(X), harm_type(X, Type).
+
+   % Use constant (lowercase) if value is fixed
+   cause_of_harm(X, fall) :- dangerous_condition(X).
+
+   % Ensure aggregation variables are grounded
+   total_harm(X, Type, N) :- case(X), harm_type(Type), N = #count { Y : harm(X, Y, Type) }.
+   ```
+
+   CLINGO DOCS: https://potassco.org/clingo/python-api/5.6/clingo.html#safety
+
+3. ARITHMETIC SYNTAX CONSTRAINT (Issues #176)
+
+   WHY: Clingo uses different arithmetic syntax than Python. LLMs often generate
+   Python-style arithmetic which fails to parse or execute in Clingo.
+
+   PROBLEMATIC LLM OUTPUT EXAMPLES:
+   ```asp
+   % WRONG: Python-style floating-point multiplication
+   amount_check(X) :- amount(X, A), A < 0.9 * 50000.
+   % Clingo doesn't support floating-point arithmetic natively
+
+   % WRONG: abs() function (not built-in)
+   difference_check(X) :- actual(X, A), expected(X, E), abs(A - E) > 100.
+   % Clingo error: abs is not a recognized function
+
+   % WRONG: Ungrounded arithmetic
+   value_calc(X) :- X = 5 * Y.
+   % Y must be bound before use in arithmetic
+   ```
+
+   CORRECT PATTERNS:
+   ```asp
+   % Use integer arithmetic for percentages
+   meets_threshold(X) :- amount(X, A), target(X, T), A * 100 >= T * 90.
+
+   % Split absolute value into two cases
+   significant_diff(X) :- val_a(X, A), val_b(X, B), A > B, A - B > 100.
+   significant_diff(X) :- val_a(X, A), val_b(X, B), B >= A, B - A > 100.
+   ```
+
+   CLINGO DOCS: https://potassco.org/clingo/python-api/5.6/clingo.html#arithmetic
+
+Version History:
+----------------
+- V1.0-V1.2: Basic gap-filling without specific ASP constraints
+- V1.3 (Issue #166): Added dataset predicate alignment requirements
+- V1.4 (Issue #167): Added variable safety requirements
+- V1.5 (Issue #168): Added embedded period/punctuation rules
+
+See Also:
+---------
+- loft/validation/asp_validators.py: Runtime validation for these constraints
+- Issue #167: Clingo safety variable validation
+- Issue #168: Embedded period detection
+- Issue #177: Context-aware detection (skip quoted strings/comments)
 """
 
 # Version format: TEMPLATE_NAME_V{major}_{minor}
@@ -323,6 +444,9 @@ Be thorough but practical - we need rules that work, not perfect formalisms.
 """
 
 # Gap-filling with dataset predicate alignment (issue #166)
+# RATIONALE: LLMs often invent predicates that don't match actual dataset facts.
+# This version requires rules to use exact predicate patterns from the dataset,
+# preventing rules that can never be validated against real case data.
 GAP_FILLING_V1_3 = """You are a knowledge engineer specializing in filling gaps in formal knowledge bases.
 
 **Knowledge Gap Detected:**
@@ -423,6 +547,22 @@ Be thorough but practical - we need rules that work, not perfect formalisms.
 """
 
 # Gap-filling with variable safety requirements (issue #167)
+#
+# RATIONALE FOR VARIABLE SAFETY CONSTRAINT:
+# Clingo requires "safe" variables - all variables in a rule head must be
+# grounded (bound) by appearing in at least one POSITIVE body literal.
+# This prevents infinite answer sets (e.g., "foo(X)." without body would
+# generate foo for every possible X). LLMs often forget to ground variables,
+# producing rules like: "cause(X, Type) :- condition(X)." where Type is
+# unbound. Such rules fail with: "error: unsafe variable 'Type' in head"
+#
+# Common LLM mistakes that led to this constraint:
+# 1. Introducing new variables in head that don't appear in body
+# 2. Using variables only in negative literals (not grounding)
+# 3. Using variables only in comparisons (not grounding)
+# 4. Confusing constants (lowercase) with variables (uppercase)
+#
+# See: https://potassco.org/clingo/ - "Global Safety" section
 GAP_FILLING_V1_4 = """You are a knowledge engineer specializing in filling gaps in formal knowledge bases.
 
 **Knowledge Gap Detected:**
@@ -560,6 +700,28 @@ Be thorough but practical - we need rules that work, not perfect formalisms.
 """
 
 # Gap-filling with punctuation rules (issue #168)
+#
+# RATIONALE FOR EMBEDDED PERIOD CONSTRAINT:
+# LLMs trained on OOP code (Java, Python, JavaScript) often generate ASP rules
+# with dot notation (Object.property, Var.Method) which is invalid syntax in
+# Clingo. In ASP, the period (.) ONLY serves as a rule/fact terminator.
+#
+# Common LLM mistakes that led to this constraint:
+# 1. OOP-style attribute access: physical_harm(Spectator.FoulBall)
+# 2. Dot notation in arguments: result(Input.Value)
+# 3. Period as separator instead of comma: pred(X). pred(Y).
+#
+# The embedded period causes Clingo parse errors like:
+#   "syntax error, unexpected '.'"
+#   "syntax error, unexpected identifier"
+#
+# This version adds explicit punctuation rules to help LLMs generate
+# valid ASP syntax by using commas for predicate separation and multi-arg
+# predicates instead of dot notation.
+#
+# ALSO INCLUDES: Variable safety (V1.4) and predicate alignment (V1.3)
+#
+# See: https://potassco.org/clingo/ - "Language" section
 GAP_FILLING_V1_5 = """You are a knowledge engineer specializing in filling gaps in formal knowledge bases.
 
 **Knowledge Gap Detected:**
