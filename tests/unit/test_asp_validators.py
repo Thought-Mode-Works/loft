@@ -1082,3 +1082,153 @@ valid(X) :- input(X)."""
         # Note: result.is_valid depends on other validation rules too
         if "embedded_periods" in result.details:
             assert all("input.method" not in err for err in result.details["embedded_periods"])
+
+
+class TestEscapedQuotesAndEdgeCases:
+    """Tests for escaped quotes and edge cases (multi-agent review feedback).
+
+    These tests verify that ASP validators correctly handle:
+    - Escaped quotes within strings (e.g., "He said \\"hello\\"")
+    - Multiple consecutive strings
+    - Strings with backslash escapes (\\n, \\t, etc.)
+    - Edge cases like empty strings, adjacent strings
+    """
+
+    def test_strip_asp_context_handles_escaped_quotes(self) -> None:
+        """Test that escaped quotes within strings are handled correctly."""
+        from loft.validation.asp_validators import strip_asp_context
+
+        # String with escaped quotes: "He said \"hello\""
+        rule = r'message(X, "He said \"hello\"") :- entity(X).'
+        stripped = strip_asp_context(rule)
+
+        # The entire quoted string should be removed, including escaped quotes
+        assert r'"He said \"hello\""' not in stripped
+        assert "message(X, ) :- entity(X)." == stripped
+
+    def test_strip_asp_context_handles_backslash_escapes(self) -> None:
+        """Test that backslash escapes within strings are handled correctly."""
+        from loft.validation.asp_validators import strip_asp_context
+
+        # String with newline and tab escapes: "line1\nline2\ttab"
+        rule = r'log(X, "line1\nline2\ttab") :- event(X).'
+        stripped = strip_asp_context(rule)
+
+        # The entire quoted string should be removed
+        assert "log(X, ) :- event(X)." == stripped
+
+    def test_strip_asp_context_handles_backslash_at_end(self) -> None:
+        """Test that backslash before closing quote is handled."""
+        from loft.validation.asp_validators import strip_asp_context
+
+        # String ending with escaped backslash: "path\\to\\file\\"
+        rule = r'path(X, "C:\\Users\\file") :- windows(X).'
+        stripped = strip_asp_context(rule)
+
+        # The entire quoted string should be removed
+        assert "path(X, ) :- windows(X)." == stripped
+
+    def test_strip_asp_context_handles_multiple_strings(self) -> None:
+        """Test multiple quoted strings in one rule."""
+        from loft.validation.asp_validators import strip_asp_context
+
+        rule = 'pair("first.string", "second.string") :- condition(X).'
+        stripped = strip_asp_context(rule)
+
+        # Both strings should be removed
+        assert "first.string" not in stripped
+        assert "second.string" not in stripped
+        assert "pair(, ) :- condition(X)." == stripped
+
+    def test_strip_asp_context_handles_adjacent_strings(self) -> None:
+        """Test adjacent quoted strings without separator."""
+        from loft.validation.asp_validators import strip_asp_context
+
+        # Adjacent strings (unusual but valid ASP)
+        rule = 'concat("hello""world") :- true.'
+        stripped = strip_asp_context(rule)
+
+        # Both strings should be removed
+        assert "hello" not in stripped
+        assert "world" not in stripped
+        assert "concat() :- true." == stripped
+
+    def test_embedded_periods_with_escaped_quotes(self) -> None:
+        """Test embedded period detection ignores periods in escaped quote strings."""
+        from loft.validation.asp_validators import check_embedded_periods
+
+        # Embedded period inside escaped quote context
+        rule = r'message(X, "Path is C:\\Users\\file.txt") :- entity(X).'
+        errors, warnings = check_embedded_periods(rule)
+
+        # Should not flag "file.txt" as embedded period
+        assert len(errors) == 0
+        assert all("file.txt" not in w for w in warnings)
+
+    def test_unsafe_variables_with_escaped_quotes(self) -> None:
+        """Test unsafe variable detection ignores variables in escaped quote strings."""
+        from loft.validation.asp_validators import check_unsafe_variables
+
+        # Variable pattern inside string with escaped quotes
+        rule = r'message(X, "Variable \"Y\" is undefined") :- entity(X).'
+        errors, warnings = check_unsafe_variables(rule)
+
+        # Y inside the quoted string should not be flagged as unsafe
+        assert len(errors) == 0
+
+    def test_asp_patterns_class_exists(self) -> None:
+        """Test that ASPPatterns class is properly defined and accessible."""
+        from loft.validation.asp_validators import ASPPatterns
+
+        # Verify all expected patterns exist
+        assert hasattr(ASPPatterns, "VARIABLE")
+        assert hasattr(ASPPatterns, "NEGATIVE_LITERAL")
+        assert hasattr(ASPPatterns, "NEGATIVE_ARGS")
+        assert hasattr(ASPPatterns, "OOP_STYLE")
+        assert hasattr(ASPPatterns, "METHOD_STYLE")
+        assert hasattr(ASPPatterns, "GENERAL_PERIOD")
+        assert hasattr(ASPPatterns, "DIGIT_BEFORE")
+        assert hasattr(ASPPatterns, "DIGIT_AFTER")
+        assert hasattr(ASPPatterns, "QUOTED_STRING")
+        assert hasattr(ASPPatterns, "ASP_COMMENT")
+
+    def test_asp_patterns_quoted_string_matches_escaped(self) -> None:
+        """Test ASPPatterns.QUOTED_STRING correctly matches escaped quotes."""
+        from loft.validation.asp_validators import ASPPatterns
+
+        # Simple string
+        assert ASPPatterns.QUOTED_STRING.search('"hello"') is not None
+
+        # String with escaped quote
+        match = ASPPatterns.QUOTED_STRING.search(r'"He said \"hello\""')
+        assert match is not None
+        assert match.group() == r'"He said \"hello\""'
+
+        # String with escaped backslash
+        match = ASPPatterns.QUOTED_STRING.search(r'"path\\to\\file"')
+        assert match is not None
+        assert match.group() == r'"path\\to\\file"'
+
+    def test_string_with_period_and_escaped_quote(self) -> None:
+        """Test string containing both period and escaped quotes."""
+        from loft.validation.asp_validators import check_embedded_periods
+
+        # Complex string with period and escaped quotes
+        rule = r'info(X, "Error: \"file.not.found\"") :- error(X).'
+        errors, warnings = check_embedded_periods(rule)
+
+        # None of the periods inside the string should be flagged
+        assert len(errors) == 0
+        assert all("file.not.found" not in w for w in warnings)
+
+    def test_real_period_with_escaped_quote_context(self) -> None:
+        """Test that real embedded periods are still detected alongside escaped strings."""
+        from loft.validation.asp_validators import check_embedded_periods
+
+        # Real embedded period plus escaped quote string
+        rule = r'result(Obj.Method, "String with \"quotes\"") :- input(X).'
+        errors, warnings = check_embedded_periods(rule)
+
+        # Should detect Obj.Method but not anything in the quoted string
+        assert len(errors) > 0
+        assert any("Obj.Method" in err for err in errors)
