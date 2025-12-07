@@ -523,9 +523,7 @@ class TestUnsafeVariableDetection:
         assert len(errors) == 0, f"Unexpected errors for safe rule: {errors}"
 
     @pytest.mark.parametrize("rule,expected_vars", UNSAFE_RULE_CASES)
-    def test_unsafe_variable_detected(
-        self, rule: str, expected_vars: list[str]
-    ) -> None:
+    def test_unsafe_variable_detected(self, rule: str, expected_vars: list[str]) -> None:
         """Test that unsafe variables are detected."""
         from loft.validation.asp_validators import check_unsafe_variables
 
@@ -576,9 +574,7 @@ class TestUnsafeVariableDetection:
         pytest.param("pred(X, Y, Z)", {"X", "Y", "Z"}, id="basic_extraction"),
         pytest.param("pred(a, b, c)", set(), id="no_variables"),
         pytest.param("pred(X, constant, Y)", {"X", "Y"}, id="mixed"),
-        pytest.param(
-            "pred(My_Var, Another_One)", {"My_Var", "Another_One"}, id="underscore_names"
-        ),
+        pytest.param("pred(My_Var, Another_One)", {"My_Var", "Another_One"}, id="underscore_names"),
     ]
 
     @pytest.mark.parametrize("text,expected", EXTRACT_VARIABLES_CASES)
@@ -661,9 +657,7 @@ class TestEmbeddedPeriodDetection:
     ]
 
     @pytest.mark.parametrize("rule,expected_pattern", EMBEDDED_PERIOD_ERROR_CASES)
-    def test_embedded_period_detected(
-        self, rule: str, expected_pattern: str
-    ) -> None:
+    def test_embedded_period_detected(self, rule: str, expected_pattern: str) -> None:
         """Test that embedded periods are detected in various patterns."""
         from loft.validation.asp_validators import check_embedded_periods
 
@@ -756,9 +750,7 @@ class TestInputValidationEdgeCases:
     ]
 
     @pytest.mark.parametrize("input_str", EMPTY_OR_WHITESPACE_INPUTS)
-    def test_check_embedded_periods_empty_or_whitespace(
-        self, input_str: str
-    ) -> None:
+    def test_check_embedded_periods_empty_or_whitespace(self, input_str: str) -> None:
         """Test check_embedded_periods with empty/whitespace input."""
         from loft.validation.asp_validators import check_embedded_periods
 
@@ -767,9 +759,7 @@ class TestInputValidationEdgeCases:
         assert warnings == []
 
     @pytest.mark.parametrize("input_str", EMPTY_OR_WHITESPACE_INPUTS)
-    def test_check_unsafe_variables_empty_or_whitespace(
-        self, input_str: str
-    ) -> None:
+    def test_check_unsafe_variables_empty_or_whitespace(self, input_str: str) -> None:
         """Test check_unsafe_variables with empty/whitespace input."""
         from loft.validation.asp_validators import check_unsafe_variables
 
