@@ -139,6 +139,10 @@ class MetaReasoningOrchestrator:
         self._cycle_history: List[CycleResult] = []
         self._accumulated_metrics: RunMetrics = RunMetrics()
 
+        # Failure pattern tracking from LLM processor (issue #169)
+        self._processor_failure_patterns: Dict[str, int] = {}
+        self._processor_failure_details: List[Dict[str, Any]] = []
+
         self._on_cycle_start: Optional[Callable[[int], None]] = None
         self._on_cycle_complete: Optional[Callable[[CycleResult], None]] = None
         self._on_improvement: Optional[Callable[[Dict[str, Any]], None]] = None
@@ -206,6 +210,137 @@ class MetaReasoningOrchestrator:
             selector: StrategySelector instance
         """
         self._strategy_selector = selector
+
+    def update_failure_patterns(
+        self,
+        patterns: Dict[str, int],
+        details: Optional[List[Dict[str, Any]]] = None,
+    ) -> None:
+        """Update failure patterns from LLM processor (issue #169).
+
+        This method receives categorized failure patterns from LLMCaseProcessor
+        to inform meta-reasoning decisions.
+
+        Args:
+            patterns: Dictionary mapping failure categories to counts
+            details: Optional list of detailed failure information
+        """
+        # Merge patterns with existing
+        for category, count in patterns.items():
+            current_count = self._processor_failure_patterns.get(category, 0)
+            self._processor_failure_patterns[category] = current_count + count
+
+        if details:
+            self._processor_failure_details.extend(details)
+
+        logger.debug(
+            f"Updated failure patterns: {len(patterns)} categories, "
+            f"{sum(patterns.values())} new failures"
+        )
+
+    def get_processor_failure_patterns(self) -> Dict[str, int]:
+        """Get accumulated failure patterns from LLM processor.
+
+        Returns:
+            Dictionary mapping failure categories to occurrence counts
+        """
+        return dict(self._processor_failure_patterns)
+
+    def suggest_prompt_improvements(self) -> List[Dict[str, Any]]:
+        """Suggest prompt improvements based on failure patterns (issue #169).
+
+        Analyzes accumulated failure patterns to generate actionable
+        suggestions for improving prompts and rule generation.
+
+        Returns:
+            List of improvement suggestions with category, description, and priority
+        """
+        suggestions = []
+
+        if not self._processor_failure_patterns:
+            return suggestions
+
+        total_failures = sum(self._processor_failure_patterns.values())
+
+        # Sort patterns by frequency
+        sorted_patterns = sorted(
+            self._processor_failure_patterns.items(),
+            key=lambda x: x[1],
+            reverse=True,
+        )
+
+        for category, count in sorted_patterns:
+            percentage = (count / total_failures * 100) if total_failures > 0 else 0
+
+            suggestion = {
+                "category": category,
+                "count": count,
+                "percentage": round(percentage, 1),
+                "priority": "high" if percentage > 30 else "medium" if percentage > 10 else "low",
+            }
+
+            # Generate specific recommendations based on category
+            if category == "unsafe_variable":
+                suggestion["description"] = (
+                    "Variables appear only in negative literals. "
+                    "Add explicit variable safety constraints to prompts."
+                )
+                suggestion["recommended_action"] = (
+                    "Update GAP_FILLING prompt with variable safety rules"
+                )
+            elif category == "embedded_period":
+                suggestion["description"] = (
+                    "Periods appearing in fact atoms cause parsing errors. "
+                    "Add period sanitization to fact preprocessing."
+                )
+                suggestion["recommended_action"] = "Sanitize periods in facts before ASP processing"
+            elif category == "syntax_error":
+                suggestion["description"] = (
+                    "ASP syntax errors in generated rules. "
+                    "Add syntax validation examples to prompts."
+                )
+                suggestion["recommended_action"] = (
+                    "Include ASP syntax examples in rule generation prompts"
+                )
+            elif category == "invalid_arithmetic":
+                suggestion["description"] = (
+                    "Invalid arithmetic expressions in rules. "
+                    "Restrict or guide arithmetic usage in prompts."
+                )
+                suggestion["recommended_action"] = "Add arithmetic constraints to rule templates"
+            elif category == "grounding_error":
+                suggestion["description"] = (
+                    "Rules cannot be grounded due to infinite domains. "
+                    "Add domain restriction guidance to prompts."
+                )
+                suggestion["recommended_action"] = "Include domain bounding examples in prompts"
+            elif category == "json_parse_error":
+                suggestion["description"] = (
+                    "LLM responses not parseable as JSON. "
+                    "Add stricter JSON formatting requirements."
+                )
+                suggestion["recommended_action"] = "Enforce JSON schema in prompt instructions"
+            elif category == "validation_error":
+                suggestion["description"] = (
+                    "Generated rules fail validation checks. "
+                    "Improve rule quality guidance in prompts."
+                )
+                suggestion["recommended_action"] = (
+                    "Add validation criteria to rule generation prompts"
+                )
+            else:
+                suggestion["description"] = f"Unknown failure category: {category}"
+                suggestion["recommended_action"] = "Investigate and categorize these failures"
+
+            suggestions.append(suggestion)
+
+        return suggestions
+
+    def clear_failure_patterns(self) -> None:
+        """Clear accumulated failure patterns (e.g., after improvement cycle)."""
+        self._processor_failure_patterns.clear()
+        self._processor_failure_details.clear()
+        logger.debug("Cleared processor failure patterns")
 
     def should_run_cycle(self, cases_since_last_cycle: int) -> bool:
         """Check if an improvement cycle should run.
@@ -546,6 +681,9 @@ class MetaReasoningOrchestrator:
             "failure_patterns": list(
                 set(pattern for cr in self._cycle_history for pattern in cr.failure_patterns)
             ),
+            # Processor failure patterns for meta-reasoning (issue #169)
+            "processor_failure_patterns": dict(self._processor_failure_patterns),
+            "total_processor_failures": sum(self._processor_failure_patterns.values()),
         }
 
     def reset(self) -> None:

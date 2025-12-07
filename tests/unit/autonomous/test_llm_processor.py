@@ -177,6 +177,147 @@ class TestPredicateExtraction:
         processor._extract_predicates.assert_called_once()
 
 
+class TestFailurePatternTracking:
+    """Test failure pattern tracking functionality (issue #169)."""
+
+    def test_initial_failure_patterns_empty(self):
+        """Test that initial failure patterns are empty."""
+        processor = LLMCaseProcessor()
+
+        assert processor.get_failure_patterns() == {}
+        assert processor.get_failure_details() == []
+
+    def test_categorize_error_unsafe_variable(self):
+        """Test categorization of unsafe variable errors."""
+        processor = LLMCaseProcessor()
+
+        result = processor._categorize_error("unsafe variable X in rule head")
+        assert result == "unsafe_variable"
+
+        result = processor._categorize_error("Variable Y is unsafe")
+        assert result == "unsafe_variable"
+
+    def test_categorize_error_embedded_period(self):
+        """Test categorization of embedded period errors."""
+        processor = LLMCaseProcessor()
+
+        result = processor._categorize_error("embedded period in fact")
+        assert result == "embedded_period"
+
+        result = processor._categorize_error("Period found inside fact atom")
+        assert result == "embedded_period"
+
+    def test_categorize_error_syntax(self):
+        """Test categorization of syntax errors."""
+        processor = LLMCaseProcessor()
+
+        result = processor._categorize_error("syntax error at line 5")
+        assert result == "syntax_error"
+
+        result = processor._categorize_error("Failed to parse rule")
+        assert result == "syntax_error"
+
+    def test_categorize_error_arithmetic(self):
+        """Test categorization of arithmetic errors."""
+        processor = LLMCaseProcessor()
+
+        result = processor._categorize_error("invalid arithmetic: abs(-5)")
+        assert result == "invalid_arithmetic"
+
+    def test_categorize_error_grounding(self):
+        """Test categorization of grounding errors."""
+        processor = LLMCaseProcessor()
+
+        result = processor._categorize_error("grounding error: infinite domain")
+        assert result == "grounding_error"
+
+    def test_categorize_error_json_parse(self):
+        """Test categorization of JSON parse errors."""
+        processor = LLMCaseProcessor()
+
+        result = processor._categorize_error("JSON decode error at position 10")
+        assert result == "json_parse_error"
+
+    def test_categorize_error_unknown(self):
+        """Test categorization of unknown errors."""
+        processor = LLMCaseProcessor()
+
+        result = processor._categorize_error("Something unexpected happened")
+        assert result == "unknown"
+
+    def test_record_failure_tracks_patterns(self):
+        """Test that recording failures updates pattern counts."""
+        processor = LLMCaseProcessor()
+
+        processor._record_failure("case_001", "unsafe variable X")
+        processor._record_failure("case_002", "unsafe variable Y")
+        processor._record_failure("case_003", "syntax error at line 1")
+
+        patterns = processor.get_failure_patterns()
+        assert patterns["unsafe_variable"] == 2
+        assert patterns["syntax_error"] == 1
+
+    def test_record_failure_stores_details(self):
+        """Test that recording failures stores details."""
+        processor = LLMCaseProcessor()
+
+        processor._record_failure(
+            "case_001",
+            "unsafe variable X",
+            context={"predicate": "foo(X)"},
+        )
+
+        details = processor.get_failure_details()
+        assert len(details) == 1
+        assert details[0]["case_id"] == "case_001"
+        assert details[0]["category"] == "unsafe_variable"
+        assert details[0]["context"]["predicate"] == "foo(X)"
+
+    def test_record_failure_with_explicit_category(self):
+        """Test recording failure with explicit category."""
+        processor = LLMCaseProcessor()
+
+        processor._record_failure(
+            "case_001",
+            "generic error",
+            category="custom_category",
+        )
+
+        patterns = processor.get_failure_patterns()
+        assert patterns["custom_category"] == 1
+
+    def test_clear_failure_tracking(self):
+        """Test clearing failure tracking data."""
+        processor = LLMCaseProcessor()
+
+        processor._record_failure("case_001", "unsafe variable X")
+        processor._record_failure("case_002", "syntax error")
+
+        assert processor.get_failure_patterns() != {}
+        assert processor.get_failure_details() != []
+
+        processor.clear_failure_tracking()
+
+        assert processor.get_failure_patterns() == {}
+        assert processor.get_failure_details() == []
+
+    def test_metrics_include_failure_patterns(self):
+        """Test that get_metrics includes failure pattern information."""
+        processor = LLMCaseProcessor()
+
+        processor._record_failure("case_001", "unsafe variable X")
+        processor._record_failure("case_002", "syntax error")
+
+        metrics = processor.get_metrics()
+
+        assert "failure_patterns" in metrics
+        assert "total_failures" in metrics
+        assert "failure_rate" in metrics
+        assert metrics["total_failures"] == 2
+        assert metrics["failure_patterns"]["unsafe_variable"] == 1
+        assert metrics["failure_patterns"]["syntax_error"] == 1
+
+
 class TestFactoryFunction:
     """Test the factory function."""
 
