@@ -4,6 +4,8 @@ Unit tests for ASP validators.
 Tests syntax and semantic validation of ASP programs.
 """
 
+import pytest
+
 from loft.validation import (
     ASPSyntaxValidator,
     ASPSemanticValidator,
@@ -447,109 +449,111 @@ class TestGeneratedRuleValidation:
 
 
 class TestUnsafeVariableDetection:
-    """Tests for unsafe variable detection (issue #167)."""
+    """Tests for unsafe variable detection (issue #167).
 
-    def test_safe_rule_no_errors(self) -> None:
-        """Test that safe rules produce no errors."""
-        from loft.validation.asp_validators import check_unsafe_variables
+    Uses pytest.mark.parametrize for cleaner, more maintainable tests.
+    """
 
-        # All head variables are bound in body
-        rule = "cause_of_harm(X, Type) :- dangerous_condition(X), type_of_harm(X, Type)."
-        errors, warnings = check_unsafe_variables(rule)
-
-        assert len(errors) == 0
-
-    def test_unsafe_variable_detected(self) -> None:
-        """Test that unsafe variables are detected (issue #167 example)."""
-        from loft.validation.asp_validators import check_unsafe_variables
-
-        # Fall is not bound in body
-        rule = "cause_of_harm(X, Fall) :- dangerous_condition(X)."
-        errors, warnings = check_unsafe_variables(rule)
-
-        assert len(errors) == 1
-        assert "Fall" in errors[0]
-        assert "unsafe" in errors[0].lower()
-
-    def test_multiple_unsafe_variables(self) -> None:
-        """Test detection of multiple unsafe variables."""
-        from loft.validation.asp_validators import check_unsafe_variables
-
-        # Both Y and Z are not bound in body
-        rule = "pred(X, Y, Z) :- other_pred(X)."
-        errors, warnings = check_unsafe_variables(rule)
-
-        assert len(errors) == 2
-        # Check both variables are mentioned
-        error_text = " ".join(errors)
-        assert "Y" in error_text
-        assert "Z" in error_text
-
-    def test_constant_not_flagged_as_unsafe(self) -> None:
-        """Test that lowercase constants are not flagged as unsafe."""
-        from loft.validation.asp_validators import check_unsafe_variables
-
-        # 'fall' is lowercase (constant), not a variable
-        rule = "cause_of_harm(X, fall) :- dangerous_condition(X)."
-        errors, warnings = check_unsafe_variables(rule)
-
-        assert len(errors) == 0
-
-    def test_variable_in_negative_literal_unsafe(self) -> None:
-        """Test that variables only in negative literals are detected."""
-        from loft.validation.asp_validators import check_unsafe_variables
-
-        # Y only appears in negative literal, so X is safe but Y is unsafe
-        rule = "result(X, Y) :- input(X), not excluded(Y)."
-        errors, warnings = check_unsafe_variables(rule)
-
-        # Y should be flagged as unsafe
-        assert len(errors) == 1
-        assert "Y" in errors[0]
-
-    def test_fact_no_errors(self) -> None:
-        """Test that facts (no body) don't produce errors."""
-        from loft.validation.asp_validators import check_unsafe_variables
-
-        rule = "fact(constant)."
-        errors, warnings = check_unsafe_variables(rule)
-
-        assert len(errors) == 0
-        assert len(warnings) == 0
-
-    def test_constraint_no_errors(self) -> None:
-        """Test that constraints (no head) don't produce errors."""
-        from loft.validation.asp_validators import check_unsafe_variables
-
-        rule = ":- conflicting(X), other(X)."
-        errors, warnings = check_unsafe_variables(rule)
-
-        assert len(errors) == 0
-
-    def test_complex_safe_rule(self) -> None:
-        """Test a complex safe rule from legal domain."""
-        from loft.validation.asp_validators import check_unsafe_variables
-
-        rule = """
-        satisfies_statute_of_frauds(Contract, Party) :-
+    # Test data for SAFE rules (no errors expected)
+    SAFE_RULE_CASES = [
+        pytest.param(
+            "cause_of_harm(X, Type) :- dangerous_condition(X), type_of_harm(X, Type).",
+            id="all_head_vars_bound",
+        ),
+        pytest.param(
+            "cause_of_harm(X, fall) :- dangerous_condition(X).",
+            id="lowercase_constant_not_variable",
+        ),
+        pytest.param(
+            "fact(constant).",
+            id="fact_no_body",
+        ),
+        pytest.param(
+            ":- conflicting(X), other(X).",
+            id="constraint_no_head",
+        ),
+        pytest.param(
+            """satisfies_statute_of_frauds(Contract, Party) :-
             contract(Contract),
             party(Contract, Party),
             has_writing(Contract),
-            signed_by(Contract, Party).
-        """
+            signed_by(Contract, Party).""",
+            id="complex_legal_rule",
+        ),
+        pytest.param(
+            "successor(X, Y) :- number(X), Y = X + 1.",
+            id="arithmetic_expression_binds_variable",
+        ),
+        pytest.param(
+            "result(X) :- input(X), not excluded(X).",
+            id="negated_atom_same_variable",
+        ),
+        pytest.param(
+            "valid(X) :- candidate(X), not rejected(X), not excluded(X).",
+            id="multiple_negated_literals",
+        ),
+    ]
+
+    # Test data for UNSAFE rules (errors expected)
+    UNSAFE_RULE_CASES = [
+        pytest.param(
+            "cause_of_harm(X, Fall) :- dangerous_condition(X).",
+            ["Fall"],
+            id="single_unsafe_variable",
+        ),
+        pytest.param(
+            "pred(X, Y, Z) :- other_pred(X).",
+            ["Y", "Z"],
+            id="multiple_unsafe_variables",
+        ),
+        pytest.param(
+            "result(X, Y) :- input(X), not excluded(Y).",
+            ["Y"],
+            id="variable_only_in_negative_literal",
+        ),
+    ]
+
+    @pytest.mark.parametrize("rule", SAFE_RULE_CASES)
+    def test_safe_rule_no_errors(self, rule: str) -> None:
+        """Test that safe rules produce no unsafe variable errors."""
+        from loft.validation.asp_validators import check_unsafe_variables
+
         errors, warnings = check_unsafe_variables(rule)
 
-        assert len(errors) == 0
+        assert len(errors) == 0, f"Unexpected errors for safe rule: {errors}"
+
+    @pytest.mark.parametrize("rule,expected_vars", UNSAFE_RULE_CASES)
+    def test_unsafe_variable_detected(
+        self, rule: str, expected_vars: list[str]
+    ) -> None:
+        """Test that unsafe variables are detected."""
+        from loft.validation.asp_validators import check_unsafe_variables
+
+        errors, warnings = check_unsafe_variables(rule)
+
+        assert len(errors) == len(expected_vars), (
+            f"Expected {len(expected_vars)} errors, got {len(errors)}: {errors}"
+        )
+        error_text = " ".join(errors)
+        for var in expected_vars:
+            assert var in error_text, f"Expected '{var}' in errors, got: {errors}"
+
+    def test_unsafe_variable_error_message_format(self) -> None:
+        """Test that unsafe variable errors include appropriate messaging."""
+        from loft.validation.asp_validators import check_unsafe_variables
+
+        rule = "cause_of_harm(X, Fall) :- dangerous_condition(X)."
+        errors, warnings = check_unsafe_variables(rule)
+
+        assert "unsafe" in errors[0].lower()
 
     def test_integration_with_validator(self) -> None:
         """Test that unsafe variable check is integrated into validator."""
         validator = ASPSyntaxValidator()
 
-        # Rule with unsafe variable (Fall not bound)
         rule = "cause_of_harm(X, Fall) :- dangerous_condition(X)."
         result = validator.validate_generated_rule(rule)
 
-        # Should not be valid due to unsafe variable
         assert not result.is_valid
         assert "unsafe_variables" in result.details
         assert any("Fall" in err for err in result.error_messages)
@@ -558,62 +562,41 @@ class TestUnsafeVariableDetection:
         """Test that safe rules pass validation."""
         validator = ASPSyntaxValidator()
 
-        # All head variables bound in body
         rule = "cause_of_harm(X, Type) :- dangerous_condition(X), harm_type(X, Type)."
         result = validator.validate_generated_rule(rule)
 
-        # Should be valid - no unsafe variables
         assert result.is_valid
         assert (
             "unsafe_variables" not in result.details
             or len(result.details.get("unsafe_variables", [])) == 0
         )
 
-    def test_arithmetic_expression_safe(self) -> None:
-        """Test arithmetic expressions where Y is bound via assignment."""
-        from loft.validation.asp_validators import check_unsafe_variables
+    # Test data for _extract_variables helper function
+    EXTRACT_VARIABLES_CASES = [
+        pytest.param("pred(X, Y, Z)", {"X", "Y", "Z"}, id="basic_extraction"),
+        pytest.param("pred(a, b, c)", set(), id="no_variables"),
+        pytest.param("pred(X, constant, Y)", {"X", "Y"}, id="mixed"),
+        pytest.param(
+            "pred(My_Var, Another_One)", {"My_Var", "Another_One"}, id="underscore_names"
+        ),
+    ]
 
-        # Y = X + 1 binds Y, but our heuristic may not catch this
-        # This documents the known limitation
-        rule = "successor(X, Y) :- number(X), Y = X + 1."
-        errors, warnings = check_unsafe_variables(rule)
-
-        # The heuristic should find Y in the body after "Y = X + 1"
-        # Since Y appears in the body text, it should be safe
-        assert len(errors) == 0
-
-    def test_helper_extract_variables(self) -> None:
+    @pytest.mark.parametrize("text,expected", EXTRACT_VARIABLES_CASES)
+    def test_helper_extract_variables(self, text: str, expected: set[str]) -> None:
         """Test the _extract_variables helper function."""
         from loft.validation.asp_validators import _extract_variables
 
-        # Test basic extraction
-        variables = _extract_variables("pred(X, Y, Z)")
-        assert variables == {"X", "Y", "Z"}
-
-        # Test no variables
-        variables = _extract_variables("pred(a, b, c)")
-        assert variables == set()
-
-        # Test mixed
-        variables = _extract_variables("pred(X, constant, Y)")
-        assert variables == {"X", "Y"}
-
-        # Test underscore variable names
-        variables = _extract_variables("pred(My_Var, Another_One)")
-        assert variables == {"My_Var", "Another_One"}
+        variables = _extract_variables(text)
+        assert variables == expected
 
     def test_documented_limitations_choice_rules(self) -> None:
         """Document behavior with choice rules (known limitation)."""
         from loft.validation.asp_validators import check_unsafe_variables
 
-        # Choice rule: {head(X)} :- body(X).
-        # The heuristic may not properly parse the braces
         rule = "{selected(X)} :- candidate(X)."
         errors, warnings = check_unsafe_variables(rule)
 
         # Document current behavior - may or may not detect correctly
-        # This test ensures we're aware of the limitation
-        # The actual result depends on regex behavior with braces
         assert isinstance(errors, list)
         assert isinstance(warnings, list)
 
@@ -621,8 +604,6 @@ class TestUnsafeVariableDetection:
         """Document behavior with aggregates (known limitation)."""
         from loft.validation.asp_validators import check_unsafe_variables
 
-        # Aggregate: count{X : pred(X)} > 0
-        # Our heuristic doesn't handle aggregate syntax
         rule = "has_items(Group) :- group(Group), #count{X : item(Group, X)} > 0."
         errors, warnings = check_unsafe_variables(rule)
 
@@ -630,115 +611,96 @@ class TestUnsafeVariableDetection:
         assert isinstance(errors, list)
         assert isinstance(warnings, list)
 
-    def test_negated_atom_without_parentheses(self) -> None:
-        """Test negated atoms - our pattern expects parentheses."""
-        from loft.validation.asp_validators import check_unsafe_variables
-
-        # Standard negation with parentheses - should work
-        rule = "result(X) :- input(X), not excluded(X)."
-        errors, warnings = check_unsafe_variables(rule)
-        assert len(errors) == 0
-
-    def test_multiple_negated_literals(self) -> None:
-        """Test rules with multiple negated literals."""
-        from loft.validation.asp_validators import check_unsafe_variables
-
-        # Multiple negated literals, all variables bound in positive literals
-        rule = "valid(X) :- candidate(X), not rejected(X), not excluded(X)."
-        errors, warnings = check_unsafe_variables(rule)
-
-        assert len(errors) == 0
-
 
 class TestEmbeddedPeriodDetection:
-    """Tests for embedded period detection (issue #168)."""
+    """Tests for embedded period detection (issue #168).
 
-    def test_oop_style_dot_notation_detected(self) -> None:
-        """Test detection of OOP-style dot notation (issue #168 example)."""
+    Uses pytest.mark.parametrize for cleaner, more maintainable tests.
+    """
+
+    # Test data for embedded period detection that SHOULD produce errors
+    EMBEDDED_PERIOD_ERROR_CASES = [
+        pytest.param(
+            "physical_harm(Spectator.FoulBall) :- at_game(Spectator).",
+            "Spectator.FoulBall",
+            id="oop_style_dot_notation",
+        ),
+        pytest.param(
+            "result(X) :- input.parse(X).",
+            "input.parse",
+            id="method_style_notation",
+        ),
+        pytest.param(
+            "output(X.value) :- input(X).",
+            "X.value",
+            id="variable_dot_lowercase",
+        ),
+        pytest.param(
+            "liable(Defendant.Negligence) :- duty_owed(Defendant), breach(Defendant).",
+            "Defendant.Negligence",
+            id="legal_context_embedded_period",
+        ),
+        pytest.param(
+            "result(X) :- math.sqrt(X, Y).",
+            "math.sqrt",
+            id="namespace_style_notation",
+        ),
+    ]
+
+    # Test data for valid rules that should NOT produce errors
+    VALID_RULE_CASES = [
+        pytest.param(
+            "injured_by(Spectator, FoulBall) :- at_baseball_game(Spectator), foul_ball_strike(FoulBall).",
+            id="comma_separated_args",
+        ),
+        pytest.param("fact(a).", id="simple_fact"),
+        pytest.param("threshold(3.14).", id="floating_point_number"),
+        pytest.param("person(john).", id="fact_with_constant"),
+        pytest.param(":- conflict(X), valid(X).", id="constraint_rule"),
+        pytest.param("", id="empty_string"),
+    ]
+
+    @pytest.mark.parametrize("rule,expected_pattern", EMBEDDED_PERIOD_ERROR_CASES)
+    def test_embedded_period_detected(
+        self, rule: str, expected_pattern: str
+    ) -> None:
+        """Test that embedded periods are detected in various patterns."""
         from loft.validation.asp_validators import check_embedded_periods
 
-        # Example from issue #168: Spectator.FoulBall instead of proper ASP
+        errors, warnings = check_embedded_periods(rule)
+
+        assert len(errors) > 0, f"Expected errors for pattern: {expected_pattern}"
+        assert any(expected_pattern in err for err in errors), (
+            f"Expected '{expected_pattern}' in errors, got: {errors}"
+        )
+
+    @pytest.mark.parametrize("rule", VALID_RULE_CASES)
+    def test_valid_rule_no_errors(self, rule: str) -> None:
+        """Test that valid ASP rules produce no embedded period errors."""
+        from loft.validation.asp_validators import check_embedded_periods
+
+        errors, warnings = check_embedded_periods(rule)
+
+        assert len(errors) == 0, f"Unexpected errors for rule '{rule}': {errors}"
+
+    def test_oop_style_error_message_format(self) -> None:
+        """Test that OOP-style errors include appropriate messaging."""
+        from loft.validation.asp_validators import check_embedded_periods
+
         rule = "physical_harm(Spectator.FoulBall) :- at_game(Spectator)."
         errors, warnings = check_embedded_periods(rule)
 
-        assert len(errors) > 0
-        assert any("Spectator.FoulBall" in err for err in errors)
         assert any("OOP" in err or "dot notation" in err.lower() for err in errors)
-
-    def test_method_style_notation_detected(self) -> None:
-        """Test detection of method-style notation."""
-        from loft.validation.asp_validators import check_embedded_periods
-
-        # Method-style: object.method
-        rule = "result(X) :- input.parse(X)."
-        errors, warnings = check_embedded_periods(rule)
-
-        assert len(errors) > 0
-        assert any("input.parse" in err for err in errors)
-
-    def test_valid_rule_no_errors(self) -> None:
-        """Test that valid ASP rules produce no errors."""
-        from loft.validation.asp_validators import check_embedded_periods
-
-        # Valid ASP with proper comma separation
-        rule = "injured_by(Spectator, FoulBall) :- at_baseball_game(Spectator), foul_ball_strike(FoulBall)."
-        errors, warnings = check_embedded_periods(rule)
-
-        assert len(errors) == 0
-
-    def test_trailing_period_not_flagged(self) -> None:
-        """Test that rule-terminating periods are not flagged."""
-        from loft.validation.asp_validators import check_embedded_periods
-
-        # Valid rule with trailing period
-        rule = "fact(a)."
-        errors, warnings = check_embedded_periods(rule)
-
-        assert len(errors) == 0
-        assert len(warnings) == 0
-
-    def test_floating_point_not_flagged(self) -> None:
-        """Test that floating-point numbers are not flagged."""
-        from loft.validation.asp_validators import check_embedded_periods
-
-        # Floating-point numbers should not be flagged
-        rule = "threshold(3.14)."
-        errors, warnings = check_embedded_periods(rule)
-
-        # Should not flag 3.14 as embedded period
-        assert len(errors) == 0
 
     def test_multiple_embedded_periods(self) -> None:
         """Test detection of multiple embedded periods."""
         from loft.validation.asp_validators import check_embedded_periods
 
-        # Multiple OOP-style violations
         rule = "result(A.B) :- input(C.D), process(E.F)."
         errors, warnings = check_embedded_periods(rule)
 
         # Should detect all three
         assert len(errors) >= 3
-
-    def test_uppercase_variable_dot_lowercase(self) -> None:
-        """Test Variable.method pattern detection."""
-        from loft.validation.asp_validators import check_embedded_periods
-
-        rule = "output(X.value) :- input(X)."
-        errors, warnings = check_embedded_periods(rule)
-
-        assert len(errors) > 0
-        assert any("X.value" in err for err in errors)
-
-    def test_complex_rule_with_embedded_period(self) -> None:
-        """Test complex legal rule with embedded period error."""
-        from loft.validation.asp_validators import check_embedded_periods
-
-        # Complex rule with OOP-style error in legal context
-        rule = "liable(Defendant.Negligence) :- duty_owed(Defendant), breach(Defendant)."
-        errors, warnings = check_embedded_periods(rule)
-
-        assert len(errors) > 0
-        assert any("Defendant.Negligence" in err for err in errors)
 
     def test_integration_with_validator(self) -> None:
         """Test that embedded period check is integrated into validator.
@@ -749,150 +711,95 @@ class TestEmbeddedPeriodDetection:
         """
         validator = ASPSyntaxValidator()
 
-        # Rule with OOP-style dot notation - Clingo catches this as syntax error
         rule = "result(X.Y) :- input(X)."
         result = validator.validate_generated_rule(rule)
 
         # Should not be valid - either due to syntax error or embedded period
         assert not result.is_valid
-        # Either syntax error or embedded period should be flagged
         assert "syntax_error" in result.details or "embedded_periods" in result.details
 
     def test_valid_rule_passes_validation(self) -> None:
         """Test that valid rules pass embedded period validation."""
         validator = ASPSyntaxValidator()
 
-        # Valid ASP with commas
         rule = "injured_by(Person, Object) :- accident(Person), involved(Object)."
         result = validator.validate_generated_rule(rule)
 
-        # Should be valid - no embedded periods
         assert result.is_valid
         assert (
             "embedded_periods" not in result.details
             or len(result.details.get("embedded_periods", [])) == 0
         )
 
-    def test_namespace_style_notation_detected(self) -> None:
-        """Test detection of namespace-style notation."""
-        from loft.validation.asp_validators import check_embedded_periods
-
-        # Namespace-style: module.predicate
-        rule = "result(X) :- math.sqrt(X, Y)."
-        errors, warnings = check_embedded_periods(rule)
-
-        assert len(errors) > 0
-        assert any("math.sqrt" in err for err in errors)
-
-    def test_empty_rule(self) -> None:
-        """Test that empty input doesn't crash."""
-        from loft.validation.asp_validators import check_embedded_periods
-
-        errors, warnings = check_embedded_periods("")
-        assert errors == []
-        assert warnings == []
-
-    def test_fact_with_constant_no_error(self) -> None:
-        """Test that facts with constants work correctly."""
-        from loft.validation.asp_validators import check_embedded_periods
-
-        rule = "person(john)."
-        errors, warnings = check_embedded_periods(rule)
-
-        assert len(errors) == 0
-
-    def test_constraint_no_embedded_period(self) -> None:
-        """Test that constraints without embedded periods pass."""
-        from loft.validation.asp_validators import check_embedded_periods
-
-        rule = ":- conflict(X), valid(X)."
-        errors, warnings = check_embedded_periods(rule)
-
-        assert len(errors) == 0
-
 
 class TestInputValidationEdgeCases:
     """Tests for input validation edge cases (feedback from multi-agent review).
 
+    Uses pytest.mark.parametrize for cleaner, more maintainable tests.
     These tests verify that functions handle edge cases gracefully:
     - Empty strings
     - Whitespace-only strings
     - Type errors for non-string inputs
     """
 
-    def test_check_embedded_periods_empty_string(self) -> None:
-        """Test check_embedded_periods with empty string."""
+    # Test data for empty/whitespace inputs that should return empty results
+    EMPTY_OR_WHITESPACE_INPUTS = [
+        pytest.param("", id="empty_string"),
+        pytest.param("   \n\t  ", id="whitespace_only"),
+    ]
+
+    # Test data for invalid type inputs that should raise TypeError
+    INVALID_TYPE_INPUTS = [
+        pytest.param(123, id="integer"),
+        pytest.param(None, id="none"),
+        pytest.param(["rule"], id="list"),
+    ]
+
+    @pytest.mark.parametrize("input_str", EMPTY_OR_WHITESPACE_INPUTS)
+    def test_check_embedded_periods_empty_or_whitespace(
+        self, input_str: str
+    ) -> None:
+        """Test check_embedded_periods with empty/whitespace input."""
         from loft.validation.asp_validators import check_embedded_periods
 
-        errors, warnings = check_embedded_periods("")
+        errors, warnings = check_embedded_periods(input_str)
         assert errors == []
         assert warnings == []
 
-    def test_check_embedded_periods_whitespace_only(self) -> None:
-        """Test check_embedded_periods with whitespace-only input."""
-        from loft.validation.asp_validators import check_embedded_periods
+    @pytest.mark.parametrize("input_str", EMPTY_OR_WHITESPACE_INPUTS)
+    def test_check_unsafe_variables_empty_or_whitespace(
+        self, input_str: str
+    ) -> None:
+        """Test check_unsafe_variables with empty/whitespace input."""
+        from loft.validation.asp_validators import check_unsafe_variables
 
-        errors, warnings = check_embedded_periods("   \n\t  ")
+        errors, warnings = check_unsafe_variables(input_str)
         assert errors == []
         assert warnings == []
 
-    def test_check_embedded_periods_type_error(self) -> None:
+    @pytest.mark.parametrize("input_str", EMPTY_OR_WHITESPACE_INPUTS)
+    def test_extract_variables_empty_or_whitespace(self, input_str: str) -> None:
+        """Test _extract_variables with empty/whitespace input."""
+        from loft.validation.asp_validators import _extract_variables
+
+        variables = _extract_variables(input_str)
+        assert variables == set()
+
+    @pytest.mark.parametrize("invalid_input", INVALID_TYPE_INPUTS)
+    def test_check_embedded_periods_type_error(self, invalid_input) -> None:  # type: ignore[no-untyped-def]
         """Test check_embedded_periods raises TypeError for non-string."""
-        import pytest
         from loft.validation.asp_validators import check_embedded_periods
 
         with pytest.raises(TypeError, match="Expected string"):
-            check_embedded_periods(123)  # type: ignore
+            check_embedded_periods(invalid_input)  # type: ignore
 
-        with pytest.raises(TypeError, match="Expected string"):
-            check_embedded_periods(None)  # type: ignore
-
-        with pytest.raises(TypeError, match="Expected string"):
-            check_embedded_periods(["rule"])  # type: ignore
-
-    def test_check_unsafe_variables_empty_string(self) -> None:
-        """Test check_unsafe_variables with empty string."""
-        from loft.validation.asp_validators import check_unsafe_variables
-
-        errors, warnings = check_unsafe_variables("")
-        assert errors == []
-        assert warnings == []
-
-    def test_check_unsafe_variables_whitespace_only(self) -> None:
-        """Test check_unsafe_variables with whitespace-only input."""
-        from loft.validation.asp_validators import check_unsafe_variables
-
-        errors, warnings = check_unsafe_variables("   \n\t  ")
-        assert errors == []
-        assert warnings == []
-
-    def test_check_unsafe_variables_type_error(self) -> None:
+    @pytest.mark.parametrize("invalid_input", INVALID_TYPE_INPUTS)
+    def test_check_unsafe_variables_type_error(self, invalid_input) -> None:  # type: ignore[no-untyped-def]
         """Test check_unsafe_variables raises TypeError for non-string."""
-        import pytest
         from loft.validation.asp_validators import check_unsafe_variables
 
         with pytest.raises(TypeError, match="Expected string"):
-            check_unsafe_variables(123)  # type: ignore
-
-        with pytest.raises(TypeError, match="Expected string"):
-            check_unsafe_variables(None)  # type: ignore
-
-        with pytest.raises(TypeError, match="Expected string"):
-            check_unsafe_variables(["rule"])  # type: ignore
-
-    def test_extract_variables_empty_string(self) -> None:
-        """Test _extract_variables with empty string."""
-        from loft.validation.asp_validators import _extract_variables
-
-        variables = _extract_variables("")
-        assert variables == set()
-
-    def test_extract_variables_whitespace_only(self) -> None:
-        """Test _extract_variables with whitespace-only input."""
-        from loft.validation.asp_validators import _extract_variables
-
-        variables = _extract_variables("   \n\t  ")
-        assert variables == set()
+            check_unsafe_variables(invalid_input)  # type: ignore
 
 
 class TestContextAwareDetection:
