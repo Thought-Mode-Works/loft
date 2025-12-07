@@ -10,6 +10,7 @@ This module provides validation for ASP programs using Clingo, including:
 - Undefined predicate detection
 - Grounding validation
 - Unsafe variable detection (issue #167)
+- Embedded period detection (issue #168)
 """
 
 from typing import Tuple, List, Optional, Dict, Any, Set
@@ -22,6 +23,17 @@ from loft.neural.rule_schemas import (
     check_undefined_predicates,
     validate_rule_grounds,
 )
+
+# Pre-compiled regex patterns for performance (feedback from multi-agent review)
+# These are compiled once at module load instead of on each function call
+_VARIABLE_PATTERN = re.compile(r"\b([A-Z][a-zA-Z0-9_]*)\b")
+_NEGATIVE_LITERAL_PATTERN = re.compile(r"\bnot\s+[a-z_][a-zA-Z0-9_]*\s*\([^)]*\)")
+_NEGATIVE_ARGS_PATTERN = re.compile(r"\bnot\s+[a-z_][a-zA-Z0-9_]*\s*\(([^)]*)\)")
+_OOP_PATTERN = re.compile(r"\b([A-Z][a-zA-Z0-9_]*)\.([a-zA-Z][a-zA-Z0-9_]*)\b")
+_METHOD_PATTERN = re.compile(r"\b([a-z][a-zA-Z0-9_]*)\.([a-z][a-zA-Z0-9_]*)\b")
+_GENERAL_PERIOD_PATTERN = re.compile(r"\.(?!\s*$)")
+_DIGIT_BEFORE_PATTERN = re.compile(r"\d$")
+_DIGIT_AFTER_PATTERN = re.compile(r"^\d")
 
 
 def _extract_variables(text: str) -> Set[str]:
@@ -37,7 +49,7 @@ def _extract_variables(text: str) -> Set[str]:
     Returns:
         Set of variable names found in the text
     """
-    return set(re.findall(r"\b([A-Z][a-zA-Z0-9_]*)\b", text))
+    return set(_VARIABLE_PATTERN.findall(text))
 
 
 def check_unsafe_variables(rule_text: str) -> Tuple[List[str], List[str]]:
@@ -67,14 +79,25 @@ def check_unsafe_variables(rule_text: str) -> Tuple[List[str], List[str]]:
         - errors: List of unsafe variable error messages
         - warnings: List of potential safety warning messages
 
+    Raises:
+        TypeError: If rule_text is not a string
+
     Example:
         >>> errors, warnings = check_unsafe_variables(
         ...     "cause_of_harm(X, Fall) :- dangerous_condition(X)."
         ... )
         >>> assert "Fall" in errors[0]  # Fall is unsafe
     """
-    errors = []
-    warnings = []
+    errors: List[str] = []
+    warnings: List[str] = []
+
+    # Input validation (feedback from multi-agent review)
+    if not isinstance(rule_text, str):
+        raise TypeError(f"Expected string, got {type(rule_text).__name__}")
+
+    # Handle empty or whitespace-only input
+    if not rule_text or not rule_text.strip():
+        return errors, warnings
 
     # Skip if not a rule (no body)
     if ":-" not in rule_text:
@@ -93,8 +116,8 @@ def check_unsafe_variables(rule_text: str) -> Tuple[List[str], List[str]]:
     # First, remove negative literals for positive literal analysis
     positive_body = body_part
 
-    # Remove negative literals (not pred(...))
-    positive_body = re.sub(r"\bnot\s+[a-z_][a-zA-Z0-9_]*\s*\([^)]*\)", "", positive_body)
+    # Remove negative literals (not pred(...)) using pre-compiled pattern
+    positive_body = _NEGATIVE_LITERAL_PATTERN.sub("", positive_body)
 
     # Extract variables from positive body literals using helper
     positive_body_variables = _extract_variables(positive_body)
@@ -133,16 +156,121 @@ def _extract_negative_only_variables(body_part: str, positive_vars: Set[str]) ->
     Returns:
         Set of variable names that only appear in negative literals
     """
-    # Find all variables in negative literals
-    negative_pattern = r"\bnot\s+[a-z_][a-zA-Z0-9_]*\s*\(([^)]*)\)"
-    negative_matches = re.findall(negative_pattern, body_part)
+    # Find all variables in negative literals using pre-compiled pattern
+    negative_matches = _NEGATIVE_ARGS_PATTERN.findall(body_part)
 
-    negative_vars = set()
+    negative_vars: Set[str] = set()
     for match in negative_matches:
         negative_vars.update(_extract_variables(match))
 
     # Return variables only in negative literals
     return negative_vars - positive_vars
+
+
+def check_embedded_periods(rule_text: str) -> Tuple[List[str], List[str]]:
+    """
+    Check for embedded periods in ASP rules (issue #168).
+
+    LLMs sometimes generate rules with OOP-style dot notation instead of proper
+    ASP syntax. For example: `physical_harm(Spectator.FoulBall)` instead of
+    `injured_by(Spectator, FoulBall)`.
+
+    In valid ASP, periods (.) only appear:
+    1. At the end of a rule/fact as a terminator
+    2. In floating-point numbers (e.g., 3.14)
+
+    This function detects:
+    - OOP-style dot notation: Var.OtherVar, Var.predicate
+    - Embedded periods within predicate arguments
+    - Method-style calls: object.method()
+
+    Args:
+        rule_text: The ASP rule to check
+
+    Returns:
+        Tuple of (errors, warnings):
+        - errors: List of embedded period error messages
+        - warnings: List of potential issues that might be false positives
+
+    Raises:
+        TypeError: If rule_text is not a string
+
+    Example:
+        >>> errors, warnings = check_embedded_periods(
+        ...     "physical_harm(Spectator.FoulBall) :- at_game(Spectator)."
+        ... )
+        >>> assert len(errors) > 0  # Detects OOP-style dot notation
+        >>> assert "Spectator.FoulBall" in errors[0]
+    """
+    errors: List[str] = []
+    warnings: List[str] = []
+
+    # Input validation (feedback from multi-agent review)
+    if not isinstance(rule_text, str):
+        raise TypeError(f"Expected string, got {type(rule_text).__name__}")
+
+    # Handle empty or whitespace-only input
+    if not rule_text or not rule_text.strip():
+        return errors, warnings
+
+    # Remove the trailing period (valid terminator)
+    rule_stripped = rule_text.rstrip()
+    if rule_stripped.endswith("."):
+        rule_stripped = rule_stripped[:-1]
+
+    # Pattern 1: OOP-style dot notation - Variable.Variable or Variable.predicate
+    # Matches: Spectator.FoulBall, Object.method, Var.something
+    # Using pre-compiled pattern for performance
+    oop_matches = _OOP_PATTERN.findall(rule_stripped)
+
+    for match in oop_matches:
+        full_match = f"{match[0]}.{match[1]}"
+        errors.append(
+            f"Embedded period detected (OOP-style dot notation): '{full_match}'. "
+            f"ASP uses commas to separate arguments, not dots. "
+            f"Consider: '{match[0]}, {match[1]}' or a different predicate structure."
+        )
+
+    # Pattern 2: lowercase.lowercase (method-style or namespace)
+    # Matches: object.method, module.predicate
+    # Using pre-compiled pattern for performance
+    method_matches = _METHOD_PATTERN.findall(rule_stripped)
+
+    for match in method_matches:
+        full_match = f"{match[0]}.{match[1]}"
+        # Skip if it looks like a floating-point number context
+        errors.append(
+            f"Embedded period detected (method-style notation): '{full_match}'. "
+            f"ASP does not support method calls or namespaced predicates. "
+            f"Use separate predicates or underscores: '{match[0]}_{match[1]}'."
+        )
+
+    # Pattern 3: Any period followed by non-whitespace (except at very end)
+    # This catches remaining cases like foo.bar(X)
+    # But exclude floating-point numbers like 3.14
+    # Using pre-compiled pattern for performance
+    period_positions = [m.start() for m in _GENERAL_PERIOD_PATTERN.finditer(rule_stripped)]
+
+    for pos in period_positions:
+        # Check if it's part of a floating-point number
+        before = rule_stripped[max(0, pos - 5) : pos]
+        after = rule_stripped[pos + 1 : min(len(rule_stripped), pos + 6)]
+
+        # Skip if surrounded by digits (floating-point number)
+        if _DIGIT_BEFORE_PATTERN.search(before) and _DIGIT_AFTER_PATTERN.search(after):
+            continue
+
+        # Skip if already captured by OOP or method patterns
+        context = rule_stripped[max(0, pos - 20) : min(len(rule_stripped), pos + 20)]
+        already_reported = any(f"{m[0]}.{m[1]}" in context for m in oop_matches + method_matches)
+        if not already_reported:
+            warnings.append(
+                f"Unexpected period found at position {pos} in rule. "
+                f"Context: '...{context}...'. "
+                f"Periods should only terminate rules, not appear mid-rule."
+            )
+
+    return errors, warnings
 
 
 class ASPSyntaxValidator:
@@ -216,6 +344,14 @@ class ASPSyntaxValidator:
             details["unsafe_variables"] = unsafe_errors
         if unsafe_warnings:
             warnings.extend(unsafe_warnings)
+
+        # 1c. Check for embedded periods (issue #168)
+        period_errors, period_warnings = check_embedded_periods(rule_text)
+        if period_errors:
+            errors.extend(period_errors)
+            details["embedded_periods"] = period_errors
+        if period_warnings:
+            warnings.extend(period_warnings)
 
         # 2. Variable naming convention check (uppercase)
         variable_issues = self._check_variable_naming(rule_text)
