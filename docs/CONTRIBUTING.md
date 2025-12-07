@@ -1,5 +1,10 @@
 # Contributing to LOFT
 
+<!-- Last verified: 2024-12-07 -->
+> **Document Status:** Last updated 2024-12-07 | Closes #21
+>
+> **Requirements:** Python 3.11+ | pip 21.0+ | Git 2.20+
+
 Welcome to LOFT (Logical Ontological Framework Translator)! This guide will help you get up to speed quickly and start contributing effectively.
 
 **Time estimates:**
@@ -78,9 +83,17 @@ LOFT is initially targeting legal document analysis, specifically contract law (
 
 ### Prerequisites
 
-- Python 3.11+
-- Git
-- API keys for LLM providers (optional for most development)
+| Requirement | Version | Notes |
+|-------------|---------|-------|
+| Python | 3.11+ | Required |
+| pip | 21.0+ | For dependency management |
+| Git | 2.20+ | For version control |
+| clingo | 5.4+ | Optional, auto-installed via pip |
+| Docker | 24.0+ | Optional, for containerized development |
+
+**API Keys (optional for most development):**
+- `ANTHROPIC_API_KEY` - For Anthropic Claude models
+- `OPENAI_API_KEY` - For OpenAI models
 
 ### Installation
 
@@ -130,42 +143,93 @@ python examples/nl_to_asp_examples.py
 ### Directory Structure
 
 ```
-loft/
-├── loft/                    # Main source code
-│   ├── autonomous/          # Long-running autonomous test infrastructure
-│   ├── batch/               # Batch processing harness for scale testing
-│   ├── consistency/         # Logical consistency checking
-│   ├── core/                # Core symbolic representations
-│   ├── dialectical/         # Dialectical reasoning (debate/critique)
-│   ├── evolution/           # Rule evolution tracking over time
-│   ├── legal/               # Legal domain-specific logic
-│   ├── meta/                # Meta-reasoning orchestration
-│   ├── metrics/             # Metrics collection and analysis
-│   ├── neural/              # LLM interface and rule generation
-│   ├── ontology/            # Ontological mappings
-│   ├── symbolic/            # ASP symbolic core
-│   ├── translation/         # NL ↔ ASP translation layer
-│   └── validation/          # Multi-stage validation pipeline
+loft/                        # Repository root
 │
-├── tests/                   # Test suites
+├── loft/                    # Main source code (Python package)
+│   │
+│   ├── autonomous/          # Long-running autonomous test infrastructure
+│   │   ├── cli.py           # Command-line interface
+│   │   ├── runner.py        # Test runner orchestration
+│   │   └── checkpoints.py   # State persistence
+│   │
+│   ├── neural/              # LLM interface and rule generation
+│   │   ├── providers/       # LLM provider implementations
+│   │   │   ├── anthropic.py # Claude integration
+│   │   │   └── openai.py    # GPT integration
+│   │   └── rule_gen.py      # Rule generation from NL
+│   │
+│   ├── symbolic/            # ASP symbolic core
+│   │   ├── asp_core.py      # Core ASP engine
+│   │   └── rules.py         # Rule representations
+│   │
+│   ├── translation/         # NL ↔ ASP translation layer
+│   │   ├── nl_to_asp.py     # Natural language to ASP
+│   │   └── asp_to_nl.py     # ASP to natural language
+│   │
+│   ├── validation/          # Multi-stage validation pipeline
+│   │   ├── asp_validators.py      # Syntax validation
+│   │   └── semantic_validators.py # Semantic validation
+│   │
+│   ├── meta/                # Meta-reasoning orchestration
+│   ├── legal/               # Legal domain-specific logic
+│   └── ...                  # Other modules
+│
+├── tests/                   # Test suites (3000+ tests)
 │   ├── unit/                # Unit tests by module
-│   ├── integration/         # Integration tests
-│   ├── e2e/                 # End-to-end tests
-│   └── property/            # Property-based tests
+│   │   ├── test_asp_validators.py   # 110+ validation tests
+│   │   ├── neural/                  # LLM interface tests
+│   │   └── translation/             # Translation tests
+│   ├── integration/         # Component interaction tests
+│   └── e2e/                 # Full pipeline tests
 │
 ├── datasets/                # Test case datasets
-│   ├── contracts/           # Contract law cases
+│   ├── contracts/           # Contract law (Statute of Frauds)
 │   ├── torts/               # Tort law cases
-│   └── ...                  # Other legal domains
+│   └── property_law/        # Property law cases
 │
 ├── experiments/             # Experiment scripts
 ├── scripts/                 # Utility scripts
 ├── docs/                    # Documentation
-├── examples/                # Example usage scripts
+│   ├── CONTRIBUTING.md      # This guide
+│   └── TESTING.md           # Testing documentation
 │
+├── examples/                # Example usage scripts
 ├── ROADMAP.md              # Phased development plan
 ├── CLAUDE.md               # AI development guidelines
 └── README.md               # Project overview
+```
+
+### Module Data Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        User Input                               │
+│              (Natural language legal facts)                     │
+└─────────────────────────────┬───────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                  loft/translation/nl_to_asp.py                  │
+│              (Translate NL facts to ASP predicates)             │
+└─────────────────────────────┬───────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   loft/symbolic/asp_core.py                     │
+│              (Execute ASP rules, find answer sets)              │
+└─────────────────────────────┬───────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                 loft/validation/asp_validators.py               │
+│              (Validate generated rules)                         │
+└─────────────────────────────┬───────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                       Legal Conclusion                          │
+│              (Is the contract enforceable?)                     │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ### Key Modules
@@ -250,13 +314,26 @@ CLINGO_PATH=/path/to/clingo  # Optional, auto-detected
 
 ### Branch Strategy
 
+We use a simplified branching model. All branches should be created from and merged into `main`.
+
+**Branch naming conventions:**
+
+| Type | Pattern | Example |
+|------|---------|---------|
+| Feature | `feature/issue-XX-description` | `feature/issue-21-contributing-guide` |
+| Bug fix | `bugfix/issue-XX-description` | `bugfix/issue-42-validation-error` |
+| Hotfix | `hotfix/issue-XX-description` | `hotfix/issue-99-critical-bug` |
+| Refactor | `refactor/description` | `refactor/simplify-translation-layer` |
+
 ```bash
 # Always start from latest main
 git fetch origin main
 git checkout -b feature/issue-XX-short-description origin/main
 
-# For bug fixes
-git checkout -b bugfix/issue-XX-short-description origin/main
+# Examples:
+git checkout -b feature/issue-177-context-aware-validators origin/main
+git checkout -b bugfix/issue-42-embedded-period-detection origin/main
+git checkout -b refactor/simplify-meta-reasoning origin/main
 ```
 
 ### Making Changes
@@ -544,13 +621,24 @@ Reviewers check for:
 - **GitHub Discussions** - Questions and design discussions
 - **Pull Request Comments** - Code-specific questions
 
-### Asking Good Questions
+### Before Asking Questions
 
-Include:
-1. What you're trying to do
-2. What you've tried
-3. Error messages (if any)
-4. Relevant code snippets
+- [ ] Search existing issues and discussions
+- [ ] Check the troubleshooting section (Section 10)
+- [ ] Review relevant documentation (README.md, ROADMAP.md)
+- [ ] Prepare a minimal reproducible example
+
+**Response time expectation:** Maintainers typically respond within 2-3 business days.
+
+### Good vs Bad Questions
+
+**Bad question:**
+> "Tests are failing, help!"
+
+**Good question:**
+> When running `pytest tests/unit/test_asp_validators.py`, I get `ImportError` for `ValidationContext`. I'm on Python 3.11, installed via pip. Here's the full traceback: [...]
+
+### Detailed Question Template
 
 ```markdown
 ## Question: How do I add a new validation rule?
@@ -561,9 +649,14 @@ Include:
 - Added a function in asp_validators.py
 - Tests pass locally but fail in CI
 
+**Environment:**
+- Python 3.11.4
+- OS: macOS 14.0
+- Installed via: pip
+
 **Error:**
 \`\`\`
-ImportError: cannot import name 'check_reserved_predicates'
+ImportError: cannot import name 'check_reserved_predicates' from 'loft.validation.asp_validators'
 \`\`\`
 
 **Code:**
@@ -571,6 +664,10 @@ ImportError: cannot import name 'check_reserved_predicates'
 def check_reserved_predicates(rule_text: str) -> Tuple[List[str], List[str]]:
     ...
 \`\`\`
+
+**Steps to reproduce:**
+1. Clone repo
+2. Run `python -m pytest tests/unit/test_my_validator.py -v`
 ```
 
 ---
