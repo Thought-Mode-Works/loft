@@ -12,6 +12,7 @@ Commands:
 """
 
 import logging
+import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -27,6 +28,85 @@ from loft.autonomous.logging_config import (
 from loft.autonomous.notifications import create_notification_manager
 from loft.autonomous.persistence import create_persistence_manager
 from loft.autonomous.runner import AutonomousTestRunner
+
+
+class LLMCaseProcessorAdapter:
+    """
+    Adapter that wraps LLMCaseProcessor for use with AutonomousTestRunner.
+
+    The runner expects a harness with process_case(case) -> Dict,
+    but LLMCaseProcessor.process_case(case, accumulated_rules) -> CaseResult.
+    This adapter bridges that interface gap.
+    """
+
+    def __init__(self, model: str = "claude-3-5-haiku-20241022"):
+        """
+        Initialize the adapter.
+
+        Args:
+            model: LLM model to use for processing
+        """
+        self._processor: Optional[Any] = None
+        self._accumulated_rules: list = []
+        self._model = model
+
+    def initialize(self) -> None:
+        """Initialize the underlying LLMCaseProcessor (lazy init)."""
+        if self._processor is not None:
+            return
+
+        from loft.autonomous.llm_processor import LLMCaseProcessor
+
+        self._processor = LLMCaseProcessor(model=self._model)
+        self._processor.initialize()
+
+    def process_case(self, case: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Process a case and return results as a dictionary.
+
+        Args:
+            case: Case data dictionary
+
+        Returns:
+            Dictionary with processing results including 'correct' key
+        """
+        self.initialize()
+
+        # Process using LLMCaseProcessor
+        result = self._processor.process_case(case, self._accumulated_rules)
+
+        # Update accumulated rules if any were generated
+        if result.generated_rule_ids:
+            self._accumulated_rules.extend(result.generated_rule_ids)
+
+        # Convert CaseResult to dict format expected by runner
+        return {
+            "case_id": result.case_id,
+            "correct": result.prediction_correct if result.prediction_correct is not None else True,
+            "domain": case.get("domain", "unknown"),
+            "status": result.status.value if result.status else "unknown",
+            "rules_generated": result.rules_generated,
+            "rules_accepted": result.rules_accepted,
+            "rules_rejected": result.rules_rejected,
+            "processing_time_ms": result.processing_time_ms,
+            "error_message": result.error_message,
+            "confidence": result.confidence,
+        }
+
+    def get_processor(self) -> Optional[Any]:
+        """Get underlying LLMCaseProcessor for metrics access."""
+        return self._processor
+
+    def get_failure_patterns(self) -> Dict[str, int]:
+        """Get failure patterns from the processor for meta-reasoning."""
+        if self._processor is None:
+            return {}
+        return self._processor.get_failure_patterns()
+
+    def clear_failure_tracking(self) -> None:
+        """Clear failure tracking data after meta-reasoning cycle."""
+        if self._processor is not None:
+            self._processor.clear_failure_tracking()
 
 
 def setup_logging(
@@ -182,6 +262,16 @@ def cli() -> None:
     default=0.8,
     help="Fraction of budget at which to log warnings (default: 0.8 = 80%%)",
 )
+@click.option(
+    "--enable-llm",
+    is_flag=True,
+    help="Enable LLM-powered case processing for ASP generation (requires ANTHROPIC_API_KEY)",
+)
+@click.option(
+    "--skip-api-check",
+    is_flag=True,
+    help="Skip ANTHROPIC_API_KEY validation (for testing)",
+)
 def start(
     dataset: tuple,
     source: str,
@@ -202,6 +292,8 @@ def start(
     max_cost: Optional[float],
     max_tokens: Optional[int],
     budget_warning_threshold: float,
+    enable_llm: bool,
+    skip_api_check: bool,
 ) -> None:
     """Start a new autonomous test run.
 
@@ -246,6 +338,14 @@ def start(
             --max-tokens 1000000 \\
             --budget-warning-threshold 0.8 \\
             --duration 4h
+
+        # With LLM-powered ASP generation (issue #185)
+        loft-autonomous start \\
+            --dataset datasets/contracts/ \\
+            --enable-llm \\
+            --model claude-3-5-haiku-20241022 \\
+            --duration 30m \\
+            --max-cases 50
     """
     # Set up logging file path
     output_path = Path(output)
@@ -267,6 +367,17 @@ def start(
     # Validate arguments based on source
     if source == "local" and not dataset:
         raise click.UsageError("--dataset is required when using --source local")
+
+    # Pre-flight validation for LLM mode (issue #185)
+    if enable_llm and not skip_api_check:
+        api_key = os.getenv("ANTHROPIC_API_KEY", "")
+        if not api_key:
+            raise click.UsageError(
+                "--enable-llm requires ANTHROPIC_API_KEY environment variable.\n"
+                "Set it with: export ANTHROPIC_API_KEY='your-key-here'\n"
+                "Or use --skip-api-check to skip this validation."
+            )
+        logger.info("ANTHROPIC_API_KEY validated")
 
     duration_hours = _parse_duration(duration)
 
@@ -369,6 +480,19 @@ def start(
         # Set data source adapter if using CourtListener
         if data_source_adapter:
             runner.set_data_source(data_source_adapter)
+
+        # Set up LLM case processor adapter if enabled (issue #185)
+        llm_processor_adapter = None
+        if enable_llm:
+            logger.info(f"Enabling LLM-powered case processing with model: {model}")
+            llm_processor_adapter = LLMCaseProcessorAdapter(model=model)
+            runner.set_batch_harness(llm_processor_adapter)
+            logger.info("LLMCaseProcessorAdapter configured as batch harness")
+        else:
+            logger.warning(
+                "LLM processing disabled (use --enable-llm for ASP generation). "
+                "Running in stub mode - cases will be marked as successful without processing."
+            )
 
         def on_progress(progress):
             if health_server:
