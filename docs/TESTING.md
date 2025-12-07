@@ -638,3 +638,519 @@ curl http://localhost:8080/ready
 - Verify webhook URL format (must start with `https://hooks.slack.com/`)
 - Check rate limiting (30-second minimum between notifications)
 - Review logs for notification errors
+
+---
+
+## Autonomous ASP Generation Testing
+
+This section documents requirements and known issues for running autonomous ASP rule generation tests.
+
+### Prerequisites
+
+1. **Environment Setup**
+   ```bash
+   # Ensure ANTHROPIC_API_KEY is set
+   export ANTHROPIC_API_KEY="your-api-key"
+
+   # Verify datasets exist
+   ls datasets/contracts/ datasets/torts/ datasets/property_law/
+   ```
+
+2. **Dataset Format**
+   Each case JSON file must contain:
+   ```json
+   {
+     "id": "case_001",
+     "domain": "contracts",
+     "asp_facts": "contract(c1). parties(c1, seller, buyer).",
+     "question": "Is there a valid contract?",
+     "ground_truth": "enforceable"
+   }
+   ```
+
+### Running ASP Generation Tests
+
+> **Note:** As of PR #186, you must use the `--enable-llm` flag to activate LLM-powered case processing. Without this flag, the runner uses stub processing (for testing infrastructure without API calls).
+
+**Quick 5-minute test:**
+```bash
+python3 -m loft.autonomous.cli start \
+  --dataset datasets/contracts/ \
+  --duration 5m \
+  --max-cases 10 \
+  --enable-llm \
+  --model claude-3-5-haiku-20241022 \
+  --output /tmp/asp_quick_test \
+  --log-level DEBUG
+```
+
+**30-minute comprehensive test:**
+```bash
+python3 -m loft.autonomous.cli start \
+  --dataset datasets/contracts/ \
+  --dataset datasets/torts/ \
+  --dataset datasets/property_law/ \
+  --dataset datasets/statute_of_frauds/ \
+  --dataset datasets/adverse_possession/ \
+  --duration 30m \
+  --max-cases 50 \
+  --checkpoint-interval 2 \
+  --enable-llm \
+  --model claude-3-5-haiku-20241022 \
+  --output /tmp/autonomous_30min_test \
+  --log-level DEBUG 2>&1 | tee /tmp/autonomous_30min_test/run.log
+```
+
+**Multi-hour production test:**
+```bash
+python3 -m loft.autonomous.cli start \
+  --dataset datasets/contracts/ \
+  --dataset datasets/torts/ \
+  --dataset datasets/property_law/ \
+  --duration 4h \
+  --max-cases 0 \
+  --checkpoint-interval 5 \
+  --enable-llm \
+  --model claude-3-5-haiku-20241022 \
+  --output /tmp/autonomous_4hr_test \
+  --log-level INFO
+```
+
+### CLI Options Reference
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--dataset` | Path to dataset directory (can specify multiple) | Required |
+| `--duration` | Run duration (e.g., `5m`, `30m`, `2h`, `4h`) | `4h` |
+| `--max-cases` | Maximum cases to process (0 = unlimited) | `0` |
+| `--checkpoint-interval` | Minutes between checkpoints | `15` |
+| `--enable-llm` | **Required for LLM processing** - Enable LLM-powered case processing | `false` |
+| `--skip-api-check` | Skip ANTHROPIC_API_KEY validation (for testing) | `false` |
+| `--model` | LLM model to use (only effective with `--enable-llm`) | `claude-3-5-haiku-20241022` |
+| `--output` | Output directory for results | `data/autonomous_runs` |
+| `--run-id` | Custom run identifier | Auto-generated |
+| `--log-level` | Logging level (DEBUG, INFO, WARNING) | `INFO` |
+| `--no-health` | Disable health endpoint | `false` |
+| `--source` | Data source (`local`, `courtlistener`) | `local` |
+
+### Verifying Test Results
+
+**Check final report:**
+```bash
+# View final report
+cat /tmp/autonomous_30min_test/*/reports/final_report.json | python3 -m json.tool
+
+# Key metrics to check:
+# - cases_processed > 0 (should match loaded cases)
+# - rules_generated_total > 0 (if LLM processing is working)
+# - llm_calls_total > 0 (confirms LLM is being called)
+# - overall_accuracy (should be > 0.5 for good performance)
+```
+
+**Check logs for issues:**
+```bash
+# Look for errors
+grep -i "error\|warning\|failed" /tmp/autonomous_30min_test/run.log
+
+# Check case processing
+grep "Processing case\|Case complete" /tmp/autonomous_30min_test/run.log
+
+# Verify LLM calls
+grep "LLM call\|API request" /tmp/autonomous_30min_test/run.log
+```
+
+### Known Issues and Solutions
+
+#### Issue: Runner Completes Immediately (0 cases processed) - RESOLVED in PR #186
+
+**Symptoms:**
+- Run completes in < 1 second
+- `cases_processed: 0` in final report
+- `llm_calls_total: 0`
+
+**Root Cause:**
+The `AutonomousTestRunner._process_case()` method returns stub results when no `BatchLearningHarness` is configured. Prior to PR #186, the CLI did not set up this harness.
+
+**Solution (PR #186):**
+Use the `--enable-llm` flag to activate LLM-powered case processing:
+```bash
+python3 -m loft.autonomous.cli start \
+  --dataset datasets/contracts/ \
+  --enable-llm \
+  --model claude-3-5-haiku-20241022 \
+  --duration 30m
+```
+
+This flag activates the `LLMCaseProcessorAdapter` which:
+1. Creates and initializes an `LLMCaseProcessor` with the specified model
+2. Bridges the interface gap between the runner and processor
+3. Accumulates generated rules across cases
+4. Tracks failure patterns for meta-reasoning analysis
+
+**Pre-flight Validation:**
+When `--enable-llm` is used, the CLI validates that `ANTHROPIC_API_KEY` is set:
+```bash
+export ANTHROPIC_API_KEY="your-api-key"
+```
+
+Use `--skip-api-check` to bypass this validation (e.g., for unit testing with mocks).
+
+**Legacy Workaround (before PR #186):**
+If using an older version, manually set up the harness:
+```python
+from loft.batch import BatchLearningHarness, BatchConfig
+from loft.autonomous import AutonomousTestRunner, AutonomousRunConfig
+
+# Create batch harness
+batch_config = BatchConfig(max_cases=50, checkpoint_interval=10)
+harness = BatchLearningHarness(batch_config, output_dir="results/")
+
+# Create autonomous runner
+run_config = AutonomousRunConfig(max_duration_hours=0.5)
+runner = AutonomousTestRunner(run_config, output_dir="results/")
+
+# Connect harness to runner
+runner.set_batch_harness(harness)
+
+# Now run will process cases properly
+result = runner.start(dataset_paths=["datasets/contracts/"])
+```
+
+**Related:** GitHub Issue #185, PR #186
+
+#### Issue: Meta-Reasoning Cycles Don't Trigger
+
+**Symptoms:**
+- `improvement_cycles_completed: 1` (only initial cycle)
+- No rules generated despite processing cases
+
+**Root Cause:**
+The `should_run_cycle()` method in `MetaReasoningOrchestrator` requires:
+1. `enable_autonomous_improvement: true` in config
+2. At least `min_cases_for_analysis` cases processed (default: 10)
+3. Cases since last cycle >= `improvement_cycle_interval_cases` (default: 50)
+
+**Solution:**
+Adjust config for shorter test runs:
+```yaml
+meta_reasoning:
+  enable_autonomous_improvement: true
+  min_cases_for_analysis: 5
+  improvement_cycle_interval_cases: 10
+```
+
+### Meta-Reasoning Architecture
+
+The autonomous test harness includes a meta-reasoning layer for self-improvement:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                  MetaReasoningOrchestrator                  │
+├─────────────────────────────────────────────────────────────┤
+│  Components:                                                 │
+│  - AutonomousImprover: Executes improvement cycles          │
+│  - PromptOptimizer: Optimizes LLM prompt templates          │
+│  - FailureAnalyzer: Analyzes prediction failures            │
+│  - StrategySelector: Selects optimal strategies             │
+├─────────────────────────────────────────────────────────────┤
+│  Improvement Cycle Flow:                                     │
+│  1. Analyze failure patterns                                 │
+│  2. Generate improvement suggestions                         │
+│  3. Apply improvements (prompt changes, strategy updates)    │
+│  4. Validate improvements against safety thresholds          │
+│  5. Rollback if accuracy drops > max_accuracy_drop           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Key Configuration:**
+```python
+MetaReasoningConfig(
+    enable_autonomous_improvement=True,
+    enable_prompt_optimization=True,
+    enable_failure_analysis=True,
+    enable_strategy_selection=True,
+    improvement_cycle_interval_cases=50,
+    min_cases_for_analysis=10,
+    max_improvement_actions_per_cycle=5,
+    confidence_threshold=0.7,
+)
+```
+
+### Failure Pattern Categories
+
+The system tracks these failure categories for meta-reasoning:
+
+| Category | Description | Recommended Action |
+|----------|-------------|-------------------|
+| `unsafe_variable` | Variables only in negative literals | Add safety constraints to prompts |
+| `embedded_period` | Periods in fact atoms | Sanitize periods before ASP processing |
+| `syntax_error` | Invalid ASP syntax | Add syntax examples to prompts |
+| `invalid_arithmetic` | Bad arithmetic expressions | Restrict arithmetic in templates |
+| `grounding_error` | Cannot ground rules | Add domain bounding examples |
+| `json_parse_error` | LLM output not parseable | Enforce JSON schema in prompts |
+| `validation_error` | Rules fail validation | Improve quality guidance |
+
+### Monitoring Long-Running Tests
+
+**Real-time log monitoring:**
+```bash
+# Follow logs
+tail -f /tmp/autonomous_test/run.log
+
+# Monitor specific patterns
+tail -f /tmp/autonomous_test/run.log | grep --line-buffered "cycle\|accuracy\|error"
+```
+
+**Check state file:**
+```bash
+# View current state
+cat /tmp/autonomous_test/*/state.json | python3 -m json.tool
+
+# Watch for updates
+watch -n 5 'cat /tmp/autonomous_test/*/state.json | python3 -c "import sys,json; d=json.load(sys.stdin); print(f\"Cases: {d.get(\"progress\",{}).get(\"cases_processed\",0)}, Accuracy: {d.get(\"progress\",{}).get(\"current_accuracy\",0):.2%}\")"'
+```
+
+**Health endpoint (if enabled):**
+```bash
+curl http://localhost:8080/health
+```
+
+### Validation Checklist
+
+Before considering an autonomous test successful, verify:
+
+- [ ] `cases_processed` matches expected count
+- [ ] `llm_calls_total > 0` (LLM was used)
+- [ ] `overall_accuracy > 0.5` (reasonable performance)
+- [ ] `rules_generated_total > 0` (rules were created)
+- [ ] No critical errors in logs
+- [ ] Checkpoints were created at expected intervals
+- [ ] Final report was generated successfully
+- [ ] Run duration matches expected duration (within 10%)
+
+### Suggested Improvements for Validation
+
+Based on analysis of the autonomous testing infrastructure, the following improvements would enhance ASP generation validation:
+
+#### 1. CLI-Harness Integration - IMPLEMENTED (PR #186)
+
+**Status:** ✅ Resolved
+
+PR #186 introduced `LLMCaseProcessorAdapter` class that bridges the interface between `AutonomousTestRunner` and `LLMCaseProcessor`. The adapter is activated via the `--enable-llm` CLI flag.
+
+**Implementation:**
+```python
+# loft/autonomous/cli.py
+class LLMCaseProcessorAdapter:
+    """Adapter that wraps LLMCaseProcessor for AutonomousTestRunner."""
+
+    def __init__(self, model: str = "claude-3-5-haiku-20241022"):
+        self._processor: Optional[Any] = None
+        self._accumulated_rules: list = []
+        self._model = model
+
+    def initialize(self) -> None:
+        if self._processor is not None:
+            return
+        from loft.autonomous.llm_processor import LLMCaseProcessor
+        self._processor = LLMCaseProcessor(model=self._model)
+        self._processor.initialize()
+
+    def process_case(self, case: Dict[str, Any]) -> Dict[str, Any]:
+        self.initialize()
+        result = self._processor.process_case(case, self._accumulated_rules)
+        # Convert CaseResult to Dict and track accumulated rules
+        ...
+```
+
+**Usage:**
+```bash
+python3 -m loft.autonomous.cli start \
+  --dataset datasets/contracts/ \
+  --enable-llm \
+  --model claude-3-5-haiku-20241022 \
+  --duration 30m
+```
+
+#### 2. Pre-Flight Validation - PARTIALLY IMPLEMENTED (PR #186)
+
+**Status:** ✅ API key validation implemented
+
+PR #186 added pre-flight validation for the ANTHROPIC_API_KEY when `--enable-llm` is used:
+
+```python
+# In cli.py start command
+if enable_llm and not skip_api_check:
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        click.echo(
+            "Error: ANTHROPIC_API_KEY environment variable not set. "
+            "Required when using --enable-llm. "
+            "Set it with: export ANTHROPIC_API_KEY='your-api-key'",
+            err=True,
+        )
+        raise click.Abort()
+```
+
+**Remaining improvements (future work):**
+```python
+def validate_run_prerequisites(config, dataset_paths):
+    """Validate prerequisites before starting autonomous run."""
+    errors = []
+
+    # Check datasets exist and are non-empty
+    for path in dataset_paths:
+        cases = load_cases_from_path(path)
+        if not cases:
+            errors.append(f"No cases found in {path}")
+
+    return errors
+```
+
+#### 3. Early Exit Detection
+
+Detect and warn about runs that complete too quickly:
+
+```python
+MIN_EXPECTED_DURATION_SECONDS = 60  # At least 1 minute for real processing
+
+if result.total_duration_seconds < MIN_EXPECTED_DURATION_SECONDS:
+    logger.warning(
+        f"Run completed in {result.total_duration_seconds:.2f}s - "
+        f"this is suspiciously fast. Check if cases were processed."
+    )
+```
+
+#### 4. Metrics Validation
+
+Add automated validation of metrics in the final report:
+
+```python
+def validate_run_metrics(result: RunResult) -> List[str]:
+    """Validate that run metrics indicate successful processing."""
+    warnings = []
+
+    if result.final_metrics.cases_processed == 0:
+        warnings.append("No cases were processed")
+
+    if result.final_metrics.llm_calls_total == 0 and result.config.llm_model:
+        warnings.append("No LLM calls were made despite LLM being configured")
+
+    if result.final_metrics.overall_accuracy == 1.0:
+        warnings.append("Perfect accuracy may indicate stub results")
+
+    return warnings
+```
+
+#### 5. Integration Test Coverage
+
+Add integration tests that verify end-to-end processing:
+
+```python
+# tests/integration/autonomous/test_end_to_end.py
+
+def test_autonomous_processes_cases():
+    """Verify that autonomous runner actually processes cases."""
+    config = AutonomousRunConfig(max_duration_hours=0.01, max_cases=5)
+    runner = AutonomousTestRunner(config, output_dir="/tmp/test")
+
+    # Set up harness (the missing piece!)
+    harness = MockBatchHarness()
+    runner.set_batch_harness(harness)
+
+    result = runner.start(dataset_paths=["datasets/contracts/"])
+
+    assert result.final_metrics.cases_processed > 0
+    assert harness.process_case_called_count > 0
+```
+
+#### 6. Meta-Reasoning Trigger Configuration
+
+For shorter test runs, lower the thresholds for meta-reasoning cycles:
+
+```yaml
+# config/test_config.yaml
+meta_reasoning:
+  enable_autonomous_improvement: true
+  min_cases_for_analysis: 3      # Lower for testing
+  improvement_cycle_interval_cases: 5  # Trigger more frequently
+  max_improvement_actions_per_cycle: 2
+```
+
+#### 7. Logging Improvements
+
+Add structured logging for easier debugging:
+
+```python
+logger.info(
+    "Case processing summary",
+    extra={
+        "cases_loaded": len(cases),
+        "cases_processed": progress.cases_processed,
+        "llm_calls": metrics.llm_calls_total,
+        "harness_configured": runner._batch_harness is not None,
+    }
+)
+```
+
+### Recommended Test Sequence
+
+For validating autonomous ASP generation, follow this sequence:
+
+1. **Unit tests first:**
+   ```bash
+   python3 -m pytest tests/unit/autonomous/ -v
+   ```
+
+2. **Quick smoke test (5 cases):**
+   ```bash
+   python3 -m loft.autonomous.cli start \
+     --dataset datasets/contracts/ \
+     --duration 2m \
+     --max-cases 5 \
+     --enable-llm \
+     --model claude-3-5-haiku-20241022 \
+     --log-level DEBUG
+   ```
+
+3. **Short integration test (10-20 cases):**
+   ```bash
+   python3 -m loft.autonomous.cli start \
+     --dataset datasets/contracts/ \
+     --dataset datasets/torts/ \
+     --duration 10m \
+     --max-cases 20 \
+     --checkpoint-interval 2 \
+     --enable-llm \
+     --model claude-3-5-haiku-20241022
+   ```
+
+4. **Full test (30+ minutes):**
+   ```bash
+   python3 -m loft.autonomous.cli start \
+     --dataset datasets/contracts/ \
+     --dataset datasets/torts/ \
+     --dataset datasets/property_law/ \
+     --duration 30m \
+     --max-cases 50 \
+     --checkpoint-interval 5 \
+     --enable-llm \
+     --model claude-3-5-haiku-20241022
+   ```
+
+5. **Validate results:**
+   ```bash
+   # Check final report
+   cat /tmp/*/reports/final_report.json | python3 -m json.tool
+
+   # Verify key metrics
+   python3 -c "
+   import json, sys
+   data = json.load(open(sys.argv[1]))
+   m = data['final_metrics']
+   print(f'Cases: {m.get(\"cases_processed\", 0)}')
+   print(f'LLM Calls: {m.get(\"llm_calls_total\", 0)}')
+   print(f'Rules: {m.get(\"rules_generated_total\", 0)}')
+   print(f'Accuracy: {m.get(\"overall_accuracy\", 0):.2%}')
+   " /tmp/*/reports/final_report.json
+   ```
