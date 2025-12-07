@@ -912,7 +912,7 @@ class TestContextAwareDetection:
         stripped = strip_asp_context(rule)
 
         assert "string.with.dot" not in stripped
-        assert 'predicate().' == stripped
+        assert "predicate()." == stripped
 
     def test_strip_asp_context_removes_comments(self) -> None:
         """Test that ASP comments are removed from rule text."""
@@ -1004,7 +1004,7 @@ fact(a)."""
         from loft.validation.asp_validators import check_embedded_periods
 
         # Real embedded period in code should still be detected
-        rule = 'result(X.Y) :- input(X). % This is valid: A.B in comment'
+        rule = "result(X.Y) :- input(X). % This is valid: A.B in comment"
         errors, warnings = check_embedded_periods(rule)
 
         # Should detect X.Y in code but not A.B in comment
@@ -1017,7 +1017,7 @@ fact(a)."""
         from loft.validation.asp_validators import check_unsafe_variables
 
         # Real unsafe variable should still be detected
-        rule = 'result(X, Y) :- input(X). % Y is intentionally unsafe'
+        rule = "result(X, Y) :- input(X). % Y is intentionally unsafe"
         errors, warnings = check_unsafe_variables(rule)
 
         # Y in the head is truly unsafe and should be detected
@@ -1056,7 +1056,7 @@ valid(X) :- input(X)."""
         rule = 'label(X, "") :- entity(X).'
         stripped = strip_asp_context(rule)
 
-        assert stripped == 'label(X, ) :- entity(X).'
+        assert stripped == "label(X, ) :- entity(X)."
 
     def test_integration_with_validator_quoted_string(self) -> None:
         """Test that validator correctly handles quoted strings with periods."""
@@ -1068,10 +1068,7 @@ valid(X) :- input(X)."""
 
         # Should not flag embedded_periods for the quoted string
         if "embedded_periods" in result.details:
-            assert all(
-                "default.value" not in err
-                for err in result.details["embedded_periods"]
-            )
+            assert all("default.value" not in err for err in result.details["embedded_periods"])
 
     def test_integration_with_validator_comment_period(self) -> None:
         """Test that validator correctly handles comments with periods."""
@@ -1084,7 +1081,4 @@ valid(X) :- input(X)."""
         # Should be valid - comment period shouldn't cause issues
         # Note: result.is_valid depends on other validation rules too
         if "embedded_periods" in result.details:
-            assert all(
-                "input.method" not in err
-                for err in result.details["embedded_periods"]
-            )
+            assert all("input.method" not in err for err in result.details["embedded_periods"])
