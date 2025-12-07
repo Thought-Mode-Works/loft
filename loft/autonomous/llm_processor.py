@@ -10,6 +10,7 @@ import logging
 import os
 import time
 import uuid
+from collections import defaultdict
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
@@ -60,6 +61,10 @@ class LLMCaseProcessor:
         self._total_tokens_used = 0
         self._total_cost_usd = 0.0
         self._processing_times: List[float] = []
+
+        # Failure pattern tracking for meta-reasoning integration (issue #169)
+        self._failure_patterns: Dict[str, int] = defaultdict(int)
+        self._failure_details: List[Dict[str, Any]] = []
 
         # Extraction prompt template
         self._extraction_template = (
@@ -132,6 +137,108 @@ Respond in JSON format:
 
         self._initialized = True
         logger.info("LLM components initialized successfully")
+
+    def _categorize_error(self, error_message: str) -> str:
+        """
+        Categorize an error message into a known failure pattern.
+
+        Args:
+            error_message: The error message to categorize
+
+        Returns:
+            Category string identifying the failure pattern
+        """
+        error_lower = error_message.lower()
+
+        # Check for unsafe variable errors (most common in ASP)
+        if "unsafe" in error_lower and "variable" in error_lower:
+            return "unsafe_variable"
+
+        # Check for embedded period errors (issue #168)
+        if "embedded period" in error_lower or ("period" in error_lower and "fact" in error_lower):
+            return "embedded_period"
+
+        # Check for arithmetic errors
+        if any(term in error_lower for term in ["abs(", "arithmetic", "division", "*", "/"]):
+            return "invalid_arithmetic"
+
+        # Check for syntax errors
+        if "syntax" in error_lower or "parse" in error_lower:
+            return "syntax_error"
+
+        # Check for grounding errors
+        if "grounding" in error_lower or "ground" in error_lower:
+            return "grounding_error"
+
+        # Check for LLM/API errors
+        if any(term in error_lower for term in ["api", "timeout", "rate limit", "connection"]):
+            return "llm_api_error"
+
+        # Check for validation errors
+        if "validation" in error_lower or "invalid" in error_lower:
+            return "validation_error"
+
+        # Check for JSON parsing errors
+        if "json" in error_lower or "decode" in error_lower:
+            return "json_parse_error"
+
+        return "unknown"
+
+    def _record_failure(
+        self,
+        case_id: str,
+        error_message: str,
+        category: Optional[str] = None,
+        context: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """
+        Record a failure for meta-reasoning analysis.
+
+        Args:
+            case_id: The case identifier
+            error_message: The error message
+            category: Optional pre-determined category (auto-detected if not provided)
+            context: Optional additional context about the failure
+        """
+        if category is None:
+            category = self._categorize_error(error_message)
+
+        self._failure_patterns[category] += 1
+        self._failure_details.append(
+            {
+                "case_id": case_id,
+                "category": category,
+                "error_message": error_message,
+                "timestamp": datetime.now().isoformat(),
+                "context": context or {},
+            }
+        )
+
+        logger.debug(f"Recorded failure: category={category}, case={case_id}")
+
+    def get_failure_patterns(self) -> Dict[str, int]:
+        """
+        Get aggregated failure patterns for meta-reasoning.
+
+        Returns:
+            Dictionary mapping failure categories to occurrence counts
+        """
+        return dict(self._failure_patterns)
+
+    def get_failure_details(self) -> List[Dict[str, Any]]:
+        """
+        Get detailed failure information for analysis.
+
+        Returns:
+            List of failure detail dictionaries
+        """
+        return list(self._failure_details)
+
+    def clear_failure_tracking(self) -> None:
+        """Clear accumulated failure data (e.g., after meta-reasoning cycle)."""
+        self._failure_patterns.clear()
+        self._failure_details.clear()
+        logger.debug("Cleared failure tracking data")
 
     def _ensure_initialized(self) -> None:
         """
@@ -302,6 +409,20 @@ Respond in JSON format:
                             else:
                                 rules_rejected += 1
                                 logger.debug(f"Rejected rule from case {case_id}")
+                                # Record validation rejection for meta-reasoning (issue #169)
+                                rejection_reason = getattr(
+                                    report, "rejection_reason", "validation_failed"
+                                )
+                                self._record_failure(
+                                    case_id=case_id,
+                                    error_message=f"Rule validation failed: {rejection_reason}",
+                                    category="validation_error",
+                                    context={
+                                        "predicate": predicate,
+                                        "phase": "validation",
+                                        "rule_asp": candidate.rule.asp_rule[:100],
+                                    },
+                                )
                         else:
                             logger.warning(f"No candidates generated for {case_id}/{predicate}")
                             rules_rejected += 1
@@ -309,6 +430,12 @@ Respond in JSON format:
                     except Exception as e:
                         logger.warning(f"Error generating rule for {case_id}: {e}")
                         rules_rejected += 1
+                        # Record failure for meta-reasoning (issue #169)
+                        self._record_failure(
+                            case_id=case_id,
+                            error_message=str(e),
+                            context={"predicate": predicate, "phase": "rule_generation"},
+                        )
 
             processing_time_ms = (time.time() - start_time) * 1000
             self._processing_times.append(processing_time_ms)
@@ -328,6 +455,12 @@ Respond in JSON format:
 
         except Exception as e:
             logger.error(f"Error processing case {case_id}: {e}")
+            # Record failure for meta-reasoning (issue #169)
+            self._record_failure(
+                case_id=case_id,
+                error_message=str(e),
+                context={"phase": "case_processing"},
+            )
             return CaseResult(
                 case_id=case_id,
                 status=CaseStatus.FAILED,
@@ -404,12 +537,14 @@ Respond in JSON format:
             }
 
     def get_metrics(self) -> Dict[str, Any]:
-        """Get processing metrics."""
+        """Get processing metrics including failure patterns for meta-reasoning."""
         avg_time = (
             sum(self._processing_times) / len(self._processing_times)
             if self._processing_times
             else 0.0
         )
+
+        total_failures = sum(self._failure_patterns.values())
 
         return {
             "total_llm_calls": self._total_llm_calls,
@@ -418,6 +553,12 @@ Respond in JSON format:
             "cases_processed": len(self._processing_times),
             "avg_processing_time_ms": avg_time,
             "model": self.model,
+            # Failure pattern metrics for meta-reasoning (issue #169)
+            "failure_patterns": dict(self._failure_patterns),
+            "total_failures": total_failures,
+            "failure_rate": total_failures / len(self._processing_times)
+            if self._processing_times
+            else 0.0,
         }
 
     def create_process_fn(self) -> Callable[[Dict[str, Any], List[str]], CaseResult]:
