@@ -4,8 +4,7 @@ Tests for the Critic LLM implementation (Issue #189, Phase 6 Neural Ensemble).
 """
 
 import pytest
-from unittest.mock import Mock, MagicMock, patch
-from dataclasses import asdict
+from unittest.mock import Mock, patch
 
 from loft.neural.ensemble.critic import (
     # Data classes
@@ -17,9 +16,7 @@ from loft.neural.ensemble.critic import (
     CriticConfig,
     # Main class
     CriticLLM,
-    Critic,
     # Strategy classes
-    CriticStrategy,
     CriticStrategyType,
     AdversarialStrategy,
     CooperativeStrategy,
@@ -843,11 +840,11 @@ class TestCriticLLMCaching:
             mock_llm.query.return_value = mock_response
 
             # First call should query LLM
-            result1 = critic.find_edge_cases("rule.", {"domain": "test"})
+            _result1 = critic.find_edge_cases("rule.", {"domain": "test"})
             assert mock_llm.query.call_count == 1
 
             # Second call with same inputs should use cache
-            result2 = critic.find_edge_cases("rule.", {"domain": "test"})
+            _result2 = critic.find_edge_cases("rule.", {"domain": "test"})
             assert mock_llm.query.call_count == 1  # No additional call
             assert critic._cache_hits == 1
 
