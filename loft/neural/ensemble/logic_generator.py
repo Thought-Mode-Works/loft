@@ -7,14 +7,23 @@ optimization and few-shot learning to improve ASP generation quality over
 general-purpose LLMs.
 
 Part of Phase 6: Heterogeneous Neural Ensemble (Issue #188).
+
+Enhancements based on multi-agent code review (PR #194):
+- Strategy Pattern for optimization strategies
+- Retry logic with exponential backoff
+- Abstract base class for extensibility
+- Comprehensive logging
+- Caching mechanism for repeated queries
 """
 
 from __future__ import annotations
 
+import hashlib
 import time
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 from loguru import logger
 
@@ -23,13 +32,219 @@ from loft.neural.rule_schemas import GeneratedRule
 from loft.validation.asp_validators import check_embedded_periods, check_unsafe_variables
 
 
-class OptimizationStrategy(Enum):
-    """Strategies for optimizing ASP generation."""
+# Custom exception for ASP generation errors
+class ASPGenerationError(Exception):
+    """Custom exception for ASP generation failures after all retries."""
+
+    def __init__(self, message: str, attempts: int = 0, last_error: Optional[str] = None):
+        super().__init__(message)
+        self.attempts = attempts
+        self.last_error = last_error
+
+
+class OptimizationStrategyType(Enum):
+    """Enum identifying optimization strategy types."""
 
     PROMPT_OPTIMIZATION = "prompt_optimization"
     FEW_SHOT_LEARNING = "few_shot_learning"
     CHAIN_OF_THOUGHT = "chain_of_thought"
     SELF_CONSISTENCY = "self_consistency"
+
+
+# ============================================================================
+# Strategy Pattern: Abstract base and concrete strategies
+# ============================================================================
+
+
+class OptimizationStrategy(ABC):
+    """Abstract base class for optimization strategies.
+
+    Follows the Strategy pattern to allow different prompt optimization
+    approaches to be swapped without changing the LogicGeneratorLLM class.
+    """
+
+    @property
+    @abstractmethod
+    def strategy_type(self) -> OptimizationStrategyType:
+        """Return the strategy type enum."""
+        pass
+
+    @abstractmethod
+    def prepare_prompt(
+        self,
+        base_prompt: str,
+        principle: str,
+        predicates: Optional[List[str]],
+        domain: str,
+        context: Optional[Dict[str, Any]],
+        few_shot_examples: Optional[List[str]] = None,
+    ) -> str:
+        """Prepare the prompt using this strategy.
+
+        Args:
+            base_prompt: The base prompt template
+            principle: Natural language principle to convert
+            predicates: Available predicates
+            domain: Domain context
+            context: Additional context
+            few_shot_examples: Example rules for few-shot learning
+
+        Returns:
+            The prepared prompt string
+        """
+        pass
+
+    @abstractmethod
+    def process_response(self, response: str, reasoning: Optional[str] = None) -> str:
+        """Post-process the response from the LLM.
+
+        Args:
+            response: The raw ASP rule from the LLM
+            reasoning: Optional reasoning from chain-of-thought
+
+        Returns:
+            The processed ASP rule
+        """
+        pass
+
+
+class PromptOptimizationStrategy(OptimizationStrategy):
+    """Default strategy using optimized prompts for ASP generation."""
+
+    @property
+    def strategy_type(self) -> OptimizationStrategyType:
+        return OptimizationStrategyType.PROMPT_OPTIMIZATION
+
+    def prepare_prompt(
+        self,
+        base_prompt: str,
+        principle: str,
+        predicates: Optional[List[str]],
+        domain: str,
+        context: Optional[Dict[str, Any]],
+        few_shot_examples: Optional[List[str]] = None,
+    ) -> str:
+        logger.debug("Preparing prompt with PROMPT_OPTIMIZATION strategy")
+        return base_prompt
+
+    def process_response(self, response: str, reasoning: Optional[str] = None) -> str:
+        return response.strip()
+
+
+class FewShotLearningStrategy(OptimizationStrategy):
+    """Strategy using few-shot examples to guide generation."""
+
+    @property
+    def strategy_type(self) -> OptimizationStrategyType:
+        return OptimizationStrategyType.FEW_SHOT_LEARNING
+
+    def prepare_prompt(
+        self,
+        base_prompt: str,
+        principle: str,
+        predicates: Optional[List[str]],
+        domain: str,
+        context: Optional[Dict[str, Any]],
+        few_shot_examples: Optional[List[str]] = None,
+    ) -> str:
+        logger.debug("Preparing prompt with FEW_SHOT_LEARNING strategy")
+        if few_shot_examples:
+            few_shot_str = "\n**Reference Examples:**\n```asp\n"
+            few_shot_str += "\n".join(few_shot_examples[:3])
+            few_shot_str += "\n```\n"
+            return base_prompt + few_shot_str
+        return base_prompt
+
+    def process_response(self, response: str, reasoning: Optional[str] = None) -> str:
+        return response.strip()
+
+
+class ChainOfThoughtStrategy(OptimizationStrategy):
+    """Strategy using chain-of-thought reasoning before generation."""
+
+    @property
+    def strategy_type(self) -> OptimizationStrategyType:
+        return OptimizationStrategyType.CHAIN_OF_THOUGHT
+
+    def prepare_prompt(
+        self,
+        base_prompt: str,
+        principle: str,
+        predicates: Optional[List[str]],
+        domain: str,
+        context: Optional[Dict[str, Any]],
+        few_shot_examples: Optional[List[str]] = None,
+    ) -> str:
+        logger.debug("Preparing prompt with CHAIN_OF_THOUGHT strategy")
+        cot_instruction = """
+
+**Reasoning Process:**
+Before generating the rule, think through:
+1. What are the key conditions/elements from the principle?
+2. Which predicates map to which conditions?
+3. What should be in the head vs body of the rule?
+4. Are all head variables grounded in the body?
+"""
+        return base_prompt + cot_instruction
+
+    def process_response(self, response: str, reasoning: Optional[str] = None) -> str:
+        if reasoning:
+            logger.debug(f"Chain-of-thought reasoning: {reasoning[:200]}...")
+        return response.strip()
+
+
+class SelfConsistencyStrategy(OptimizationStrategy):
+    """Strategy that generates multiple candidates for consistency checking."""
+
+    @property
+    def strategy_type(self) -> OptimizationStrategyType:
+        return OptimizationStrategyType.SELF_CONSISTENCY
+
+    def prepare_prompt(
+        self,
+        base_prompt: str,
+        principle: str,
+        predicates: Optional[List[str]],
+        domain: str,
+        context: Optional[Dict[str, Any]],
+        few_shot_examples: Optional[List[str]] = None,
+    ) -> str:
+        logger.debug("Preparing prompt with SELF_CONSISTENCY strategy")
+        consistency_instruction = """
+
+**Self-Consistency Check:**
+Generate the most reliable interpretation of the rule. Focus on:
+1. Clear, unambiguous conditions
+2. Minimal assumptions beyond stated requirements
+3. Conservative variable usage
+"""
+        return base_prompt + consistency_instruction
+
+    def process_response(self, response: str, reasoning: Optional[str] = None) -> str:
+        return response.strip()
+
+
+# Strategy factory for creating strategies from enum
+def create_strategy(strategy_type: OptimizationStrategyType) -> OptimizationStrategy:
+    """Factory function to create strategy instances from type enum.
+
+    Args:
+        strategy_type: The type of optimization strategy
+
+    Returns:
+        An instance of the corresponding strategy class
+    """
+    strategy_map: Dict[OptimizationStrategyType, Type[OptimizationStrategy]] = {
+        OptimizationStrategyType.PROMPT_OPTIMIZATION: PromptOptimizationStrategy,
+        OptimizationStrategyType.FEW_SHOT_LEARNING: FewShotLearningStrategy,
+        OptimizationStrategyType.CHAIN_OF_THOUGHT: ChainOfThoughtStrategy,
+        OptimizationStrategyType.SELF_CONSISTENCY: SelfConsistencyStrategy,
+    }
+    return strategy_map[strategy_type]()
+
+
+# Backwards compatibility alias
+OptimizationStrategy_Enum = OptimizationStrategyType
 
 
 @dataclass
@@ -45,16 +260,22 @@ class LogicGeneratorConfig:
         enable_syntax_validation: Validate ASP syntax before returning
         enable_variable_safety_check: Check for unsafe variables
         max_generation_retries: Maximum retry attempts on validation failure
+        retry_base_delay_seconds: Base delay for exponential backoff
+        enable_cache: Enable caching for repeated queries
+        cache_max_size: Maximum number of cached results
     """
 
     model: str = "claude-3-5-haiku-20241022"
     temperature: float = 0.3
     max_tokens: int = 4096
-    optimization_strategy: OptimizationStrategy = OptimizationStrategy.PROMPT_OPTIMIZATION
+    optimization_strategy: OptimizationStrategyType = OptimizationStrategyType.PROMPT_OPTIMIZATION
     few_shot_examples: List[str] = field(default_factory=list)
     enable_syntax_validation: bool = True
     enable_variable_safety_check: bool = True
     max_generation_retries: int = 3
+    retry_base_delay_seconds: float = 1.0
+    enable_cache: bool = True
+    cache_max_size: int = 100
 
 
 @dataclass
@@ -69,6 +290,7 @@ class ASPGenerationResult:
         generation_time_ms: Time taken for generation
         retries_needed: Number of retries before success
         reasoning: Chain-of-thought reasoning if enabled
+        from_cache: Whether result was retrieved from cache
     """
 
     rule: str
@@ -78,6 +300,7 @@ class ASPGenerationResult:
     generation_time_ms: float = 0.0
     retries_needed: int = 0
     reasoning: Optional[str] = None
+    from_cache: bool = False
 
 
 @dataclass
@@ -139,13 +362,79 @@ Generate rules that are precise, use appropriate predicates from the provided co
 and follow all ASP syntax requirements."""
 
 
-class LogicGeneratorLLM:
+# ============================================================================
+# Abstract Base Class for Logic Generators
+# ============================================================================
+
+
+class LogicGenerator(ABC):
+    """Abstract base class for logic generators.
+
+    Defines the interface that all logic generators must implement,
+    enabling future extensibility for CriticLLM, TranslatorLLM, etc.
+    """
+
+    @abstractmethod
+    def generate_rule(
+        self,
+        principle: str,
+        predicates: Optional[List[str]] = None,
+        domain: str = "legal",
+        context: Optional[Dict[str, Any]] = None,
+    ) -> ASPGenerationResult:
+        """Generate an ASP rule from a natural language principle.
+
+        Args:
+            principle: Natural language description of the rule to generate
+            predicates: Available predicates to use in the rule
+            domain: Domain context (e.g., "contracts", "torts")
+            context: Additional context for generation
+
+        Returns:
+            ASPGenerationResult with the generated rule and metadata
+        """
+        pass
+
+    @abstractmethod
+    def validate_rule(self, rule: str) -> Tuple[bool, List[str]]:
+        """Validate an ASP rule.
+
+        Args:
+            rule: The ASP rule to validate
+
+        Returns:
+            Tuple of (is_valid, list of error messages)
+        """
+        pass
+
+    @abstractmethod
+    def get_statistics(self) -> Dict[str, Any]:
+        """Get generation statistics.
+
+        Returns:
+            Dictionary with generation metrics
+        """
+        pass
+
+
+# ============================================================================
+# Main Implementation
+# ============================================================================
+
+
+class LogicGeneratorLLM(LogicGenerator):
     """
     Specialized LLM for formal ASP logic generation.
 
     This class wraps an LLM provider with ASP-specific prompt optimization,
     validation, and retry logic to achieve higher accuracy on formal logic
     generation tasks compared to general-purpose LLMs.
+
+    Features (based on multi-agent review recommendations):
+    - Strategy Pattern for flexible optimization approaches
+    - Exponential backoff retry logic for resilience
+    - LRU caching for repeated queries
+    - Comprehensive logging throughout
 
     Example:
         >>> from loft.neural.providers import AnthropicProvider
@@ -163,30 +452,58 @@ class LogicGeneratorLLM:
         self,
         provider: LLMProvider,
         config: Optional[LogicGeneratorConfig] = None,
+        strategy: Optional[OptimizationStrategy] = None,
     ):
         """Initialize the Logic Generator LLM.
 
         Args:
             provider: LLM provider instance (Anthropic, OpenAI, etc.)
             config: Configuration for generation parameters
+            strategy: Optional custom optimization strategy (overrides config)
         """
         self.provider = provider
         self.config = config or LogicGeneratorConfig()
         self._llm = LLMInterface(provider, enable_cache=True, max_retries=3)
+
+        # Initialize strategy (custom or from config)
+        if strategy:
+            self._strategy = strategy
+            logger.info(f"Using custom strategy: {strategy.strategy_type.value}")
+        else:
+            self._strategy = create_strategy(self.config.optimization_strategy)
+            logger.info(f"Using config strategy: {self.config.optimization_strategy.value}")
 
         # Statistics tracking
         self._total_generations = 0
         self._successful_generations = 0
         self._syntax_errors = 0
         self._variable_safety_errors = 0
+        self._cache_hits = 0
+        self._total_retries = 0
+
+        # Cache for repeated queries
+        self._cache: Dict[str, ASPGenerationResult] = {}
 
         # Load default few-shot examples if none provided
         if not self.config.few_shot_examples:
             self.config.few_shot_examples = self._get_default_few_shot_examples()
 
         logger.info(
-            f"Initialized LogicGeneratorLLM with strategy={self.config.optimization_strategy.value}"
+            f"Initialized LogicGeneratorLLM: "
+            f"strategy={self._strategy.strategy_type.value}, "
+            f"model={self.config.model}, "
+            f"cache={'enabled' if self.config.enable_cache else 'disabled'}"
         )
+
+    def set_strategy(self, strategy: OptimizationStrategy) -> None:
+        """Change the optimization strategy at runtime.
+
+        Args:
+            strategy: The new optimization strategy to use
+        """
+        old_strategy = self._strategy.strategy_type.value
+        self._strategy = strategy
+        logger.info(f"Strategy changed: {old_strategy} -> {strategy.strategy_type.value}")
 
     def generate_rule(
         self,
@@ -197,8 +514,8 @@ class LogicGeneratorLLM:
     ) -> ASPGenerationResult:
         """Generate an ASP rule from a natural language principle.
 
-        Uses the configured optimization strategy to produce high-quality
-        ASP rules with validation.
+        Uses the configured optimization strategy with retry logic and
+        exponential backoff for resilience.
 
         Args:
             principle: Natural language description of the rule to generate
@@ -209,18 +526,46 @@ class LogicGeneratorLLM:
         Returns:
             ASPGenerationResult with the generated rule and metadata
 
-        Example:
-            >>> result = logic_gen.generate_rule(
-            ...     principle="A contract is void if signed under duress",
-            ...     predicates=["contract(X)", "signed(X, P)", "duress(X)", "void(X)"],
-            ...     domain="contracts"
-            ... )
+        Raises:
+            ASPGenerationError: If generation fails after all retries
         """
         start_time = time.time()
         self._total_generations += 1
 
-        # Build the generation prompt
-        prompt = self._build_generation_prompt(principle, predicates, domain, context)
+        logger.debug(
+            f"Starting rule generation #{self._total_generations}: "
+            f"principle='{principle[:50]}...', domain={domain}"
+        )
+
+        # Check cache first
+        cache_key = self._get_cache_key(principle, predicates, domain, context)
+        if self.config.enable_cache and cache_key in self._cache:
+            cached_result = self._cache[cache_key]
+            self._cache_hits += 1
+            logger.debug(f"Cache hit for key {cache_key[:16]}... (hits: {self._cache_hits})")
+            return ASPGenerationResult(
+                rule=cached_result.rule,
+                is_valid=cached_result.is_valid,
+                confidence=cached_result.confidence,
+                validation_errors=cached_result.validation_errors,
+                generation_time_ms=0.0,
+                retries_needed=0,
+                reasoning=cached_result.reasoning,
+                from_cache=True,
+            )
+
+        # Build the base generation prompt
+        base_prompt = self._build_generation_prompt(principle, predicates, domain, context)
+
+        # Apply strategy to prepare final prompt
+        prompt = self._strategy.prepare_prompt(
+            base_prompt=base_prompt,
+            principle=principle,
+            predicates=predicates,
+            domain=domain,
+            context=context,
+            few_shot_examples=self.config.few_shot_examples,
+        )
 
         validation_errors: List[str] = []
         retries = 0
@@ -230,6 +575,10 @@ class LogicGeneratorLLM:
 
         for attempt in range(self.config.max_generation_retries):
             try:
+                logger.debug(
+                    f"Generation attempt {attempt + 1}/{self.config.max_generation_retries}"
+                )
+
                 response = self._llm.query(
                     question=prompt,
                     output_schema=GeneratedRule,
@@ -242,29 +591,50 @@ class LogicGeneratorLLM:
                 confidence = response.content.confidence
                 reasoning = response.content.reasoning
 
-                # Validate the generated rule
-                validation_errors = self._validate_rule(generated_rule)
+                # Process response through strategy
+                generated_rule = self._strategy.process_response(generated_rule, reasoning)
 
-                if not validation_errors:
+                # Validate the generated rule
+                is_valid, validation_errors = self.validate_rule(generated_rule)
+
+                if is_valid:
                     self._successful_generations += 1
+                    logger.info(
+                        f"Rule generated successfully on attempt {attempt + 1}: "
+                        f"confidence={confidence:.2f}"
+                    )
                     break
 
                 # Log validation failures for retry
-                logger.debug(f"Validation failed on attempt {attempt + 1}: {validation_errors}")
+                logger.warning(f"Validation failed on attempt {attempt + 1}: {validation_errors}")
 
                 # Enhance prompt with error feedback for retry
                 prompt = self._build_retry_prompt(prompt, generated_rule, validation_errors)
                 retries = attempt + 1
+                self._total_retries += 1
+
+                # Exponential backoff before retry
+                if attempt < self.config.max_generation_retries - 1:
+                    delay = self.config.retry_base_delay_seconds * (2**attempt)
+                    logger.debug(f"Waiting {delay:.1f}s before retry (exponential backoff)")
+                    time.sleep(delay)
 
             except Exception as e:
-                logger.warning(f"Generation error on attempt {attempt + 1}: {e}")
+                logger.error(f"Generation error on attempt {attempt + 1}: {e}")
                 validation_errors = [str(e)]
                 retries = attempt + 1
+                self._total_retries += 1
+
+                # Exponential backoff before retry
+                if attempt < self.config.max_generation_retries - 1:
+                    delay = self.config.retry_base_delay_seconds * (2**attempt)
+                    logger.debug(f"Waiting {delay:.1f}s before retry after error")
+                    time.sleep(delay)
 
         generation_time_ms = (time.time() - start_time) * 1000
         is_valid = len(validation_errors) == 0
 
-        return ASPGenerationResult(
+        result = ASPGenerationResult(
             rule=generated_rule,
             is_valid=is_valid,
             confidence=confidence,
@@ -272,7 +642,37 @@ class LogicGeneratorLLM:
             generation_time_ms=generation_time_ms,
             retries_needed=retries,
             reasoning=reasoning,
+            from_cache=False,
         )
+
+        # Cache successful results
+        if is_valid and self.config.enable_cache:
+            if len(self._cache) >= self.config.cache_max_size:
+                # Remove oldest entry (simple LRU approximation)
+                oldest_key = next(iter(self._cache))
+                del self._cache[oldest_key]
+                logger.debug(f"Cache eviction: removed {oldest_key[:16]}...")
+            self._cache[cache_key] = result
+            logger.debug(f"Cached result for key {cache_key[:16]}...")
+
+        logger.info(
+            f"Generation complete: valid={is_valid}, "
+            f"retries={retries}, time={generation_time_ms:.1f}ms"
+        )
+
+        return result
+
+    def validate_rule(self, rule: str) -> Tuple[bool, List[str]]:
+        """Validate an ASP rule for common errors.
+
+        Args:
+            rule: The ASP rule to validate
+
+        Returns:
+            Tuple of (is_valid, list of error messages)
+        """
+        errors = self._validate_rule_internal(rule)
+        return len(errors) == 0, errors
 
     def generate_gap_filling_candidates(
         self,
@@ -295,17 +695,21 @@ class LogicGeneratorLLM:
         Returns:
             List of ASPGenerationResult with candidate rules
         """
+        logger.info(f"Generating {num_candidates} gap-filling candidates for: {missing_predicate}")
         candidates = []
 
         # Generate candidates with varying temperatures for diversity
         temperatures = [0.2, 0.4, 0.6][:num_candidates]
 
         for i, temp in enumerate(temperatures):
+            approach = ["conservative", "balanced", "permissive"][i]
+            logger.debug(f"Generating candidate {i + 1} with approach={approach}, temp={temp}")
+
             prompt = self._build_gap_filling_prompt(
                 gap_description,
                 missing_predicate,
                 dataset_predicates,
-                approach=["conservative", "balanced", "permissive"][i],
+                approach=approach,
             )
 
             start_time = time.time()
@@ -320,18 +724,19 @@ class LogicGeneratorLLM:
                 )
 
                 rule = response.content.asp_rule
-                validation_errors = self._validate_rule(rule)
+                is_valid, validation_errors = self.validate_rule(rule)
 
                 candidates.append(
                     ASPGenerationResult(
                         rule=rule,
-                        is_valid=len(validation_errors) == 0,
+                        is_valid=is_valid,
                         confidence=response.content.confidence,
                         validation_errors=validation_errors,
                         generation_time_ms=(time.time() - start_time) * 1000,
                         reasoning=response.content.reasoning,
                     )
                 )
+                logger.debug(f"Candidate {i + 1} generated: valid={is_valid}")
 
             except Exception as e:
                 logger.warning(f"Candidate generation {i + 1} failed: {e}")
@@ -344,6 +749,9 @@ class LogicGeneratorLLM:
                         generation_time_ms=(time.time() - start_time) * 1000,
                     )
                 )
+
+        valid_count = sum(1 for c in candidates if c.is_valid)
+        logger.info(f"Gap-filling complete: {valid_count}/{num_candidates} valid candidates")
 
         return candidates
 
@@ -365,12 +773,14 @@ class LogicGeneratorLLM:
         Returns:
             BenchmarkResult with comparative metrics
         """
-        logger.info(f"Benchmarking against general LLM on {len(test_cases)} cases")
+        logger.info(f"Starting benchmark against general LLM: {len(test_cases)} test cases")
 
         logic_gen_results: List[ASPGenerationResult] = []
         general_llm_results: List[Dict[str, Any]] = []
 
-        for case in test_cases:
+        for i, case in enumerate(test_cases):
+            logger.debug(f"Benchmark case {i + 1}/{len(test_cases)}")
+
             # Run through logic generator
             lg_result = self.generate_rule(
                 principle=case["principle"],
@@ -388,15 +798,16 @@ class LogicGeneratorLLM:
                     temperature=0.3,
                 )
                 gen_rule = gen_response.content.asp_rule
-                gen_errors = self._validate_rule(gen_rule)
+                is_valid, gen_errors = self.validate_rule(gen_rule)
                 general_llm_results.append(
                     {
                         "rule": gen_rule,
-                        "is_valid": len(gen_errors) == 0,
+                        "is_valid": is_valid,
                         "time_ms": (time.time() - start_time) * 1000,
                     }
                 )
             except Exception as e:
+                logger.warning(f"General LLM failed on case {i + 1}: {e}")
                 general_llm_results.append(
                     {
                         "rule": "",
@@ -422,19 +833,15 @@ class LogicGeneratorLLM:
             sum(r["time_ms"] for r in general_llm_results) / len(test_cases) if test_cases else 0.0
         )
 
-        # Calculate accuracy if expected rules are provided
-        lg_accuracy = lg_syntax_rate  # Default to syntax validity
-        gen_accuracy = gen_syntax_rate
-
         improvement = (
             ((lg_syntax_rate - gen_syntax_rate) / gen_syntax_rate * 100)
             if gen_syntax_rate > 0
             else 0.0
         )
 
-        return BenchmarkResult(
-            logic_generator_accuracy=lg_accuracy,
-            general_llm_accuracy=gen_accuracy,
+        result = BenchmarkResult(
+            logic_generator_accuracy=lg_syntax_rate,
+            general_llm_accuracy=gen_syntax_rate,
             logic_generator_syntax_valid_rate=lg_syntax_rate,
             general_llm_syntax_valid_rate=gen_syntax_rate,
             logic_generator_avg_time_ms=lg_avg_time,
@@ -442,6 +849,14 @@ class LogicGeneratorLLM:
             test_cases_count=len(test_cases),
             improvement_percentage=improvement,
         )
+
+        logger.info(
+            f"Benchmark complete: "
+            f"LogicGen={lg_syntax_rate:.1%} vs General={gen_syntax_rate:.1%} "
+            f"(improvement={improvement:+.1f}%)"
+        )
+
+        return result
 
     def get_statistics(self) -> Dict[str, Any]:
         """Get generation statistics.
@@ -455,14 +870,22 @@ class LogicGeneratorLLM:
             else 0.0
         )
 
+        cache_hit_rate = (
+            self._cache_hits / self._total_generations if self._total_generations > 0 else 0.0
+        )
+
         return {
             "total_generations": self._total_generations,
             "successful_generations": self._successful_generations,
             "success_rate": success_rate,
             "syntax_errors": self._syntax_errors,
             "variable_safety_errors": self._variable_safety_errors,
+            "total_retries": self._total_retries,
+            "cache_hits": self._cache_hits,
+            "cache_hit_rate": cache_hit_rate,
+            "cache_size": len(self._cache),
             "model": self.config.model,
-            "optimization_strategy": self.config.optimization_strategy.value,
+            "optimization_strategy": self._strategy.strategy_type.value,
         }
 
     def reset_statistics(self) -> None:
@@ -471,6 +894,33 @@ class LogicGeneratorLLM:
         self._successful_generations = 0
         self._syntax_errors = 0
         self._variable_safety_errors = 0
+        self._total_retries = 0
+        self._cache_hits = 0
+        logger.debug("Statistics reset")
+
+    def clear_cache(self) -> None:
+        """Clear the generation cache."""
+        cache_size = len(self._cache)
+        self._cache.clear()
+        logger.info(f"Cache cleared ({cache_size} entries removed)")
+
+    def _get_cache_key(
+        self,
+        principle: str,
+        predicates: Optional[List[str]],
+        domain: str,
+        context: Optional[Dict[str, Any]],
+    ) -> str:
+        """Generate a cache key for the given inputs."""
+        key_parts = [
+            principle,
+            str(sorted(predicates) if predicates else []),
+            domain,
+            str(sorted(context.items()) if context else {}),
+            self._strategy.strategy_type.value,
+        ]
+        key_string = "|".join(key_parts)
+        return hashlib.md5(key_string.encode()).hexdigest()
 
     def _build_generation_prompt(
         self,
@@ -479,7 +929,7 @@ class LogicGeneratorLLM:
         domain: str,
         context: Optional[Dict[str, Any]],
     ) -> str:
-        """Build the generation prompt with optimization strategy."""
+        """Build the base generation prompt."""
         predicates_str = (
             "\n".join(f"  - {p}" for p in predicates)
             if predicates
@@ -492,27 +942,6 @@ class LogicGeneratorLLM:
                 f"  - {k}: {v}" for k, v in context.items()
             )
 
-        few_shot_str = ""
-        if (
-            self.config.optimization_strategy == OptimizationStrategy.FEW_SHOT_LEARNING
-            and self.config.few_shot_examples
-        ):
-            few_shot_str = "\n**Reference Examples:**\n```asp\n"
-            few_shot_str += "\n".join(self.config.few_shot_examples[:3])
-            few_shot_str += "\n```\n"
-
-        cot_instruction = ""
-        if self.config.optimization_strategy == OptimizationStrategy.CHAIN_OF_THOUGHT:
-            cot_instruction = """
-
-**Reasoning Process:**
-Before generating the rule, think through:
-1. What are the key conditions/elements from the principle?
-2. Which predicates map to which conditions?
-3. What should be in the head vs body of the rule?
-4. Are all head variables grounded in the body?
-"""
-
         prompt = f"""Generate an ASP rule for the following legal principle in the {domain} domain.
 
 **Principle:** {principle}
@@ -520,8 +949,7 @@ Before generating the rule, think through:
 **Available Predicates:**
 {predicates_str}
 {context_str}
-{few_shot_str}
-{cot_instruction}
+
 **Requirements:**
 1. The rule must be syntactically valid Clingo ASP
 2. All head variables must appear in positive body literals
@@ -604,8 +1032,8 @@ Generate the ASP rule:"""
 Use predicates: {predicates_str}
 The rule must be valid Clingo ASP syntax ending with a period."""
 
-    def _validate_rule(self, rule: str) -> List[str]:
-        """Validate an ASP rule for common errors.
+    def _validate_rule_internal(self, rule: str) -> List[str]:
+        """Validate an ASP rule for common errors (internal method).
 
         Args:
             rule: The ASP rule to validate

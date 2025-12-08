@@ -13,7 +13,7 @@ from loft.neural.ensemble.logic_generator import (
     LogicGeneratorConfig,
     ASPGenerationResult,
     BenchmarkResult,
-    OptimizationStrategy,
+    OptimizationStrategyType,
     ASP_LOGIC_SYSTEM_PROMPT,
 )
 from loft.neural.rule_schemas import GeneratedRule
@@ -53,7 +53,7 @@ class TestLogicGeneratorConfig:
         assert config.model == "claude-3-5-haiku-20241022"
         assert config.temperature == 0.3
         assert config.max_tokens == 4096
-        assert config.optimization_strategy == OptimizationStrategy.PROMPT_OPTIMIZATION
+        assert config.optimization_strategy == OptimizationStrategyType.PROMPT_OPTIMIZATION
         assert config.enable_syntax_validation is True
         assert config.enable_variable_safety_check is True
         assert config.max_generation_retries == 3
@@ -64,13 +64,13 @@ class TestLogicGeneratorConfig:
         config = LogicGeneratorConfig(
             model="claude-3-5-sonnet-20241022",
             temperature=0.5,
-            optimization_strategy=OptimizationStrategy.CHAIN_OF_THOUGHT,
+            optimization_strategy=OptimizationStrategyType.CHAIN_OF_THOUGHT,
             few_shot_examples=["example1", "example2"],
         )
 
         assert config.model == "claude-3-5-sonnet-20241022"
         assert config.temperature == 0.5
-        assert config.optimization_strategy == OptimizationStrategy.CHAIN_OF_THOUGHT
+        assert config.optimization_strategy == OptimizationStrategyType.CHAIN_OF_THOUGHT
         assert len(config.few_shot_examples) == 2
 
 
@@ -153,40 +153,44 @@ class TestLogicGeneratorLLM:
         """Test initialization with custom configuration."""
         config = LogicGeneratorConfig(
             temperature=0.5,
-            optimization_strategy=OptimizationStrategy.FEW_SHOT_LEARNING,
+            optimization_strategy=OptimizationStrategyType.FEW_SHOT_LEARNING,
         )
         gen = LogicGeneratorLLM(mock_provider, config)
 
         assert gen.config.temperature == 0.5
-        assert gen.config.optimization_strategy == OptimizationStrategy.FEW_SHOT_LEARNING
+        assert gen.config.optimization_strategy == OptimizationStrategyType.FEW_SHOT_LEARNING
 
     def test_validate_rule_valid(self, logic_generator):
         """Test validation of a valid ASP rule."""
         valid_rule = "enforceable(C) :- contract(C), signed(C, P), party(P)."
-        errors = logic_generator._validate_rule(valid_rule)
+        is_valid, errors = logic_generator.validate_rule(valid_rule)
 
+        assert is_valid is True
         assert len(errors) == 0
 
     def test_validate_rule_missing_period(self, logic_generator):
         """Test validation catches missing period."""
         invalid_rule = "enforceable(C) :- contract(C)"
-        errors = logic_generator._validate_rule(invalid_rule)
+        is_valid, errors = logic_generator.validate_rule(invalid_rule)
 
+        assert is_valid is False
         assert len(errors) > 0
         assert any("period" in e.lower() for e in errors)
 
     def test_validate_rule_empty(self, logic_generator):
         """Test validation of empty rule."""
-        errors = logic_generator._validate_rule("")
+        is_valid, errors = logic_generator.validate_rule("")
 
+        assert is_valid is False
         assert len(errors) > 0
         assert any("empty" in e.lower() for e in errors)
 
     def test_validate_rule_unbalanced_parentheses(self, logic_generator):
         """Test validation catches unbalanced parentheses."""
         invalid_rule = "enforceable(C :- contract(C)."
-        errors = logic_generator._validate_rule(invalid_rule)
+        is_valid, errors = logic_generator.validate_rule(invalid_rule)
 
+        assert is_valid is False
         assert len(errors) > 0
         assert any("parenthes" in e.lower() for e in errors)
 
@@ -216,41 +220,60 @@ class TestLogicGeneratorLLM:
         assert "CA" in prompt
 
     def test_build_generation_prompt_few_shot(self, mock_provider):
-        """Test building prompt with few-shot learning strategy."""
+        """Test that few-shot strategy adds reference examples to prompt."""
         config = LogicGeneratorConfig(
-            optimization_strategy=OptimizationStrategy.FEW_SHOT_LEARNING,
+            optimization_strategy=OptimizationStrategyType.FEW_SHOT_LEARNING,
             few_shot_examples=[
                 "valid_contract(C) :- offer(C), acceptance(C).",
             ],
         )
         gen = LogicGeneratorLLM(mock_provider, config)
 
-        prompt = gen._build_generation_prompt(
+        base_prompt = gen._build_generation_prompt(
             principle="Test",
             predicates=None,
             domain="legal",
             context=None,
         )
 
-        assert "Reference Examples" in prompt
-        assert "valid_contract" in prompt
+        # Apply the strategy to the base prompt
+        final_prompt = gen._strategy.prepare_prompt(
+            base_prompt=base_prompt,
+            principle="Test",
+            predicates=None,
+            domain="legal",
+            context=None,
+            few_shot_examples=config.few_shot_examples,
+        )
+
+        assert "Reference Examples" in final_prompt
+        assert "valid_contract" in final_prompt
 
     def test_build_generation_prompt_chain_of_thought(self, mock_provider):
-        """Test building prompt with chain-of-thought strategy."""
+        """Test that chain-of-thought strategy adds reasoning instructions."""
         config = LogicGeneratorConfig(
-            optimization_strategy=OptimizationStrategy.CHAIN_OF_THOUGHT,
+            optimization_strategy=OptimizationStrategyType.CHAIN_OF_THOUGHT,
         )
         gen = LogicGeneratorLLM(mock_provider, config)
 
-        prompt = gen._build_generation_prompt(
+        base_prompt = gen._build_generation_prompt(
             principle="Test",
             predicates=None,
             domain="legal",
             context=None,
         )
 
-        assert "Reasoning Process" in prompt
-        assert "think through" in prompt.lower()
+        # Apply the strategy to the base prompt
+        final_prompt = gen._strategy.prepare_prompt(
+            base_prompt=base_prompt,
+            principle="Test",
+            predicates=None,
+            domain="legal",
+            context=None,
+        )
+
+        assert "Reasoning Process" in final_prompt
+        assert "think through" in final_prompt.lower()
 
     def test_build_gap_filling_prompt(self, logic_generator):
         """Test building gap filling prompt."""
@@ -377,15 +400,15 @@ class TestLogicGeneratorLLM:
         assert any("." in ex for ex in examples)
 
 
-class TestOptimizationStrategy:
-    """Tests for OptimizationStrategy enum."""
+class TestOptimizationStrategyType:
+    """Tests for OptimizationStrategyType enum."""
 
     def test_enum_values(self):
         """Test all optimization strategy values."""
-        assert OptimizationStrategy.PROMPT_OPTIMIZATION.value == "prompt_optimization"
-        assert OptimizationStrategy.FEW_SHOT_LEARNING.value == "few_shot_learning"
-        assert OptimizationStrategy.CHAIN_OF_THOUGHT.value == "chain_of_thought"
-        assert OptimizationStrategy.SELF_CONSISTENCY.value == "self_consistency"
+        assert OptimizationStrategyType.PROMPT_OPTIMIZATION.value == "prompt_optimization"
+        assert OptimizationStrategyType.FEW_SHOT_LEARNING.value == "few_shot_learning"
+        assert OptimizationStrategyType.CHAIN_OF_THOUGHT.value == "chain_of_thought"
+        assert OptimizationStrategyType.SELF_CONSISTENCY.value == "self_consistency"
 
 
 class TestASPLogicSystemPrompt:
