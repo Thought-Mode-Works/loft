@@ -506,9 +506,10 @@ class TestCriticLLMFindEdgeCases:
         )
 
         # Fail first two attempts, succeed on third
+        # Use ConnectionError (a specific retryable exception) instead of generic Exception
         mock_critic._llm.query.side_effect = [
-            Exception("API error"),
-            Exception("API error"),
+            ConnectionError("API error"),
+            ConnectionError("API error"),
             mock_response,
         ]
 

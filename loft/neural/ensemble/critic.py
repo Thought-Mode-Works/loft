@@ -14,6 +14,8 @@ generated rules before they are incorporated into the knowledge base.
 from __future__ import annotations
 
 import hashlib
+import json
+import threading
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -21,9 +23,32 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Type
 
 from loguru import logger
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from loft.neural.llm_interface import LLMInterface, LLMProvider
+
+
+# =============================================================================
+# Specific Exceptions for Retry Logic
+# =============================================================================
+
+
+class LLMConnectionError(Exception):
+    """Raised when LLM connection fails (network issues, timeouts)."""
+
+    pass
+
+
+class LLMResponseParsingError(Exception):
+    """Raised when LLM response cannot be parsed into expected schema."""
+
+    pass
+
+
+class LLMRateLimitError(Exception):
+    """Raised when LLM rate limit is exceeded."""
+
+    pass
 
 
 # =============================================================================
@@ -707,10 +732,19 @@ class CriticLLM(Critic):
             provider: LLM provider instance
             config: Configuration for analysis parameters
             strategy: Optional custom critic strategy (overrides config)
+
+        Raises:
+            ValueError: If provider is None
         """
+        if provider is None:
+            raise ValueError("provider cannot be None")
+
         self.provider = provider
         self.config = config or CriticConfig()
         self._llm = LLMInterface(provider, enable_cache=True, max_retries=3)
+
+        # Thread-safe strategy access
+        self._strategy_lock = threading.Lock()
 
         # Initialize strategy
         if strategy:
@@ -732,6 +766,7 @@ class CriticLLM(Critic):
 
         # Cache for repeated analyses
         self._cache: Dict[str, CriticResult] = {}
+        self._cache_lock = threading.Lock()
 
         logger.info(
             f"Initialized CriticLLM: "
@@ -741,10 +776,23 @@ class CriticLLM(Critic):
         )
 
     def set_strategy(self, strategy: CriticStrategy) -> None:
-        """Change the critic strategy at runtime."""
-        old_strategy = self._strategy.strategy_type.value
-        self._strategy = strategy
-        logger.info(f"Strategy changed: {old_strategy} -> {strategy.strategy_type.value}")
+        """Change the critic strategy at runtime.
+
+        Thread-safe method to update the critic strategy.
+
+        Args:
+            strategy: New strategy to use for analysis
+
+        Raises:
+            ValueError: If strategy is None
+        """
+        if strategy is None:
+            raise ValueError("strategy cannot be None")
+
+        with self._strategy_lock:
+            old_strategy = self._strategy.strategy_type.value
+            self._strategy = strategy
+            logger.info(f"Strategy changed: {old_strategy} -> {strategy.strategy_type.value}")
 
     def find_edge_cases(
         self,
@@ -759,19 +807,32 @@ class CriticLLM(Critic):
 
         Returns:
             List of EdgeCase objects describing potential failure modes
+
+        Raises:
+            ValueError: If rule is empty
+            CriticAnalysisError: If analysis fails after all retries
         """
+        # Input validation
+        if not rule or not rule.strip():
+            raise ValueError("rule cannot be empty")
+
         start_time = time.time()
         self._total_analyses += 1
         self._edge_case_analyses += 1
 
         logger.debug(f"Starting edge case analysis for rule: {rule[:50]}...")
 
-        # Check cache
+        # Check cache with thread safety
         cache_key = self._get_cache_key("edge_cases", rule, context)
-        if self.config.enable_cache and cache_key in self._cache:
-            self._cache_hits += 1
-            logger.debug("Cache hit for edge case analysis")
-            return self._cache[cache_key].edge_cases
+        with self._cache_lock:
+            if self.config.enable_cache and cache_key in self._cache:
+                self._cache_hits += 1
+                logger.debug("Cache hit for edge case analysis")
+                return self._cache[cache_key].edge_cases
+
+        # Get strategy with thread safety
+        with self._strategy_lock:
+            current_strategy = self._strategy
 
         # Prepare context strings
         predicates_str = (
@@ -789,7 +850,7 @@ class CriticLLM(Critic):
             predicates=predicates_str,
         )
 
-        prompt = self._strategy.prepare_edge_case_prompt(base_prompt, rule, context)
+        prompt = current_strategy.prepare_edge_case_prompt(base_prompt, rule, context)
 
         edge_cases: List[EdgeCase] = []
 
@@ -805,8 +866,16 @@ class CriticLLM(Critic):
                     system_prompt=CRITIC_SYSTEM_PROMPT,
                 )
 
-                # Convert to EdgeCase dataclasses
-                result = response.content  # type: ignore[attr-defined]
+                # Validate response content
+                if not hasattr(response, "content") or response.content is None:
+                    raise LLMResponseParsingError("LLM response has no content")
+
+                result = response.content
+                if not isinstance(result, EdgeCaseAnalysisResult):
+                    raise LLMResponseParsingError(
+                        f"Expected EdgeCaseAnalysisResult, got {type(result).__name__}"
+                    )
+
                 for ec_schema in result.edge_cases[: self.config.max_edge_cases]:
                     if ec_schema.confidence >= self.config.confidence_threshold:
                         edge_cases.append(
@@ -817,7 +886,7 @@ class CriticLLM(Critic):
                                 severity=ec_schema.severity,
                                 confidence=ec_schema.confidence,
                                 suggested_fix=ec_schema.suggested_fix,
-                                related_predicates=ec_schema.related_predicates,
+                                related_predicates=list(ec_schema.related_predicates),
                             )
                         )
 
@@ -825,7 +894,8 @@ class CriticLLM(Critic):
                 logger.info(f"Found {len(edge_cases)} edge cases in rule")
                 break
 
-            except Exception as e:
+            except (ValidationError, LLMResponseParsingError) as e:
+                # Parsing/validation errors - retry with backoff
                 logger.warning(f"Edge case analysis attempt {attempt + 1} failed: {e}")
                 self._total_retries += 1
 
@@ -838,10 +908,29 @@ class CriticLLM(Critic):
                         f"Edge case analysis failed after {self.config.max_retries} attempts"
                     )
 
-        # Cache result
+            except (ConnectionError, TimeoutError, OSError) as e:
+                # Network errors - retry with backoff
+                logger.warning(f"Edge case analysis attempt {attempt + 1} failed (network): {e}")
+                self._total_retries += 1
+
+                if attempt < self.config.max_retries - 1:
+                    delay = self.config.retry_base_delay_seconds * (2**attempt)
+                    logger.debug(f"Waiting {delay:.1f}s before retry")
+                    time.sleep(delay)
+                else:
+                    logger.error(
+                        f"Edge case analysis failed after {self.config.max_retries} attempts"
+                    )
+
+            except KeyboardInterrupt:
+                # Don't retry on user interrupt
+                raise
+
+        # Cache result with thread safety
         if self.config.enable_cache and edge_cases:
             analysis_time_ms = (time.time() - start_time) * 1000
-            self._cache_result(cache_key, rule, edge_cases=edge_cases, time_ms=analysis_time_ms)
+            with self._cache_lock:
+                self._cache_result(cache_key, rule, edge_cases=edge_cases, time_ms=analysis_time_ms)
 
         return edge_cases
 
@@ -858,7 +947,14 @@ class CriticLLM(Critic):
 
         Returns:
             List of Contradiction objects describing conflicts
+
+        Raises:
+            ValueError: If rule is empty
         """
+        # Input validation
+        if not rule or not rule.strip():
+            raise ValueError("rule cannot be empty")
+
         start_time = time.time()
         self._total_analyses += 1
         self._contradiction_analyses += 1
@@ -868,12 +964,20 @@ class CriticLLM(Critic):
             f"against {len(existing_rules)} existing rules"
         )
 
-        # Check cache
-        cache_key = self._get_cache_key("contradictions", rule, {"existing": existing_rules})
-        if self.config.enable_cache and cache_key in self._cache:
-            self._cache_hits += 1
-            logger.debug("Cache hit for contradiction analysis")
-            return self._cache[cache_key].contradictions
+        # Check cache with thread safety (convert list to tuple for hashability)
+        existing_rules_tuple = tuple(existing_rules) if existing_rules else ()
+        cache_key = self._get_cache_key(
+            "contradictions", rule, {"existing": existing_rules_tuple}
+        )
+        with self._cache_lock:
+            if self.config.enable_cache and cache_key in self._cache:
+                self._cache_hits += 1
+                logger.debug("Cache hit for contradiction analysis")
+                return self._cache[cache_key].contradictions
+
+        # Get strategy with thread safety
+        with self._strategy_lock:
+            current_strategy = self._strategy
 
         # Build prompt
         existing_rules_str = "\n".join(existing_rules) if existing_rules else "(none)"
@@ -882,7 +986,7 @@ class CriticLLM(Critic):
             existing_rules=existing_rules_str,
         )
 
-        prompt = self._strategy.prepare_contradiction_prompt(base_prompt, rule, existing_rules)
+        prompt = current_strategy.prepare_contradiction_prompt(base_prompt, rule, existing_rules)
 
         contradictions: List[Contradiction] = []
 
@@ -898,8 +1002,16 @@ class CriticLLM(Critic):
                     system_prompt=CRITIC_SYSTEM_PROMPT,
                 )
 
-                # Convert to Contradiction dataclasses
-                result = response.content  # type: ignore[attr-defined]
+                # Validate response content
+                if not hasattr(response, "content") or response.content is None:
+                    raise LLMResponseParsingError("LLM response has no content")
+
+                result = response.content
+                if not isinstance(result, ContradictionAnalysisResult):
+                    raise LLMResponseParsingError(
+                        f"Expected ContradictionAnalysisResult, got {type(result).__name__}"
+                    )
+
                 for c_schema in result.contradictions[: self.config.max_contradictions]:
                     if c_schema.confidence >= self.config.confidence_threshold:
                         contradictions.append(
@@ -911,7 +1023,7 @@ class CriticLLM(Critic):
                                 example_trigger=c_schema.example_trigger,
                                 resolution_suggestion=c_schema.resolution_suggestion,
                                 confidence=c_schema.confidence,
-                                affected_predicates=c_schema.affected_predicates,
+                                affected_predicates=list(c_schema.affected_predicates),
                             )
                         )
 
@@ -922,7 +1034,8 @@ class CriticLLM(Critic):
                 )
                 break
 
-            except Exception as e:
+            except (ValidationError, LLMResponseParsingError) as e:
+                # Parsing/validation errors - retry with backoff
                 logger.warning(f"Contradiction analysis attempt {attempt + 1} failed: {e}")
                 self._total_retries += 1
 
@@ -935,12 +1048,33 @@ class CriticLLM(Critic):
                         f"Contradiction analysis failed after {self.config.max_retries} attempts"
                     )
 
-        # Cache result
+            except (ConnectionError, TimeoutError, OSError) as e:
+                # Network errors - retry with backoff
+                logger.warning(
+                    f"Contradiction analysis attempt {attempt + 1} failed (network): {e}"
+                )
+                self._total_retries += 1
+
+                if attempt < self.config.max_retries - 1:
+                    delay = self.config.retry_base_delay_seconds * (2**attempt)
+                    logger.debug(f"Waiting {delay:.1f}s before retry")
+                    time.sleep(delay)
+                else:
+                    logger.error(
+                        f"Contradiction analysis failed after {self.config.max_retries} attempts"
+                    )
+
+            except KeyboardInterrupt:
+                # Don't retry on user interrupt
+                raise
+
+        # Cache result with thread safety
         if self.config.enable_cache:
             analysis_time_ms = (time.time() - start_time) * 1000
-            self._cache_result(
-                cache_key, rule, contradictions=contradictions, time_ms=analysis_time_ms
-            )
+            with self._cache_lock:
+                self._cache_result(
+                    cache_key, rule, contradictions=contradictions, time_ms=analysis_time_ms
+                )
 
         return contradictions
 
@@ -959,7 +1093,14 @@ class CriticLLM(Critic):
 
         Returns:
             GeneralizationAssessment with scores and recommendations
+
+        Raises:
+            ValueError: If rule is empty
         """
+        # Input validation
+        if not rule or not rule.strip():
+            raise ValueError("rule cannot be empty")
+
         self._total_analyses += 1
         self._generalization_analyses += 1
 
@@ -1000,13 +1141,22 @@ class CriticLLM(Critic):
                     system_prompt=CRITIC_SYSTEM_PROMPT,
                 )
 
-                result = response.content  # type: ignore[attr-defined]
+                # Validate response content
+                if not hasattr(response, "content") or response.content is None:
+                    raise LLMResponseParsingError("LLM response has no content")
+
+                result = response.content
+                if not isinstance(result, GeneralizationSchema):
+                    raise LLMResponseParsingError(
+                        f"Expected GeneralizationSchema, got {type(result).__name__}"
+                    )
+
                 assessment = GeneralizationAssessment(
                     generalization_score=result.generalization_score,
                     coverage_estimate=result.coverage_estimate,
                     overfitting_risk=result.overfitting_risk,
                     underfitting_risk=result.underfitting_risk,
-                    test_cases_needed=result.test_cases_needed,
+                    test_cases_needed=list(result.test_cases_needed),
                     confidence=result.confidence,
                 )
 
@@ -1017,7 +1167,8 @@ class CriticLLM(Critic):
                 )
                 break
 
-            except Exception as e:
+            except (ValidationError, LLMResponseParsingError) as e:
+                # Parsing/validation errors - retry with backoff
                 logger.warning(f"Generalization assessment attempt {attempt + 1} failed: {e}")
                 self._total_retries += 1
 
@@ -1028,6 +1179,25 @@ class CriticLLM(Critic):
                     logger.error(
                         f"Generalization assessment failed after {self.config.max_retries} attempts"
                     )
+
+            except (ConnectionError, TimeoutError, OSError) as e:
+                # Network errors - retry with backoff
+                logger.warning(
+                    f"Generalization assessment attempt {attempt + 1} failed (network): {e}"
+                )
+                self._total_retries += 1
+
+                if attempt < self.config.max_retries - 1:
+                    delay = self.config.retry_base_delay_seconds * (2**attempt)
+                    time.sleep(delay)
+                else:
+                    logger.error(
+                        f"Generalization assessment failed after {self.config.max_retries} attempts"
+                    )
+
+            except KeyboardInterrupt:
+                # Don't retry on user interrupt
+                raise
 
         return assessment
 
@@ -1180,12 +1350,28 @@ class CriticLLM(Critic):
         rule: str,
         context: Any,
     ) -> str:
-        """Generate a cache key for the given analysis."""
+        """Generate a cache key for the given analysis.
+
+        Uses JSON serialization for consistent, hashable representation
+        of context objects that may contain lists or other unhashable types.
+        """
+        # Serialize context to JSON for consistent hashing
+        # Use sort_keys for deterministic ordering, default=str for non-serializable types
+        try:
+            context_str = json.dumps(context, sort_keys=True, default=str)
+        except (TypeError, ValueError):
+            # Fallback to str() if JSON serialization fails
+            context_str = str(context)
+
+        # Get strategy type with thread safety
+        with self._strategy_lock:
+            strategy_type = self._strategy.strategy_type.value
+
         key_parts = [
             analysis_type,
             rule,
-            str(context),
-            self._strategy.strategy_type.value,
+            context_str,
+            strategy_type,
         ]
         key_string = "|".join(key_parts)
         return hashlib.md5(key_string.encode()).hexdigest()
