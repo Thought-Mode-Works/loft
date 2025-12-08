@@ -806,7 +806,8 @@ class CriticLLM(Critic):
                 )
 
                 # Convert to EdgeCase dataclasses
-                for ec_schema in response.content.edge_cases[: self.config.max_edge_cases]:
+                result = response.content  # type: ignore[attr-defined]
+                for ec_schema in result.edge_cases[: self.config.max_edge_cases]:
                     if ec_schema.confidence >= self.config.confidence_threshold:
                         edge_cases.append(
                             EdgeCase(
@@ -898,7 +899,8 @@ class CriticLLM(Critic):
                 )
 
                 # Convert to Contradiction dataclasses
-                for c_schema in response.content.contradictions[: self.config.max_contradictions]:
+                result = response.content  # type: ignore[attr-defined]
+                for c_schema in result.contradictions[: self.config.max_contradictions]:
                     if c_schema.confidence >= self.config.confidence_threshold:
                         contradictions.append(
                             Contradiction(
@@ -916,7 +918,7 @@ class CriticLLM(Critic):
                 self._total_contradictions_found += len(contradictions)
                 logger.info(
                     f"Found {len(contradictions)} contradictions "
-                    f"(consistent={response.content.is_consistent})"
+                    f"(consistent={result.is_consistent})"
                 )
                 break
 
@@ -998,13 +1000,14 @@ class CriticLLM(Critic):
                     system_prompt=CRITIC_SYSTEM_PROMPT,
                 )
 
+                result = response.content  # type: ignore[attr-defined]
                 assessment = GeneralizationAssessment(
-                    generalization_score=response.content.generalization_score,
-                    coverage_estimate=response.content.coverage_estimate,
-                    overfitting_risk=response.content.overfitting_risk,
-                    underfitting_risk=response.content.underfitting_risk,
-                    test_cases_needed=response.content.test_cases_needed,
-                    confidence=response.content.confidence,
+                    generalization_score=result.generalization_score,
+                    coverage_estimate=result.coverage_estimate,
+                    overfitting_risk=result.overfitting_risk,
+                    underfitting_risk=result.underfitting_risk,
+                    test_cases_needed=result.test_cases_needed,
+                    confidence=result.confidence,
                 )
 
                 logger.info(
