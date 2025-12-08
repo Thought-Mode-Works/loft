@@ -966,9 +966,7 @@ class CriticLLM(Critic):
 
         # Check cache with thread safety (convert list to tuple for hashability)
         existing_rules_tuple = tuple(existing_rules) if existing_rules else ()
-        cache_key = self._get_cache_key(
-            "contradictions", rule, {"existing": existing_rules_tuple}
-        )
+        cache_key = self._get_cache_key("contradictions", rule, {"existing": existing_rules_tuple})
         with self._cache_lock:
             if self.config.enable_cache and cache_key in self._cache:
                 self._cache_hits += 1
