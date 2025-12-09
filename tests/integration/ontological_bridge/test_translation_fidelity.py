@@ -117,7 +117,9 @@ class TestTranslationFidelity:
         )
 
         # Calculate fidelity metrics
-        metrics = calculate_fidelity(original_text, nl_result.natural_language, similarity)
+        metrics = calculate_fidelity(
+            original_text, nl_result.natural_language, similarity
+        )
 
         # Assert fidelity thresholds
         assert metrics.semantic_similarity >= 0.7, (
@@ -131,7 +133,9 @@ class TestTranslationFidelity:
             f"Metrics: {metrics.to_dict()}"
         )
 
-    def test_batch_translation_fidelity(self, translation_components, similarity_calculator):
+    def test_batch_translation_fidelity(
+        self, translation_components, similarity_calculator
+    ):
         """
         Test fidelity across multiple translations.
 
@@ -158,7 +162,9 @@ class TestTranslationFidelity:
             similarity = similarity_calculator.calculate_similarity(
                 original_text, nl_result.natural_language
             )
-            metrics = calculate_fidelity(original_text, nl_result.natural_language, similarity)
+            metrics = calculate_fidelity(
+                original_text, nl_result.natural_language, similarity
+            )
             metrics_list.append(metrics)
 
         # Aggregate metrics
@@ -170,13 +176,13 @@ class TestTranslationFidelity:
             f"{aggregated['avg_semantic_similarity']:.2f}"
         )
 
-        assert aggregated["avg_hallucination_rate"] <= 0.3, (
-            f"Average hallucination rate too high: {aggregated['avg_hallucination_rate']:.2f}"
-        )
+        assert (
+            aggregated["avg_hallucination_rate"] <= 0.3
+        ), f"Average hallucination rate too high: {aggregated['avg_hallucination_rate']:.2f}"
 
-        assert aggregated["avg_overall_fidelity"] >= 0.65, (
-            f"Average overall fidelity below threshold: {aggregated['avg_overall_fidelity']:.2f}"
-        )
+        assert (
+            aggregated["avg_overall_fidelity"] >= 0.65
+        ), f"Average overall fidelity below threshold: {aggregated['avg_overall_fidelity']:.2f}"
 
     def test_information_loss(self, translation_components):
         """Test that critical information is not lost in translation."""
@@ -222,14 +228,14 @@ class TestTranslationFidelity:
         asp_result = nl_to_asp.translate(test_text)
 
         # Confidence should be reasonable
-        assert 0.0 <= asp_result.confidence <= 1.0, (
-            f"Confidence out of range: {asp_result.confidence}"
-        )
+        assert (
+            0.0 <= asp_result.confidence <= 1.0
+        ), f"Confidence out of range: {asp_result.confidence}"
 
         # For this simple case, confidence should be relatively high
-        assert asp_result.confidence >= 0.5, (
-            f"Confidence too low for straightforward case: {asp_result.confidence}"
-        )
+        assert (
+            asp_result.confidence >= 0.5
+        ), f"Confidence too low for straightforward case: {asp_result.confidence}"
 
 
 class TestTranslationConsistency:
@@ -252,7 +258,9 @@ class TestTranslationConsistency:
         result2 = nl_to_asp.translate(test_text)
 
         # Results should be similar (but may not be identical due to LLM variance)
-        similarity = similarity_calc.calculate_similarity(result1.asp_code, result2.asp_code)
+        similarity = similarity_calc.calculate_similarity(
+            result1.asp_code, result2.asp_code
+        )
 
         # Relaxed threshold due to LLM variance
         assert similarity >= 0.6, (
@@ -294,7 +302,9 @@ class TestExtensiveTranslation:
                 similarity = similarity_calculator.calculate_similarity(
                     original_text, nl_result.natural_language
                 )
-                metrics = calculate_fidelity(original_text, nl_result.natural_language, similarity)
+                metrics = calculate_fidelity(
+                    original_text, nl_result.natural_language, similarity
+                )
                 metrics_list.append(metrics)
 
                 # Track failures
@@ -335,6 +345,6 @@ class TestExtensiveTranslation:
                 print(f"  {failure}")
 
         # Assert overall quality
-        assert aggregated["avg_overall_fidelity"] >= 0.6, (
-            "Overall fidelity below threshold across all cases"
-        )
+        assert (
+            aggregated["avg_overall_fidelity"] >= 0.6
+        ), "Overall fidelity below threshold across all cases"

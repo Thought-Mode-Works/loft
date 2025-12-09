@@ -27,13 +27,19 @@ def improve():
     default="tactical",
     help="Target stratification layer for new rules",
 )
-@click.option("--enable-llm", is_flag=True, help="Enable LLM integration for real rule generation")
+@click.option(
+    "--enable-llm", is_flag=True, help="Enable LLM integration for real rule generation"
+)
 @click.option(
     "--enable-dialectical",
     is_flag=True,
     help="Enable Phase 4.1 dialectical validation (critique system)",
 )
-@click.option("--persistence-dir", default="./asp_rules", help="Directory for persisting ASP rules")
+@click.option(
+    "--persistence-dir",
+    default="./asp_rules",
+    help="Directory for persisting ASP rules",
+)
 def run(max_gaps, target_layer, enable_llm, enable_dialectical, persistence_dir):
     """Run self-improvement cycle."""
     click.echo("=" * 80)
@@ -50,8 +56,12 @@ def run(max_gaps, target_layer, enable_llm, enable_dialectical, persistence_dir)
 
     # Initialize system
     click.echo("\nInitializing self-modifying system...")
-    click.echo(f"  LLM Integration: {'Enabled' if enable_llm else 'Disabled (Mock Mode)'}")
-    click.echo(f"  Dialectical Validation: {'Enabled' if enable_dialectical else 'Disabled'}")
+    click.echo(
+        f"  LLM Integration: {'Enabled' if enable_llm else 'Disabled (Mock Mode)'}"
+    )
+    click.echo(
+        f"  Dialectical Validation: {'Enabled' if enable_dialectical else 'Disabled'}"
+    )
     click.echo(f"  Persistence: {persistence_dir}")
     system = SelfModifyingSystem(
         enable_llm=enable_llm,
@@ -60,8 +70,12 @@ def run(max_gaps, target_layer, enable_llm, enable_dialectical, persistence_dir)
     )
 
     # Run cycle
-    click.echo(f"\nRunning improvement cycle (max_gaps={max_gaps}, layer={target_layer})...")
-    result = system.run_improvement_cycle(max_gaps=max_gaps, target_layer=layer_map[target_layer])
+    click.echo(
+        f"\nRunning improvement cycle (max_gaps={max_gaps}, layer={target_layer})..."
+    )
+    result = system.run_improvement_cycle(
+        max_gaps=max_gaps, target_layer=layer_map[target_layer]
+    )
 
     # Display results
     click.echo("\n" + "=" * 80)
@@ -155,7 +169,9 @@ def history():
 
 @improve.command()
 @click.option(
-    "--persistence-dir", default="./asp_rules", help="Directory containing persisted rules"
+    "--persistence-dir",
+    default="./asp_rules",
+    help="Directory containing persisted rules",
 )
 @click.option("--output", default=None, help="Output path for living document")
 def document(persistence_dir, output):

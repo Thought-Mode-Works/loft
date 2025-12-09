@@ -313,7 +313,9 @@ def test_gate_accept_decision():
         is_reliable=True,
     )
 
-    decision = gate.should_accept(confidence, target_layer="tactical", rule_impact="medium")
+    decision = gate.should_accept(
+        confidence, target_layer="tactical", rule_impact="medium"
+    )
 
     assert decision.action == "accept"
     assert decision.threshold == 0.8
@@ -332,7 +334,9 @@ def test_gate_reject_decision():
         is_reliable=True,
     )
 
-    decision = gate.should_accept(confidence, target_layer="tactical", rule_impact="medium")
+    decision = gate.should_accept(
+        confidence, target_layer="tactical", rule_impact="medium"
+    )
 
     assert decision.action == "reject"
     assert "below threshold" in decision.reasoning.lower()
@@ -350,7 +354,9 @@ def test_gate_flag_decision():
         is_reliable=True,
     )
 
-    decision = gate.should_accept(confidence, target_layer="tactical", rule_impact="medium")
+    decision = gate.should_accept(
+        confidence, target_layer="tactical", rule_impact="medium"
+    )
 
     assert decision.action == "flag_for_review"
     assert "flagging for human review" in decision.reasoning.lower()
@@ -369,11 +375,15 @@ def test_gate_impact_adjustment():
     )
 
     # Low impact: threshold reduced by 0.1
-    decision_low = gate.should_accept(confidence, target_layer="tactical", rule_impact="low")
+    decision_low = gate.should_accept(
+        confidence, target_layer="tactical", rule_impact="low"
+    )
     assert decision_low.action == "accept"  # 0.75 >= 0.7
 
     # High impact: threshold increased by 0.1
-    decision_high = gate.should_accept(confidence, target_layer="tactical", rule_impact="high")
+    decision_high = gate.should_accept(
+        confidence, target_layer="tactical", rule_impact="high"
+    )
     assert decision_high.action == "reject"  # 0.75 < 0.9
 
 
@@ -389,7 +399,9 @@ def test_gate_constitutional_layer():
         is_reliable=True,
     )
 
-    decision = gate.should_accept(confidence, target_layer="constitutional", rule_impact="low")
+    decision = gate.should_accept(
+        confidence, target_layer="constitutional", rule_impact="low"
+    )
 
     assert decision.action == "flag_for_review"
     assert "constitutional" in decision.reasoning.lower()
@@ -595,10 +607,18 @@ def test_tracker_high_variance_cases():
 
     # Record cases with different variances
     conf1 = AggregatedConfidence(
-        score=0.8, components={"gen": 0.8}, weights={"gen": 1.0}, variance=0.01, is_reliable=True
+        score=0.8,
+        components={"gen": 0.8},
+        weights={"gen": 1.0},
+        variance=0.01,
+        is_reliable=True,
     )
     conf2 = AggregatedConfidence(
-        score=0.8, components={"gen": 0.8}, weights={"gen": 1.0}, variance=0.20, is_reliable=False
+        score=0.8,
+        components={"gen": 0.8},
+        weights={"gen": 1.0},
+        variance=0.20,
+        is_reliable=False,
     )
 
     tracker.record(conf1)
@@ -639,7 +659,11 @@ def test_tracker_clear_history():
     # Record some scores
     for i in range(5):
         confidence = AggregatedConfidence(
-            score=0.8, components={"gen": 0.8}, weights={"gen": 1.0}, variance=0.0, is_reliable=True
+            score=0.8,
+            components={"gen": 0.8},
+            weights={"gen": 1.0},
+            variance=0.0,
+            is_reliable=True,
         )
         tracker.record(confidence, category="test")
 

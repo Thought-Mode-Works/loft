@@ -53,7 +53,9 @@ class TestEventType:
     def test_self_improvement_events_exist(self):
         """Test that self-improvement event types exist."""
         assert EventType.IMPROVEMENT_CYCLE_STARTED.value == "improvement_cycle_started"
-        assert EventType.IMPROVEMENT_CYCLE_COMPLETED.value == "improvement_cycle_completed"
+        assert (
+            EventType.IMPROVEMENT_CYCLE_COMPLETED.value == "improvement_cycle_completed"
+        )
         assert EventType.IMPROVEMENT_APPLIED.value == "improvement_applied"
         assert EventType.GOAL_STATUS_CHANGED.value == "goal_status_changed"
         assert EventType.METRIC_RECORDED.value == "metric_recorded"
@@ -77,7 +79,9 @@ class TestComponentType:
         assert ComponentType.AB_TESTER.value == "ab_tester"
         assert ComponentType.FAILURE_ANALYZER.value == "failure_analyzer"
         assert ComponentType.RECOMMENDATION_ENGINE.value == "recommendation_engine"
-        assert ComponentType.SELF_IMPROVEMENT_TRACKER.value == "self_improvement_tracker"
+        assert (
+            ComponentType.SELF_IMPROVEMENT_TRACKER.value == "self_improvement_tracker"
+        )
         assert ComponentType.AUTONOMOUS_IMPROVER.value == "autonomous_improver"
         assert ComponentType.EVENT_BUS.value == "event_bus"
 

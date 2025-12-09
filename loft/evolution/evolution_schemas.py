@@ -143,7 +143,9 @@ class RuleVersion:
             "stratification_level": self.stratification_level.value,
             "modification_authority": self.modification_authority,
             "created_at": self.created_at.isoformat(),
-            "incorporated_at": (self.incorporated_at.isoformat() if self.incorporated_at else None),
+            "incorporated_at": (
+                self.incorporated_at.isoformat() if self.incorporated_at else None
+            ),
             "incorporated_by": self.incorporated_by,
             "is_active": self.is_active,
             "is_deprecated": self.is_deprecated,
@@ -246,8 +248,12 @@ class RuleVersion:
             evolution_context=evolution_context,
             performance=performance,
             improvement_over_parent=data.get("improvement_over_parent", 0.0),
-            stratification_level=StratificationLevel(data.get("stratification_level", "tactical")),
-            modification_authority=data.get("modification_authority", "llm_with_validation"),
+            stratification_level=StratificationLevel(
+                data.get("stratification_level", "tactical")
+            ),
+            modification_authority=data.get(
+                "modification_authority", "llm_with_validation"
+            ),
             created_at=datetime.fromisoformat(data["created_at"]),
             incorporated_at=(
                 datetime.fromisoformat(data["incorporated_at"])
@@ -303,7 +309,9 @@ class RuleLineage:
                 tree[version.parent_version].append(version.rule_id)
         return tree
 
-    def get_evolution_path(self, to_version_id: Optional[str] = None) -> List[RuleVersion]:
+    def get_evolution_path(
+        self, to_version_id: Optional[str] = None
+    ) -> List[RuleVersion]:
         """Get path from root to specified version (or current)."""
         target_id = to_version_id or self.current_version.rule_id
         target = self._version_map.get(target_id)

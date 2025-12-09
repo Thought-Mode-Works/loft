@@ -152,9 +152,11 @@ class PromptTemplate:
             "created_at": self.created_at,
             "tags": self.tags,
             "performance": self.performance.to_dict(),
-            "template_preview": self.template[:200] + "..."
-            if len(self.template) > 200
-            else self.template,
+            "template_preview": (
+                self.template[:200] + "..."
+                if len(self.template) > 200
+                else self.template
+            ),
         }
 
 
@@ -244,7 +246,9 @@ class PromptRegistry:
             KeyError: If template or version not found
         """
         if name not in self.templates:
-            raise KeyError(f"Template '{name}' not found. Available: {list(self.templates.keys())}")
+            raise KeyError(
+                f"Template '{name}' not found. Available: {list(self.templates.keys())}"
+            )
 
         versions = self.templates[name]
 
@@ -349,7 +353,9 @@ class PromptRegistry:
         versions = self.templates[name]
 
         # Filter to used versions
-        used_versions = {v: t for v, t in versions.items() if t.performance.total_uses > 0}
+        used_versions = {
+            v: t for v, t in versions.items() if t.performance.total_uses > 0
+        }
 
         if not used_versions:
             raise ValueError(f"No versions of '{name}' have been used yet")

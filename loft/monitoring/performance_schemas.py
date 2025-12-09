@@ -211,10 +211,15 @@ class PerformanceReport:
         if self.active_alerts:
             lines.append("### Active Alerts")
             for alert in self.active_alerts:
-                severity_emoji = {"low": "ℹ️", "medium": "🟡", "high": "🟠", "critical": "🔴"}[
-                    alert.severity
-                ]
-                lines.append(f"- {severity_emoji} **{alert.category}**: {alert.message}")
+                severity_emoji = {
+                    "low": "ℹ️",
+                    "medium": "🟡",
+                    "high": "🟠",
+                    "critical": "🔴",
+                }[alert.severity]
+                lines.append(
+                    f"- {severity_emoji} **{alert.category}**: {alert.message}"
+                )
             lines.append("")
 
         lines.append("### Recommendations")

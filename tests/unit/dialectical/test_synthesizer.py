@@ -97,7 +97,9 @@ class TestSynthesizerMockMode:
 
     def test_synthesize_basic(self, synthesizer, thesis, antithesis_with_issues):
         """Test basic synthesis (thesis + antithesis → synthesis)."""
-        synthesis_rule, argument = synthesizer.synthesize(thesis, antithesis_with_issues, [])
+        synthesis_rule, argument = synthesizer.synthesize(
+            thesis, antithesis_with_issues, []
+        )
 
         assert isinstance(synthesis_rule, GeneratedRule)
         assert isinstance(argument, DebateArgument)
@@ -117,17 +119,25 @@ class TestSynthesizerMockMode:
         assert synthesis_rule.asp_rule == antithesis.suggested_revision
         assert "Applied suggested revision" in argument.content
 
-    def test_synthesize_adds_consideration(self, synthesizer, thesis, antithesis_with_issues):
+    def test_synthesize_adds_consideration(
+        self, synthesizer, thesis, antithesis_with_issues
+    ):
         """Test synthesis adding missing consideration condition."""
-        synthesis_rule, argument = synthesizer.synthesize(thesis, antithesis_with_issues, [])
+        synthesis_rule, argument = synthesizer.synthesize(
+            thesis, antithesis_with_issues, []
+        )
 
         # Mock synthesis should add consideration if mentioned in issues
         if synthesis_rule.asp_rule != thesis.asp_rule:
             assert "consideration" in synthesis_rule.asp_rule
 
-    def test_synthesize_adds_capacity(self, synthesizer, thesis, antithesis_with_issues):
+    def test_synthesize_adds_capacity(
+        self, synthesizer, thesis, antithesis_with_issues
+    ):
         """Test synthesis adding missing capacity checks."""
-        synthesis_rule, argument = synthesizer.synthesize(thesis, antithesis_with_issues, [])
+        synthesis_rule, argument = synthesizer.synthesize(
+            thesis, antithesis_with_issues, []
+        )
 
         # Mock synthesis should add capacity if mentioned in issues
         if synthesis_rule.asp_rule != thesis.asp_rule:
@@ -329,7 +339,9 @@ class TestSynthesizerWithLLM:
 
     def test_synthesize_with_contradictions(self, mock_llm, thesis):
         """Test synthesis resolving contradictions."""
-        existing_rules = ["enforceable(C) :- contract(C), consideration(C), capacity(P)."]
+        existing_rules = [
+            "enforceable(C) :- contract(C), consideration(C), capacity(P)."
+        ]
         antithesis = CritiqueReport(
             rule=thesis.asp_rule,
             contradictions=[
@@ -356,7 +368,9 @@ class TestSynthesizerWithLLM:
         )
 
         synthesizer = Synthesizer(llm_client=mock_llm, mock_mode=False)
-        synthesis_rule, argument = synthesizer.synthesize(thesis, antithesis, existing_rules)
+        synthesis_rule, argument = synthesizer.synthesize(
+            thesis, antithesis, existing_rules
+        )
 
         assert "consideration" in synthesis_rule.asp_rule
 
@@ -412,20 +426,26 @@ class TestPromptBuilding:
         assert thesis.asp_rule in prompt
         assert thesis.reasoning in prompt
 
-    def test_build_synthesis_prompt_includes_issues(self, synthesizer, thesis, antithesis):
+    def test_build_synthesis_prompt_includes_issues(
+        self, synthesizer, thesis, antithesis
+    ):
         """Test prompt includes critique issues."""
         prompt = synthesizer._build_synthesis_prompt(thesis, antithesis, [], None)
 
         assert "Missing consideration" in prompt
         assert "medium" in prompt.lower()
 
-    def test_build_synthesis_prompt_includes_edge_cases(self, synthesizer, thesis, antithesis):
+    def test_build_synthesis_prompt_includes_edge_cases(
+        self, synthesizer, thesis, antithesis
+    ):
         """Test prompt includes edge cases."""
         prompt = synthesizer._build_synthesis_prompt(thesis, antithesis, [], None)
 
         assert "Contract without consideration" in prompt
 
-    def test_build_synthesis_prompt_includes_existing_rules(self, synthesizer, thesis, antithesis):
+    def test_build_synthesis_prompt_includes_existing_rules(
+        self, synthesizer, thesis, antithesis
+    ):
         """Test prompt includes existing rules context."""
         existing = ["rule1(X) :- condition(X).", "rule2(Y) :- other(Y)."]
         prompt = synthesizer._build_synthesis_prompt(thesis, antithesis, existing, None)
@@ -433,7 +453,9 @@ class TestPromptBuilding:
         assert "rule1" in prompt
         assert "rule2" in prompt
 
-    def test_build_synthesis_prompt_empty_existing_rules(self, synthesizer, thesis, antithesis):
+    def test_build_synthesis_prompt_empty_existing_rules(
+        self, synthesizer, thesis, antithesis
+    ):
         """Test prompt with no existing rules."""
         prompt = synthesizer._build_synthesis_prompt(thesis, antithesis, [], None)
 

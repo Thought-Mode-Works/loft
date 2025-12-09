@@ -24,7 +24,9 @@ class TestQualityMetrics:
 
     def test_quality_metrics_creation(self):
         """Test creating quality metrics."""
-        metrics = QualityMetrics(completeness=0.9, readability=0.8, fidelity=0.85, overall=0.85)
+        metrics = QualityMetrics(
+            completeness=0.9, readability=0.8, fidelity=0.85, overall=0.85
+        )
         assert metrics.completeness == 0.9
         assert metrics.readability == 0.8
         assert metrics.fidelity == 0.85
@@ -323,7 +325,9 @@ class TestRoundtripFidelityTest:
         asp_result.asp_facts = ["contract(c1)."]
         nl_to_asp.translate_to_facts.return_value = asp_result
 
-        fidelity, explanation = roundtrip_fidelity_test("contract(c1).", asp_to_nl, nl_to_asp)
+        fidelity, explanation = roundtrip_fidelity_test(
+            "contract(c1).", asp_to_nl, nl_to_asp
+        )
 
         assert fidelity == 1.0
         assert "contract(c1)" in explanation
@@ -342,7 +346,9 @@ class TestRoundtripFidelityTest:
         asp_result.asp_facts = ["void(c1)."]  # Different predicate
         nl_to_asp.translate_to_facts.return_value = asp_result
 
-        fidelity, explanation = roundtrip_fidelity_test("contract(c1).", asp_to_nl, nl_to_asp)
+        fidelity, explanation = roundtrip_fidelity_test(
+            "contract(c1).", asp_to_nl, nl_to_asp
+        )
 
         assert fidelity < 1.0
         assert "Fidelity" in explanation

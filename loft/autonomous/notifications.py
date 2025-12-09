@@ -134,7 +134,9 @@ class NotificationManager:
             fields={
                 "Cases Processed": str(metrics.get("cases_processed", 0)),
                 "Current Accuracy": f"{metrics.get('accuracy', 0):.2%}",
-                "Elapsed Time": self._format_duration(metrics.get("elapsed_seconds", 0)),
+                "Elapsed Time": self._format_duration(
+                    metrics.get("elapsed_seconds", 0)
+                ),
                 "Improvement Cycles": str(metrics.get("total_cycles", 0)),
             },
         )
@@ -197,7 +199,9 @@ class NotificationManager:
             fields={
                 "Duration": f"{result.duration_hours:.2f} hours",
                 "Final Accuracy": f"{result.final_metrics.overall_accuracy:.2%}",
-                "Improvement Cycles": str(result.final_metrics.improvement_cycles_completed),
+                "Improvement Cycles": str(
+                    result.final_metrics.improvement_cycles_completed
+                ),
                 "Rules Generated": str(result.final_metrics.rules_generated_total),
             },
         )
@@ -260,7 +264,9 @@ class NotificationManager:
             fields={
                 "Cases Processed": str(metrics.get("cases_processed", 0)),
                 "Current Accuracy": f"{metrics.get('accuracy', 0):.2%}",
-                "Elapsed Time": self._format_duration(metrics.get("elapsed_seconds", 0)),
+                "Elapsed Time": self._format_duration(
+                    metrics.get("elapsed_seconds", 0)
+                ),
             },
         )
 
@@ -320,7 +326,8 @@ class NotificationManager:
             Slack payload dictionary
         """
         fields = [
-            {"title": key, "value": value, "short": True} for key, value in message.fields.items()
+            {"title": key, "value": value, "short": True}
+            for key, value in message.fields.items()
         ]
 
         attachment = {
@@ -343,7 +350,10 @@ class NotificationManager:
         if self._last_notification_time is None:
             return True
 
-        return datetime.now() - self._last_notification_time >= self._min_notification_interval
+        return (
+            datetime.now() - self._last_notification_time
+            >= self._min_notification_interval
+        )
 
     def _format_duration(self, seconds: float) -> str:
         """Format duration in human-readable form.

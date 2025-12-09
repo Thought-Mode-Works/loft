@@ -243,9 +243,9 @@ class TestStatuteOfFraudsDemo:
         assert "total" in summary
 
         # Validate accuracy threshold (MVP requirement: >85%)
-        assert summary["accuracy"] >= 0.85, (
-            f"Accuracy {summary['accuracy']:.2%} below 85% threshold"
-        )
+        assert (
+            summary["accuracy"] >= 0.85
+        ), f"Accuracy {summary['accuracy']:.2%} below 85% threshold"
 
         # Should have tested 21 cases
         assert summary["total"] == 21
@@ -279,7 +279,9 @@ class TestAccuracyValidation:
             f"({correct}/{total} correct) must be >85%"
         )
 
-        print(f"✓ MVP Accuracy Requirement Met: {accuracy:.2%} ({correct}/{total} correct)")
+        print(
+            f"✓ MVP Accuracy Requirement Met: {accuracy:.2%} ({correct}/{total} correct)"
+        )
 
 
 class TestPerformance:

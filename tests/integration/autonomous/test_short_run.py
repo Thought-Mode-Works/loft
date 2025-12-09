@@ -53,7 +53,9 @@ def short_run_config():
 class TestShortAutonomousRun:
     """Integration tests for short autonomous runs."""
 
-    def test_complete_run_with_dataset(self, short_run_config, sample_dataset, tmp_path):
+    def test_complete_run_with_dataset(
+        self, short_run_config, sample_dataset, tmp_path
+    ):
         """Test a complete short autonomous run."""
         output_dir = tmp_path / "runs"
 
@@ -253,7 +255,9 @@ class TestCheckpointResume:
 class TestHealthEndpoint:
     """Integration tests for health endpoint."""
 
-    def test_health_endpoint_during_run(self, short_run_config, sample_dataset, tmp_path):
+    def test_health_endpoint_during_run(
+        self, short_run_config, sample_dataset, tmp_path
+    ):
         """Test health endpoint works during run."""
         import socket
         import urllib.request

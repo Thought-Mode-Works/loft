@@ -374,7 +374,9 @@ class RuleEvolutionTracker:
 
         return iteration_counts[:n]
 
-    def rollback_to_version(self, rule_family_id: str, target_version_id: str) -> RuleVersion:
+    def rollback_to_version(
+        self, rule_family_id: str, target_version_id: str
+    ) -> RuleVersion:
         """
         Rollback to a previous version.
 
@@ -390,7 +392,9 @@ class RuleEvolutionTracker:
         """
         target = self.store.get_version(rule_family_id, target_version_id)
         if not target:
-            raise ValueError(f"Version {target_version_id} not found in family {rule_family_id}")
+            raise ValueError(
+                f"Version {target_version_id} not found in family {rule_family_id}"
+            )
 
         # Deactivate current version
         lineage = self.get_lineage(rule_family_id)
@@ -458,7 +462,8 @@ class RuleEvolutionTracker:
             # Recalculate overall improvement
             if lineage.root_version.performance and new_version.performance:
                 lineage.overall_improvement = (
-                    new_version.performance.confidence - lineage.root_version.performance.confidence
+                    new_version.performance.confidence
+                    - lineage.root_version.performance.confidence
                 )
         else:
             # Create new lineage

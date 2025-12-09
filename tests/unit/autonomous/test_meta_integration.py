@@ -156,7 +156,9 @@ class TestPromptImprovementSuggestions:
         suggestions = orchestrator.suggest_prompt_improvements()
 
         # Find the dominant failure pattern
-        unsafe_suggestion = next(s for s in suggestions if s["category"] == "unsafe_variable")
+        unsafe_suggestion = next(
+            s for s in suggestions if s["category"] == "unsafe_variable"
+        )
 
         # The dominant one should be high priority (>30%)
         # 50/70 = 71.4% so high priority

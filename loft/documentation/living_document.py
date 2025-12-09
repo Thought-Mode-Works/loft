@@ -185,7 +185,9 @@ to show the current state of rules, their history, and system performance."""
 
             # Cycle count
             if self.cycle_history:
-                lines.append(f"**Improvement Cycles Completed**: {len(self.cycle_history)}\n")
+                lines.append(
+                    f"**Improvement Cycles Completed**: {len(self.cycle_history)}\n"
+                )
 
             # LLM status
             if hasattr(self.system, "rule_generator") and self.system.rule_generator:
@@ -194,10 +196,15 @@ to show the current state of rules, their history, and system performance."""
                 lines.append("**LLM Integration**: Disabled\n")
 
             # System health
-            if hasattr(self.system, "performance_monitor") and self.system.performance_monitor:
+            if (
+                hasattr(self.system, "performance_monitor")
+                and self.system.performance_monitor
+            ):
                 try:
                     health = self.system.performance_monitor.get_system_health()
-                    lines.append(f"**System Health**: {health.overall_health.title()}\n")
+                    lines.append(
+                        f"**System Health**: {health.overall_health.title()}\n"
+                    )
                     lines.append(f"**Success Rate**: {health.success_rate:.1%}\n")
                 except Exception:
                     pass
@@ -280,13 +287,19 @@ to show the current state of rules, their history, and system performance."""
 
         # Track which cycle each incorporation came from
         for cycle in reversed(self.cycle_history[-10:]):  # Last 10 cycles
-            for inc in cycle.successful_incorporations[:5]:  # Show first 5 from each cycle
+            for inc in cycle.successful_incorporations[
+                :5
+            ]:  # Show first 5 from each cycle
                 mod_num = inc.modification_number
                 status = "✅" if inc.is_success() else "❌"
                 improvement = inc.accuracy_after - inc.accuracy_before
-                impact = f"+{improvement:.1%}" if improvement > 0 else f"{improvement:.1%}"
+                impact = (
+                    f"+{improvement:.1%}" if improvement > 0 else f"{improvement:.1%}"
+                )
 
-                lines.append(f"| #{cycle.cycle_number} | {mod_num} | {status} | {impact} |")
+                lines.append(
+                    f"| #{cycle.cycle_number} | {mod_num} | {status} | {impact} |"
+                )
 
         lines.append("")
 
@@ -294,7 +307,9 @@ to show the current state of rules, their history, and system performance."""
         if self.cycle_history:
             total_incorporated = sum(c.rules_incorporated for c in self.cycle_history)
             total_attempts = sum(c.variants_generated for c in self.cycle_history)
-            success_rate = (total_incorporated / total_attempts * 100) if total_attempts > 0 else 0
+            success_rate = (
+                (total_incorporated / total_attempts * 100) if total_attempts > 0 else 0
+            )
 
             lines.append(f"**Total Incorporations**: {total_incorporated}")
             lines.append(f"**Success Rate**: {success_rate:.1f}%")
@@ -310,8 +325,12 @@ to show the current state of rules, their history, and system performance."""
             return "\n".join(lines)
 
         lines.append("Historical cycle results and performance trends:\n")
-        lines.append("| Cycle # | Timestamp | Gaps | Variants | Incorporated | Accuracy Δ |")
-        lines.append("|---------|-----------|------|----------|--------------|-----------|")
+        lines.append(
+            "| Cycle # | Timestamp | Gaps | Variants | Incorporated | Accuracy Δ |"
+        )
+        lines.append(
+            "|---------|-----------|------|----------|--------------|-----------|"
+        )
 
         for cycle in reversed(self.cycle_history[-15:]):  # Last 15 cycles
             timestamp = cycle.timestamp.strftime("%Y-%m-%d %H:%M")
@@ -355,7 +374,9 @@ to show the current state of rules, their history, and system performance."""
             analysis = self.system.analyze_self()
 
             lines.append(f"**Self-Confidence**: {analysis.self_confidence:.1%}\n")
-            lines.append(f"**Overall Health**: {analysis.system_health.overall_health.title()}\n")
+            lines.append(
+                f"**Overall Health**: {analysis.system_health.overall_health.title()}\n"
+            )
 
             # Strengths
             if analysis.identified_strengths:

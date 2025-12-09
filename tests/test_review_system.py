@@ -173,7 +173,9 @@ def test_review_queue_get_next():
             new_predicates=[],
         )
 
-        report = ValidationReport(rule_asp=rule.asp_rule, rule_id="test", target_layer="tactical")
+        report = ValidationReport(
+            rule_asp=rule.asp_rule, rule_id="test", target_layer="tactical"
+        )
         report.final_decision = "accept"
 
         queue.add(rule, report, priority="low", reason="Low priority")
@@ -204,7 +206,9 @@ def test_review_queue_submit_review():
             new_predicates=[],
         )
 
-        report = ValidationReport(rule_asp=rule.asp_rule, rule_id="test", target_layer="tactical")
+        report = ValidationReport(
+            rule_asp=rule.asp_rule, rule_id="test", target_layer="tactical"
+        )
         report.final_decision = "accept"
 
         item = queue.add(rule, report, priority="medium", reason="Test")
@@ -242,7 +246,9 @@ def test_review_queue_statistics():
             new_predicates=[],
         )
 
-        report = ValidationReport(rule_asp=rule.asp_rule, rule_id="test", target_layer="tactical")
+        report = ValidationReport(
+            rule_asp=rule.asp_rule, rule_id="test", target_layer="tactical"
+        )
         report.final_decision = "accept"
 
         # Add and review some items
@@ -373,7 +379,9 @@ def test_review_trigger_novel_predicate():
 
     existing_predicates = {"existing", "other"}
 
-    result = trigger.should_review(rule, report, existing_predicates=existing_predicates)
+    result = trigger.should_review(
+        rule, report, existing_predicates=existing_predicates
+    )
     assert result is not None
     assert "novel_predicate" in result.all_triggers
 

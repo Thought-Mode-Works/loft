@@ -54,7 +54,9 @@ class ReasoningObserver:
 
         # Aggregated statistics
         self._step_durations: Dict[ReasoningStepType, List[float]] = defaultdict(list)
-        self._step_success_rates: Dict[ReasoningStepType, List[bool]] = defaultdict(list)
+        self._step_success_rates: Dict[ReasoningStepType, List[bool]] = defaultdict(
+            list
+        )
         self._domain_outcomes: Dict[str, List[bool]] = defaultdict(list)
 
         # Callbacks for real-time observation
@@ -166,9 +168,13 @@ class ReasoningObserver:
         elif isinstance(chain_or_id, ReasoningChain):
             return chain_or_id.chain_id
         else:
-            raise TypeError(f"Expected str or ReasoningChain, got {type(chain_or_id).__name__}")
+            raise TypeError(
+                f"Expected str or ReasoningChain, got {type(chain_or_id).__name__}"
+            )
 
-    def resolve_chain(self, chain_or_id: Union[str, ReasoningChain]) -> Optional[ReasoningChain]:
+    def resolve_chain(
+        self, chain_or_id: Union[str, ReasoningChain]
+    ) -> Optional[ReasoningChain]:
         """Resolve a chain object or ID to a ReasoningChain.
 
         Accepts either a chain_id string or a ReasoningChain object and returns
@@ -236,7 +242,9 @@ class ReasoningObserver:
             if abs(correlation) >= min_correlation:
                 pattern = ReasoningPattern(
                     pattern_id=f"pattern_step_{step_type.value}",
-                    pattern_type=(PatternType.SUCCESS if correlation > 0 else PatternType.FAILURE),
+                    pattern_type=(
+                        PatternType.SUCCESS if correlation > 0 else PatternType.FAILURE
+                    ),
                     name=f"{step_type.value}_pattern",
                     description=(
                         f"Steps of type '{step_type.value}' have {success_rate:.1%} success rate"
@@ -262,7 +270,9 @@ class ReasoningObserver:
                     pattern_id=f"pattern_domain_{domain}",
                     pattern_type=PatternType.DOMAIN_SPECIFIC,
                     name=f"{domain}_success_pattern",
-                    description=(f"Domain '{domain}' has {success_rate:.1%} success rate"),
+                    description=(
+                        f"Domain '{domain}' has {success_rate:.1%} success rate"
+                    ),
                     frequency=len(outcomes),
                     associated_step_types=[],
                     success_correlation=correlation,
@@ -280,7 +290,9 @@ class ReasoningObserver:
                     pattern_id=f"pattern_failure_{step_type.value}",
                     pattern_type=PatternType.FAILURE,
                     name=f"{step_type.value}_failure_pattern",
-                    description=(f"Failures frequently occur at '{step_type.value}' step"),
+                    description=(
+                        f"Failures frequently occur at '{step_type.value}' step"
+                    ),
                     frequency=count,
                     associated_step_types=[step_type],
                     success_correlation=-0.8,
@@ -322,7 +334,9 @@ class ReasoningObserver:
 
         return failure_counts
 
-    def _identify_bottleneck_patterns(self, min_frequency: int) -> List[ReasoningPattern]:
+    def _identify_bottleneck_patterns(
+        self, min_frequency: int
+    ) -> List[ReasoningPattern]:
         """Identify patterns related to performance bottlenecks.
 
         Args:
@@ -344,7 +358,9 @@ class ReasoningObserver:
                     pattern_id=f"pattern_bottleneck_{step_type.value}",
                     pattern_type=PatternType.BOTTLENECK,
                     name=f"{step_type.value}_bottleneck",
-                    description=(f"Step type '{step_type.value}' averages {avg_duration:.0f}ms"),
+                    description=(
+                        f"Step type '{step_type.value}' averages {avg_duration:.0f}ms"
+                    ),
                     frequency=len(durations),
                     associated_step_types=[step_type],
                     success_correlation=0.0,
@@ -398,7 +414,9 @@ class ReasoningObserver:
                 pattern_id=pattern_id,
                 pattern_type=PatternType.FAILURE,
                 name=f"{step_type.value}_error_pattern",
-                description=(f"Recurring error in '{step_type.value}': {error_message}"),
+                description=(
+                    f"Recurring error in '{step_type.value}': {error_message}"
+                ),
                 frequency=failure_data["count"],
                 associated_step_types=[step_type],
                 success_correlation=-0.9,
@@ -510,7 +528,9 @@ class ReasoningObserver:
                 bottleneck = Bottleneck(
                     bottleneck_id=f"bottleneck_{step_type.value}",
                     step_type=step_type,
-                    description=(f"{step_type.value} consumes {percentage:.1f}% of total time"),
+                    description=(
+                        f"{step_type.value} consumes {percentage:.1f}% of total time"
+                    ),
                     avg_duration_ms=mean(durations),
                     max_duration_ms=max(durations),
                     occurrence_count=len(durations),
@@ -580,7 +600,9 @@ class ReasoningObserver:
         }
         return causes.get(step_type, ["Unknown cause"])
 
-    def _generate_bottleneck_recommendations(self, bottlenecks: List[Bottleneck]) -> List[str]:
+    def _generate_bottleneck_recommendations(
+        self, bottlenecks: List[Bottleneck]
+    ) -> List[str]:
         """Generate recommendations for addressing bottlenecks.
 
         Args:
@@ -593,7 +615,9 @@ class ReasoningObserver:
 
         for bottleneck in bottlenecks:
             if bottleneck.step_type == ReasoningStepType.TRANSLATION:
-                recommendations.append("Consider caching translation results for common patterns")
+                recommendations.append(
+                    "Consider caching translation results for common patterns"
+                )
             elif bottleneck.step_type == ReasoningStepType.INFERENCE:
                 recommendations.append("Optimize ASP program or consider rule pruning")
             elif bottleneck.step_type == ReasoningStepType.VALIDATION:
@@ -619,7 +643,9 @@ class ReasoningObserver:
         success_rate = successful_chains / len(self.chains) if self.chains else 0.0
 
         avg_duration = (
-            mean(c.total_duration_ms for c in self.chains.values()) if self.chains else 0.0
+            mean(c.total_duration_ms for c in self.chains.values())
+            if self.chains
+            else 0.0
         )
 
         # Step type distribution
@@ -645,7 +671,11 @@ class ReasoningObserver:
             avg_chain_duration_ms=avg_duration,
             patterns_identified=len(self.patterns),
             bottlenecks_identified=len(
-                [p for p in self.patterns.values() if p.pattern_type == PatternType.BOTTLENECK]
+                [
+                    p
+                    for p in self.patterns.values()
+                    if p.pattern_type == PatternType.BOTTLENECK
+                ]
             ),
             domains_observed=list(self._domain_outcomes.keys()),
             step_type_distribution=dict(step_distribution),
@@ -727,7 +757,9 @@ class MetaReasoner:
         similar = self._find_similar_failures(chain)
 
         # Generate explanation
-        explanation = self._generate_failure_explanation(chain, failure_type, root_causes)
+        explanation = self._generate_failure_explanation(
+            chain, failure_type, root_causes
+        )
 
         diagnosis = FailureDiagnosis(
             diagnosis_id=diagnosis_id,
@@ -788,7 +820,9 @@ class MetaReasoner:
         causes = []
 
         # Check for low confidence steps
-        low_confidence_steps = [s for s in chain.steps if s.confidence < 0.5 and s.success]
+        low_confidence_steps = [
+            s for s in chain.steps if s.confidence < 0.5 and s.success
+        ]
         if low_confidence_steps:
             causes.append("Low confidence in intermediate steps")
 
@@ -804,7 +838,9 @@ class MetaReasoner:
         if domain_success_rate:
             rate = sum(domain_success_rate) / len(domain_success_rate)
             if rate < 0.5:
-                causes.append(f"Domain '{chain.domain}' has low success rate ({rate:.1%})")
+                causes.append(
+                    f"Domain '{chain.domain}' has low success rate ({rate:.1%})"
+                )
 
         if not causes:
             causes.append("Unable to determine specific root cause")
@@ -832,7 +868,10 @@ class MetaReasoner:
 
         # Check for patterns associated with failures
         for pattern in self.observer.patterns.values():
-            if pattern.pattern_type == PatternType.FAILURE and pattern.success_correlation < -0.3:
+            if (
+                pattern.pattern_type == PatternType.FAILURE
+                and pattern.success_correlation < -0.3
+            ):
                 for step in chain.steps:
                     if step.step_type in pattern.associated_step_types:
                         factors.append(f"Matches failure pattern: {pattern.name}")
@@ -905,7 +944,9 @@ class MetaReasoner:
         ]
 
         if root_causes:
-            explanation_parts.append(f"Root causes identified: {'; '.join(root_causes[:3])}.")
+            explanation_parts.append(
+                f"Root causes identified: {'; '.join(root_causes[:3])}."
+            )
 
         if chain.prediction and chain.ground_truth:
             explanation_parts.append(
@@ -1046,7 +1087,9 @@ class MetaReasoner:
             description=desc,
             expected_impact=f"Reduce {step_type.value} failures",
             target_component=target,
-            supporting_evidence=[f"Pattern '{pattern.name}' shows {pattern.frequency} occurrences"],
+            supporting_evidence=[
+                f"Pattern '{pattern.name}' shows {pattern.frequency} occurrences"
+            ],
             related_patterns=[pattern.pattern_id],
         )
 
@@ -1080,7 +1123,9 @@ class MetaReasoner:
             related_patterns=[pattern.pattern_id],
         )
 
-    def _create_improvement_from_bottleneck_detail(self, bottleneck: Bottleneck) -> Improvement:
+    def _create_improvement_from_bottleneck_detail(
+        self, bottleneck: Bottleneck
+    ) -> Improvement:
         """Create an improvement from detailed bottleneck analysis.
 
         Args:
@@ -1131,12 +1176,18 @@ class MetaReasoner:
                 improvement = Improvement(
                     improvement_id=f"imp_diag_{failure_type}",
                     improvement_type=ImprovementType.STRATEGY_CHANGE,
-                    priority=ImprovementPriority.HIGH if count >= 5 else ImprovementPriority.MEDIUM,
+                    priority=(
+                        ImprovementPriority.HIGH
+                        if count >= 5
+                        else ImprovementPriority.MEDIUM
+                    ),
                     title=f"Address {failure_type} Failures",
                     description=f"Multiple cases ({count}) failing with {failure_type}",
                     expected_impact=f"Fix {count} failure cases",
                     target_component=failure_type,
-                    supporting_evidence=[f"{count} diagnoses identified this failure type"],
+                    supporting_evidence=[
+                        f"{count} diagnoses identified this failure type"
+                    ],
                     related_diagnoses=[
                         d.diagnosis_id
                         for d in self.diagnoses.values()
@@ -1175,9 +1226,13 @@ class MetaReasoner:
             )
 
         if summary.patterns_identified > 0:
-            parts.append(f"Identified {summary.patterns_identified} reasoning patterns.")
+            parts.append(
+                f"Identified {summary.patterns_identified} reasoning patterns."
+            )
 
         if summary.bottlenecks_identified > 0:
-            parts.append(f"Found {summary.bottlenecks_identified} performance bottlenecks.")
+            parts.append(
+                f"Found {summary.bottlenecks_identified} performance bottlenecks."
+            )
 
         return " ".join(parts)

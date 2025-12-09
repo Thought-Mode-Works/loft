@@ -67,7 +67,8 @@ class TestConsistencyChecker:
 
         # Should detect contradiction
         contradiction_found = any(
-            inc.type == InconsistencyType.CONTRADICTION for inc in report.inconsistencies
+            inc.type == InconsistencyType.CONTRADICTION
+            for inc in report.inconsistencies
         )
         assert contradiction_found
 
@@ -80,7 +81,8 @@ class TestConsistencyChecker:
 
         # Incompleteness is a warning, not error
         incompleteness_found = any(
-            inc.type == InconsistencyType.INCOMPLETENESS for inc in report.inconsistencies
+            inc.type == InconsistencyType.INCOMPLETENESS
+            for inc in report.inconsistencies
         )
         assert incompleteness_found
 
@@ -316,7 +318,9 @@ class TestConsistencyReporter:
 
         inc1 = Inconsistency(InconsistencyType.CONTRADICTION, "error", "Test 1", ["r1"])
         inc2 = Inconsistency(InconsistencyType.CONTRADICTION, "error", "Test 2", ["r2"])
-        inc3 = Inconsistency(InconsistencyType.INCOMPLETENESS, "warning", "Test 3", ["r3"])
+        inc3 = Inconsistency(
+            InconsistencyType.INCOMPLETENESS, "warning", "Test 3", ["r3"]
+        )
 
         report = ConsistencyReport(
             passed=False,
@@ -335,7 +339,9 @@ class TestConsistencyReporter:
         """Test conflict graph formatting."""
         reporter = ConsistencyReporter()
 
-        inc = Inconsistency(InconsistencyType.CONTRADICTION, "error", "Test", ["r1", "r2"])
+        inc = Inconsistency(
+            InconsistencyType.CONTRADICTION, "error", "Test", ["r1", "r2"]
+        )
 
         report = ConsistencyReport(
             passed=False, inconsistencies=[inc], warnings=0, errors=1, info=0
@@ -359,7 +365,9 @@ class TestConsistencyHistory:
         """Test adding a report to history."""
         history = ConsistencyHistory()
 
-        report = ConsistencyReport(passed=True, inconsistencies=[], warnings=0, errors=0, info=0)
+        report = ConsistencyReport(
+            passed=True, inconsistencies=[], warnings=0, errors=0, info=0
+        )
 
         history.add_report(report, total_rules=5)
 
@@ -375,7 +383,9 @@ class TestConsistencyHistory:
         assert history.get_latest() is None
 
         # Add a report
-        report = ConsistencyReport(passed=True, inconsistencies=[], warnings=0, errors=0, info=0)
+        report = ConsistencyReport(
+            passed=True, inconsistencies=[], warnings=0, errors=0, info=0
+        )
         history.add_report(report, total_rules=5)
 
         latest = history.get_latest()
@@ -392,7 +402,9 @@ class TestConsistencyHistory:
         # Add improving trend
         for i in range(10):
             score = 0.5 + (i * 0.05)  # Improving
-            ConsistencyReport(passed=True, inconsistencies=[], warnings=0, errors=0, info=0)
+            ConsistencyReport(
+                passed=True, inconsistencies=[], warnings=0, errors=0, info=0
+            )
             metrics = ConsistencyMetrics(
                 timestamp=datetime.utcnow().isoformat(),
                 total_rules=5,

@@ -21,7 +21,9 @@ from loft.symbolic.stratification import (
 )
 
 
-def run_improvement_session(gaps: int = 5, layer: str = "tactical", candidates_per_gap: int = 3):
+def run_improvement_session(
+    gaps: int = 5, layer: str = "tactical", candidates_per_gap: int = 3
+):
     """
     Run an improvement session.
 
@@ -60,7 +62,9 @@ def run_improvement_session(gaps: int = 5, layer: str = "tactical", candidates_p
     print("Layer Policy:")
     print(f"  Confidence Threshold: {policy.confidence_threshold:.2f}")
     print(f"  Max Modifications: {policy.max_modifications_per_session}")
-    print(f"  Regression Tests: {'Required' if policy.regression_test_required else 'Optional'}")
+    print(
+        f"  Regression Tests: {'Required' if policy.regression_test_required else 'Optional'}"
+    )
     print()
 
     # Initialize components
@@ -68,7 +72,9 @@ def run_improvement_session(gaps: int = 5, layer: str = "tactical", candidates_p
     incorporation_engine = RuleIncorporationEngine()
     session = ModificationSession(incorporation_engine)
 
-    print(f"Baseline Accuracy: {incorporation_engine.test_suite.measure_accuracy():.1%}")
+    print(
+        f"Baseline Accuracy: {incorporation_engine.test_suite.measure_accuracy():.1%}"
+    )
     print()
 
     # Run improvement cycle
@@ -89,7 +95,9 @@ def run_improvement_session(gaps: int = 5, layer: str = "tactical", candidates_p
             print(f"\n{i}. {rule.asp_rule}")
             print(f"   Confidence: {rule.confidence:.2f}")
             print(f"   Source: {rule.source_type}")
-            print(f"   Accuracy Impact: {result.accuracy_before:.1%} → {result.accuracy_after:.1%}")
+            print(
+                f"   Accuracy Impact: {result.accuracy_before:.1%} → {result.accuracy_after:.1%}"
+            )
 
 
 def show_modification_history():
@@ -114,7 +122,9 @@ def show_modification_history():
         print(f"{i}. {entry['rule'][:60]}...")
         print(f"   Layer: {entry['layer']}")
         print(f"   Confidence: {entry['confidence']:.2f}")
-        print(f"   Accuracy: {entry['accuracy_before']:.1%} → {entry['accuracy_after']:.1%}")
+        print(
+            f"   Accuracy: {entry['accuracy_before']:.1%} → {entry['accuracy_after']:.1%}"
+        )
         print(f"   Timestamp: {entry['timestamp']}")
         print()
 
@@ -170,7 +180,9 @@ def main():
 
     # Run command
     run_parser = subparsers.add_parser("run", help="Run improvement session")
-    run_parser.add_argument("--gaps", type=int, default=5, help="Number of gaps to address")
+    run_parser.add_argument(
+        "--gaps", type=int, default=5, help="Number of gaps to address"
+    )
     run_parser.add_argument(
         "--layer",
         type=str,

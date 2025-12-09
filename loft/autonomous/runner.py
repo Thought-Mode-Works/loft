@@ -231,7 +231,9 @@ class AutonomousTestRunner:
         if not checkpoint:
             raise ValueError(f"Could not load checkpoint from {checkpoint_path}")
 
-        logger.info(f"Resuming run {self._run_id} from checkpoint {checkpoint.checkpoint_number}")
+        logger.info(
+            f"Resuming run {self._run_id} from checkpoint {checkpoint.checkpoint_number}"
+        )
 
         self._restore_from_checkpoint(checkpoint)
 
@@ -325,8 +327,12 @@ class AutonomousTestRunner:
 
     def _install_signal_handlers(self) -> None:
         """Install signal handlers for graceful shutdown."""
-        self._original_sigterm_handler = signal.signal(signal.SIGTERM, self._signal_handler)
-        self._original_sigint_handler = signal.signal(signal.SIGINT, self._signal_handler)
+        self._original_sigterm_handler = signal.signal(
+            signal.SIGTERM, self._signal_handler
+        )
+        self._original_sigint_handler = signal.signal(
+            signal.SIGINT, self._signal_handler
+        )
 
     def _restore_signal_handlers(self) -> None:
         """Restore original signal handlers."""
@@ -370,7 +376,11 @@ class AutonomousTestRunner:
 
         logger.info(f"Processing {len(remaining_cases)} remaining cases")
 
-        max_cases = self._config.max_cases if self._config.max_cases > 0 else len(remaining_cases)
+        max_cases = (
+            self._config.max_cases
+            if self._config.max_cases > 0
+            else len(remaining_cases)
+        )
 
         for case in remaining_cases[:max_cases]:
             if self._should_stop():
@@ -409,11 +419,15 @@ class AutonomousTestRunner:
 
         # Use data source adapter if set (e.g., CourtListenerAdapter)
         if self._data_source:
-            logger.info(f"Loading cases from data source: {self._data_source.source_name}")
+            logger.info(
+                f"Loading cases from data source: {self._data_source.source_name}"
+            )
             limit = self._config.max_cases if self._config.max_cases > 0 else None
             for case_data in self._data_source.get_cases(limit=limit):
                 all_cases.append(case_data.to_dict())
-            logger.info(f"Loaded {len(all_cases)} cases from {self._data_source.source_name}")
+            logger.info(
+                f"Loaded {len(all_cases)} cases from {self._data_source.source_name}"
+            )
             return all_cases
 
         if self._dataset_loader:
@@ -548,7 +562,9 @@ class AutonomousTestRunner:
             progress.cases_failed += 1
 
         if self._start_time:
-            progress.elapsed_seconds = (datetime.now() - self._start_time).total_seconds()
+            progress.elapsed_seconds = (
+                datetime.now() - self._start_time
+            ).total_seconds()
 
             if progress.cases_processed > 0:
                 rate = progress.cases_processed / progress.elapsed_seconds
@@ -709,7 +725,9 @@ class AutonomousTestRunner:
             started_at=self._start_time or datetime.now(),
             completed_at=datetime.now(),
             total_duration_seconds=(
-                (datetime.now() - self._start_time).total_seconds() if self._start_time else 0
+                (datetime.now() - self._start_time).total_seconds()
+                if self._start_time
+                else 0
             ),
             config_used=self._config.to_dict(),
             final_metrics=metrics,
@@ -742,7 +760,9 @@ class AutonomousTestRunner:
             started_at=self._start_time or datetime.now(),
             completed_at=datetime.now(),
             total_duration_seconds=(
-                (datetime.now() - self._start_time).total_seconds() if self._start_time else 0
+                (datetime.now() - self._start_time).total_seconds()
+                if self._start_time
+                else 0
             ),
             config_used=self._config.to_dict(),
             final_metrics=metrics,
@@ -753,7 +773,9 @@ class AutonomousTestRunner:
 
         self._persistence.save_result(result)
 
-        logger.info(f"Run {self._run_id} cancelled after {result.duration_hours:.2f} hours")
+        logger.info(
+            f"Run {self._run_id} cancelled after {result.duration_hours:.2f} hours"
+        )
         logger.info("Checkpoint saved for resume")
 
         return result
@@ -773,7 +795,9 @@ class AutonomousTestRunner:
             if self._persistence:
                 self._persistence.save_state(self._state)
 
-        metrics = self._calculate_final_metrics() if self._case_results else RunMetrics()
+        metrics = (
+            self._calculate_final_metrics() if self._case_results else RunMetrics()
+        )
 
         result = RunResult(
             run_id=self._run_id or "unknown",
@@ -781,7 +805,9 @@ class AutonomousTestRunner:
             started_at=self._start_time or datetime.now(),
             completed_at=datetime.now(),
             total_duration_seconds=(
-                (datetime.now() - self._start_time).total_seconds() if self._start_time else 0
+                (datetime.now() - self._start_time).total_seconds()
+                if self._start_time
+                else 0
             ),
             config_used=self._config.to_dict(),
             final_metrics=metrics,
@@ -819,10 +845,16 @@ class AutonomousTestRunner:
             for domain, counts in domain_accuracy.items()
         }
 
-        meta_summary = self._orchestrator.get_metrics_summary() if self._orchestrator else {}
+        meta_summary = (
+            self._orchestrator.get_metrics_summary() if self._orchestrator else {}
+        )
 
-        cycle_durations = [cr.duration_seconds for cr in self._cycle_results if cr.duration_seconds]
-        avg_cycle_duration = sum(cycle_durations) / len(cycle_durations) if cycle_durations else 0.0
+        cycle_durations = [
+            cr.duration_seconds for cr in self._cycle_results if cr.duration_seconds
+        ]
+        avg_cycle_duration = (
+            sum(cycle_durations) / len(cycle_durations) if cycle_durations else 0.0
+        )
 
         return RunMetrics(
             overall_accuracy=progress.current_accuracy,

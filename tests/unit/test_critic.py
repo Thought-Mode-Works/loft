@@ -125,7 +125,9 @@ class TestCriticSystemMockMode:
 
     def test_critique_rule_basic(self, critic, sample_rule):
         """Test basic rule critique in mock mode."""
-        critique = critic.critique_rule(sample_rule, existing_rules=[], context="Contract law")
+        critique = critic.critique_rule(
+            sample_rule, existing_rules=[], context="Contract law"
+        )
 
         assert isinstance(critique, CritiqueReport)
         assert critique.rule == sample_rule.asp_rule
@@ -243,7 +245,10 @@ class TestCriticSystemMockMode:
         if improved:  # Mock may or may not synthesize
             assert isinstance(improved, GeneratedRule)
             assert "consideration" in improved.asp_rule
-            assert "Mock synthesis" in improved.reasoning or "Synthesized" in improved.reasoning
+            assert (
+                "Mock synthesis" in improved.reasoning
+                or "Synthesized" in improved.reasoning
+            )
 
 
 class TestCriticSystemValidation:
@@ -325,7 +330,12 @@ class TestCriticIntegration:
         )
 
         # Should complete validation (mock critic is lenient)
-        assert report.final_decision in ["accept", "reject", "revise", "flag_for_review"]
+        assert report.final_decision in [
+            "accept",
+            "reject",
+            "revise",
+            "flag_for_review",
+        ]
 
 
 class TestCriticWithLLM:
@@ -621,7 +631,9 @@ class TestCriticWithLLM:
         critique = CritiqueReport(
             rule=sample_rule.asp_rule,
             issues=[
-                CritiqueIssue(category="test", description="test", severity=CritiqueSeverity.LOW)
+                CritiqueIssue(
+                    category="test", description="test", severity=CritiqueSeverity.LOW
+                )
             ],
         )
 
@@ -669,7 +681,9 @@ Some text after"""
 
     def test_extract_json_nested_in_text(self, critic):
         """Test extraction when JSON is nested in text."""
-        response = """Here is the result: {"result": "success", "count": 5} and that's it."""
+        response = (
+            """Here is the result: {"result": "success", "count": 5} and that's it."""
+        )
         extracted = critic._extract_json(response)
         data = json.loads(extracted)
         assert data["result"] == "success"
@@ -709,7 +723,12 @@ class TestCriticSeverityScoring:
         # Mock critic should identify issues with severity
         if critique.issues:
             # Overall severity should be a valid severity level
-            assert critique.overall_severity.value in ["low", "medium", "high", "critical"]
+            assert critique.overall_severity.value in [
+                "low",
+                "medium",
+                "high",
+                "critical",
+            ]
 
     def test_has_critical_issues(self):
         """Test critical issues detection."""
@@ -785,13 +804,19 @@ class TestRecommendationLogic:
             rule="test",
             issues=[
                 CritiqueIssue(
-                    category="flaw1", description="Issue 1", severity=CritiqueSeverity.HIGH
+                    category="flaw1",
+                    description="Issue 1",
+                    severity=CritiqueSeverity.HIGH,
                 ),
                 CritiqueIssue(
-                    category="flaw2", description="Issue 2", severity=CritiqueSeverity.HIGH
+                    category="flaw2",
+                    description="Issue 2",
+                    severity=CritiqueSeverity.HIGH,
                 ),
                 CritiqueIssue(
-                    category="flaw3", description="Issue 3", severity=CritiqueSeverity.HIGH
+                    category="flaw3",
+                    description="Issue 3",
+                    severity=CritiqueSeverity.HIGH,
                 ),
             ],
             overall_severity=CritiqueSeverity.HIGH,

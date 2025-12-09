@@ -26,13 +26,19 @@ class ReviewItem(BaseModel):
     status: Literal["pending", "in_review", "reviewed"] = Field(
         default="pending", description="Current review status"
     )
-    reviewer_id: Optional[str] = Field(default=None, description="ID of person reviewing")
-    review_started_at: Optional[datetime] = Field(default=None, description="When review began")
+    reviewer_id: Optional[str] = Field(
+        default=None, description="ID of person reviewing"
+    )
+    review_started_at: Optional[datetime] = Field(
+        default=None, description="When review began"
+    )
     review_decision: Optional["ReviewDecision"] = Field(
         default=None, description="Human decision (if reviewed)"
     )
     metadata: Dict = Field(default_factory=dict, description="Additional context")
-    created_at: datetime = Field(default_factory=datetime.now, description="When item was queued")
+    created_at: datetime = Field(
+        default_factory=datetime.now, description="When item was queued"
+    )
 
     def summary(self) -> str:
         """Generate human-readable summary."""
@@ -53,7 +59,9 @@ class ReviewDecision(BaseModel):
     """Human review decision on a rule."""
 
     item_id: str = Field(description="Review item ID")
-    decision: Literal["accept", "reject", "revise"] = Field(description="Accept/reject/revise")
+    decision: Literal["accept", "reject", "revise"] = Field(
+        description="Accept/reject/revise"
+    )
     reviewer_notes: str = Field(description="Human explanation")
     suggested_revision: Optional[str] = Field(
         default=None, description="If revise, suggested improvement"
@@ -78,10 +86,16 @@ class ReviewDecision(BaseModel):
 class ReviewTriggerResult(BaseModel):
     """Result of checking if rule needs review."""
 
-    trigger_type: str = Field(description="Primary trigger type (e.g., 'confidence_borderline')")
-    priority: Literal["critical", "high", "medium", "low"] = Field(description="Priority level")
+    trigger_type: str = Field(
+        description="Primary trigger type (e.g., 'confidence_borderline')"
+    )
+    priority: Literal["critical", "high", "medium", "low"] = Field(
+        description="Priority level"
+    )
     reason: str = Field(description="Human-readable explanation")
-    all_triggers: List[str] = Field(description="All triggers that fired (not just primary)")
+    all_triggers: List[str] = Field(
+        description="All triggers that fired (not just primary)"
+    )
 
     def summary(self) -> str:
         """Generate human-readable summary."""
@@ -91,8 +105,12 @@ class ReviewTriggerResult(BaseModel):
 class RuleImpact(BaseModel):
     """Assessment of rule's impact on existing knowledge base."""
 
-    affects_rules: int = Field(description="Number of existing rules potentially affected")
-    affects_test_cases: int = Field(description="Number of test cases potentially affected")
+    affects_rules: int = Field(
+        description="Number of existing rules potentially affected"
+    )
+    affects_test_cases: int = Field(
+        description="Number of test cases potentially affected"
+    )
     predicate_usage_frequency: Dict[str, int] = Field(
         default_factory=dict,
         description="How often predicates are used in existing rules",
@@ -118,7 +136,9 @@ class ReviewQueueStats(BaseModel):
     in_review: int = Field(description="Items currently being reviewed")
     reviewed: int = Field(description="Items that have been reviewed")
     by_priority: Dict[str, int] = Field(description="Count of items by priority level")
-    average_review_time_seconds: float = Field(description="Average time to complete review")
+    average_review_time_seconds: float = Field(
+        description="Average time to complete review"
+    )
     oldest_pending: Optional[datetime] = Field(
         default=None, description="Timestamp of oldest pending item"
     )

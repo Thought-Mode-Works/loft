@@ -167,7 +167,9 @@ class BatchProgress:
             "started_at": self.started_at.isoformat() if self.started_at else None,
             "last_update": self.last_update.isoformat() if self.last_update else None,
             "estimated_completion": (
-                self.estimated_completion.isoformat() if self.estimated_completion else None
+                self.estimated_completion.isoformat()
+                if self.estimated_completion
+                else None
             ),
             "current_case_id": self.current_case_id,
             "status": self.status.value,
@@ -192,10 +194,14 @@ class BatchProgress:
             correct_predictions=data.get("correct_predictions", 0),
             incorrect_predictions=data.get("incorrect_predictions", 0),
             started_at=(
-                datetime.fromisoformat(data["started_at"]) if data.get("started_at") else None
+                datetime.fromisoformat(data["started_at"])
+                if data.get("started_at")
+                else None
             ),
             last_update=(
-                datetime.fromisoformat(data["last_update"]) if data.get("last_update") else None
+                datetime.fromisoformat(data["last_update"])
+                if data.get("last_update")
+                else None
             ),
             estimated_completion=(
                 datetime.fromisoformat(data["estimated_completion"])
@@ -252,9 +258,15 @@ class BatchCheckpoint:
             created_at=datetime.fromisoformat(data["created_at"]),
             processed_case_ids=data.get("processed_case_ids", []),
             pending_case_ids=data.get("pending_case_ids", []),
-            case_results=[CaseResult.from_dict(r) for r in data.get("case_results", [])],
+            case_results=[
+                CaseResult.from_dict(r) for r in data.get("case_results", [])
+            ],
             accumulated_rule_ids=data.get("accumulated_rule_ids", []),
-            progress=(BatchProgress.from_dict(data["progress"]) if data.get("progress") else None),
+            progress=(
+                BatchProgress.from_dict(data["progress"])
+                if data.get("progress")
+                else None
+            ),
             config=data.get("config", {}),
         )
 
@@ -302,7 +314,9 @@ class BatchMetrics:
         return {
             "batch_id": self.batch_id,
             "started_at": self.started_at.isoformat(),
-            "completed_at": (self.completed_at.isoformat() if self.completed_at else None),
+            "completed_at": (
+                self.completed_at.isoformat() if self.completed_at else None
+            ),
             "cases_processed": self.cases_processed,
             "rules_generated": self.rules_generated,
             "rules_accepted": self.rules_accepted,
@@ -330,7 +344,9 @@ class BatchMetrics:
             batch_id=data["batch_id"],
             started_at=datetime.fromisoformat(data["started_at"]),
             completed_at=(
-                datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None
+                datetime.fromisoformat(data["completed_at"])
+                if data.get("completed_at")
+                else None
             ),
             cases_processed=data.get("cases_processed", 0),
             rules_generated=data.get("rules_generated", 0),
@@ -396,7 +412,9 @@ class BatchResult:
             "batch_id": self.batch_id,
             "status": self.status.value,
             "started_at": self.started_at.isoformat(),
-            "completed_at": (self.completed_at.isoformat() if self.completed_at else None),
+            "completed_at": (
+                self.completed_at.isoformat() if self.completed_at else None
+            ),
             "case_results": [r.to_dict() for r in self.case_results],
             "accumulated_rule_ids": self.accumulated_rule_ids,
             "metrics": self.metrics.to_dict() if self.metrics else None,
@@ -415,11 +433,17 @@ class BatchResult:
             status=BatchStatus(data["status"]),
             started_at=datetime.fromisoformat(data["started_at"]),
             completed_at=(
-                datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None
+                datetime.fromisoformat(data["completed_at"])
+                if data.get("completed_at")
+                else None
             ),
-            case_results=[CaseResult.from_dict(r) for r in data.get("case_results", [])],
+            case_results=[
+                CaseResult.from_dict(r) for r in data.get("case_results", [])
+            ],
             accumulated_rule_ids=data.get("accumulated_rule_ids", []),
-            metrics=(BatchMetrics.from_dict(data["metrics"]) if data.get("metrics") else None),
+            metrics=(
+                BatchMetrics.from_dict(data["metrics"]) if data.get("metrics") else None
+            ),
             config=data.get("config", {}),
             checkpoint_ids=data.get("checkpoint_ids", []),
         )
@@ -500,7 +524,9 @@ class BatchConfig:
             parallel_validation=data.get("parallel_validation", False),
             use_dialectical=data.get("use_dialectical", True),
             max_dialectical_rounds=data.get("max_dialectical_rounds", 3),
-            dialectical_convergence_threshold=data.get("dialectical_convergence_threshold", 0.85),
+            dialectical_convergence_threshold=data.get(
+                "dialectical_convergence_threshold", 0.85
+            ),
             enable_transfer_learning=data.get("enable_transfer_learning", True),
             transfer_source_domains=data.get("transfer_source_domains", []),
         )

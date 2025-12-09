@@ -7,7 +7,11 @@ Tests the multi-stage validation pipeline for LLM-generated ASP rules.
 import pytest
 from unittest.mock import Mock
 from loft.validation.validation_pipeline import ValidationPipeline
-from loft.validation.validation_schemas import ValidationReport, ValidationResult, TestCase
+from loft.validation.validation_schemas import (
+    ValidationReport,
+    ValidationResult,
+    TestCase,
+)
 from loft.validation.asp_validators import ASPSyntaxValidator
 from loft.validation.semantic_validator import SemanticValidator
 from loft.validation.empirical_validator import EmpiricalValidator
@@ -59,10 +63,12 @@ class TestValidationPipeline:
     def test_validate_rule_syntax_failure(self, pipeline, mock_validators):
         """Test that syntax failure causes early termination."""
         # Syntax validation fails
-        mock_validators["syntax"].validate_generated_rule.return_value = ValidationResult(
-            is_valid=False,
-            stage_name="syntactic",
-            error_messages=["Syntax error: missing period"],
+        mock_validators["syntax"].validate_generated_rule.return_value = (
+            ValidationResult(
+                is_valid=False,
+                stage_name="syntactic",
+                error_messages=["Syntax error: missing period"],
+            )
         )
 
         result = pipeline.validate_rule(
@@ -81,9 +87,11 @@ class TestValidationPipeline:
     def test_validate_rule_semantic_failure(self, pipeline, mock_validators):
         """Test that semantic failure causes rejection."""
         # Syntax passes
-        mock_validators["syntax"].validate_generated_rule.return_value = ValidationResult(
-            is_valid=True,
-            stage_name="syntactic",
+        mock_validators["syntax"].validate_generated_rule.return_value = (
+            ValidationResult(
+                is_valid=True,
+                stage_name="syntactic",
+            )
         )
 
         # Semantic fails
@@ -108,9 +116,11 @@ class TestValidationPipeline:
     def test_validate_rule_all_stages_pass(self, pipeline, mock_validators):
         """Test validation when all stages pass."""
         # Syntax passes
-        mock_validators["syntax"].validate_generated_rule.return_value = ValidationResult(
-            is_valid=True,
-            stage_name="syntactic",
+        mock_validators["syntax"].validate_generated_rule.return_value = (
+            ValidationResult(
+                is_valid=True,
+                stage_name="syntactic",
+            )
         )
 
         # Semantic passes
@@ -137,9 +147,11 @@ class TestValidationPipeline:
         from loft.validation.validation_schemas import EmpiricalValidationResult
 
         # Syntax and semantic pass
-        mock_validators["syntax"].validate_generated_rule.return_value = ValidationResult(
-            is_valid=True,
-            stage_name="syntactic",
+        mock_validators["syntax"].validate_generated_rule.return_value = (
+            ValidationResult(
+                is_valid=True,
+                stage_name="syntactic",
+            )
         )
         mock_validators["semantic"].validate_rule.return_value = ValidationResult(
             is_valid=True,
@@ -149,16 +161,18 @@ class TestValidationPipeline:
         )
 
         # Empirical passes
-        mock_validators["empirical"].validate_rule.return_value = EmpiricalValidationResult(
-            accuracy=0.95,
-            baseline_accuracy=0.5,
-            improvement=0.45,
-            test_cases_passed=19,
-            test_cases_failed=1,
-            total_test_cases=20,
-            failures=[],
-            improvements=[],
-            is_valid=True,
+        mock_validators["empirical"].validate_rule.return_value = (
+            EmpiricalValidationResult(
+                accuracy=0.95,
+                baseline_accuracy=0.5,
+                improvement=0.45,
+                test_cases_passed=19,
+                test_cases_failed=1,
+                total_test_cases=20,
+                failures=[],
+                improvements=[],
+                is_valid=True,
+            )
         )
 
         test_cases = [
@@ -183,11 +197,16 @@ class TestValidationPipeline:
 
     def test_validate_rule_empirical_failure(self, pipeline, mock_validators):
         """Test that empirical failure triggers revision."""
-        from loft.validation.validation_schemas import EmpiricalValidationResult, FailureCase
+        from loft.validation.validation_schemas import (
+            EmpiricalValidationResult,
+            FailureCase,
+        )
 
-        mock_validators["syntax"].validate_generated_rule.return_value = ValidationResult(
-            is_valid=True,
-            stage_name="syntactic",
+        mock_validators["syntax"].validate_generated_rule.return_value = (
+            ValidationResult(
+                is_valid=True,
+                stage_name="syntactic",
+            )
         )
         mock_validators["semantic"].validate_rule.return_value = ValidationResult(
             is_valid=True,
@@ -204,20 +223,25 @@ class TestValidationPipeline:
             query="result",
             expected=True,
         )
-        mock_validators["empirical"].validate_rule.return_value = EmpiricalValidationResult(
-            accuracy=0.5,
-            baseline_accuracy=0.5,
-            improvement=0.0,
-            test_cases_passed=5,
-            test_cases_failed=5,
-            total_test_cases=10,
-            failures=[
-                FailureCase(
-                    test_case=failed_tc, expected=True, actual=False, explanation="Test failed"
-                )
-            ],
-            improvements=[],
-            is_valid=False,
+        mock_validators["empirical"].validate_rule.return_value = (
+            EmpiricalValidationResult(
+                accuracy=0.5,
+                baseline_accuracy=0.5,
+                improvement=0.0,
+                test_cases_passed=5,
+                test_cases_failed=5,
+                total_test_cases=10,
+                failures=[
+                    FailureCase(
+                        test_case=failed_tc,
+                        expected=True,
+                        actual=False,
+                        explanation="Test failed",
+                    )
+                ],
+                improvements=[],
+                is_valid=False,
+            )
         )
 
         test_cases = [failed_tc]
@@ -236,9 +260,11 @@ class TestValidationPipeline:
         from loft.validation.validation_schemas import ConsensusValidationResult
         from loft.neural.rule_schemas import ConsensusVote
 
-        mock_validators["syntax"].validate_generated_rule.return_value = ValidationResult(
-            is_valid=True,
-            stage_name="syntactic",
+        mock_validators["syntax"].validate_generated_rule.return_value = (
+            ValidationResult(
+                is_valid=True,
+                stage_name="syntactic",
+            )
         )
         mock_validators["semantic"].validate_rule.return_value = ValidationResult(
             is_valid=True,
@@ -248,24 +274,26 @@ class TestValidationPipeline:
         )
 
         # Consensus accepts
-        mock_validators["consensus"].validate_rule.return_value = ConsensusValidationResult(
-            decision="accept",
-            votes=[
-                ConsensusVote(
-                    vote="accept",
-                    confidence=0.9,
-                    reasoning="Good rule",
-                    issues_found=[],
-                    suggested_revisions=[],
-                    voter_id="v1",
-                )
-            ],
-            accept_weight=0.9,
-            reject_weight=0.0,
-            revise_weight=0.0,
-            consensus_strength=1.0,
-            suggested_revisions=[],
-            is_valid=True,
+        mock_validators["consensus"].validate_rule.return_value = (
+            ConsensusValidationResult(
+                decision="accept",
+                votes=[
+                    ConsensusVote(
+                        vote="accept",
+                        confidence=0.9,
+                        reasoning="Good rule",
+                        issues_found=[],
+                        suggested_revisions=[],
+                        voter_id="v1",
+                    )
+                ],
+                accept_weight=0.9,
+                reject_weight=0.0,
+                revise_weight=0.0,
+                consensus_strength=1.0,
+                suggested_revisions=[],
+                is_valid=True,
+            )
         )
 
         result = pipeline.validate_rule(
@@ -281,9 +309,11 @@ class TestValidationPipeline:
         from loft.validation.validation_schemas import ConsensusValidationResult
         from loft.neural.rule_schemas import ConsensusVote
 
-        mock_validators["syntax"].validate_generated_rule.return_value = ValidationResult(
-            is_valid=True,
-            stage_name="syntactic",
+        mock_validators["syntax"].validate_generated_rule.return_value = (
+            ValidationResult(
+                is_valid=True,
+                stage_name="syntactic",
+            )
         )
         mock_validators["semantic"].validate_rule.return_value = ValidationResult(
             is_valid=True,
@@ -293,24 +323,26 @@ class TestValidationPipeline:
         )
 
         # Consensus rejects
-        mock_validators["consensus"].validate_rule.return_value = ConsensusValidationResult(
-            decision="reject",
-            votes=[
-                ConsensusVote(
-                    vote="reject",
-                    confidence=0.9,
-                    reasoning="Bad rule",
-                    issues_found=["major_error"],
-                    suggested_revisions=[],
-                    voter_id="v1",
-                )
-            ],
-            accept_weight=0.0,
-            reject_weight=0.9,
-            revise_weight=0.0,
-            consensus_strength=1.0,
-            suggested_revisions=[],
-            is_valid=False,
+        mock_validators["consensus"].validate_rule.return_value = (
+            ConsensusValidationResult(
+                decision="reject",
+                votes=[
+                    ConsensusVote(
+                        vote="reject",
+                        confidence=0.9,
+                        reasoning="Bad rule",
+                        issues_found=["major_error"],
+                        suggested_revisions=[],
+                        voter_id="v1",
+                    )
+                ],
+                accept_weight=0.0,
+                reject_weight=0.9,
+                revise_weight=0.0,
+                consensus_strength=1.0,
+                suggested_revisions=[],
+                is_valid=False,
+            )
         )
 
         result = pipeline.validate_rule(
@@ -325,9 +357,11 @@ class TestValidationPipeline:
         """Test that consensus revise decision triggers revision."""
         from loft.validation.validation_schemas import ConsensusValidationResult
 
-        mock_validators["syntax"].validate_generated_rule.return_value = ValidationResult(
-            is_valid=True,
-            stage_name="syntactic",
+        mock_validators["syntax"].validate_generated_rule.return_value = (
+            ValidationResult(
+                is_valid=True,
+                stage_name="syntactic",
+            )
         )
         mock_validators["semantic"].validate_rule.return_value = ValidationResult(
             is_valid=True,
@@ -337,15 +371,17 @@ class TestValidationPipeline:
         )
 
         # Consensus wants revision
-        mock_validators["consensus"].validate_rule.return_value = ConsensusValidationResult(
-            decision="revise",
-            votes=[],
-            accept_weight=0.0,
-            reject_weight=0.0,
-            revise_weight=0.8,
-            consensus_strength=0.8,
-            suggested_revisions=["Add negation", "Check consistency"],
-            is_valid=False,
+        mock_validators["consensus"].validate_rule.return_value = (
+            ConsensusValidationResult(
+                decision="revise",
+                votes=[],
+                accept_weight=0.0,
+                reject_weight=0.0,
+                revise_weight=0.8,
+                consensus_strength=0.8,
+                suggested_revisions=["Add negation", "Check consistency"],
+                is_valid=False,
+            )
         )
 
         result = pipeline.validate_rule(
@@ -358,9 +394,11 @@ class TestValidationPipeline:
 
     def test_validate_rule_confidence_below_threshold(self, pipeline, mock_validators):
         """Test that low confidence triggers flag_for_review."""
-        mock_validators["syntax"].validate_generated_rule.return_value = ValidationResult(
-            is_valid=True,
-            stage_name="syntactic",
+        mock_validators["syntax"].validate_generated_rule.return_value = (
+            ValidationResult(
+                is_valid=True,
+                stage_name="syntactic",
+            )
         )
 
         # Semantic passes but with many warnings (low confidence)
@@ -386,9 +424,11 @@ class TestValidationPipeline:
 
     def test_validate_batch(self, pipeline, mock_validators):
         """Test batch validation of multiple rules."""
-        mock_validators["syntax"].validate_generated_rule.return_value = ValidationResult(
-            is_valid=True,
-            stage_name="syntactic",
+        mock_validators["syntax"].validate_generated_rule.return_value = (
+            ValidationResult(
+                is_valid=True,
+                stage_name="syntactic",
+            )
         )
         mock_validators["semantic"].validate_rule.return_value = ValidationResult(
             is_valid=True,
@@ -460,9 +500,11 @@ class TestValidationPipeline:
 
     def test_validate_rule_parameters_passed(self, pipeline, mock_validators):
         """Test that parameters are passed to validators correctly."""
-        mock_validators["syntax"].validate_generated_rule.return_value = ValidationResult(
-            is_valid=True,
-            stage_name="syntactic",
+        mock_validators["syntax"].validate_generated_rule.return_value = (
+            ValidationResult(
+                is_valid=True,
+                stage_name="syntactic",
+            )
         )
         mock_validators["semantic"].validate_rule.return_value = ValidationResult(
             is_valid=True,
@@ -492,9 +534,11 @@ class TestValidationPipeline:
 
     def test_validation_report_structure(self, pipeline, mock_validators):
         """Test that ValidationReport has all expected fields."""
-        mock_validators["syntax"].validate_generated_rule.return_value = ValidationResult(
-            is_valid=True,
-            stage_name="syntactic",
+        mock_validators["syntax"].validate_generated_rule.return_value = (
+            ValidationResult(
+                is_valid=True,
+                stage_name="syntactic",
+            )
         )
         mock_validators["semantic"].validate_rule.return_value = ValidationResult(
             is_valid=True,
@@ -519,9 +563,11 @@ class TestValidationPipeline:
 
     def test_aggregate_confidence_calculation(self, pipeline, mock_validators):
         """Test aggregate confidence calculation from multiple stages."""
-        mock_validators["syntax"].validate_generated_rule.return_value = ValidationResult(
-            is_valid=True,
-            stage_name="syntactic",
+        mock_validators["syntax"].validate_generated_rule.return_value = (
+            ValidationResult(
+                is_valid=True,
+                stage_name="syntactic",
+            )
         )
 
         # Semantic with no warnings (high confidence)
@@ -542,9 +588,11 @@ class TestValidationPipeline:
 
     def test_semantic_warnings_affect_confidence(self, pipeline, mock_validators):
         """Test that semantic warnings reduce confidence."""
-        mock_validators["syntax"].validate_generated_rule.return_value = ValidationResult(
-            is_valid=True,
-            stage_name="syntactic",
+        mock_validators["syntax"].validate_generated_rule.return_value = (
+            ValidationResult(
+                is_valid=True,
+                stage_name="syntactic",
+            )
         )
 
         # Many warnings
@@ -580,9 +628,11 @@ class TestValidationPipeline:
 
     def test_target_layer_parameter(self, pipeline, mock_validators):
         """Test that target_layer is passed through correctly."""
-        mock_validators["syntax"].validate_generated_rule.return_value = ValidationResult(
-            is_valid=True,
-            stage_name="syntactic",
+        mock_validators["syntax"].validate_generated_rule.return_value = (
+            ValidationResult(
+                is_valid=True,
+                stage_name="syntactic",
+            )
         )
         mock_validators["semantic"].validate_rule.return_value = ValidationResult(
             is_valid=True,
@@ -608,10 +658,12 @@ class TestValidationPipeline:
     def test_early_termination_saves_computation(self, pipeline, mock_validators):
         """Test that pipeline terminates early on failures."""
         # Syntax fails
-        mock_validators["syntax"].validate_generated_rule.return_value = ValidationResult(
-            is_valid=False,
-            stage_name="syntactic",
-            error_messages=["Syntax error"],
+        mock_validators["syntax"].validate_generated_rule.return_value = (
+            ValidationResult(
+                is_valid=False,
+                stage_name="syntactic",
+                error_messages=["Syntax error"],
+            )
         )
 
         pipeline.validate_rule(rule_asp="invalid")
@@ -625,9 +677,11 @@ class TestValidationPipeline:
         """Test that suggested revisions are collected from various stages."""
         from loft.validation.validation_schemas import ConsensusValidationResult
 
-        mock_validators["syntax"].validate_generated_rule.return_value = ValidationResult(
-            is_valid=True,
-            stage_name="syntactic",
+        mock_validators["syntax"].validate_generated_rule.return_value = (
+            ValidationResult(
+                is_valid=True,
+                stage_name="syntactic",
+            )
         )
         mock_validators["semantic"].validate_rule.return_value = ValidationResult(
             is_valid=True,
@@ -637,15 +691,17 @@ class TestValidationPipeline:
         )
 
         # Consensus suggests revisions
-        mock_validators["consensus"].validate_rule.return_value = ConsensusValidationResult(
-            decision="revise",
-            votes=[],
-            accept_weight=0.0,
-            reject_weight=0.0,
-            revise_weight=1.0,
-            consensus_strength=1.0,
-            suggested_revisions=["Revision 1", "Revision 2", "Revision 3"],
-            is_valid=False,
+        mock_validators["consensus"].validate_rule.return_value = (
+            ConsensusValidationResult(
+                decision="revise",
+                votes=[],
+                accept_weight=0.0,
+                reject_weight=0.0,
+                revise_weight=1.0,
+                consensus_strength=1.0,
+                suggested_revisions=["Revision 1", "Revision 2", "Revision 3"],
+                is_valid=False,
+            )
         )
 
         result = pipeline.validate_rule(

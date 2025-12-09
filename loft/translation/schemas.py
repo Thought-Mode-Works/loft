@@ -33,7 +33,9 @@ class Writing(BaseModel):
 
     writing_id: str = Field(description="Unique identifier for the writing")
     is_signed: bool = Field(default=False, description="Whether the writing is signed")
-    signed_by: Optional[List[str]] = Field(default=None, description="List of parties who signed")
+    signed_by: Optional[List[str]] = Field(
+        default=None, description="List of parties who signed"
+    )
 
     def to_asp(self) -> List[str]:
         """Convert writing to ASP facts."""
@@ -55,13 +57,25 @@ class ContractFact(BaseModel):
         default=None,
         description="Type of contract (land_sale, goods_sale, service, etc.)",
     )
-    parties: List[str] = Field(default_factory=list, description="Parties to the contract")
-    has_writing: bool = Field(default=False, description="Whether contract has a writing")
-    writing_id: Optional[str] = Field(default=None, description="ID of associated writing")
+    parties: List[str] = Field(
+        default_factory=list, description="Parties to the contract"
+    )
+    has_writing: bool = Field(
+        default=False, description="Whether contract has a writing"
+    )
+    writing_id: Optional[str] = Field(
+        default=None, description="ID of associated writing"
+    )
     is_signed: bool = Field(default=False, description="Whether the writing is signed")
-    sale_amount: Optional[float] = Field(default=None, description="Sale amount if applicable")
-    has_consideration: bool = Field(default=False, description="Whether contract has consideration")
-    has_mutual_assent: bool = Field(default=False, description="Whether parties have mutual assent")
+    sale_amount: Optional[float] = Field(
+        default=None, description="Sale amount if applicable"
+    )
+    has_consideration: bool = Field(
+        default=False, description="Whether contract has consideration"
+    )
+    has_mutual_assent: bool = Field(
+        default=False, description="Whether parties have mutual assent"
+    )
 
     def to_asp(self) -> List[str]:
         """Convert contract to ASP facts."""
@@ -122,9 +136,13 @@ class LegalRelationship(BaseModel):
 class ExtractedEntities(BaseModel):
     """Schema for batch entity extraction from natural language."""
 
-    contracts: List[ContractFact] = Field(default_factory=list, description="Extracted contracts")
+    contracts: List[ContractFact] = Field(
+        default_factory=list, description="Extracted contracts"
+    )
     parties: List[Party] = Field(default_factory=list, description="Extracted parties")
-    writings: List[Writing] = Field(default_factory=list, description="Extracted writings")
+    writings: List[Writing] = Field(
+        default_factory=list, description="Extracted writings"
+    )
     relationships: List[LegalRelationship] = Field(
         default_factory=list, description="Extracted relationships"
     )
@@ -164,7 +182,9 @@ class LegalRule(BaseModel):
     head_arguments: List[str] = Field(
         description="Arguments in the head predicate (e.g., ['C'] for variables)"
     )
-    body_conditions: List[str] = Field(description="List of conditions in the rule body")
+    body_conditions: List[str] = Field(
+        description="List of conditions in the rule body"
+    )
     is_negation_as_failure: bool = Field(
         default=False, description="Whether rule uses negation-as-failure"
     )

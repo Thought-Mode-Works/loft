@@ -99,7 +99,9 @@ class CycleResult:
             "cycle_number": self.cycle_number,
             "status": self.status.value,
             "started_at": self.started_at.isoformat() if self.started_at else None,
-            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "completed_at": (
+                self.completed_at.isoformat() if self.completed_at else None
+            ),
             "cases_processed": self.cases_processed,
             "improvements_applied": self.improvements_applied,
             "accuracy_before": self.accuracy_before,
@@ -119,10 +121,14 @@ class CycleResult:
             cycle_number=data["cycle_number"],
             status=CycleStatus(data["status"]),
             started_at=(
-                datetime.fromisoformat(data["started_at"]) if data.get("started_at") else None
+                datetime.fromisoformat(data["started_at"])
+                if data.get("started_at")
+                else None
             ),
             completed_at=(
-                datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None
+                datetime.fromisoformat(data["completed_at"])
+                if data.get("completed_at")
+                else None
             ),
             cases_processed=data.get("cases_processed", 0),
             improvements_applied=data.get("improvements_applied", 0),
@@ -283,7 +289,9 @@ class RunMetrics:
             rules_promoted_total=data.get("rules_promoted_total", 0),
             rules_rolled_back=data.get("rules_rolled_back", 0),
             improvement_cycles_completed=data.get("improvement_cycles_completed", 0),
-            average_cycle_duration_seconds=data.get("average_cycle_duration_seconds", 0.0),
+            average_cycle_duration_seconds=data.get(
+                "average_cycle_duration_seconds", 0.0
+            ),
             llm_calls_total=data.get("llm_calls_total", 0),
             llm_tokens_used=data.get("llm_tokens_used", 0),
             llm_cost_estimate=data.get("llm_cost_estimate", 0.0),
@@ -326,10 +334,14 @@ class RunState:
             "run_id": self.run_id,
             "status": self.status.value,
             "started_at": self.started_at.isoformat() if self.started_at else None,
-            "last_updated": (self.last_updated.isoformat() if self.last_updated else None),
+            "last_updated": (
+                self.last_updated.isoformat() if self.last_updated else None
+            ),
             "progress": self.progress.to_dict(),
             "current_cycle_result": (
-                self.current_cycle_result.to_dict() if self.current_cycle_result else None
+                self.current_cycle_result.to_dict()
+                if self.current_cycle_result
+                else None
             ),
             "error_message": self.error_message,
             "shutdown_requested": self.shutdown_requested,
@@ -342,10 +354,14 @@ class RunState:
             run_id=data["run_id"],
             status=RunStatus(data["status"]),
             started_at=(
-                datetime.fromisoformat(data["started_at"]) if data.get("started_at") else None
+                datetime.fromisoformat(data["started_at"])
+                if data.get("started_at")
+                else None
             ),
             last_updated=(
-                datetime.fromisoformat(data["last_updated"]) if data.get("last_updated") else None
+                datetime.fromisoformat(data["last_updated"])
+                if data.get("last_updated")
+                else None
             ),
             progress=RunProgress.from_dict(data.get("progress", {})),
             current_cycle_result=(
@@ -455,8 +471,12 @@ class RunCheckpoint:
             run_id=data["run_id"],
             run_state=RunState.from_dict(data["run_state"]),
             config_snapshot=data.get("config_snapshot", {}),
-            meta_reasoning_state=MetaReasoningState.from_dict(data.get("meta_reasoning_state", {})),
-            cycle_results=[CycleResult.from_dict(cr) for cr in data.get("cycle_results", [])],
+            meta_reasoning_state=MetaReasoningState.from_dict(
+                data.get("meta_reasoning_state", {})
+            ),
+            cycle_results=[
+                CycleResult.from_dict(cr) for cr in data.get("cycle_results", [])
+            ],
             accumulated_rules=data.get("accumulated_rules", []),
             case_results=data.get("case_results", []),
             batch_checkpoint=data.get("batch_checkpoint"),
@@ -532,7 +552,9 @@ class RunResult:
             total_duration_seconds=data["total_duration_seconds"],
             config_used=data.get("config_used", {}),
             final_metrics=RunMetrics.from_dict(data.get("final_metrics", {})),
-            cycle_results=[CycleResult.from_dict(cr) for cr in data.get("cycle_results", [])],
+            cycle_results=[
+                CycleResult.from_dict(cr) for cr in data.get("cycle_results", [])
+            ],
             final_rules=data.get("final_rules", []),
             error_message=data.get("error_message"),
             checkpoint_path=data.get("checkpoint_path"),

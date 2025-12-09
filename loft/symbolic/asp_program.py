@@ -118,10 +118,14 @@ class StratifiedASPCore:
     - Operational: Low-level rapid adaptation
     """
 
-    constitutional: ASPProgram = field(default_factory=lambda: ASPProgram(name="constitutional"))
+    constitutional: ASPProgram = field(
+        default_factory=lambda: ASPProgram(name="constitutional")
+    )
     strategic: ASPProgram = field(default_factory=lambda: ASPProgram(name="strategic"))
     tactical: ASPProgram = field(default_factory=lambda: ASPProgram(name="tactical"))
-    operational: ASPProgram = field(default_factory=lambda: ASPProgram(name="operational"))
+    operational: ASPProgram = field(
+        default_factory=lambda: ASPProgram(name="operational")
+    )
 
     def get_program(self, level: StratificationLevel) -> ASPProgram:
         """Get the program for a specific stratification level."""

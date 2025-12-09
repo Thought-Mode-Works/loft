@@ -294,7 +294,9 @@ class TestEvolutionStore:
             rule_family_id="fam1",
             version="1.0.0",
             asp_rule="rule1.",
-            evolution_context=EvolutionContext(evolution_method=EvolutionMethod.DIALECTICAL),
+            evolution_context=EvolutionContext(
+                evolution_method=EvolutionMethod.DIALECTICAL
+            ),
         )
 
         v2 = RuleVersion(
@@ -467,7 +469,9 @@ class TestEvolutionTracker:
 
         assert v2.parent_version == v1.rule_id
         assert v2.version == "1.0.1"
-        assert abs(v2.improvement_over_parent - 0.15) < 0.01  # 0.90 - 0.75 (with float tolerance)
+        assert (
+            abs(v2.improvement_over_parent - 0.15) < 0.01
+        )  # 0.90 - 0.75 (with float tolerance)
 
     def test_track_from_debate(self, evolution_tracker):
         """Test tracking from dialectical debate."""
@@ -520,7 +524,9 @@ class TestEvolutionTracker:
         )
 
         # Verify update
-        loaded = evolution_tracker.store.get_version(version.rule_family_id, version.rule_id)
+        loaded = evolution_tracker.store.get_version(
+            version.rule_family_id, version.rule_id
+        )
         assert loaded.performance.confidence == 0.90
 
     def test_deprecate_version(self, evolution_tracker):
@@ -639,7 +645,9 @@ class TestEvolutionTracker:
         )
 
         # Rollback to v1
-        rolled_back = evolution_tracker.rollback_to_version(v1.rule_family_id, v1.rule_id)
+        rolled_back = evolution_tracker.rollback_to_version(
+            v1.rule_family_id, v1.rule_id
+        )
 
         assert rolled_back.rule_id == v1.rule_id
         assert rolled_back.is_active is True

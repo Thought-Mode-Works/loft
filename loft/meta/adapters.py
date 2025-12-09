@@ -105,7 +105,8 @@ class ObserverToFailureAdapter:
         failed_chains = [
             chain
             for chain in chains
-            if not chain.overall_success and chain.chain_id not in self._processed_chain_ids
+            if not chain.overall_success
+            and chain.chain_id not in self._processed_chain_ids
         ]
 
         if limit:
@@ -154,7 +155,9 @@ class ObserverToFailureAdapter:
             actual_output=chain.prediction,
         )
 
-    def get_unprocessed_failures(self, domain: Optional[str] = None) -> List[ReasoningChain]:
+    def get_unprocessed_failures(
+        self, domain: Optional[str] = None
+    ) -> List[ReasoningChain]:
         """Get failed chains that haven't been processed yet.
 
         Args:
@@ -170,7 +173,8 @@ class ObserverToFailureAdapter:
         return [
             chain
             for chain in chains
-            if not chain.overall_success and chain.chain_id not in self._processed_chain_ids
+            if not chain.overall_success
+            and chain.chain_id not in self._processed_chain_ids
         ]
 
     def reset_processed_tracking(self) -> int:
@@ -251,7 +255,9 @@ class FailureToImprovementAdapter:
         actions_created = []
 
         # Get recommendations from engine's internal storage
-        all_recommendations = list(self._recommendation_engine._recommendations.values())
+        all_recommendations = list(
+            self._recommendation_engine._recommendations.values()
+        )
 
         # Note: min_priority parameter is kept for API compatibility but not used
         # since Recommendation uses an enum for priority. All recommendations are processed.
@@ -269,7 +275,9 @@ class FailureToImprovementAdapter:
             action = self._convert_recommendation_to_action(rec, goal)
             if action:
                 actions_created.append(action)
-                self._recommendation_to_action_map[rec.recommendation_id] = action.action_id
+                self._recommendation_to_action_map[rec.recommendation_id] = (
+                    action.action_id
+                )
 
                 # Publish event if bus is connected
                 if self._event_bus:
@@ -329,7 +337,9 @@ class FailureToImprovementAdapter:
             },
         )
 
-    def _map_category_to_action_type(self, recommendation: Recommendation) -> ActionType:
+    def _map_category_to_action_type(
+        self, recommendation: Recommendation
+    ) -> ActionType:
         """Map a recommendation category to an action type.
 
         Args:
@@ -350,7 +360,9 @@ class FailureToImprovementAdapter:
             RecommendationCategory.STRATEGY_ADJUSTMENT: ActionType.STRATEGY_ADJUSTMENT,
         }
 
-        return category_to_action.get(recommendation.category, ActionType.STRATEGY_ADJUSTMENT)
+        return category_to_action.get(
+            recommendation.category, ActionType.STRATEGY_ADJUSTMENT
+        )
 
     def _calculate_risk_level(self, recommendation: Recommendation) -> str:
         """Calculate risk level for an action based on recommendation.
@@ -364,7 +376,10 @@ class FailureToImprovementAdapter:
         from loft.meta.schemas import ImprovementPriority
 
         # Higher priority recommendations typically have higher risk
-        if recommendation.priority in (ImprovementPriority.CRITICAL, ImprovementPriority.HIGH):
+        if recommendation.priority in (
+            ImprovementPriority.CRITICAL,
+            ImprovementPriority.HIGH,
+        ):
             return "high"
         elif recommendation.priority == ImprovementPriority.MEDIUM:
             return "medium"
@@ -479,7 +494,9 @@ class EventDrivenIntegration:
         Returns:
             The created adapter
         """
-        adapter = FailureToImprovementAdapter(recommendation_engine, tracker, self._event_bus)
+        adapter = FailureToImprovementAdapter(
+            recommendation_engine, tracker, self._event_bus
+        )
         self._adapters["failure_to_improvement"] = adapter
 
         if auto_convert and goal:

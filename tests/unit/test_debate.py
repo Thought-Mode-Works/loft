@@ -143,7 +143,11 @@ class TestDebateFramework:
 
         class MockGenerator:
             def fill_knowledge_gap(
-                self, gap_description, missing_predicate, context=None, existing_predicates=None
+                self,
+                gap_description,
+                missing_predicate,
+                context=None,
+                existing_predicates=None,
             ):
                 rule = make_test_rule(
                     asp_rule="enforceable(C) :- contract(C), signed(C).",
@@ -321,7 +325,11 @@ class TestDebateIntegration:
 
         class MockGenerator:
             def fill_knowledge_gap(
-                self, gap_description, missing_predicate, context=None, existing_predicates=None
+                self,
+                gap_description,
+                missing_predicate,
+                context=None,
+                existing_predicates=None,
             ):
                 rule = make_test_rule(
                     asp_rule="enforceable(C) :- contract(C).",

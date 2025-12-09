@@ -136,7 +136,9 @@ class ASPGrounder:
 class AmbiguityHandler:
     """Detect and handle ambiguous NL → ASP conversions."""
 
-    def detect_ambiguity(self, nl_text: str, asp_candidates: List[str]) -> Optional[str]:
+    def detect_ambiguity(
+        self, nl_text: str, asp_candidates: List[str]
+    ) -> Optional[str]:
         """
         Detect if NL has multiple valid ASP interpretations.
 

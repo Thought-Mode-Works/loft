@@ -86,7 +86,9 @@ class SemanticSimilarityCalculator:
 
         return len(intersection) / len(union)
 
-    def calculate_batch_similarity(self, text_pairs: List[Tuple[str, str]]) -> List[float]:
+    def calculate_batch_similarity(
+        self, text_pairs: List[Tuple[str, str]]
+    ) -> List[float]:
         """
         Calculate similarity for multiple text pairs.
 

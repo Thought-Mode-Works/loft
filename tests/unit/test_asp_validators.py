@@ -405,14 +405,20 @@ class TestGeneratedRuleValidation:
         """Test validation warns about overly complex rules."""
         validator = ASPSyntaxValidator()
         # Create a rule longer than 150 chars
-        rule = "enforceable(C) :- " + ", ".join([f"predicate{i}(C)" for i in range(20)]) + "."
+        rule = (
+            "enforceable(C) :- "
+            + ", ".join([f"predicate{i}(C)" for i in range(20)])
+            + "."
+        )
 
         result = validator.validate_generated_rule(rule)
 
         # Should be valid but warn about length
         assert result.is_valid
         assert len(result.warnings) > 0
-        assert any("long" in w.lower() or "complex" in w.lower() for w in result.warnings)
+        assert any(
+            "long" in w.lower() or "complex" in w.lower() for w in result.warnings
+        )
 
     def test_validate_rule_with_empty_head(self) -> None:
         """Test validation catches rule with empty head."""
@@ -523,15 +529,17 @@ class TestUnsafeVariableDetection:
         assert len(errors) == 0, f"Unexpected errors for safe rule: {errors}"
 
     @pytest.mark.parametrize("rule,expected_vars", UNSAFE_RULE_CASES)
-    def test_unsafe_variable_detected(self, rule: str, expected_vars: list[str]) -> None:
+    def test_unsafe_variable_detected(
+        self, rule: str, expected_vars: list[str]
+    ) -> None:
         """Test that unsafe variables are detected."""
         from loft.validation.asp_validators import check_unsafe_variables
 
         errors, warnings = check_unsafe_variables(rule)
 
-        assert len(errors) == len(expected_vars), (
-            f"Expected {len(expected_vars)} errors, got {len(errors)}: {errors}"
-        )
+        assert len(errors) == len(
+            expected_vars
+        ), f"Expected {len(expected_vars)} errors, got {len(errors)}: {errors}"
         error_text = " ".join(errors)
         for var in expected_vars:
             assert var in error_text, f"Expected '{var}' in errors, got: {errors}"
@@ -574,7 +582,11 @@ class TestUnsafeVariableDetection:
         pytest.param("pred(X, Y, Z)", {"X", "Y", "Z"}, id="basic_extraction"),
         pytest.param("pred(a, b, c)", set(), id="no_variables"),
         pytest.param("pred(X, constant, Y)", {"X", "Y"}, id="mixed"),
-        pytest.param("pred(My_Var, Another_One)", {"My_Var", "Another_One"}, id="underscore_names"),
+        pytest.param(
+            "pred(My_Var, Another_One)",
+            {"My_Var", "Another_One"},
+            id="underscore_names",
+        ),
     ]
 
     @pytest.mark.parametrize("text,expected", EXTRACT_VARIABLES_CASES)
@@ -664,9 +676,9 @@ class TestEmbeddedPeriodDetection:
         errors, warnings = check_embedded_periods(rule)
 
         assert len(errors) > 0, f"Expected errors for pattern: {expected_pattern}"
-        assert any(expected_pattern in err for err in errors), (
-            f"Expected '{expected_pattern}' in errors, got: {errors}"
-        )
+        assert any(
+            expected_pattern in err for err in errors
+        ), f"Expected '{expected_pattern}' in errors, got: {errors}"
 
     @pytest.mark.parametrize("rule", VALID_RULE_CASES)
     def test_valid_rule_no_errors(self, rule: str) -> None:
@@ -965,7 +977,9 @@ valid(X) :- input(X)."""
 
         # Should not flag embedded_periods for the quoted string
         if "embedded_periods" in result.details:
-            assert all("default.value" not in err for err in result.details["embedded_periods"])
+            assert all(
+                "default.value" not in err for err in result.details["embedded_periods"]
+            )
 
     def test_integration_with_validator_comment_period(self) -> None:
         """Test that validator correctly handles comments with periods."""
@@ -978,7 +992,9 @@ valid(X) :- input(X)."""
         # Should be valid - comment period shouldn't cause issues
         # Note: result.is_valid depends on other validation rules too
         if "embedded_periods" in result.details:
-            assert all("input.method" not in err for err in result.details["embedded_periods"])
+            assert all(
+                "input.method" not in err for err in result.details["embedded_periods"]
+            )
 
 
 class TestEscapedQuotesAndEdgeCases:

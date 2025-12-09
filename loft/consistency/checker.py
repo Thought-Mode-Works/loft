@@ -147,7 +147,9 @@ class ConsistencyChecker:
         inconsistencies: List[Inconsistency] = []
 
         # Build map of predicates to rules
-        predicate_map: Dict[str, List[Tuple[Rule, bool]]] = {}  # predicate -> (rule, is_negated)
+        predicate_map: Dict[str, List[Tuple[Rule, bool]]] = (
+            {}
+        )  # predicate -> (rule, is_negated)
 
         for rule in rules:
             predicates = self._extract_predicates(rule.content)
@@ -250,8 +252,12 @@ class ConsistencyChecker:
 
         # Check stratification ordering
         # Constitutional rules should not depend on lower-level rules
-        const_rules = [r for r in rules if r.level == StratificationLevel.CONSTITUTIONAL]
-        lower_rules = [r for r in rules if r.level != StratificationLevel.CONSTITUTIONAL]
+        const_rules = [
+            r for r in rules if r.level == StratificationLevel.CONSTITUTIONAL
+        ]
+        lower_rules = [
+            r for r in rules if r.level != StratificationLevel.CONSTITUTIONAL
+        ]
 
         for const_rule in const_rules:
             body_preds = set()

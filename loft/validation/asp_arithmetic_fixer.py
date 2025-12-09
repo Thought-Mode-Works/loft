@@ -90,15 +90,21 @@ class ASPArithmeticFixer:
         current_rule = rule_text
 
         # Apply fixes in order of complexity
-        current_rule, float_fixes, float_failures = self._fix_floating_point_literals(current_rule)
+        current_rule, float_fixes, float_failures = self._fix_floating_point_literals(
+            current_rule
+        )
         fixes_applied.extend(float_fixes)
         could_not_fix.extend(float_failures)
 
-        current_rule, abs_fixes, abs_failures = self._fix_abs_function_calls(current_rule)
+        current_rule, abs_fixes, abs_failures = self._fix_abs_function_calls(
+            current_rule
+        )
         fixes_applied.extend(abs_fixes)
         could_not_fix.extend(abs_failures)
 
-        current_rule, infix_fixes, infix_failures = self._fix_infix_multiplication(current_rule)
+        current_rule, infix_fixes, infix_failures = self._fix_infix_multiplication(
+            current_rule
+        )
         fixes_applied.extend(infix_fixes)
         could_not_fix.extend(infix_failures)
 
@@ -111,7 +117,9 @@ class ASPArithmeticFixer:
             )
             for fix in fixes_applied:
                 self._fix_count += 1
-                self._fixes_by_type[fix.fix_type] = self._fixes_by_type.get(fix.fix_type, 0) + 1
+                self._fixes_by_type[fix.fix_type] = (
+                    self._fixes_by_type.get(fix.fix_type, 0) + 1
+                )
 
         return FixResult(
             original_rule=rule_text,
@@ -195,7 +203,9 @@ class ASPArithmeticFixer:
 
         return current_rule, fixes, failures
 
-    def _fix_abs_function_calls(self, rule_text: str) -> Tuple[str, List[ArithmeticFix], List[str]]:
+    def _fix_abs_function_calls(
+        self, rule_text: str
+    ) -> Tuple[str, List[ArithmeticFix], List[str]]:
         """
         Fix abs() function calls by suggesting split into two rules.
 

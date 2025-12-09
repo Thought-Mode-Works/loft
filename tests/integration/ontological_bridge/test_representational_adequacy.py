@@ -52,9 +52,9 @@ class TestConceptualDistinctions:
 
         # The structures should be different
         # (This is a simplified check - in reality would need semantic analysis)
-        assert result_necessary.asp_code != result_sufficient.asp_code or True, (
-            "Different conditions should potentially have different representations"
-        )
+        assert (
+            result_necessary.asp_code != result_sufficient.asp_code or True
+        ), "Different conditions should potentially have different representations"
 
     def test_universal_vs_existential(self, nl_to_asp):
         """Test representation of universal vs existential quantifiers."""
@@ -69,7 +69,9 @@ class TestConceptualDistinctions:
 
         # Both should produce ASP code
         assert result_universal.asp_code, "Should represent universal quantification"
-        assert result_existential.asp_code, "Should represent existential quantification"
+        assert (
+            result_existential.asp_code
+        ), "Should represent existential quantification"
 
     def test_obligation_vs_permission(self, nl_to_asp):
         """Test representation of deontic modalities (must vs may)."""
@@ -180,7 +182,9 @@ class TestHierarchicalConcepts:
     def test_exception_hierarchy(self, nl_to_asp):
         """Test representation of rules and exceptions."""
 
-        text = "Generally contracts require writing, but part performance is an exception"
+        text = (
+            "Generally contracts require writing, but part performance is an exception"
+        )
         result = nl_to_asp.translate(text)
 
         assert result.asp_code, "Should represent exception hierarchy"
@@ -228,9 +232,9 @@ class TestNegationAdequacy:
         result = nl_to_asp.translate(text)
 
         assert result.asp_code, "Should represent classical negation"
-        assert "not" in result.asp_code.lower() or "~" in result.asp_code, (
-            "Should use negation operator"
-        )
+        assert (
+            "not" in result.asp_code.lower() or "~" in result.asp_code
+        ), "Should use negation operator"
 
     def test_negation_as_failure(self, nl_to_asp):
         """Test negation as failure (default negation)."""
@@ -312,4 +316,6 @@ class TestComprehensiveCoverage:
 
         # Should successfully represent most concepts
         coverage = successful / len(sof_concepts)
-        assert coverage >= 0.8, f"Coverage too low: {coverage:.1%}\nFailed cases: {failed}"
+        assert (
+            coverage >= 0.8
+        ), f"Coverage too low: {coverage:.1%}\nFailed cases: {failed}"

@@ -157,7 +157,9 @@ class TestPredicateExtraction:
     def test_extract_dataset_predicates_handles_exception(self):
         """Test that exceptions during extraction are caught and logged."""
         processor = LLMCaseProcessor()
-        processor._extract_predicates = MagicMock(side_effect=Exception("Extraction failed"))
+        processor._extract_predicates = MagicMock(
+            side_effect=Exception("Extraction failed")
+        )
         extraction = {"asp_predicates": ["pred(X)"], "facts": ["fact1"]}
 
         result = processor._extract_dataset_predicates(extraction, "test_case")
@@ -168,7 +170,9 @@ class TestPredicateExtraction:
     def test_extract_dataset_predicates_success(self):
         """Test successful predicate extraction."""
         processor = LLMCaseProcessor()
-        processor._extract_predicates = MagicMock(return_value=["contract", "breach", "damages"])
+        processor._extract_predicates = MagicMock(
+            return_value=["contract", "breach", "damages"]
+        )
         extraction = {"asp_predicates": ["pred(X)"], "facts": ["contract(a, b)."]}
 
         result = processor._extract_dataset_predicates(extraction, "test_case")

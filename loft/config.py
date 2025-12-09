@@ -36,7 +36,9 @@ class LLMConfig(BaseModel):
     temperature: float = Field(
         default=0.7, ge=0.0, le=2.0, description="Temperature for LLM sampling"
     )
-    max_tokens: int = Field(default=4096, gt=0, description="Maximum tokens in LLM response")
+    max_tokens: int = Field(
+        default=4096, gt=0, description="Maximum tokens in LLM response"
+    )
 
 
 class ValidationConfig(BaseModel):
@@ -52,13 +54,22 @@ class ValidationConfig(BaseModel):
         description="Confidence threshold for constitutional layer (never auto-modify)",
     )
     confidence_threshold_strategic: float = Field(
-        default=0.9, ge=0.0, le=1.0, description="Confidence threshold for strategic layer"
+        default=0.9,
+        ge=0.0,
+        le=1.0,
+        description="Confidence threshold for strategic layer",
     )
     confidence_threshold_tactical: float = Field(
-        default=0.8, ge=0.0, le=1.0, description="Confidence threshold for tactical layer"
+        default=0.8,
+        ge=0.0,
+        le=1.0,
+        description="Confidence threshold for tactical layer",
     )
     confidence_threshold_operational: float = Field(
-        default=0.6, ge=0.0, le=1.0, description="Confidence threshold for operational layer"
+        default=0.6,
+        ge=0.0,
+        le=1.0,
+        description="Confidence threshold for operational layer",
     )
 
 
@@ -71,9 +82,12 @@ class ASPConfig(BaseModel):
     max_answer_sets: int = Field(
         default=10, gt=0, description="Maximum number of answer sets to compute"
     )
-    optimization: bool = Field(default=True, description="Enable optimization in ASP solving")
+    optimization: bool = Field(
+        default=True, description="Enable optimization in ASP solving"
+    )
     stats: bool = Field(
-        default=False, description="Enable statistics output from Clingo (for debugging)"
+        default=False,
+        description="Enable statistics output from Clingo (for debugging)",
     )
 
     @property
@@ -98,7 +112,9 @@ class LogConfig(BaseModel):
     rotation: str = Field(default="100 MB", description="Log file rotation size")
     retention: str = Field(default="1 month", description="Log file retention period")
     log_dir: str = Field(default="logs", description="Directory for log files")
-    enable_file_logging: bool = Field(default=True, description="Whether to enable file logging")
+    enable_file_logging: bool = Field(
+        default=True, description="Whether to enable file logging"
+    )
     enable_console_logging: bool = Field(
         default=True, description="Whether to enable console logging"
     )
