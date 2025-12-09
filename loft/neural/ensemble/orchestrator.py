@@ -276,6 +276,8 @@ class OrchestratorConfig:
             raise ValueError("max_retries must be non-negative")
         if not 0.0 <= self.min_confidence_threshold <= 1.0:
             raise ValueError("min_confidence_threshold must be between 0.0 and 1.0")
+        if self.cache_ttl_seconds < 0:
+            raise ValueError("cache_ttl_seconds must be non-negative")
 
 
 @dataclass
@@ -501,6 +503,9 @@ class WeightedVotingStrategy(VotingStrategy):
         logger.debug("Performing weighted voting")
         if not responses:
             raise VotingError("No responses to vote on")
+
+        # Note: Confidence scores are already validated and clamped to [0.0, 1.0]
+        # by ModelResponse.__post_init__, so no additional validation is needed here.
 
         # Calculate weighted scores for each result
         result_weights: Dict[str, float] = {}
@@ -1209,7 +1214,18 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
 
         Returns:
             OrchestrationResult with the final output
+
+        Raises:
+            TaskRoutingError: If input_data is None or empty
         """
+        # Validate input_data
+        if input_data is None:
+            raise TaskRoutingError("input_data cannot be None")
+        if isinstance(input_data, str) and not input_data.strip():
+            raise TaskRoutingError("input_data cannot be empty")
+        if isinstance(input_data, dict) and not input_data:
+            raise TaskRoutingError("input_data cannot be an empty dictionary")
+
         start_time = time.time()
         logger.info(f"Routing task: {task_type.value}")
 

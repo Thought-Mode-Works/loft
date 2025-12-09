@@ -1154,3 +1154,172 @@ For validating autonomous ASP generation, follow this sequence:
    print(f'Accuracy: {m.get(\"overall_accuracy\", 0):.2%}')
    " /tmp/*/reports/final_report.json
    ```
+
+---
+
+## Phase 6: Neural Ensemble Validation
+
+Phase 6 introduces heterogeneous neural ensemble components. This section covers validation testing for these components.
+
+### Unit Test Coverage
+
+Run ensemble unit tests:
+
+```bash
+# All ensemble unit tests (~300 tests)
+python3 -m pytest tests/unit/neural/ensemble/ -v
+
+# By component
+python3 -m pytest tests/unit/neural/ensemble/test_logic_generator.py -v  # 60 tests
+python3 -m pytest tests/unit/neural/ensemble/test_critic.py -v           # 50 tests
+python3 -m pytest tests/unit/neural/ensemble/test_translator.py -v       # 55 tests
+python3 -m pytest tests/unit/neural/ensemble/test_meta_reasoner.py -v    # 68 tests
+python3 -m pytest tests/unit/neural/ensemble/test_orchestrator.py -v     # 67 tests
+```
+
+### MVP Validation Criteria
+
+Per ROADMAP.md Phase 6, the following criteria must be validated:
+
+| Criterion | Target | Validation Method |
+|-----------|--------|-------------------|
+| Specialized models outperform general-purpose | Better accuracy | Benchmark comparison |
+| Ensemble consensus improves accuracy | >20% over single LLM | A/B test vs. single model |
+| Translator bidirectional fidelity | >95% | Roundtrip semantic similarity |
+| Meta-Reasoner generates actionable insights | Qualitative + quantitative | Insight actionability scoring |
+| Cost/performance optimized | Measurable trade-offs | Token usage tracking |
+
+### Ensemble Component Testing
+
+#### LogicGeneratorLLM
+
+Test formal ASP logic generation:
+
+```python
+from loft.neural.ensemble import LogicGeneratorLLM, LogicGeneratorConfig
+
+# Configure with haiku for cost-effective testing
+config = LogicGeneratorConfig(
+    model="claude-3-5-haiku-20241022",
+    strategy_type="chain_of_thought"
+)
+generator = LogicGeneratorLLM(config)
+
+# Generate ASP rules
+result = generator.generate(
+    case_facts="contract(c1). parties(c1, alice, bob).",
+    question="Is this contract enforceable?",
+    existing_rules=[]
+)
+
+# Validate result
+assert result.rules, "Should generate at least one rule"
+assert result.confidence > 0.5, "Should have reasonable confidence"
+print(f"Generated {len(result.rules)} rules with confidence {result.confidence}")
+```
+
+#### CriticLLM
+
+Test edge case detection:
+
+```python
+from loft.neural.ensemble import CriticLLM, CriticConfig
+
+config = CriticConfig(
+    model="claude-3-5-haiku-20241022",
+    strategy_type="adversarial"
+)
+critic = CriticLLM(config)
+
+# Critique a rule
+result = critic.analyze_rule(
+    rule="enforceable(C) :- contract(C), valid_consideration(C).",
+    context="Contract law analysis"
+)
+
+# Validate result
+print(f"Found {len(result.edge_cases)} edge cases")
+print(f"Found {len(result.contradictions)} contradictions")
+print(f"Generalization: {result.generalization_assessment}")
+```
+
+#### TranslatorLLM
+
+Test bidirectional translation:
+
+```python
+from loft.neural.ensemble import TranslatorLLM, TranslatorConfig
+
+config = TranslatorConfig(
+    model="claude-3-5-haiku-20241022",
+    strategy_type="legal_domain"
+)
+translator = TranslatorLLM(config)
+
+# Test roundtrip
+original_rule = "enforceable(C) :- contract(C), offer(C), acceptance(C)."
+nl = translator.symbolic_to_nl(original_rule)
+roundtrip = translator.nl_to_symbolic(nl)
+
+# Measure fidelity
+fidelity_result = translator.measure_roundtrip_fidelity(original_rule)
+print(f"Roundtrip fidelity: {fidelity_result.similarity:.2%}")
+assert fidelity_result.similarity > 0.95, "Should maintain >95% fidelity"
+```
+
+#### EnsembleOrchestrator
+
+Test multi-model coordination:
+
+```python
+from loft.neural.ensemble import (
+    EnsembleOrchestrator, OrchestratorConfig,
+    VotingStrategyType, DisagreementStrategyType
+)
+
+config = OrchestratorConfig(
+    default_voting_strategy=VotingStrategyType.MAJORITY,
+    default_disagreement_strategy=DisagreementStrategyType.DEFER_TO_CRITIC,
+    consensus_threshold=0.7
+)
+orchestrator = EnsembleOrchestrator(config)
+
+# Process with ensemble
+result = orchestrator.process_task(
+    task_type="logic_generation",
+    input_data={
+        "case_facts": "contract(c1). parties(c1, a, b).",
+        "question": "Is the contract valid?"
+    }
+)
+
+# Check voting result
+print(f"Consensus reached: {result.voting_result.consensus_reached}")
+print(f"Final answer confidence: {result.final_confidence}")
+if result.disagreement_records:
+    print(f"Disagreements resolved: {len(result.disagreement_records)}")
+```
+
+### Future: Ensemble Autonomous Testing
+
+> **Note:** The following features are tracked in GitHub issues #205-207 and are not yet implemented.
+
+Once issue #207 is implemented, ensemble testing will be available via CLI:
+
+```bash
+# Future: Enable ensemble processing
+python3 -m loft.autonomous.cli start \
+  --dataset datasets/contracts/ \
+  --enable-llm \
+  --enable-ensemble \  # Issue #207
+  --duration 30m \
+  --output /tmp/ensemble_test/
+```
+
+### Related Issues
+
+- #193: Model-specific prompt optimization (OPEN)
+- #205: Ensemble integration tests (OPEN)
+- #206: MVP validation benchmarks (OPEN)
+- #207: Ensemble diagnostics in autonomous testing (OPEN)
+- #200-204: Orchestrator code quality improvements (OPEN)
