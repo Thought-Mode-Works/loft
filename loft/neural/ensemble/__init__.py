@@ -6,12 +6,15 @@ This package contains specialized LLMs for different aspects of ASP rule generat
 - CriticLLM: Specialized for edge case and contradiction detection
 - TranslatorLLM: Symbolic <-> natural language bidirectional conversion
 - MetaReasonerLLM: Reasoning about reasoning (meta-level analysis)
+- EnsembleOrchestrator: Coordinates specialized LLMs with voting and routing
 
 Architecture enhancements (based on multi-agent review PR #194):
 - Strategy Pattern for flexible optimization approaches
 - Abstract base class (LogicGenerator) for extensibility
 - Exponential backoff retry logic for resilience
 - LRU caching for repeated queries
+- Multi-LLM voting mechanisms (Issue #192)
+- Disagreement resolution strategies (Issue #192)
 """
 
 from .logic_generator import (
@@ -106,6 +109,46 @@ from .meta_reasoner import (
     MetaReasoningError,
 )
 
+from .orchestrator import (
+    # Main class
+    EnsembleOrchestrator,
+    OrchestratorConfig,
+    # Abstract base class
+    EnsembleOrchestratorBase,
+    # Data classes
+    ModelResponse,
+    VotingResult,
+    DisagreementRecord,
+    ModelPerformanceMetrics,
+    OrchestrationResult,
+    # Enums
+    TaskType,
+    VotingStrategyType,
+    DisagreementStrategyType,
+    ModelStatus,
+    # Voting Strategy Pattern components
+    VotingStrategy,
+    UnanimousVotingStrategy,
+    MajorityVotingStrategy,
+    WeightedVotingStrategy,
+    DialecticalVotingStrategy,
+    create_voting_strategy,
+    # Disagreement Resolution components
+    DisagreementResolver,
+    DeferToCriticResolver,
+    DeferToConfidenceResolver,
+    SynthesizeResolver,
+    EscalateResolver,
+    ConservativeResolver,
+    create_disagreement_resolver,
+    # Exceptions
+    OrchestratorError,
+    TaskRoutingError,
+    VotingError,
+    DisagreementResolutionError,
+    FallbackExhaustedError,
+)
+
 __all__ = [
     # Logic Generator
     "LogicGeneratorLLM",
@@ -171,4 +214,35 @@ __all__ = [
     "DiagnosticStrategy",
     "create_meta_reasoning_strategy",
     "MetaReasoningError",
+    # Ensemble Orchestrator
+    "EnsembleOrchestrator",
+    "OrchestratorConfig",
+    "EnsembleOrchestratorBase",
+    "ModelResponse",
+    "VotingResult",
+    "DisagreementRecord",
+    "ModelPerformanceMetrics",
+    "OrchestrationResult",
+    "TaskType",
+    "VotingStrategyType",
+    "DisagreementStrategyType",
+    "ModelStatus",
+    "VotingStrategy",
+    "UnanimousVotingStrategy",
+    "MajorityVotingStrategy",
+    "WeightedVotingStrategy",
+    "DialecticalVotingStrategy",
+    "create_voting_strategy",
+    "DisagreementResolver",
+    "DeferToCriticResolver",
+    "DeferToConfidenceResolver",
+    "SynthesizeResolver",
+    "EscalateResolver",
+    "ConservativeResolver",
+    "create_disagreement_resolver",
+    "OrchestratorError",
+    "TaskRoutingError",
+    "VotingError",
+    "DisagreementResolutionError",
+    "FallbackExhaustedError",
 ]
