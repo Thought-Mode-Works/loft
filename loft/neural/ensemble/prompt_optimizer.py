@@ -315,7 +315,9 @@ class ABTestResult:
             "confidence": self.confidence,
             "status": self.status.value,
             "started_at": self.started_at.isoformat(),
-            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "completed_at": (
+                self.completed_at.isoformat() if self.completed_at else None
+            ),
         }
 
 
@@ -692,9 +694,7 @@ class PromptRegistry:
         with self._lock:
             template_ids = self._templates_by_task.get(task_type, [])
             templates = [
-                self._templates[tid]
-                for tid in template_ids
-                if tid in self._templates
+                self._templates[tid] for tid in template_ids if tid in self._templates
             ]
             if status:
                 templates = [t for t in templates if t.status == status]
@@ -715,9 +715,7 @@ class PromptRegistry:
         with self._lock:
             template_ids = self._templates_by_model.get(model_type, [])
             templates = [
-                self._templates[tid]
-                for tid in template_ids
-                if tid in self._templates
+                self._templates[tid] for tid in template_ids if tid in self._templates
             ]
             if status:
                 templates = [t for t in templates if t.status == status]
@@ -828,7 +826,7 @@ class PromptPerformanceTracker:
             records.append(record)
             # Trim if necessary
             if len(records) > self._max_history:
-                self._records[record.template_id] = records[-self._max_history:]
+                self._records[record.template_id] = records[-self._max_history :]
             logger.debug(
                 f"Recorded performance for template {record.template_id}: "
                 f"success={record.success}, quality={record.quality_score:.2f}"
@@ -925,12 +923,14 @@ class PromptPerformanceTracker:
 
         patterns = []
         for error, count in sorted(error_counts.items(), key=lambda x: -x[1]):
-            patterns.append({
-                "error_pattern": error,
-                "count": count,
-                "frequency": count / len(records) if records else 0,
-                "sample_contexts": error_contexts[error][:3],  # Keep first 3
-            })
+            patterns.append(
+                {
+                    "error_pattern": error,
+                    "count": count,
+                    "frequency": count / len(records) if records else 0,
+                    "sample_contexts": error_contexts[error][:3],  # Keep first 3
+                }
+            )
         return patterns
 
     def clear_records(self, template_id: Optional[str] = None) -> int:
@@ -1093,28 +1093,28 @@ class ABTestingFramework:
                 # Update running averages
                 n = test.variant_a_samples
                 test.variant_a_success_rate = (
-                    (test.variant_a_success_rate * (n - 1) + (1.0 if success else 0.0)) / n
-                )
+                    test.variant_a_success_rate * (n - 1) + (1.0 if success else 0.0)
+                ) / n
                 if success:
                     test.variant_a_avg_quality = (
-                        (test.variant_a_avg_quality * (n - 1) + quality_score) / n
-                    )
+                        test.variant_a_avg_quality * (n - 1) + quality_score
+                    ) / n
                 test.variant_a_avg_latency = (
-                    (test.variant_a_avg_latency * (n - 1) + latency_ms) / n
-                )
+                    test.variant_a_avg_latency * (n - 1) + latency_ms
+                ) / n
             elif template_id == test.variant_b_id:
                 test.variant_b_samples += 1
                 n = test.variant_b_samples
                 test.variant_b_success_rate = (
-                    (test.variant_b_success_rate * (n - 1) + (1.0 if success else 0.0)) / n
-                )
+                    test.variant_b_success_rate * (n - 1) + (1.0 if success else 0.0)
+                ) / n
                 if success:
                     test.variant_b_avg_quality = (
-                        (test.variant_b_avg_quality * (n - 1) + quality_score) / n
-                    )
+                        test.variant_b_avg_quality * (n - 1) + quality_score
+                    ) / n
                 test.variant_b_avg_latency = (
-                    (test.variant_b_avg_latency * (n - 1) + latency_ms) / n
-                )
+                    test.variant_b_avg_latency * (n - 1) + latency_ms
+                ) / n
 
             # Check if we have enough samples to conclude
             self._check_test_completion(test)
@@ -1126,8 +1126,7 @@ class ABTestingFramework:
             test: Test to check
         """
         min_samples = self._config.min_samples_for_ab_test
-        if (test.variant_a_samples < min_samples or
-            test.variant_b_samples < min_samples):
+        if test.variant_a_samples < min_samples or test.variant_b_samples < min_samples:
             return
 
         # Calculate confidence using simple z-test approximation
@@ -1143,8 +1142,12 @@ class ABTestingFramework:
 
         if test.confidence >= self._config.confidence_threshold:
             # Determine winner based on combined score
-            score_a = test.variant_a_success_rate * 0.6 + test.variant_a_avg_quality * 0.4
-            score_b = test.variant_b_success_rate * 0.6 + test.variant_b_avg_quality * 0.4
+            score_a = (
+                test.variant_a_success_rate * 0.6 + test.variant_a_avg_quality * 0.4
+            )
+            score_b = (
+                test.variant_b_success_rate * 0.6 + test.variant_b_avg_quality * 0.4
+            )
 
             if score_a > score_b + 0.05:  # 5% margin
                 test.winner = "A"
@@ -1188,9 +1191,7 @@ class ABTestingFramework:
         with self._lock:
             return list(self._active_tests.values())
 
-    def get_completed_tests(
-        self, limit: Optional[int] = None
-    ) -> List[ABTestResult]:
+    def get_completed_tests(self, limit: Optional[int] = None) -> List[ABTestResult]:
         """Get completed tests.
 
         Args:
@@ -1446,9 +1447,11 @@ class ModelPromptOptimizer(PromptOptimizer):
             )
 
         # Check for auto-deprecation
-        if (self._config.enable_auto_evolution and
-            combined_score < self._config.auto_deprecate_threshold and
-            metrics["sample_count"] >= self._config.min_samples_for_ab_test):
+        if (
+            self._config.enable_auto_evolution
+            and combined_score < self._config.auto_deprecate_threshold
+            and metrics["sample_count"] >= self._config.min_samples_for_ab_test
+        ):
             template = self._registry.get_template(template_id)
             if template and template.status == PromptVariantStatus.ACTIVE:
                 logger.warning(
@@ -1530,7 +1533,9 @@ class ModelPromptOptimizer(PromptOptimizer):
             original_template_id=template_id,
             evolved_template=new_template,
             changes_made=changes_made,
-            failure_patterns_addressed=[p.get("error_pattern", "") for p in failure_patterns],
+            failure_patterns_addressed=[
+                p.get("error_pattern", "") for p in failure_patterns
+            ],
             expected_improvement="Addresses identified failure patterns",
             confidence=0.6,  # Base confidence
         )
@@ -1552,7 +1557,9 @@ class ModelPromptOptimizer(PromptOptimizer):
 
     def _add_conciseness_instruction(self, prompt: str) -> str:
         """Add conciseness instruction to a prompt."""
-        instruction = "\n\nBe concise. Provide only the requested output without explanation."
+        instruction = (
+            "\n\nBe concise. Provide only the requested output without explanation."
+        )
         return prompt + instruction
 
     def _add_validation_emphasis(self, prompt: str) -> str:
@@ -1625,12 +1632,8 @@ class ModelPromptOptimizer(PromptOptimizer):
             reverse=True,
         )
         if sorted_tasks:
-            profile.strengths = [
-                t[0].value for t in sorted_tasks[:2] if t[1] > 0.7
-            ]
-            profile.weaknesses = [
-                t[0].value for t in sorted_tasks[-2:] if t[1] < 0.5
-            ]
+            profile.strengths = [t[0].value for t in sorted_tasks[:2] if t[1] > 0.7]
+            profile.weaknesses = [t[0].value for t in sorted_tasks[-2:] if t[1] < 0.5]
 
         profile.last_updated = datetime.now()
         self._model_profiles[model_name] = profile
@@ -1736,10 +1739,13 @@ class ModelPromptOptimizer(PromptOptimizer):
             suggestions = [s for s in suggestions if s.target_task == task_type]
         suggestions = [s for s in suggestions if s.confidence >= min_confidence]
 
-        return sorted(suggestions, key=lambda s: (
-            -{"high": 2, "medium": 1, "low": 0}.get(s.priority, 0),
-            -s.confidence,
-        ))
+        return sorted(
+            suggestions,
+            key=lambda s: (
+                -{"high": 2, "medium": 1, "low": 0}.get(s.priority, 0),
+                -s.confidence,
+            ),
+        )
 
     def get_performance_report(
         self,
@@ -1775,10 +1781,13 @@ class ModelPromptOptimizer(PromptOptimizer):
             if task_templates:
                 report["templates_by_task"][task.value] = {
                     "count": len(task_templates),
-                    "active": len([
-                        t for t in task_templates
-                        if t.status == PromptVariantStatus.ACTIVE
-                    ]),
+                    "active": len(
+                        [
+                            t
+                            for t in task_templates
+                            if t.status == PromptVariantStatus.ACTIVE
+                        ]
+                    ),
                 }
 
         # Group by model
@@ -1787,10 +1796,13 @@ class ModelPromptOptimizer(PromptOptimizer):
             if model_templates:
                 report["templates_by_model"][model.value] = {
                     "count": len(model_templates),
-                    "active": len([
-                        t for t in model_templates
-                        if t.status == PromptVariantStatus.ACTIVE
-                    ]),
+                    "active": len(
+                        [
+                            t
+                            for t in model_templates
+                            if t.status == PromptVariantStatus.ACTIVE
+                        ]
+                    ),
                 }
 
         # Top performers
@@ -1817,7 +1829,8 @@ class ModelPromptOptimizer(PromptOptimizer):
                 "score": t.performance_score,
                 "usage_count": t.usage_count,
             }
-            for t in sorted_templates[-5:] if t.performance_score < 0.5
+            for t in sorted_templates[-5:]
+            if t.performance_score < 0.5
         ]
 
         return report
