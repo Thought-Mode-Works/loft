@@ -22,10 +22,11 @@ import statistics
 import threading
 import uuid
 from abc import ABC, abstractmethod
+from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Deque, Dict, List, Optional, Tuple
 
 from loguru import logger
 
@@ -800,33 +801,37 @@ class PromptPerformanceTracker:
     """Tracks performance metrics for prompt templates.
 
     Thread-safe tracker that maintains performance history and
-    computes aggregate metrics.
+    computes aggregate metrics. Uses bounded deques to prevent
+    unbounded memory growth.
+
+    Attributes:
+        max_history_per_template: Maximum number of records to retain per template.
     """
 
     def __init__(self, max_history_per_template: int = 1000) -> None:
         """Initialize the tracker.
 
         Args:
-            max_history_per_template: Maximum records to keep per template
+            max_history_per_template: Maximum records to keep per template.
+                Older records are automatically discarded when limit is reached.
         """
-        self._records: Dict[str, List[PromptPerformanceRecord]] = {}
+        self._records: Dict[str, Deque[PromptPerformanceRecord]] = {}
         self._max_history = max_history_per_template
         self._lock = threading.RLock()
 
     def record(self, record: PromptPerformanceRecord) -> None:
         """Record a performance measurement.
 
+        Thread-safe method that stores performance data. Uses deque with
+        maxlen to automatically evict oldest records when limit is reached.
+
         Args:
             record: Performance record to store
         """
         with self._lock:
             if record.template_id not in self._records:
-                self._records[record.template_id] = []
-            records = self._records[record.template_id]
-            records.append(record)
-            # Trim if necessary
-            if len(records) > self._max_history:
-                self._records[record.template_id] = records[-self._max_history :]
+                self._records[record.template_id] = deque(maxlen=self._max_history)
+            self._records[record.template_id].append(record)
             logger.debug(
                 f"Recorded performance for template {record.template_id}: "
                 f"success={record.success}, quality={record.quality_score:.2f}"
@@ -841,17 +846,22 @@ class PromptPerformanceTracker:
     ) -> List[PromptPerformanceRecord]:
         """Get performance records for a template.
 
+        Thread-safe retrieval of performance records with optional filtering.
+
         Args:
-            template_id: Template ID
-            model_name: Optional filter by model
-            task_type: Optional filter by task
-            limit: Maximum records to return
+            template_id: Template ID to retrieve records for
+            model_name: Optional filter to only include records for this model
+            task_type: Optional filter to only include records for this task type
+            limit: Maximum number of records to return (from most recent)
 
         Returns:
-            List of matching records
+            List of matching records, ordered from oldest to newest
         """
         with self._lock:
-            records = self._records.get(template_id, [])
+            records_deque = self._records.get(template_id)
+            if records_deque is None:
+                return []
+            records = list(records_deque)
             if model_name:
                 records = [r for r in records if r.model_name == model_name]
             if task_type:
@@ -936,15 +946,19 @@ class PromptPerformanceTracker:
     def clear_records(self, template_id: Optional[str] = None) -> int:
         """Clear performance records.
 
+        Thread-safe method to clear stored performance data.
+
         Args:
-            template_id: Optional template to clear (all if None)
+            template_id: Specific template to clear records for.
+                If None, clears all records for all templates.
 
         Returns:
-            Number of records cleared
+            Number of records that were cleared
         """
         with self._lock:
             if template_id:
-                count = len(self._records.get(template_id, []))
+                records_deque = self._records.get(template_id)
+                count = len(records_deque) if records_deque else 0
                 self._records.pop(template_id, None)
             else:
                 count = sum(len(r) for r in self._records.values())
@@ -1122,47 +1136,72 @@ class ABTestingFramework:
     def _check_test_completion(self, test: ABTestResult) -> None:
         """Check if a test has enough data to conclude.
 
+        Evaluates whether sufficient samples have been collected and computes
+        statistical confidence using a simplified heuristic. Handles edge cases
+        like zero denominators and invalid configurations gracefully.
+
         Args:
-            test: Test to check
+            test: Test to check for completion readiness
         """
         min_samples = self._config.min_samples_for_ab_test
+
+        # Guard against invalid configuration
+        if min_samples <= 0:
+            logger.warning(
+                f"Invalid min_samples_for_ab_test={min_samples}, skipping completion check"
+            )
+            return
+
         if test.variant_a_samples < min_samples or test.variant_b_samples < min_samples:
             return
 
-        # Calculate confidence using simple z-test approximation
-        # (simplified for this implementation)
-        rate_diff = abs(test.variant_a_success_rate - test.variant_b_success_rate)
-        quality_diff = abs(test.variant_a_avg_quality - test.variant_b_avg_quality)
+        try:
+            # Calculate confidence using simple z-test approximation
+            # (simplified for this implementation)
+            rate_diff = abs(test.variant_a_success_rate - test.variant_b_success_rate)
+            quality_diff = abs(test.variant_a_avg_quality - test.variant_b_avg_quality)
 
-        # Simple confidence heuristic
-        total_samples = test.variant_a_samples + test.variant_b_samples
-        base_confidence = min(1.0, total_samples / (min_samples * 4))
-        effect_size = max(rate_diff, quality_diff)
-        test.confidence = base_confidence * (0.5 + effect_size)
-
-        if test.confidence >= self._config.confidence_threshold:
-            # Determine winner based on combined score
-            score_a = (
-                test.variant_a_success_rate * 0.6 + test.variant_a_avg_quality * 0.4
-            )
-            score_b = (
-                test.variant_b_success_rate * 0.6 + test.variant_b_avg_quality * 0.4
-            )
-
-            if score_a > score_b + 0.05:  # 5% margin
-                test.winner = "A"
-            elif score_b > score_a + 0.05:
-                test.winner = "B"
+            # Simple confidence heuristic with division safety
+            total_samples = test.variant_a_samples + test.variant_b_samples
+            denominator = min_samples * 4
+            if denominator == 0:
+                base_confidence = 0.0
             else:
-                test.winner = None  # Tie
+                base_confidence = min(1.0, total_samples / denominator)
 
-            test.status = ABTestStatus.COMPLETED
-            test.completed_at = datetime.now()
-            self._completed_tests.append(test)
-            del self._active_tests[test.test_id]
-            logger.info(
-                f"A/B test {test.test_id} completed: winner={test.winner}, "
-                f"confidence={test.confidence:.2f}"
+            effect_size = max(rate_diff, quality_diff)
+            test.confidence = base_confidence * (0.5 + effect_size)
+
+            # Clamp confidence to valid range
+            test.confidence = max(0.0, min(1.0, test.confidence))
+
+            if test.confidence >= self._config.confidence_threshold:
+                # Determine winner based on combined score
+                score_a = (
+                    test.variant_a_success_rate * 0.6 + test.variant_a_avg_quality * 0.4
+                )
+                score_b = (
+                    test.variant_b_success_rate * 0.6 + test.variant_b_avg_quality * 0.4
+                )
+
+                if score_a > score_b + 0.05:  # 5% margin
+                    test.winner = "A"
+                elif score_b > score_a + 0.05:
+                    test.winner = "B"
+                else:
+                    test.winner = None  # Tie
+
+                test.status = ABTestStatus.COMPLETED
+                test.completed_at = datetime.now()
+                self._completed_tests.append(test)
+                del self._active_tests[test.test_id]
+                logger.info(
+                    f"A/B test {test.test_id} completed: winner={test.winner}, "
+                    f"confidence={test.confidence:.2f}"
+                )
+        except (ZeroDivisionError, ValueError, TypeError) as e:
+            logger.error(
+                f"Error in statistical calculation for test {test.test_id}: {e}"
             )
 
     def get_test(self, test_id: str) -> Optional[ABTestResult]:
