@@ -10,6 +10,15 @@ for predicates that lack explicit ontology mappings.
 """
 
 from loft.ontology.canonical_translator import CanonicalTranslator
-from loft.ontology.hybrid_translator import HybridTranslator, TranslationResult, TranslationStats
+from loft.ontology.hybrid_translator import (
+    HybridTranslator,
+    TranslationResult,
+    TranslationStats,
+)
 
-__all__ = ["CanonicalTranslator", "HybridTranslator", "TranslationResult", "TranslationStats"]
+__all__ = [
+    "CanonicalTranslator",
+    "HybridTranslator",
+    "TranslationResult",
+    "TranslationStats",
+]

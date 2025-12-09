@@ -50,7 +50,9 @@ class FidelityCalculator:
             Fidelity metrics
         """
         # Calculate information preservation (based on length and content)
-        info_preservation = self._calculate_information_preservation(original_text, translated_text)
+        info_preservation = self._calculate_information_preservation(
+            original_text, translated_text
+        )
 
         # Estimate hallucination rate (content in translation not in original)
         hallucination = self._estimate_hallucination(original_text, translated_text)
@@ -74,7 +76,9 @@ class FidelityCalculator:
             overall_fidelity=overall,
         )
 
-    def _calculate_information_preservation(self, original: str, translated: str) -> float:
+    def _calculate_information_preservation(
+        self, original: str, translated: str
+    ) -> float:
         """
         Estimate how much information is preserved.
 
@@ -91,7 +95,9 @@ class FidelityCalculator:
         preservation = overlap / len(original_tokens)
 
         # Adjust for length difference (penalize if translation is too short)
-        length_ratio = len(translated.split()) / len(original.split()) if original.split() else 1.0
+        length_ratio = (
+            len(translated.split()) / len(original.split()) if original.split() else 1.0
+        )
         length_factor = min(1.0, length_ratio)
 
         return (preservation + length_factor) / 2.0
@@ -112,7 +118,19 @@ class FidelityCalculator:
         hallucinated = translated_tokens - original_tokens
 
         # Ignore common stopwords
-        stopwords = {"the", "a", "an", "and", "or", "but", "is", "are", "was", "were", "be"}
+        stopwords = {
+            "the",
+            "a",
+            "an",
+            "and",
+            "or",
+            "but",
+            "is",
+            "are",
+            "was",
+            "were",
+            "be",
+        }
         hallucinated = hallucinated - stopwords
 
         return len(hallucinated) / len(translated_tokens)
@@ -123,8 +141,12 @@ class FidelityCalculator:
 
         Simplified version based on sentence count similarity.
         """
-        original_sentences = original.count(".") + original.count("!") + original.count("?")
-        translated_sentences = translated.count(".") + translated.count("!") + translated.count("?")
+        original_sentences = (
+            original.count(".") + original.count("!") + original.count("?")
+        )
+        translated_sentences = (
+            translated.count(".") + translated.count("!") + translated.count("?")
+        )
 
         if original_sentences == 0:
             original_sentences = 1
@@ -154,7 +176,9 @@ def calculate_fidelity(
         Fidelity metrics
     """
     calculator = FidelityCalculator()
-    return calculator.calculate_fidelity(original_text, translated_text, semantic_similarity_score)
+    return calculator.calculate_fidelity(
+        original_text, translated_text, semantic_similarity_score
+    )
 
 
 def aggregate_metrics(metrics_list: List[FidelityMetrics]) -> Dict[str, Any]:
@@ -175,7 +199,10 @@ def aggregate_metrics(metrics_list: List[FidelityMetrics]) -> Dict[str, Any]:
     return {
         "count": n,
         "avg_semantic_similarity": sum(m.semantic_similarity for m in metrics_list) / n,
-        "avg_information_preservation": sum(m.information_preservation for m in metrics_list) / n,
+        "avg_information_preservation": sum(
+            m.information_preservation for m in metrics_list
+        )
+        / n,
         "avg_hallucination_rate": sum(m.hallucination_rate for m in metrics_list) / n,
         "avg_structural_accuracy": sum(m.structural_accuracy for m in metrics_list) / n,
         "avg_overall_fidelity": sum(m.overall_fidelity for m in metrics_list) / n,

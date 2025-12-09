@@ -115,7 +115,9 @@ class TestAspRuleToNl:
 
     def test_rule_with_conjunction(self) -> None:
         """Test translating rule with multiple conditions."""
-        nl = asp_rule_to_nl("satisfies_statute_of_frauds(C) :- has_writing(C, W), signed_by(W, _).")
+        nl = asp_rule_to_nl(
+            "satisfies_statute_of_frauds(C) :- has_writing(C, W), signed_by(W, _)."
+        )
         assert "statute" in nl.lower() and "frauds" in nl.lower()
         assert "writing" in nl.lower()
         assert "signed" in nl.lower()

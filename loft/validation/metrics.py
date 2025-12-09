@@ -180,10 +180,22 @@ class MetricsTracker:
         deltas = []
 
         metric_pairs = [
-            ("prediction_accuracy", current.prediction_accuracy, previous.prediction_accuracy),
-            ("logical_consistency", current.logical_consistency, previous.logical_consistency),
+            (
+                "prediction_accuracy",
+                current.prediction_accuracy,
+                previous.prediction_accuracy,
+            ),
+            (
+                "logical_consistency",
+                current.logical_consistency,
+                previous.logical_consistency,
+            ),
             ("rule_stability", current.rule_stability, previous.rule_stability),
-            ("translation_fidelity", current.translation_fidelity, previous.translation_fidelity),
+            (
+                "translation_fidelity",
+                current.translation_fidelity,
+                previous.translation_fidelity,
+            ),
             ("coverage", current.coverage, previous.coverage),
         ]
 
@@ -203,7 +215,9 @@ class MetricsTracker:
 
         return deltas
 
-    def check_regression(self, current: Optional[ValidationMetrics] = None) -> List[str]:
+    def check_regression(
+        self, current: Optional[ValidationMetrics] = None
+    ) -> List[str]:
         """
         Check if metrics have regressed from previous measurement.
 

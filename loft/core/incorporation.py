@@ -153,7 +153,9 @@ class SimpleASPCore:
             }
         )
         self.rule_count += 1
-        logger.info(f"Added rule to {stratification_level.value} layer: {rule_text[:50]}...")
+        logger.info(
+            f"Added rule to {stratification_level.value} layer: {rule_text[:50]}..."
+        )
 
     def get_state(self) -> Dict[str, Any]:
         """Get current state for snapshotting."""
@@ -196,7 +198,9 @@ class SimpleTestSuite:
         random.seed(42)  # Fixed seed for deterministic testing
 
         # Tests pass
-        self.current_accuracy = min(1.0, self.current_accuracy + random.uniform(0, 0.01))
+        self.current_accuracy = min(
+            1.0, self.current_accuracy + random.uniform(0, 0.01)
+        )
         return {"passed": True, "failures": [], "accuracy": self.current_accuracy}
 
     def measure_accuracy(self) -> float:
@@ -239,13 +243,17 @@ class RuleIncorporationEngine:
             from loft.symbolic.stratification import MODIFICATION_POLICIES
 
             # Convert to string keys to avoid enum instance mismatch issues
-            self.policies = {level.value: policy for level, policy in MODIFICATION_POLICIES.items()}
+            self.policies = {
+                level.value: policy for level, policy in MODIFICATION_POLICIES.items()
+            }
         else:
             # Assume policies dict already uses appropriate keys
             self.policies = policies
 
         # Use string values as keys to avoid enum instance mismatch issues
-        self.modification_count: Dict[str, int] = {level.value: 0 for level in StratificationLevel}
+        self.modification_count: Dict[str, int] = {
+            level.value: 0 for level in StratificationLevel
+        }
 
         self.incorporation_history: List[Dict[str, Any]] = []
         self.rollback_history: List[RollbackEvent] = []
@@ -290,7 +298,9 @@ class RuleIncorporationEngine:
             policy = self.policies[target_layer.value]
 
         if not policy.autonomous_allowed and is_autonomous:
-            logger.warning(f"Autonomous modification not allowed for {target_layer.value} layer")
+            logger.warning(
+                f"Autonomous modification not allowed for {target_layer.value} layer"
+            )
             return IncorporationResult(
                 status="blocked",
                 reason=f"Autonomous modification not allowed for {target_layer.value} layer",
@@ -310,7 +320,10 @@ class RuleIncorporationEngine:
             )
 
         # 3. Check modification limit
-        if self.modification_count[target_layer.value] >= policy.max_modifications_per_session:
+        if (
+            self.modification_count[target_layer.value]
+            >= policy.max_modifications_per_session
+        ):
             logger.warning(
                 f"Reached max modifications ({policy.max_modifications_per_session}) for {target_layer.value}"
             )
@@ -445,7 +458,9 @@ class RuleIncorporationEngine:
                 regression_details={"exception": str(e)},
             )
 
-            return IncorporationResult(status="error", reason=str(e), requires_human_review=True)
+            return IncorporationResult(
+                status="error", reason=str(e), requires_human_review=True
+            )
 
     def _rollback(
         self,
@@ -497,7 +512,9 @@ class RuleIncorporationEngine:
         # Calculate success rate
         total_attempts = len(self.incorporation_history) + total_rollbacks
         success_rate = (
-            len(self.incorporation_history) / total_attempts if total_attempts > 0 else 0.0
+            len(self.incorporation_history) / total_attempts
+            if total_attempts > 0
+            else 0.0
         )
 
         # modification_count already uses string keys (layer.value)

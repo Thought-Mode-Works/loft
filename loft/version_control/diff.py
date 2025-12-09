@@ -152,7 +152,9 @@ class CoreStateDiff:
             for metric, (old_val, new_val) in self.metric_changes.items():
                 delta = new_val - old_val
                 sign = "+" if delta >= 0 else ""
-                lines.append(f"  {metric}: {old_val:.3f} -> {new_val:.3f} ({sign}{delta:.3f})")
+                lines.append(
+                    f"  {metric}: {old_val:.3f} -> {new_val:.3f} ({sign}{delta:.3f})"
+                )
             lines.append("")
 
         lines.append("=" * 60)
@@ -192,14 +194,18 @@ def compute_diff(state1: CoreState, state2: CoreState) -> CoreStateDiff:
                 or rule1.confidence != rule2.confidence
             ):
                 rule_changes.append(
-                    RuleChange(change_type=ChangeType.MODIFIED, old_rule=rule1, new_rule=rule2)
+                    RuleChange(
+                        change_type=ChangeType.MODIFIED, old_rule=rule1, new_rule=rule2
+                    )
                 )
 
     # Find removed rules
     for rule_id, rule1 in rules1_map.items():
         if rule_id not in rules2_map:
             rule_changes.append(
-                RuleChange(change_type=ChangeType.REMOVED, old_rule=rule1, new_rule=None)
+                RuleChange(
+                    change_type=ChangeType.REMOVED, old_rule=rule1, new_rule=None
+                )
             )
 
     # Configuration changes
@@ -209,7 +215,9 @@ def compute_diff(state1: CoreState, state2: CoreState) -> CoreStateDiff:
         old_val = state1.configuration.get(key)
         new_val = state2.configuration.get(key)
         if old_val != new_val:
-            config_changes.append(ConfigChange(key=key, old_value=old_val, new_value=new_val))
+            config_changes.append(
+                ConfigChange(key=key, old_value=old_val, new_value=new_val)
+            )
 
     # Metric changes
     metric_changes: Dict[str, Tuple[float, float]] = {}

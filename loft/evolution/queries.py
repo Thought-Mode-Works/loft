@@ -134,7 +134,9 @@ class EvolutionQuery:
         self.custom_filters.append(predicate)
         return self
 
-    def sort_by(self, field: SortField, order: SortOrder = SortOrder.DESC) -> "EvolutionQuery":
+    def sort_by(
+        self, field: SortField, order: SortOrder = SortOrder.DESC
+    ) -> "EvolutionQuery":
         """Set sort field and order."""
         self.sort_field = field
         self.sort_order = order
@@ -167,7 +169,11 @@ class EvolutionQuery:
             return False
 
         # Version filters
-        rule_version = int(rule.version.split(".")[0]) if "." in rule.version else int(rule.version)
+        rule_version = (
+            int(rule.version.split(".")[0])
+            if "." in rule.version
+            else int(rule.version)
+        )
         if self.min_version is not None and rule_version < self.min_version:
             return False
         if self.max_version is not None and rule_version > self.max_version:
@@ -207,7 +213,11 @@ class EvolutionQuery:
         if self.sort_field == SortField.CREATED_AT:
             return rule.created_at
         elif self.sort_field == SortField.VERSION:
-            return int(rule.version.split(".")[0]) if "." in rule.version else int(rule.version)
+            return (
+                int(rule.version.split(".")[0])
+                if "." in rule.version
+                else int(rule.version)
+            )
         elif self.sort_field == SortField.ACCURACY:
             return rule.current_accuracy
         elif self.sort_field == SortField.LAYER:
@@ -353,7 +363,9 @@ class RuleEvolutionDB:
 
         # Sort by version
         versions.sort(
-            key=lambda r: int(r.version.split(".")[0]) if "." in r.version else int(r.version)
+            key=lambda r: (
+                int(r.version.split(".")[0]) if "." in r.version else int(r.version)
+            )
         )
         return versions
 
@@ -405,7 +417,9 @@ class RuleEvolutionDB:
         all_tests = self.storage.load_all_ab_tests()
         return [t for t in all_tests if t.completed_at is None]
 
-    def get_completed_ab_tests(self, winner: Optional[str] = None) -> List[ABTestResult]:
+    def get_completed_ab_tests(
+        self, winner: Optional[str] = None
+    ) -> List[ABTestResult]:
         """
         Get completed A/B tests, optionally filtered by winner.
 
@@ -464,17 +478,24 @@ class RuleEvolutionDB:
 
         # Version stats
         versions = [
-            int(r.version.split(".")[0]) if "." in r.version else int(r.version) for r in rules
+            int(r.version.split(".")[0]) if "." in r.version else int(r.version)
+            for r in rules
         ]
         avg_versions = sum(versions) / len(versions) if versions else 0.0
 
         # Dialectical stats
-        rules_with_dialectical = sum(1 for r in rules if r.dialectical.cycles_completed > 0)
+        rules_with_dialectical = sum(
+            1 for r in rules if r.dialectical.cycles_completed > 0
+        )
         dialectical_cycles = [
-            r.dialectical.cycles_completed for r in rules if r.dialectical.cycles_completed > 0
+            r.dialectical.cycles_completed
+            for r in rules
+            if r.dialectical.cycles_completed > 0
         ]
         avg_dialectical = (
-            sum(dialectical_cycles) / len(dialectical_cycles) if dialectical_cycles else 0.0
+            sum(dialectical_cycles) / len(dialectical_cycles)
+            if dialectical_cycles
+            else 0.0
         )
 
         return {
@@ -571,5 +592,7 @@ class RuleEvolutionDB:
         Returns:
             List of recent rules
         """
-        query = EvolutionQuery().sort_by(SortField.CREATED_AT, SortOrder.DESC).limit(limit)
+        query = (
+            EvolutionQuery().sort_by(SortField.CREATED_AT, SortOrder.DESC).limit(limit)
+        )
         return self.execute(query).rules

@@ -70,7 +70,9 @@ class Synthesizer:
             return self._mock_synthesis(thesis, antithesis, existing_rules)
 
         # Build synthesis prompt
-        prompt = self._build_synthesis_prompt(thesis, antithesis, existing_rules, context)
+        prompt = self._build_synthesis_prompt(
+            thesis, antithesis, existing_rules, context
+        )
 
         try:
             logger.debug("Calling LLM for synthesis")
@@ -130,7 +132,9 @@ class Synthesizer:
             ]
         )
 
-        edge_cases_summary = "\n".join([f"- {ec.description}" for ec in antithesis.edge_cases])
+        edge_cases_summary = "\n".join(
+            [f"- {ec.description}" for ec in antithesis.edge_cases]
+        )
 
         contradictions_summary = "\n".join(
             [f"- {c.description}" for c in antithesis.contradictions]
@@ -222,7 +226,9 @@ Example:
             raise ValueError("No LLM client configured")
 
         logger.debug(
-            f"LLM Request:\n{prompt[:500]}..." if len(prompt) > 500 else f"LLM Request:\n{prompt}"
+            f"LLM Request:\n{prompt[:500]}..."
+            if len(prompt) > 500
+            else f"LLM Request:\n{prompt}"
         )
 
         # Use LLMInterface.query() method
@@ -260,8 +266,13 @@ Example:
                 ):
                     synthesized = synthesized.replace(".", ", consideration(C).")
                     changes.append("Added consideration requirement")
-                if "capacity" in issue.description.lower() and "capacity" not in synthesized:
-                    synthesized = synthesized.replace(".", ", capacity(P1), capacity(P2).")
+                if (
+                    "capacity" in issue.description.lower()
+                    and "capacity" not in synthesized
+                ):
+                    synthesized = synthesized.replace(
+                        ".", ", capacity(P1), capacity(P2)."
+                    )
                     changes.append("Added capacity checks")
 
         # If no changes, return thesis

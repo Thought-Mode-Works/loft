@@ -141,7 +141,11 @@ class TestConsistencyCheckPipeline:
                 enhanced = reporter.report(report, len(state.rules), save_history=True)
 
                 results.append(
-                    {"state_id": state.state_id, "passed": report.passed, "report": enhanced}
+                    {
+                        "state_id": state.state_id,
+                        "passed": report.passed,
+                        "report": enhanced,
+                    }
                 )
 
             # Verify all checks completed

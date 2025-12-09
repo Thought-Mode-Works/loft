@@ -314,7 +314,9 @@ class TestValidateConfig:
 
         warnings = validate_config(config)
 
-        assert any("courtlistener" in w.lower() and "no API key" in w.lower() for w in warnings)
+        assert any(
+            "courtlistener" in w.lower() and "no API key" in w.lower() for w in warnings
+        )
 
     def test_validate_config_low_timeout(self):
         """Test validation warns about very low timeout."""

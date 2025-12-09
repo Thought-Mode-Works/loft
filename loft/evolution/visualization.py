@@ -81,7 +81,9 @@ def format_rule_history(
             for critique in rule.dialectical.antithesis_critiques[:2]:
                 lines.append(f"   [Antithesis] {critique[:50]}...")
             if rule.dialectical.synthesis_rule:
-                lines.append(f"   [Synthesis] {rule.dialectical.synthesis_rule[:50]}...")
+                lines.append(
+                    f"   [Synthesis] {rule.dialectical.synthesis_rule[:50]}..."
+                )
 
         lines.append("│")
 
@@ -279,7 +281,9 @@ def format_ab_test_dashboard(
                 sig_str = "significant"
             else:
                 sig_str = "not significant"
-            lines.append(f"├─ Statistical significance: p={test.p_value:.3f} ({sig_str})")
+            lines.append(
+                f"├─ Statistical significance: p={test.p_value:.3f} ({sig_str})"
+            )
 
         # Recommendation
         if test.winner:
@@ -340,7 +344,11 @@ def format_stratification_timeline(
             for i, (timestamp, hist_layer) in enumerate(rule.layer_history):
                 if hist_layer == layer:
                     # Calculate position
-                    pos = int((timestamp - start_time).total_seconds() / total_duration * width)
+                    pos = int(
+                        (timestamp - start_time).total_seconds()
+                        / total_duration
+                        * width
+                    )
 
                     # Add empty space before
                     bar += "░" * (pos - current_pos)
@@ -349,7 +357,9 @@ def format_stratification_timeline(
                     if i + 1 < len(rule.layer_history):
                         next_time = rule.layer_history[i + 1][0]
                         end_pos = int(
-                            (next_time - start_time).total_seconds() / total_duration * width
+                            (next_time - start_time).total_seconds()
+                            / total_duration
+                            * width
                         )
                     else:
                         end_pos = width

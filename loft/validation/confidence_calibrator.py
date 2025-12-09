@@ -30,9 +30,13 @@ class ConfidenceCalibrator:
         self.min_calibration_points = min_calibration_points
         self.last_calibration_report: Optional[CalibrationReport] = None
 
-        logger.debug(f"Initialized ConfidenceCalibrator (min_points={min_calibration_points})")
+        logger.debug(
+            f"Initialized ConfidenceCalibrator (min_points={min_calibration_points})"
+        )
 
-    def record(self, predicted_confidence: float, actual_accuracy: float, rule_id: str) -> None:
+    def record(
+        self, predicted_confidence: float, actual_accuracy: float, rule_id: str
+    ) -> None:
         """
         Record a calibration data point.
 
@@ -81,7 +85,9 @@ class ConfidenceCalibrator:
                 f"have {len(self.calibration_data)}"
             )
 
-        logger.info(f"Calibrating with {len(self.calibration_data)} points using {method}")
+        logger.info(
+            f"Calibrating with {len(self.calibration_data)} points using {method}"
+        )
 
         predicted = [p.predicted for p in self.calibration_data]
         actual = [p.actual for p in self.calibration_data]
@@ -149,7 +155,9 @@ class ConfidenceCalibrator:
 
         return calibrated
 
-    def _isotonic_calibration(self, predicted: List[float], actual: List[float]) -> Callable:
+    def _isotonic_calibration(
+        self, predicted: List[float], actual: List[float]
+    ) -> Callable:
         """
         Isotonic regression calibration.
 
@@ -180,7 +188,9 @@ class ConfidenceCalibrator:
             logger.warning("sklearn not available, falling back to linear calibration")
             return self._linear_calibration(predicted, actual)
 
-    def _linear_calibration(self, predicted: List[float], actual: List[float]) -> Callable:
+    def _linear_calibration(
+        self, predicted: List[float], actual: List[float]
+    ) -> Callable:
         """
         Linear calibration (Platt scaling).
 
@@ -201,7 +211,9 @@ class ConfidenceCalibrator:
         mean_pred = statistics.mean(predicted)
         mean_actual = statistics.mean(actual)
 
-        numerator = sum((p - mean_pred) * (a - mean_actual) for p, a in zip(predicted, actual))
+        numerator = sum(
+            (p - mean_pred) * (a - mean_actual) for p, a in zip(predicted, actual)
+        )
         denominator = sum((p - mean_pred) ** 2 for p in predicted)
 
         if denominator > 0:

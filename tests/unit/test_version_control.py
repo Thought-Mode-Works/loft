@@ -259,8 +259,12 @@ class TestDiff:
 
     def test_diff_config_changed(self) -> None:
         """Test diff with configuration changes."""
-        state1 = CoreState("s1", datetime.utcnow().isoformat(), [], {"param": "old"}, {})
-        state2 = CoreState("s2", datetime.utcnow().isoformat(), [], {"param": "new"}, {})
+        state1 = CoreState(
+            "s1", datetime.utcnow().isoformat(), [], {"param": "old"}, {}
+        )
+        state2 = CoreState(
+            "s2", datetime.utcnow().isoformat(), [], {"param": "new"}, {}
+        )
 
         diff = compute_diff(state1, state2)
         assert diff.has_changes()
@@ -434,8 +438,12 @@ class TestVersionControl:
         with tempfile.TemporaryDirectory() as tmpdir:
             vc = VersionControl(storage_dir=Path(tmpdir))
 
-            state1 = CoreState("s1", datetime.utcnow().isoformat(), [], {"test": "value1"}, {})
-            state2 = CoreState("s2", datetime.utcnow().isoformat(), [], {"test": "value2"}, {})
+            state1 = CoreState(
+                "s1", datetime.utcnow().isoformat(), [], {"test": "value1"}, {}
+            )
+            state2 = CoreState(
+                "s2", datetime.utcnow().isoformat(), [], {"test": "value2"}, {}
+            )
 
             commit1 = vc.commit(state1, "Commit 1")
             vc.commit(state2, "Commit 2")

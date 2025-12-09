@@ -51,7 +51,9 @@ class TestABTestingSchemas:
             new_predicates=["test"],
         )
 
-        variant = RuleVariant(variant_id="v1", rule=rule, strategy="balanced", description="Test")
+        variant = RuleVariant(
+            variant_id="v1", rule=rule, strategy="balanced", description="Test"
+        )
 
         performance = VariantPerformance(
             variant=variant,
@@ -162,7 +164,10 @@ class TestABTestingFramework:
         )
 
         return RuleVariant(
-            variant_id=variant_id, rule=rule, strategy=strategy, description=f"Test {variant_id}"
+            variant_id=variant_id,
+            rule=rule,
+            strategy=strategy,
+            description=f"Test {variant_id}",
         )
 
     def test_framework_initialization(self):
@@ -231,7 +236,8 @@ class TestABTestingFramework:
     def test_selection_criterion_simplicity(self):
         """Test winner selection based on simplicity."""
         framework = ABTestingFramework(
-            test_suite=SimpleTestSuite(), selection_criterion=SelectionCriteria.SIMPLICITY
+            test_suite=SimpleTestSuite(),
+            selection_criterion=SelectionCriteria.SIMPLICITY,
         )
 
         # Create variants with different predicate counts
@@ -255,7 +261,9 @@ class TestABTestingFramework:
             new_predicates=["complex"],
         )
 
-        v1 = RuleVariant(variant_id="simple", rule=rule1, strategy="balanced", description="Simple")
+        v1 = RuleVariant(
+            variant_id="simple", rule=rule1, strategy="balanced", description="Simple"
+        )
         v2 = RuleVariant(
             variant_id="complex", rule=rule2, strategy="balanced", description="Complex"
         )

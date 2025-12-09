@@ -51,7 +51,12 @@ class TestStratificationLevelStrategy:
         @settings(max_examples=10)
         def check_enum(level):
             assert hasattr(level, "value")
-            assert level.value in ["constitutional", "strategic", "tactical", "operational"]
+            assert level.value in [
+                "constitutional",
+                "strategic",
+                "tactical",
+                "operational",
+            ]
 
         check_enum()
 
@@ -222,7 +227,9 @@ class TestAspRuleStrategy:
         rules_without_negation = 0
 
         @given(asp_rule_strategy())
-        @settings(max_examples=50, suppress_health_check=[HealthCheck.large_base_example])
+        @settings(
+            max_examples=50, suppress_health_check=[HealthCheck.large_base_example]
+        )
         def classify_rules(rule):
             nonlocal rules_with_negation, rules_without_negation
             body = rule.split(":-")[1]

@@ -290,7 +290,9 @@ class TestValidateNewFacts:
         mock_core = Mock()
         facts = ["contract(c1)."]
 
-        is_valid, message = validate_new_facts(mock_core, facts, check_consistency=False)
+        is_valid, message = validate_new_facts(
+            mock_core, facts, check_consistency=False
+        )
         assert is_valid
         assert "disabled" in message.lower()
 

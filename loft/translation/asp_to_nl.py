@@ -336,7 +336,10 @@ def asp_rule_to_nl(rule: str) -> str:
                 return template.format(arg=args_human[0], arg1=args_human[0]) + "."
             elif len(args) == 2:
                 return (
-                    template.format(arg=args_human[0], arg1=args_human[0], arg2=args_human[1]) + "."
+                    template.format(
+                        arg=args_human[0], arg1=args_human[0], arg2=args_human[1]
+                    )
+                    + "."
                 )
         else:
             predicate_human = humanize_predicate_name(predicate)
@@ -503,7 +506,9 @@ class ASPToNLTranslator:
             logger.warning(f"Unknown domain: {domain}, using empty templates")
             return {}
 
-    def translate_query(self, query: str, context: Optional[ASPCore] = None) -> TranslationResult:
+    def translate_query(
+        self, query: str, context: Optional[ASPCore] = None
+    ) -> TranslationResult:
         """
         Translate ASP query with full metadata.
 

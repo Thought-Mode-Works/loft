@@ -82,7 +82,11 @@ class LLMCaseProcessorAdapter:
         # Convert CaseResult to dict format expected by runner
         return {
             "case_id": result.case_id,
-            "correct": result.prediction_correct if result.prediction_correct is not None else True,
+            "correct": (
+                result.prediction_correct
+                if result.prediction_correct is not None
+                else True
+            ),
             "domain": case.get("domain", "unknown"),
             "status": result.status.value if result.status else "unknown",
             "rules_generated": result.rules_generated,
@@ -534,7 +538,9 @@ def start(
             click.echo(f"Run ID: {result.run_id}")
             click.echo(f"Duration: {result.duration_hours:.2f} hours")
             click.echo(f"Final accuracy: {result.final_metrics.overall_accuracy:.2%}")
-            click.echo(f"Report: {Path(output) / result.run_id / 'reports' / 'final_report.md'}")
+            click.echo(
+                f"Report: {Path(output) / result.run_id / 'reports' / 'final_report.md'}"
+            )
         else:
             click.echo(f"\nRun ended with status: {result.status.value}")
             if result.error_message:
@@ -684,7 +690,9 @@ def status(run_id: str, output: str) -> None:
 
         progress = state.progress
         click.echo("\nProgress:")
-        click.echo(f"  Cases processed: {progress.cases_processed}/{progress.total_cases}")
+        click.echo(
+            f"  Cases processed: {progress.cases_processed}/{progress.total_cases}"
+        )
         click.echo(f"  Accuracy: {progress.current_accuracy:.2%}")
         click.echo(f"  Elapsed: {progress.elapsed_seconds / 3600:.2f} hours")
         click.echo(f"  Improvement cycles: {progress.total_cycles}")

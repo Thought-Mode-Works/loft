@@ -105,7 +105,9 @@ class CaseLawDocument:
             "court": self.court,
             "court_level": self.court_level.value if self.court_level else None,
             "docket_number": self.docket_number,
-            "decision_date": (self.decision_date.isoformat() if self.decision_date else None),
+            "decision_date": (
+                self.decision_date.isoformat() if self.decision_date else None
+            ),
             "text": self.text,
             "summary": self.summary,
             "headnotes": self.headnotes,

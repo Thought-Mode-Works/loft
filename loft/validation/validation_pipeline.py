@@ -125,7 +125,9 @@ class ValidationPipeline:
 
         # Stage 1: Syntactic Validation
         logger.info(f"Running syntactic validation for rule: {rule_id or 'unknown'}")
-        syntax_result = self.syntax_validator.validate_generated_rule(rule_asp, existing_predicates)
+        syntax_result = self.syntax_validator.validate_generated_rule(
+            rule_asp, existing_predicates
+        )
         report.add_stage("syntactic", syntax_result)
 
         if not syntax_result.is_valid:
@@ -155,7 +157,9 @@ class ValidationPipeline:
 
         # Stage 3: Empirical Validation (if test cases provided)
         if self.empirical_validator and test_cases:
-            logger.info(f"Running empirical validation for rule: {rule_id or 'unknown'}")
+            logger.info(
+                f"Running empirical validation for rule: {rule_id or 'unknown'}"
+            )
             empirical_result = self.empirical_validator.validate_rule(
                 rule_asp, test_cases, existing_rules
             )
@@ -175,7 +179,9 @@ class ValidationPipeline:
 
         # Stage 4: Consensus Validation (if validator configured)
         if self.consensus_validator and proposer_reasoning:
-            logger.info(f"Running consensus validation for rule: {rule_id or 'unknown'}")
+            logger.info(
+                f"Running consensus validation for rule: {rule_id or 'unknown'}"
+            )
             consensus_result = self.consensus_validator.validate_rule(
                 rule_asp,
                 proposer_reasoning,
@@ -193,14 +199,18 @@ class ValidationPipeline:
 
             if consensus_result.decision == "revise":
                 report.final_decision = "revise"
-                report.suggested_revisions.extend(consensus_result.suggested_revisions[:5])
+                report.suggested_revisions.extend(
+                    consensus_result.suggested_revisions[:5]
+                )
                 report.aggregate_confidence = 0.5
                 logger.info(f"Rule {rule_id} needs revision per consensus")
                 return report
 
         # Stage 5: Dialectical Validation (Phase 4.1, if enabled)
         if self.enable_dialectical and self.critic_system:
-            logger.info(f"Running dialectical validation for rule: {rule_id or 'unknown'}")
+            logger.info(
+                f"Running dialectical validation for rule: {rule_id or 'unknown'}"
+            )
 
             # Create GeneratedRule object for critic
             # Extract predicates from the rule
@@ -223,7 +233,9 @@ class ValidationPipeline:
             # Get existing rules for context
             existing_rules_list = []
             if existing_rules:
-                existing_rules_list = [r.strip() for r in existing_rules.split("\n") if r.strip()]
+                existing_rules_list = [
+                    r.strip() for r in existing_rules.split("\n") if r.strip()
+                ]
 
             # Run critique
             critique_report = self.critic_system.critique_rule(
@@ -287,7 +299,9 @@ class ValidationPipeline:
                 confidence_scores.append(critique.confidence)
 
         report.aggregate_confidence = (
-            sum(confidence_scores) / len(confidence_scores) if confidence_scores else 0.5
+            sum(confidence_scores) / len(confidence_scores)
+            if confidence_scores
+            else 0.5
         )
 
         # Final Decision

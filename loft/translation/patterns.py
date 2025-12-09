@@ -180,7 +180,9 @@ def extract_essential_elements(nl_text: str) -> Dict[str, bool]:
             or "meeting of the minds" in nl_lower
             or "agreement" in nl_lower
         ),
-        "has_writing": ("writing" in nl_lower or "written" in nl_lower or "document" in nl_lower),
+        "has_writing": (
+            "writing" in nl_lower or "written" in nl_lower or "document" in nl_lower
+        ),
         "is_signed": ("signed" in nl_lower or "signature" in nl_lower),
     }
 
@@ -203,7 +205,16 @@ def extract_parties(nl_text: str) -> List[str]:
     names = re.findall(r"\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b", nl_text)
 
     # Filter out common words that aren't names
-    common_words = {"The", "A", "An", "This", "That", "Contract", "Agreement", "Writing"}
+    common_words = {
+        "The",
+        "A",
+        "An",
+        "This",
+        "That",
+        "Contract",
+        "Agreement",
+        "Writing",
+    }
     parties = [name for name in names if name not in common_words]
 
     # Deduplicate

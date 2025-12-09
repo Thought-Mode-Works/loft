@@ -254,7 +254,11 @@ def _parse_rule_from_nl_basic(nl_rule: str) -> str:
                 if word.isalpha() and len(word) > 2:
                     body_conditions.append(f"{word}({entity_var})")
 
-        body = ", ".join(body_conditions) if body_conditions else f"{entity_var}={entity_var}"
+        body = (
+            ", ".join(body_conditions)
+            if body_conditions
+            else f"{entity_var}={entity_var}"
+        )
 
         return f"{head_predicate}({entity_var}) :- {body}."
 
@@ -353,7 +357,9 @@ class NLToASPTranslator:
         if is_rule:
             return self.translate_to_rule(nl_text)
         else:
-            return self.translate_to_rule(nl_text)  # Default to rule for most statements
+            return self.translate_to_rule(
+                nl_text
+            )  # Default to rule for most statements
 
     def extract_entities(self, nl_text: str) -> ExtractedEntities:
         """

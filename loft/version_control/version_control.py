@@ -133,7 +133,9 @@ class VersionControl:
         state2 = self._resolve_state(to_version)
 
         if not state1 or not state2:
-            raise VersionControlError(f"Could not resolve versions: {from_version}, {to_version}")
+            raise VersionControlError(
+                f"Could not resolve versions: {from_version}, {to_version}"
+            )
 
         return compute_diff(state1, state2)
 
@@ -309,7 +311,9 @@ class VersionControl:
         # Detect conflicts
         conflicts = detect_conflicts(current_state, other_state)
         if conflicts:
-            raise MergeConflictError("Merge conflicts detected:\n" + "\n".join(conflicts))
+            raise MergeConflictError(
+                "Merge conflicts detected:\n" + "\n".join(conflicts)
+            )
 
         # Merge rules (simple union for now)
         merged_rules = list(current_state.rules)
@@ -427,7 +431,9 @@ class VersionControl:
 
         return commit.state
 
-    def _validate_rollback(self, current_state: CoreState, target_state: CoreState) -> None:
+    def _validate_rollback(
+        self, current_state: CoreState, target_state: CoreState
+    ) -> None:
         """
         Validate that rollback is safe.
 
@@ -439,8 +445,12 @@ class VersionControl:
             VersionControlError: If rollback would violate safety constraints
         """
         # Check constitutional rules are preserved
-        current_const = current_state.get_rules_by_level(StratificationLevel.CONSTITUTIONAL)
-        target_const = target_state.get_rules_by_level(StratificationLevel.CONSTITUTIONAL)
+        current_const = current_state.get_rules_by_level(
+            StratificationLevel.CONSTITUTIONAL
+        )
+        target_const = target_state.get_rules_by_level(
+            StratificationLevel.CONSTITUTIONAL
+        )
 
         current_const_ids = {r.rule_id for r in current_const}
         target_const_ids = {r.rule_id for r in target_const}

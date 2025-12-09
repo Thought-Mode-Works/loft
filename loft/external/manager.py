@@ -121,7 +121,9 @@ class LegalAPIManager:
                     self._wait_for_rate_limit(provider_name)
 
                 # Execute search
-                logger.info(f"Searching {provider_name} for: {query.query_text[:50]}...")
+                logger.info(
+                    f"Searching {provider_name} for: {query.query_text[:50]}..."
+                )
                 result = client.search(query)
 
                 # Record request
@@ -257,7 +259,9 @@ class LegalAPIManager:
                         return result.documents[0]
 
             except Exception as e:
-                logger.warning(f"Error searching {provider_name} for citation '{citation}': {e}")
+                logger.warning(
+                    f"Error searching {provider_name} for citation '{citation}': {e}"
+                )
                 continue
 
         return None
@@ -354,7 +358,9 @@ class LegalAPIManager:
         if provider in self.request_history:
             self.request_history[provider].append(time.time())
 
-    def _aggregate_results(self, results: List[SearchResult], query: SearchQuery) -> SearchResult:
+    def _aggregate_results(
+        self, results: List[SearchResult], query: SearchQuery
+    ) -> SearchResult:
         """
         Aggregate results from multiple providers.
 

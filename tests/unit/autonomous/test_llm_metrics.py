@@ -205,7 +205,9 @@ class TestLLMMetricsTracker:
     def test_cost_limit_warning(self):
         """Test that warning is triggered when approaching cost limit."""
         warning_callback = MagicMock()
-        exceeded_callback = MagicMock()  # Provide exceeded callback to prevent exception
+        exceeded_callback = (
+            MagicMock()
+        )  # Provide exceeded callback to prevent exception
 
         # Calculate cost for 1000 input + 500 output tokens with Haiku pricing
         # Haiku: $1/M input, $5/M output
@@ -301,8 +303,12 @@ class TestLLMMetricsTracker:
         """Test get_metrics_summary returns complete data."""
         tracker = LLMMetricsTracker(model="claude-3-5-haiku-20241022")
 
-        tracker.record_call(OperationType.GAP_FILL, 1000, 500, success=True, duration_seconds=2.5)
-        tracker.record_call(OperationType.EXTRACTION, 800, 400, success=True, duration_seconds=1.5)
+        tracker.record_call(
+            OperationType.GAP_FILL, 1000, 500, success=True, duration_seconds=2.5
+        )
+        tracker.record_call(
+            OperationType.EXTRACTION, 800, 400, success=True, duration_seconds=1.5
+        )
 
         summary = tracker.get_metrics_summary()
 

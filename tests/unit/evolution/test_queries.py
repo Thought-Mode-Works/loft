@@ -45,7 +45,9 @@ def temp_db():
                 created_at=base_time + timedelta(days=i * 5),
                 status=RuleStatus.ACTIVE if i % 2 == 0 else RuleStatus.CANDIDATE,
                 current_layer=(
-                    StratificationLayer.OPERATIONAL if i < 3 else StratificationLayer.TACTICAL
+                    StratificationLayer.OPERATIONAL
+                    if i < 3
+                    else StratificationLayer.TACTICAL
                 ),
             )
             # Add validation result
@@ -192,7 +194,9 @@ class TestEvolutionQuery:
 
     def test_custom_filter(self):
         """Test custom predicate filter."""
-        query = EvolutionQuery().where(lambda r: r.version == "2.0" or r.version == "3.0")
+        query = EvolutionQuery().where(
+            lambda r: r.version == "2.0" or r.version == "3.0"
+        )
 
         v1 = RuleMetadata(
             rule_id="v1",
@@ -232,14 +236,20 @@ class TestRuleEvolutionDB:
 
     def test_execute_with_layer_filter(self, temp_db):
         """Test query with layer filter."""
-        result = temp_db.execute(EvolutionQuery().in_layer(StratificationLayer.TACTICAL))
+        result = temp_db.execute(
+            EvolutionQuery().in_layer(StratificationLayer.TACTICAL)
+        )
 
         assert result.count == 2  # Rules 3, 4 are tactical
-        assert all(r.current_layer == StratificationLayer.TACTICAL for r in result.rules)
+        assert all(
+            r.current_layer == StratificationLayer.TACTICAL for r in result.rules
+        )
 
     def test_execute_with_sorting(self, temp_db):
         """Test query with sorting."""
-        result = temp_db.execute(EvolutionQuery().sort_by(SortField.ACCURACY, SortOrder.DESC))
+        result = temp_db.execute(
+            EvolutionQuery().sort_by(SortField.ACCURACY, SortOrder.DESC)
+        )
 
         accuracies = [r.current_accuracy for r in result.rules]
         assert accuracies == sorted(accuracies, reverse=True)
@@ -281,7 +291,9 @@ class TestRuleEvolutionDB:
 
     def test_find_improvement_candidates(self, temp_db):
         """Test finding improvement candidates."""
-        candidates = temp_db.find_improvement_candidates(min_accuracy=0.6, max_accuracy=0.8)
+        candidates = temp_db.find_improvement_candidates(
+            min_accuracy=0.6, max_accuracy=0.8
+        )
 
         assert len(candidates) > 0
         for c in candidates:

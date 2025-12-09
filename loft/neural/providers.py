@@ -16,7 +16,12 @@ import openai
 from loguru import logger
 
 from .llm_interface import LLMProvider, LLMQuery, LLMResponse, ResponseMetadata
-from .errors import LLMProviderError, LLMParsingError, LLMRateLimitError, LLMTimeoutError
+from .errors import (
+    LLMProviderError,
+    LLMParsingError,
+    LLMRateLimitError,
+    LLMTimeoutError,
+)
 
 
 T = TypeVar("T", bound=BaseModel)
@@ -65,7 +70,9 @@ class AnthropicProvider(LLMProvider):
             if response_model or llm_query.output_schema:
                 schema = response_model or llm_query.output_schema
                 assert schema is not None  # Type narrowing
-                response = self._query_structured(messages, system_prompt, schema, llm_query)
+                response = self._query_structured(
+                    messages, system_prompt, schema, llm_query
+                )
             else:
                 response = self._query_unstructured(messages, system_prompt, llm_query)
 
@@ -83,7 +90,9 @@ class AnthropicProvider(LLMProvider):
             raise LLMTimeoutError(str(e), provider="anthropic")
         except anthropic.APIError as e:
             raise LLMProviderError(
-                str(e), provider="anthropic", status_code=getattr(e, "status_code", None)
+                str(e),
+                provider="anthropic",
+                status_code=getattr(e, "status_code", None),
             )
 
     def _build_messages(self, llm_query: LLMQuery) -> list[dict[str, str]]:
@@ -202,7 +211,9 @@ class AnthropicProvider(LLMProvider):
             tokens_output=response.usage.output_tokens,
             tokens_total=response.usage.input_tokens + response.usage.output_tokens,
             latency_ms=0.0,  # Set by caller
-            cost_usd=self.estimate_cost(response.usage.input_tokens, response.usage.output_tokens),
+            cost_usd=self.estimate_cost(
+                response.usage.input_tokens, response.usage.output_tokens
+            ),
             timestamp=datetime.utcnow().isoformat(),
             provider="anthropic",
         )
@@ -419,7 +430,11 @@ class LocalProvider(LLMProvider):
     """
 
     def __init__(
-        self, api_key: str, model: str, base_url: str = "http://localhost:11434", **kwargs: Any
+        self,
+        api_key: str,
+        model: str,
+        base_url: str = "http://localhost:11434",
+        **kwargs: Any,
     ):
         super().__init__(api_key, model, **kwargs)
         self.base_url = base_url

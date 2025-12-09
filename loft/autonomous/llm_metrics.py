@@ -332,7 +332,9 @@ class LLMMetricsTracker:
         if self._max_tokens is None:
             return False
         with self._lock:
-            return (self._total_input_tokens + self._total_output_tokens) >= self._max_tokens
+            return (
+                self._total_input_tokens + self._total_output_tokens
+            ) >= self._max_tokens
 
     def get_pricing(self, model: Optional[str] = None) -> ModelPricing:
         """Get pricing for a model.
@@ -460,7 +462,9 @@ class LLMMetricsTracker:
             error_type: Type of validation error
         """
         with self._lock:
-            self._validation_errors[error_type] = self._validation_errors.get(error_type, 0) + 1
+            self._validation_errors[error_type] = (
+                self._validation_errors.get(error_type, 0) + 1
+            )
 
     def _check_budget_limits(self) -> None:
         """Check if budget limits are approached or exceeded."""
@@ -469,7 +473,10 @@ class LLMMetricsTracker:
             cost_fraction = self._total_cost_usd / self._max_cost_usd
 
             # Warning at threshold
-            if cost_fraction >= self._warning_threshold and not self._cost_warning_issued:
+            if (
+                cost_fraction >= self._warning_threshold
+                and not self._cost_warning_issued
+            ):
                 self._cost_warning_issued = True
                 message = (
                     f"Approaching cost limit: ${self._total_cost_usd:.2f} / "
@@ -477,18 +484,22 @@ class LLMMetricsTracker:
                 )
                 logger.warning(message)
                 if self._on_budget_warning:
-                    self._on_budget_warning("cost", self._total_cost_usd, self._max_cost_usd)
+                    self._on_budget_warning(
+                        "cost", self._total_cost_usd, self._max_cost_usd
+                    )
 
             # Exceeded
             if cost_fraction >= 1.0:
-                message = (
-                    f"Cost limit exceeded: ${self._total_cost_usd:.2f} >= ${self._max_cost_usd:.2f}"
-                )
+                message = f"Cost limit exceeded: ${self._total_cost_usd:.2f} >= ${self._max_cost_usd:.2f}"
                 logger.error(message)
                 if self._on_budget_exceeded:
-                    self._on_budget_exceeded("cost", self._total_cost_usd, self._max_cost_usd)
+                    self._on_budget_exceeded(
+                        "cost", self._total_cost_usd, self._max_cost_usd
+                    )
                 else:
-                    raise BudgetExceededError(message, self._total_cost_usd, self._max_cost_usd)
+                    raise BudgetExceededError(
+                        message, self._total_cost_usd, self._max_cost_usd
+                    )
 
         # Check token limit
         if self._max_tokens is not None:
@@ -496,7 +507,10 @@ class LLMMetricsTracker:
             token_fraction = total_tokens / self._max_tokens
 
             # Warning at threshold
-            if token_fraction >= self._warning_threshold and not self._token_warning_issued:
+            if (
+                token_fraction >= self._warning_threshold
+                and not self._token_warning_issued
+            ):
                 self._token_warning_issued = True
                 message = (
                     f"Approaching token limit: {total_tokens:,} / "
@@ -504,16 +518,24 @@ class LLMMetricsTracker:
                 )
                 logger.warning(message)
                 if self._on_budget_warning:
-                    self._on_budget_warning("tokens", float(total_tokens), float(self._max_tokens))
+                    self._on_budget_warning(
+                        "tokens", float(total_tokens), float(self._max_tokens)
+                    )
 
             # Exceeded
             if token_fraction >= 1.0:
-                message = f"Token limit exceeded: {total_tokens:,} >= {self._max_tokens:,}"
+                message = (
+                    f"Token limit exceeded: {total_tokens:,} >= {self._max_tokens:,}"
+                )
                 logger.error(message)
                 if self._on_budget_exceeded:
-                    self._on_budget_exceeded("tokens", float(total_tokens), float(self._max_tokens))
+                    self._on_budget_exceeded(
+                        "tokens", float(total_tokens), float(self._max_tokens)
+                    )
                 else:
-                    raise BudgetExceededError(message, float(total_tokens), float(self._max_tokens))
+                    raise BudgetExceededError(
+                        message, float(total_tokens), float(self._max_tokens)
+                    )
 
     def _should_log(self) -> bool:
         """Check if progress should be logged."""
@@ -528,7 +550,9 @@ class LLMMetricsTracker:
         calls_per_hour = self._total_calls / elapsed_hours if elapsed_hours > 0 else 0
 
         rule_acceptance_rate = (
-            self._rules_accepted / self._rules_generated if self._rules_generated > 0 else 0
+            self._rules_accepted / self._rules_generated
+            if self._rules_generated > 0
+            else 0
         )
 
         logger.info(
@@ -552,21 +576,33 @@ class LLMMetricsTracker:
             elapsed_hours = elapsed / 3600
 
             # Calculate rates
-            calls_per_hour = self._total_calls / elapsed_hours if elapsed_hours > 0 else 0
-            cost_per_hour = self._total_cost_usd / elapsed_hours if elapsed_hours > 0 else 0
+            calls_per_hour = (
+                self._total_calls / elapsed_hours if elapsed_hours > 0 else 0
+            )
+            cost_per_hour = (
+                self._total_cost_usd / elapsed_hours if elapsed_hours > 0 else 0
+            )
 
             # Calculate success rate
-            total_success = sum(m.success_count for m in self._operation_metrics.values())
-            success_rate = total_success / self._total_calls if self._total_calls > 0 else 1.0
+            total_success = sum(
+                m.success_count for m in self._operation_metrics.values()
+            )
+            success_rate = (
+                total_success / self._total_calls if self._total_calls > 0 else 1.0
+            )
 
             # Calculate average latency
             avg_latency = (
-                self._total_duration_seconds / self._total_calls if self._total_calls > 0 else 0.0
+                self._total_duration_seconds / self._total_calls
+                if self._total_calls > 0
+                else 0.0
             )
 
             # Rule metrics
             rule_acceptance_rate = (
-                self._rules_accepted / self._rules_generated if self._rules_generated > 0 else 0
+                self._rules_accepted / self._rules_generated
+                if self._rules_generated > 0
+                else 0
             )
 
             return {

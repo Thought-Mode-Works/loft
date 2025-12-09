@@ -35,7 +35,9 @@ class TestCriticValidationIntegration:
     @pytest.fixture
     def pipeline_with_critic(self, critic):
         """Create validation pipeline with critic enabled."""
-        return ValidationPipeline(critic_system=critic, enable_dialectical=True, min_confidence=0.6)
+        return ValidationPipeline(
+            critic_system=critic, enable_dialectical=True, min_confidence=0.6
+        )
 
     def test_dialectical_validation_stage_runs(self, pipeline_with_critic):
         """Test that dialectical validation stage executes."""
@@ -126,7 +128,9 @@ class TestCriticWithRuleAccumulation:
             predicates_used=["contract", "signed"],
         )
 
-        critique = critic.critique_rule(new_rule, existing_rules, context="Contract law")
+        critique = critic.critique_rule(
+            new_rule, existing_rules, context="Contract law"
+        )
 
         # Should compare with existing rules
         assert critique.rule == new_rule.asp_rule
@@ -144,7 +148,9 @@ class TestCriticWithRuleAccumulation:
             "valid_offer(O) :- offer(O), definite(O), communicated(O)."
         ]
 
-        cycle_3_rules = cycle_2_rules + ["acceptance(A) :- acceptance(A), mirror_image(A)."]
+        cycle_3_rules = cycle_2_rules + [
+            "acceptance(A) :- acceptance(A), mirror_image(A)."
+        ]
 
         # New rule to critique against accumulated knowledge
         new_rule = make_test_rule(

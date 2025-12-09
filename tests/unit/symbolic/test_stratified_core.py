@@ -64,7 +64,9 @@ class TestStratifiedASPCore:
             confidence=1.0,
         )
 
-        result = core.add_rule(rule, StratificationLevel.CONSTITUTIONAL, bypass_checks=True)
+        result = core.add_rule(
+            rule, StratificationLevel.CONSTITUTIONAL, bypass_checks=True
+        )
 
         assert result.success
         assert result.rule_id == "const_1"
@@ -106,10 +108,15 @@ class TestStratifiedASPCore:
             confidence=1.0,
         )
 
-        result = core.add_rule(rule, StratificationLevel.CONSTITUTIONAL, is_autonomous=True)
+        result = core.add_rule(
+            rule, StratificationLevel.CONSTITUTIONAL, is_autonomous=True
+        )
 
         assert not result.success
-        assert "autonomous" in result.reason.lower() or "not allowed" in result.reason.lower()
+        assert (
+            "autonomous" in result.reason.lower()
+            or "not allowed" in result.reason.lower()
+        )
 
     def test_get_rules_by_layer(self, core):
         """Test retrieving rules by stratification layer."""
@@ -335,4 +342,7 @@ class TestStratifiedASPCore:
         )
         result2 = core.add_rule(rule2, StratificationLevel.TACTICAL)
         assert not result2.success
-        assert "cooldown" in result2.reason.lower() or "remaining" in result2.reason.lower()
+        assert (
+            "cooldown" in result2.reason.lower()
+            or "remaining" in result2.reason.lower()
+        )

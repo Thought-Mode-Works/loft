@@ -291,7 +291,10 @@ class PerformanceProfiler:
                 self.take_memory_snapshot()
 
             # Collect GC stats periodically
-            if self.enable_gc_stats and self._operation_count % self.memory_sample_interval == 0:
+            if (
+                self.enable_gc_stats
+                and self._operation_count % self.memory_sample_interval == 0
+            ):
                 self.collect_gc_stats()
 
         return result, profile_result
@@ -374,7 +377,9 @@ class PerformanceProfiler:
         Returns:
             List of slowest operations
         """
-        slow_operations = [r for r in self.profile_results if r.elapsed_ms >= threshold_ms]
+        slow_operations = [
+            r for r in self.profile_results if r.elapsed_ms >= threshold_ms
+        ]
         slow_operations.sort(key=lambda x: x.elapsed_ms, reverse=True)
         return slow_operations[:top_n]
 
@@ -387,6 +392,8 @@ class PerformanceProfiler:
         Returns:
             List of operations with high memory growth
         """
-        high_memory = [r for r in self.profile_results if r.memory_delta_mb >= threshold_mb]
+        high_memory = [
+            r for r in self.profile_results if r.memory_delta_mb >= threshold_mb
+        ]
         high_memory.sort(key=lambda x: x.memory_delta_mb, reverse=True)
         return high_memory

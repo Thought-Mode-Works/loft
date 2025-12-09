@@ -84,11 +84,15 @@ class EmpiricalValidationResult(BaseModel):
     Measures actual performance improvement/degradation from adding a rule.
     """
 
-    accuracy: float = Field(ge=0.0, le=1.0, description="Accuracy with new rule (0.0-1.0)")
+    accuracy: float = Field(
+        ge=0.0, le=1.0, description="Accuracy with new rule (0.0-1.0)"
+    )
     baseline_accuracy: float = Field(
         ge=0.0, le=1.0, description="Accuracy without new rule (0.0-1.0)"
     )
-    improvement: float = Field(description="Change from baseline (positive = improvement)")
+    improvement: float = Field(
+        description="Change from baseline (positive = improvement)"
+    )
     test_cases_passed: int = Field(description="Number of test cases passed")
     test_cases_failed: int = Field(description="Number of test cases failed")
     total_test_cases: int = Field(description="Total test cases evaluated")
@@ -132,7 +136,9 @@ class ConsensusValidationResult(BaseModel):
     Aggregates votes from multiple LLMs to determine acceptance.
     """
 
-    decision: Literal["accept", "reject", "revise"] = Field(description="Consensus decision")
+    decision: Literal["accept", "reject", "revise"] = Field(
+        description="Consensus decision"
+    )
     votes: List[Any] = Field(
         description="Individual votes from each LLM"
     )  # List[ConsensusVote] but avoid circular import
@@ -162,15 +168,21 @@ class ConsensusValidationResult(BaseModel):
             f"Consensus Strength: {self.consensus_strength:.2%}",
             "",
             "Vote Distribution:",
-            f"  Accept:  {self.accept_weight / total_weight:.1%}"
-            if total_weight > 0
-            else "  Accept:  0.0%",
-            f"  Reject:  {self.reject_weight / total_weight:.1%}"
-            if total_weight > 0
-            else "  Reject:  0.0%",
-            f"  Revise:  {self.revise_weight / total_weight:.1%}"
-            if total_weight > 0
-            else "  Revise:  0.0%",
+            (
+                f"  Accept:  {self.accept_weight / total_weight:.1%}"
+                if total_weight > 0
+                else "  Accept:  0.0%"
+            ),
+            (
+                f"  Reject:  {self.reject_weight / total_weight:.1%}"
+                if total_weight > 0
+                else "  Reject:  0.0%"
+            ),
+            (
+                f"  Revise:  {self.revise_weight / total_weight:.1%}"
+                if total_weight > 0
+                else "  Revise:  0.0%"
+            ),
         ]
 
         if self.suggested_revisions:
@@ -280,7 +292,9 @@ class ValidationReport(BaseModel):
         if self.suggested_revisions:
             lines.append(f"\nSuggested Revisions ({len(self.suggested_revisions)}):")
             for i, revision in enumerate(self.suggested_revisions[:3], 1):
-                lines.append(f"  {i}. {revision[:100]}{'...' if len(revision) > 100 else ''}")
+                lines.append(
+                    f"  {i}. {revision[:100]}{'...' if len(revision) > 100 else ''}"
+                )
 
         lines.append("=" * 80)
 

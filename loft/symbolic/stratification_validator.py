@@ -121,7 +121,9 @@ class StratificationValidator:
         """
         violations = []
 
-        constitutional_rules = core.get_rules_by_layer(StratificationLevel.CONSTITUTIONAL)
+        constitutional_rules = core.get_rules_by_layer(
+            StratificationLevel.CONSTITUTIONAL
+        )
 
         # Check if any rules were added or removed
         initial_ids = {r.rule_id for r in self.initial_constitutional_rules}

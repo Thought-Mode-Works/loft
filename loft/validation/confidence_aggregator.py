@@ -31,7 +31,11 @@ class ConfidenceAggregator:
         "consensus": 0.20,  # Multi-LLM agreement
     }
 
-    def __init__(self, weights: Optional[Dict[str, float]] = None, variance_threshold: float = 0.1):
+    def __init__(
+        self,
+        weights: Optional[Dict[str, float]] = None,
+        variance_threshold: float = 0.1,
+    ):
         """
         Initialize confidence aggregator.
 
@@ -114,7 +118,8 @@ class ConfidenceAggregator:
 
         # Weighted sum
         aggregate_score = sum(
-            active_weights.get(source, 0.0) * score for source, score in components.items()
+            active_weights.get(source, 0.0) * score
+            for source, score in components.items()
         )
 
         # Compute variance to measure agreement
@@ -136,7 +141,9 @@ class ConfidenceAggregator:
             is_reliable=is_reliable,
         )
 
-    def aggregate_from_report(self, validation_report: "ValidationReport") -> AggregatedConfidence:
+    def aggregate_from_report(
+        self, validation_report: "ValidationReport"
+    ) -> AggregatedConfidence:
         """
         Aggregate confidence from a ValidationReport.
 
@@ -175,7 +182,9 @@ class ConfidenceAggregator:
             consensus_strength = consensus.consensus_strength
 
         # Generation confidence (stored in metadata if available)
-        generation_confidence = validation_report.metadata.get("generation_confidence", 0.5)
+        generation_confidence = validation_report.metadata.get(
+            "generation_confidence", 0.5
+        )
 
         return self.aggregate(
             generation_confidence=generation_confidence,

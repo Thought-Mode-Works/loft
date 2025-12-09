@@ -312,9 +312,7 @@ class TestASPReasonerIntegration:
             "enforceable(C) :- contract(C), subject_matter(C, land), has_writing(C, yes).",
             "unenforceable(C) :- contract(C), subject_matter(C, land), has_writing(C, no).",
         ]
-        facts = (
-            "contract(c1). subject_matter(c1, land). parties(c1, alice, bob). has_writing(c1, yes)."
-        )
+        facts = "contract(c1). subject_matter(c1, land). parties(c1, alice, bob). has_writing(c1, yes)."
 
         result = reasoner.reason(rules, facts)
 

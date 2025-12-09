@@ -152,7 +152,9 @@ class TestCourtListenerSearch:
         mock_response = Mock()
         mock_response.json.return_value = {
             "count": 100,
-            "results": [{"id": i, "case_name": f"Case {i}", "court": "ca9"} for i in range(10)],
+            "results": [
+                {"id": i, "case_name": f"Case {i}", "court": "ca9"} for i in range(10)
+            ],
             "next": "https://example.com/next",
         }
         mock_response.raise_for_status = Mock()
@@ -612,7 +614,9 @@ class TestCourtListenerErrorHandling:
     def test_handle_rate_limit_error(self, mock_get, client):
         """Test rate limit error handling."""
         mock_response = Mock()
-        mock_response.raise_for_status.side_effect = Exception("429 Rate limit exceeded")
+        mock_response.raise_for_status.side_effect = Exception(
+            "429 Rate limit exceeded"
+        )
         mock_get.return_value = mock_response
 
         query = SearchQuery(query_text="test")
@@ -637,7 +641,9 @@ class TestCourtListenerErrorHandling:
     def test_handle_server_error(self, mock_get, client):
         """Test server error handling."""
         mock_response = Mock()
-        mock_response.raise_for_status.side_effect = Exception("500 Internal Server Error")
+        mock_response.raise_for_status.side_effect = Exception(
+            "500 Internal Server Error"
+        )
         mock_get.return_value = mock_response
 
         query = SearchQuery(query_text="test")

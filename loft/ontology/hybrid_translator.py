@@ -64,7 +64,9 @@ class TranslationStats:
         """Fraction of successful translations."""
         if self.total_predicates == 0:
             return 0.0
-        return (self.canonical_translations + self.llm_translations) / self.total_predicates
+        return (
+            self.canonical_translations + self.llm_translations
+        ) / self.total_predicates
 
     def to_dict(self) -> Dict:
         """Convert to dictionary."""
@@ -159,7 +161,9 @@ class HybridTranslator:
         self.enable_llm = enable_llm
 
         # Cache for LLM translations: (predicate, source, target) -> (result, confidence)
-        self._llm_cache: Dict[Tuple[str, str, str], Tuple[Optional[str], float, str]] = {}
+        self._llm_cache: Dict[
+            Tuple[str, str, str], Tuple[Optional[str], float, str]
+        ] = {}
 
         # Translation statistics
         self.stats = TranslationStats()
@@ -241,7 +245,9 @@ class HybridTranslator:
 
         if result is not None:
             self.stats.llm_translations += 1
-            logger.debug(f"LLM translation: {predicate} -> {result} (conf: {confidence:.2f})")
+            logger.debug(
+                f"LLM translation: {predicate} -> {result} (conf: {confidence:.2f})"
+            )
         else:
             self.stats.failed_translations += 1
             logger.debug(f"No translation found for: {predicate}")
@@ -406,7 +412,9 @@ class HybridTranslator:
             translated=translated_rule,
             confidence=overall_confidence,
             method=overall_method,
-            reasoning=", ".join(reasoning_parts) if reasoning_parts else "No changes needed",
+            reasoning=(
+                ", ".join(reasoning_parts) if reasoning_parts else "No changes needed"
+            ),
             translations=translations,
         )
 
@@ -516,16 +524,22 @@ class HybridTranslator:
             canonical_uri = URIRef(f"https://loft.legal/canonical/{canonical_name}")
 
             # Add canonical predicate
-            self.canonical.graph.add((canonical_uri, RDF.type, CANON.CanonicalPredicate))
+            self.canonical.graph.add(
+                (canonical_uri, RDF.type, CANON.CanonicalPredicate)
+            )
 
             # Add source domain mapping
-            source_uri = URIRef(f"https://loft.legal/domains/{source_domain}/{source_pred}")
+            source_uri = URIRef(
+                f"https://loft.legal/domains/{source_domain}/{source_pred}"
+            )
             self.canonical.graph.add((source_uri, RDF.type, CANON.DomainPredicate))
             self.canonical.graph.add((source_uri, CANON.mapsTo, canonical_uri))
             self.canonical.graph.add((source_uri, LOFT.domain, Literal(source_domain)))
 
             # Add target domain mapping
-            target_uri = URIRef(f"https://loft.legal/domains/{target_domain}/{target_pred}")
+            target_uri = URIRef(
+                f"https://loft.legal/domains/{target_domain}/{target_pred}"
+            )
             self.canonical.graph.add((target_uri, RDF.type, CANON.DomainPredicate))
             self.canonical.graph.add((target_uri, CANON.mapsTo, canonical_uri))
             self.canonical.graph.add((target_uri, LOFT.domain, Literal(target_domain)))
