@@ -1059,3 +1059,29 @@ class TestRouteTaskInputValidation:
             TaskRoutingError, match="input_data cannot be an empty dictionary"
         ):
             mock_orchestrator.route_task(TaskType.RULE_GENERATION, {})
+
+    def test_empty_list_input_data_raises_error(self, mock_orchestrator):
+        """Test that empty list input_data raises TaskRoutingError."""
+        with pytest.raises(
+            TaskRoutingError, match="input_data cannot be an empty list"
+        ):
+            mock_orchestrator.route_task(TaskType.RULE_GENERATION, [])
+
+
+class TestCacheTTLBoundaryValues:
+    """Tests for cache_ttl_seconds boundary values."""
+
+    def test_positive_cache_ttl_allowed(self):
+        """Test that positive cache_ttl_seconds is allowed."""
+        config = OrchestratorConfig(cache_ttl_seconds=3600)
+        assert config.cache_ttl_seconds == 3600
+
+    def test_large_cache_ttl_allowed(self):
+        """Test that large cache_ttl_seconds is allowed."""
+        config = OrchestratorConfig(cache_ttl_seconds=86400)  # 1 day
+        assert config.cache_ttl_seconds == 86400
+
+    def test_boundary_negative_one_raises_error(self):
+        """Test that -1 cache_ttl_seconds raises ValueError."""
+        with pytest.raises(ValueError, match="cache_ttl_seconds must be non-negative"):
+            OrchestratorConfig(cache_ttl_seconds=-1)

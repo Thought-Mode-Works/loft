@@ -1225,6 +1225,8 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
             raise TaskRoutingError("input_data cannot be empty")
         if isinstance(input_data, dict) and not input_data:
             raise TaskRoutingError("input_data cannot be an empty dictionary")
+        if isinstance(input_data, list) and not input_data:
+            raise TaskRoutingError("input_data cannot be an empty list")
 
         start_time = time.time()
         logger.info(f"Routing task: {task_type.value}")
