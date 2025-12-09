@@ -5,7 +5,7 @@ This package contains specialized LLMs for different aspects of ASP rule generat
 - LogicGeneratorLLM: Fine-tuned/optimized for formal ASP logic generation
 - CriticLLM: Specialized for edge case and contradiction detection
 - TranslatorLLM: Symbolic <-> natural language bidirectional conversion
-- MetaReasonerLLM: Reasoning about reasoning (future)
+- MetaReasonerLLM: Reasoning about reasoning (meta-level analysis)
 
 Architecture enhancements (based on multi-agent review PR #194):
 - Strategy Pattern for flexible optimization approaches
@@ -79,6 +79,33 @@ from .translator import (
     TranslationError,
 )
 
+from .meta_reasoner import (
+    # Main class
+    MetaReasonerLLM,
+    MetaReasonerConfig,
+    # Abstract base class
+    MetaReasoner,
+    # Data classes
+    FailureRecord,
+    Insight,
+    StrategyChange,
+    ImprovementReport,
+    MetaReasoningResult,
+    # Enums
+    MetaReasoningStrategyType,
+    InsightType,
+    FailureCategory,
+    # Strategy Pattern components
+    MetaReasoningStrategy,
+    AnalyticalStrategy,
+    ReflectiveStrategy,
+    ComparativeStrategy,
+    DiagnosticStrategy,
+    create_meta_reasoning_strategy,
+    # Exceptions
+    MetaReasoningError,
+)
+
 __all__ = [
     # Logic Generator
     "LogicGeneratorLLM",
@@ -125,4 +152,23 @@ __all__ = [
     "PedagogicalStrategy",
     "create_translation_strategy",
     "TranslationError",
+    # Meta-Reasoner LLM
+    "MetaReasonerLLM",
+    "MetaReasonerConfig",
+    "MetaReasoner",
+    "FailureRecord",
+    "Insight",
+    "StrategyChange",
+    "ImprovementReport",
+    "MetaReasoningResult",
+    "MetaReasoningStrategyType",
+    "InsightType",
+    "FailureCategory",
+    "MetaReasoningStrategy",
+    "AnalyticalStrategy",
+    "ReflectiveStrategy",
+    "ComparativeStrategy",
+    "DiagnosticStrategy",
+    "create_meta_reasoning_strategy",
+    "MetaReasoningError",
 ]
