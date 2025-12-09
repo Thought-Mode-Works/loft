@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import random
+import re
 import threading
 import time
 from abc import ABC, abstractmethod
@@ -457,9 +459,12 @@ class TranslatorConfig:
         strategy: Translation strategy type
         max_retries: Maximum retry attempts
         retry_base_delay_seconds: Base delay for exponential backoff
+        retry_jitter_max_seconds: Maximum jitter added to retry delays
         enable_cache: Enable caching
         cache_max_size: Maximum cache entries
-        fidelity_threshold: Minimum fidelity score for success
+        fidelity_threshold: Minimum fidelity score for success (configurable)
+        max_input_length: Maximum allowed input text length
+        enable_input_sanitization: Enable basic input sanitization
     """
 
     model: str = "claude-3-5-haiku-20241022"
@@ -468,9 +473,12 @@ class TranslatorConfig:
     strategy: TranslationStrategyType = TranslationStrategyType.LEGAL_DOMAIN
     max_retries: int = 3
     retry_base_delay_seconds: float = 1.0
+    retry_jitter_max_seconds: float = 0.5  # Jitter to prevent thundering herd
     enable_cache: bool = True
     cache_max_size: int = 100
     fidelity_threshold: float = 0.95  # Target >95% fidelity per issue #190
+    max_input_length: int = 10000  # Maximum characters for input validation
+    enable_input_sanitization: bool = True  # Enable basic input sanitization
 
 
 # =============================================================================
@@ -710,6 +718,9 @@ class TranslatorLLM(Translator):
         self._cache: Dict[str, TranslationResult] = {}
         self._cache_lock = threading.Lock()
 
+        # Fidelity threshold violations tracking
+        self._fidelity_violations = 0
+
         logger.info(
             f"Initialized TranslatorLLM: "
             f"strategy={self._strategy.strategy_type.value}, "
@@ -717,6 +728,71 @@ class TranslatorLLM(Translator):
             f"cache={'enabled' if self.config.enable_cache else 'disabled'}, "
             f"fidelity_threshold={self.config.fidelity_threshold}"
         )
+
+    def _validate_input(self, text: str, input_name: str = "input") -> None:
+        """Validate input text length and basic constraints.
+
+        Args:
+            text: Input text to validate
+            input_name: Name of the input parameter for error messages
+
+        Raises:
+            ValueError: If input exceeds maximum length
+        """
+        if len(text) > self.config.max_input_length:
+            raise ValueError(
+                f"{input_name} exceeds maximum length of "
+                f"{self.config.max_input_length} characters "
+                f"(got {len(text)} characters)"
+            )
+
+    def _sanitize_input(self, text: str) -> str:
+        """Sanitize input text to remove potentially problematic patterns.
+
+        This provides basic protection against prompt injection by removing
+        or escaping patterns that could manipulate the LLM's behavior.
+
+        Args:
+            text: Input text to sanitize
+
+        Returns:
+            Sanitized text
+        """
+        if not self.config.enable_input_sanitization:
+            return text
+
+        sanitized = text
+
+        # Remove control characters (except newlines and tabs)
+        sanitized = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", sanitized)
+
+        # Log if suspicious patterns are detected (but don't block)
+        suspicious_patterns = [
+            r"ignore\s+(previous|all|above)\s+(instructions?|prompts?)",
+            r"disregard\s+(previous|all|above)",
+            r"forget\s+(everything|all|your)\s+(instructions?|prompts?)",
+        ]
+        for pattern in suspicious_patterns:
+            if re.search(pattern, sanitized, re.IGNORECASE):
+                logger.warning(
+                    f"Suspicious pattern detected in input (potential prompt injection): "
+                    f"'{pattern}'"
+                )
+
+        return sanitized
+
+    def _calculate_retry_delay(self, attempt: int) -> float:
+        """Calculate retry delay with exponential backoff and jitter.
+
+        Args:
+            attempt: Current attempt number (0-indexed)
+
+        Returns:
+            Delay in seconds with jitter applied
+        """
+        base_delay = self.config.retry_base_delay_seconds * (2**attempt)
+        jitter = random.uniform(0, self.config.retry_jitter_max_seconds)
+        return base_delay + jitter
 
     def set_strategy(self, strategy: TranslationStrategy) -> None:
         """Change the translation strategy at runtime.
@@ -754,11 +830,15 @@ class TranslatorLLM(Translator):
             TranslationResult with natural language explanation
 
         Raises:
-            ValueError: If asp_rule is empty
+            ValueError: If asp_rule is empty or exceeds max length
             TranslationError: If translation fails after all retries
         """
         if not asp_rule or not asp_rule.strip():
             raise ValueError("asp_rule cannot be empty")
+
+        # Input validation and sanitization
+        self._validate_input(asp_rule, "asp_rule")
+        asp_rule = self._sanitize_input(asp_rule)
 
         start_time = time.time()
         self._total_translations += 1
@@ -862,8 +942,8 @@ class TranslatorLLM(Translator):
                 self._total_retries += 1
 
                 if attempt < self.config.max_retries - 1:
-                    delay = self.config.retry_base_delay_seconds * (2**attempt)
-                    logger.debug(f"Waiting {delay:.1f}s before retry")
+                    delay = self._calculate_retry_delay(attempt)
+                    logger.debug(f"Waiting {delay:.2f}s before retry (with jitter)")
                     time.sleep(delay)
                 else:
                     logger.error(
@@ -877,7 +957,7 @@ class TranslatorLLM(Translator):
                 self._total_retries += 1
 
                 if attempt < self.config.max_retries - 1:
-                    delay = self.config.retry_base_delay_seconds * (2**attempt)
+                    delay = self._calculate_retry_delay(attempt)
                     time.sleep(delay)
 
             except KeyboardInterrupt:
@@ -912,6 +992,10 @@ class TranslatorLLM(Translator):
         """
         if not description or not description.strip():
             raise ValueError("description cannot be empty")
+
+        # Input validation and sanitization
+        self._validate_input(description, "description")
+        description = self._sanitize_input(description)
 
         start_time = time.time()
         self._total_translations += 1
@@ -1017,8 +1101,8 @@ class TranslatorLLM(Translator):
                 self._total_retries += 1
 
                 if attempt < self.config.max_retries - 1:
-                    delay = self.config.retry_base_delay_seconds * (2**attempt)
-                    logger.debug(f"Waiting {delay:.1f}s before retry")
+                    delay = self._calculate_retry_delay(attempt)
+                    logger.debug(f"Waiting {delay:.2f}s before retry (with jitter)")
                     time.sleep(delay)
                 else:
                     logger.error(
@@ -1032,7 +1116,7 @@ class TranslatorLLM(Translator):
                 self._total_retries += 1
 
                 if attempt < self.config.max_retries - 1:
-                    delay = self.config.retry_base_delay_seconds * (2**attempt)
+                    delay = self._calculate_retry_delay(attempt)
                     time.sleep(delay)
 
             except KeyboardInterrupt:
@@ -1131,6 +1215,14 @@ class TranslatorLLM(Translator):
         if result.fidelity_score >= self.config.fidelity_threshold:
             self._successful_roundtrips += 1
             self._high_fidelity_roundtrips += 1
+        else:
+            # Track fidelity threshold violations for monitoring
+            self._fidelity_violations += 1
+            logger.warning(
+                f"Fidelity threshold violation: "
+                f"score={result.fidelity_score:.2f} < threshold={self.config.fidelity_threshold} "
+                f"(total violations: {self._fidelity_violations})"
+            )
 
         logger.info(
             f"Roundtrip validation complete: "
@@ -1394,6 +1486,7 @@ class TranslatorLLM(Translator):
             "roundtrip_count": self._roundtrip_count,
             "successful_roundtrips": self._successful_roundtrips,
             "high_fidelity_roundtrips": self._high_fidelity_roundtrips,
+            "fidelity_violations": self._fidelity_violations,
             "average_fidelity_score": avg_fidelity,
             "cache_hits": self._cache_hits,
             "cache_hit_rate": (
@@ -1408,6 +1501,38 @@ class TranslatorLLM(Translator):
             "fidelity_threshold": self.config.fidelity_threshold,
         }
 
+    def get_cache_statistics(self) -> Dict[str, Any]:
+        """Get detailed cache statistics for monitoring.
+
+        Returns:
+            Dictionary containing cache metrics:
+            - cache_size: Current number of cached entries
+            - cache_max_size: Maximum allowed cache size
+            - cache_hits: Total cache hits
+            - cache_hit_rate: Ratio of cache hits to total translations
+            - cache_utilization: Ratio of current size to max size
+            - cache_enabled: Whether caching is enabled
+        """
+        with self._cache_lock:
+            cache_size = len(self._cache)
+
+        return {
+            "cache_size": cache_size,
+            "cache_max_size": self.config.cache_max_size,
+            "cache_hits": self._cache_hits,
+            "cache_hit_rate": (
+                self._cache_hits / self._total_translations
+                if self._total_translations > 0
+                else 0.0
+            ),
+            "cache_utilization": (
+                cache_size / self.config.cache_max_size
+                if self.config.cache_max_size > 0
+                else 0.0
+            ),
+            "cache_enabled": self.config.enable_cache,
+        }
+
     def reset_statistics(self) -> None:
         """Reset translation statistics."""
         self._total_translations = 0
@@ -1416,6 +1541,7 @@ class TranslatorLLM(Translator):
         self._roundtrip_count = 0
         self._successful_roundtrips = 0
         self._high_fidelity_roundtrips = 0
+        self._fidelity_violations = 0
         self._cache_hits = 0
         self._total_retries = 0
         self._total_fidelity_score = 0.0
