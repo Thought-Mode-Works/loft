@@ -29,6 +29,7 @@ import re
 import threading
 import time
 from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -295,6 +296,7 @@ class MetaReasonerConfig:
         max_retries: Maximum retry attempts
         retry_base_delay_seconds: Base delay for exponential backoff
         retry_jitter_max_seconds: Maximum jitter added to retry delays
+        timeout_seconds: Timeout for individual LLM calls (None = no timeout)
         enable_cache: Enable caching
         cache_max_size: Maximum cache entries
         max_input_length: Maximum allowed input length
@@ -308,11 +310,43 @@ class MetaReasonerConfig:
     max_retries: int = 3
     retry_base_delay_seconds: float = 1.0
     retry_jitter_max_seconds: float = 0.5
+    timeout_seconds: Optional[float] = 60.0
     enable_cache: bool = True
     cache_max_size: int = 100
     max_input_length: int = 15000
     enable_input_sanitization: bool = True
     min_confidence_threshold: float = 0.5
+
+    def __post_init__(self) -> None:
+        """Validate configuration values after initialization."""
+        if not 0.0 <= self.temperature <= 2.0:
+            raise ValueError(
+                f"temperature must be between 0.0 and 2.0, got {self.temperature}"
+            )
+        if self.max_retries < 0:
+            raise ValueError(f"max_retries must be >= 0, got {self.max_retries}")
+        if self.retry_base_delay_seconds < 0:
+            raise ValueError(
+                f"retry_base_delay_seconds must be >= 0, got {self.retry_base_delay_seconds}"
+            )
+        if self.retry_jitter_max_seconds < 0:
+            raise ValueError(
+                f"retry_jitter_max_seconds must be >= 0, got {self.retry_jitter_max_seconds}"
+            )
+        if self.timeout_seconds is not None and self.timeout_seconds <= 0:
+            raise ValueError(
+                f"timeout_seconds must be > 0 or None, got {self.timeout_seconds}"
+            )
+        if self.cache_max_size < 0:
+            raise ValueError(f"cache_max_size must be >= 0, got {self.cache_max_size}")
+        if self.max_input_length <= 0:
+            raise ValueError(
+                f"max_input_length must be > 0, got {self.max_input_length}"
+            )
+        if not 0.0 <= self.min_confidence_threshold <= 1.0:
+            raise ValueError(
+                f"min_confidence_threshold must be between 0.0 and 1.0, got {self.min_confidence_threshold}"
+            )
 
 
 # =============================================================================
@@ -1612,8 +1646,64 @@ class MetaReasonerLLM(MetaReasoner):
 
             self._cache[cache_key] = result
 
-    def _call_llm_with_retry(self, prompt: str) -> str:
-        """Call LLM with retry logic.
+    def _call_llm_with_retry(self, prompt: str, context: Optional[str] = None) -> str:
+        """Call LLM with retry logic and timeout protection.
+
+        Args:
+            prompt: Prompt to send to LLM
+            context: Optional context string for enhanced error logging
+
+        Returns:
+            LLM response string
+
+        Raises:
+            MetaReasoningError: If all retries fail or timeout occurs
+        """
+        last_error = None
+        prompt_summary = prompt[:100] + "..." if len(prompt) > 100 else prompt
+        strategy_name = self._strategy.__class__.__name__
+
+        for attempt in range(self.config.max_retries):
+            try:
+                if self.config.timeout_seconds is not None:
+                    response = self._call_llm_with_timeout(prompt)
+                else:
+                    response = self._llm.generate(
+                        prompt=prompt,
+                        temperature=self.config.temperature,
+                    )
+                return response
+
+            except FuturesTimeoutError:
+                last_error = f"LLM call timed out after {self.config.timeout_seconds}s"
+                logger.warning(
+                    f"LLM call timeout (attempt {attempt + 1}/{self.config.max_retries}): "
+                    f"strategy={strategy_name}, context={context or 'N/A'}, "
+                    f"prompt_preview='{prompt_summary}'"
+                )
+
+            except Exception as e:
+                last_error = str(e)
+                logger.warning(
+                    f"LLM call failed (attempt {attempt + 1}/{self.config.max_retries}): "
+                    f"error={last_error}, strategy={strategy_name}, "
+                    f"context={context or 'N/A'}, prompt_preview='{prompt_summary}'"
+                )
+
+            if attempt < self.config.max_retries - 1:
+                delay = self._calculate_retry_delay(attempt)
+                logger.debug(f"Waiting {delay:.2f}s before retry (with jitter)")
+                time.sleep(delay)
+
+        raise MetaReasoningError(
+            f"Meta-reasoning failed after {self.config.max_retries} attempts "
+            f"(strategy={strategy_name}, context={context or 'N/A'})",
+            attempts=self.config.max_retries,
+            last_error=last_error,
+        )
+
+    def _call_llm_with_timeout(self, prompt: str) -> str:
+        """Call LLM with timeout protection using ThreadPoolExecutor.
 
         Args:
             prompt: Prompt to send to LLM
@@ -1622,35 +1712,15 @@ class MetaReasonerLLM(MetaReasoner):
             LLM response string
 
         Raises:
-            MetaReasoningError: If all retries fail
+            FuturesTimeoutError: If timeout is exceeded
         """
-        last_error = None
-
-        for attempt in range(self.config.max_retries):
-            try:
-                response = self._llm.generate(
-                    prompt=prompt,
-                    temperature=self.config.temperature,
-                )
-                return response
-
-            except Exception as e:
-                last_error = str(e)
-                logger.warning(
-                    f"LLM call failed (attempt {attempt + 1}/{self.config.max_retries}): "
-                    f"{last_error}"
-                )
-
-                if attempt < self.config.max_retries - 1:
-                    delay = self._calculate_retry_delay(attempt)
-                    logger.debug(f"Waiting {delay:.2f}s before retry (with jitter)")
-                    time.sleep(delay)
-
-        raise MetaReasoningError(
-            f"Meta-reasoning failed after {self.config.max_retries} attempts",
-            attempts=self.config.max_retries,
-            last_error=last_error,
-        )
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(
+                self._llm.generate,
+                prompt=prompt,
+                temperature=self.config.temperature,
+            )
+            return future.result(timeout=self.config.timeout_seconds)
 
     def _parse_json_response(self, response: str) -> Dict[str, Any]:
         """Parse JSON from LLM response.
