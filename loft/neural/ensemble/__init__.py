@@ -3,7 +3,7 @@ Neural ensemble components for Phase 6 heterogeneous LLM architecture.
 
 This package contains specialized LLMs for different aspects of ASP rule generation:
 - LogicGeneratorLLM: Fine-tuned/optimized for formal ASP logic generation
-- CriticLLM: Specialized for edge case and contradiction detection (future)
+- CriticLLM: Specialized for edge case and contradiction detection
 - TranslatorLLM: Symbolic <-> natural language conversion (future)
 - MetaReasonerLLM: Reasoning about reasoning (future)
 
@@ -34,15 +34,36 @@ from .logic_generator import (
     ASPGenerationError,
 )
 
+from .critic import (
+    # Main class
+    CriticLLM,
+    CriticConfig,
+    # Abstract base class
+    Critic,
+    # Data classes
+    EdgeCase,
+    Contradiction,
+    GeneralizationAssessment,
+    CriticResult,
+    # Strategy Pattern components
+    CriticStrategy,
+    CriticStrategyType,
+    AdversarialStrategy,
+    CooperativeStrategy,
+    SystematicStrategy,
+    DialecticalStrategy,
+    create_critic_strategy,
+    # Exceptions
+    CriticAnalysisError,
+)
+
 __all__ = [
-    # Main classes
+    # Logic Generator
     "LogicGeneratorLLM",
     "LogicGeneratorConfig",
     "ASPGenerationResult",
     "BenchmarkResult",
-    # Abstract base class
     "LogicGenerator",
-    # Strategy Pattern components
     "OptimizationStrategy",
     "OptimizationStrategyType",
     "PromptOptimizationStrategy",
@@ -50,6 +71,21 @@ __all__ = [
     "ChainOfThoughtStrategy",
     "SelfConsistencyStrategy",
     "create_strategy",
-    # Exceptions
     "ASPGenerationError",
+    # Critic LLM
+    "CriticLLM",
+    "CriticConfig",
+    "Critic",
+    "EdgeCase",
+    "Contradiction",
+    "GeneralizationAssessment",
+    "CriticResult",
+    "CriticStrategy",
+    "CriticStrategyType",
+    "AdversarialStrategy",
+    "CooperativeStrategy",
+    "SystematicStrategy",
+    "DialecticalStrategy",
+    "create_critic_strategy",
+    "CriticAnalysisError",
 ]
