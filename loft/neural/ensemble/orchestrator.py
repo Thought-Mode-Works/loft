@@ -25,7 +25,7 @@ import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type, TypedDict, Union
 
 from loguru import logger
 
@@ -129,6 +129,110 @@ class ModelStatus(Enum):
 
 
 # =============================================================================
+# TypedDicts for Input Data (Issue #204)
+# =============================================================================
+
+
+class RuleGenerationInput(TypedDict, total=False):
+    """Input data structure for rule generation tasks.
+
+    Attributes:
+        principle: The legal principle or statement to convert to ASP rule
+        domain: The domain context (e.g., 'legal', 'contracts', 'torts')
+        predicates: List of available predicates for rule generation
+    """
+
+    principle: str
+    domain: str
+    predicates: List[str]
+
+
+class RuleCriticismInput(TypedDict, total=False):
+    """Input data structure for rule criticism tasks.
+
+    Attributes:
+        rule: The ASP rule to analyze and critique
+        domain: The domain context for analysis
+        existing_rules: List of existing rules for consistency checking
+    """
+
+    rule: str
+    domain: str
+    existing_rules: List[str]
+
+
+class TranslationToNLInput(TypedDict, total=False):
+    """Input data structure for ASP-to-natural-language translation.
+
+    Attributes:
+        rule: The ASP rule to translate
+        domain: The domain context for translation
+    """
+
+    rule: str
+    domain: str
+
+
+class TranslationToASPInput(TypedDict, total=False):
+    """Input data structure for natural-language-to-ASP translation.
+
+    Attributes:
+        text: The natural language text to convert to ASP
+        domain: The domain context for translation
+        predicates: List of available predicates for translation
+    """
+
+    text: str
+    domain: str
+    predicates: List[str]
+
+
+class MetaAnalysisInput(TypedDict, total=False):
+    """Input data structure for meta-analysis tasks.
+
+    Attributes:
+        failures: List of failure records to analyze
+        insights: List of existing insights to consider
+    """
+
+    failures: List[Any]
+    insights: List[Any]
+
+
+class FullPipelineInput(TypedDict, total=False):
+    """Input data structure for full pipeline tasks (generate -> critique -> refine).
+
+    Attributes:
+        principle: The legal principle or statement to process
+        domain: The domain context
+        predicates: List of available predicates
+    """
+
+    principle: str
+    domain: str
+    predicates: List[str]
+
+
+# Type alias for all possible input data types
+TaskInputData = Union[
+    str,
+    RuleGenerationInput,
+    RuleCriticismInput,
+    TranslationToNLInput,
+    TranslationToASPInput,
+    MetaAnalysisInput,
+    FullPipelineInput,
+    Dict[str, Any],  # Fallback for backwards compatibility
+]
+
+# Type alias for context dictionary
+ContextDict = Dict[str, Any]
+
+# Type alias for response metadata
+ResponseMetadata = Dict[str, Any]
+
+
+# =============================================================================
 # Data Classes
 # =============================================================================
 
@@ -149,7 +253,7 @@ class ModelResponse:
     result: Any
     confidence: float
     latency_ms: float
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: ResponseMetadata = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         """Validate confidence score."""
@@ -302,7 +406,7 @@ class OrchestrationResult:
     disagreements: List[DisagreementRecord] = field(default_factory=list)
     total_latency_ms: float = 0.0
     from_cache: bool = False
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: ResponseMetadata = field(default_factory=dict)
 
 
 # =============================================================================
@@ -323,7 +427,7 @@ class VotingStrategy(ABC):
     def vote(
         self,
         responses: List[ModelResponse],
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[ContextDict] = None,
     ) -> VotingResult:
         """Perform voting on responses.
 
@@ -347,7 +451,7 @@ class UnanimousVotingStrategy(VotingStrategy):
     def vote(
         self,
         responses: List[ModelResponse],
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[ContextDict] = None,
     ) -> VotingResult:
         logger.debug("Performing unanimous voting")
         if not responses:
@@ -418,7 +522,7 @@ class MajorityVotingStrategy(VotingStrategy):
     def vote(
         self,
         responses: List[ModelResponse],
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[ContextDict] = None,
     ) -> VotingResult:
         logger.debug("Performing majority voting")
         if not responses:
@@ -498,7 +602,7 @@ class WeightedVotingStrategy(VotingStrategy):
     def vote(
         self,
         responses: List[ModelResponse],
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[ContextDict] = None,
     ) -> VotingResult:
         logger.debug("Performing weighted voting")
         if not responses:
@@ -567,7 +671,7 @@ class DialecticalVotingStrategy(VotingStrategy):
     def vote(
         self,
         responses: List[ModelResponse],
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[ContextDict] = None,
     ) -> VotingResult:
         logger.debug("Performing dialectical voting")
         if not responses:
@@ -714,7 +818,7 @@ class DisagreementResolver(ABC):
     def resolve(
         self,
         responses: List[ModelResponse],
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[ContextDict] = None,
     ) -> Tuple[Any, str]:
         """Resolve disagreement between responses.
 
@@ -738,7 +842,7 @@ class DeferToCriticResolver(DisagreementResolver):
     def resolve(
         self,
         responses: List[ModelResponse],
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[ContextDict] = None,
     ) -> Tuple[Any, str]:
         logger.debug("Resolving disagreement by deferring to critic")
 
@@ -768,7 +872,7 @@ class DeferToConfidenceResolver(DisagreementResolver):
     def resolve(
         self,
         responses: List[ModelResponse],
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[ContextDict] = None,
     ) -> Tuple[Any, str]:
         logger.debug("Resolving disagreement by selecting highest confidence")
 
@@ -789,7 +893,7 @@ class SynthesizeResolver(DisagreementResolver):
     def resolve(
         self,
         responses: List[ModelResponse],
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[ContextDict] = None,
     ) -> Tuple[Any, str]:
         logger.debug("Attempting to synthesize conflicting responses")
 
@@ -837,7 +941,7 @@ class EscalateResolver(DisagreementResolver):
     def resolve(
         self,
         responses: List[ModelResponse],
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[ContextDict] = None,
     ) -> Tuple[Any, str]:
         logger.warning("Escalating disagreement to human review")
 
@@ -863,7 +967,7 @@ class ConservativeResolver(DisagreementResolver):
     def resolve(
         self,
         responses: List[ModelResponse],
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[ContextDict] = None,
     ) -> Tuple[Any, str]:
         logger.debug("Resolving disagreement with conservative approach")
 
@@ -928,8 +1032,8 @@ class EnsembleOrchestratorBase(ABC):
     def route_task(
         self,
         task_type: TaskType,
-        input_data: Any,
-        context: Optional[Dict[str, Any]] = None,
+        input_data: TaskInputData,
+        context: Optional[ContextDict] = None,
     ) -> OrchestrationResult:
         """Route a task to appropriate specialized model(s).
 
@@ -1125,7 +1229,10 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
         return self._meta_reasoner
 
     def _get_cache_key(
-        self, task_type: TaskType, input_data: Any, context: Optional[Dict[str, Any]]
+        self,
+        task_type: TaskType,
+        input_data: TaskInputData,
+        context: Optional[ContextDict],
     ) -> str:
         """Generate a cache key for the given task."""
         key_parts = [task_type.value, str(input_data)]
@@ -1202,14 +1309,14 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
     def route_task(
         self,
         task_type: TaskType,
-        input_data: Any,
-        context: Optional[Dict[str, Any]] = None,
+        input_data: TaskInputData,
+        context: Optional[ContextDict] = None,
     ) -> OrchestrationResult:
         """Route a task to appropriate specialized model(s).
 
         Args:
             task_type: Type of task to perform
-            input_data: Input data for the task
+            input_data: Input data for the task (see TypedDicts for structure)
             context: Additional context
 
         Returns:
@@ -1269,8 +1376,8 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
 
     def _route_rule_generation(
         self,
-        input_data: Any,
-        context: Optional[Dict[str, Any]],
+        input_data: TaskInputData,
+        context: Optional[ContextDict],
     ) -> OrchestrationResult:
         """Route rule generation task."""
         logger.debug("Routing to LogicGenerator")
@@ -1328,8 +1435,8 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
 
     def _route_rule_criticism(
         self,
-        input_data: Any,
-        context: Optional[Dict[str, Any]],
+        input_data: TaskInputData,
+        context: Optional[ContextDict],
     ) -> OrchestrationResult:
         """Route rule criticism task."""
         logger.debug("Routing to Critic")
@@ -1386,8 +1493,8 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
 
     def _route_translation_to_nl(
         self,
-        input_data: Any,
-        context: Optional[Dict[str, Any]],
+        input_data: TaskInputData,
+        context: Optional[ContextDict],
     ) -> OrchestrationResult:
         """Route ASP to NL translation task."""
         logger.debug("Routing to Translator (ASP -> NL)")
@@ -1441,8 +1548,8 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
 
     def _route_translation_to_asp(
         self,
-        input_data: Any,
-        context: Optional[Dict[str, Any]],
+        input_data: TaskInputData,
+        context: Optional[ContextDict],
     ) -> OrchestrationResult:
         """Route NL to ASP translation task."""
         logger.debug("Routing to Translator (NL -> ASP)")
@@ -1499,8 +1606,8 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
 
     def _route_meta_analysis(
         self,
-        input_data: Any,
-        context: Optional[Dict[str, Any]],
+        input_data: TaskInputData,
+        context: Optional[ContextDict],
     ) -> OrchestrationResult:
         """Route meta-analysis task."""
         logger.debug("Routing to MetaReasoner")
@@ -1554,8 +1661,8 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
 
     def _route_full_pipeline(
         self,
-        input_data: Any,
-        context: Optional[Dict[str, Any]],
+        input_data: TaskInputData,
+        context: Optional[ContextDict],
     ) -> OrchestrationResult:
         """Route through full pipeline: Generate -> Critique -> Refine.
 
@@ -1650,8 +1757,8 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
     def _handle_fallback(
         self,
         task_type: TaskType,
-        input_data: Any,
-        context: Optional[Dict[str, Any]],
+        input_data: TaskInputData,
+        context: Optional[ContextDict],
         original_error: Exception,
     ) -> OrchestrationResult:
         """Handle fallback when primary routing fails."""
