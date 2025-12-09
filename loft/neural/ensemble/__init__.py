@@ -4,7 +4,7 @@ Neural ensemble components for Phase 6 heterogeneous LLM architecture.
 This package contains specialized LLMs for different aspects of ASP rule generation:
 - LogicGeneratorLLM: Fine-tuned/optimized for formal ASP logic generation
 - CriticLLM: Specialized for edge case and contradiction detection
-- TranslatorLLM: Symbolic <-> natural language conversion (future)
+- TranslatorLLM: Symbolic <-> natural language bidirectional conversion
 - MetaReasonerLLM: Reasoning about reasoning (future)
 
 Architecture enhancements (based on multi-agent review PR #194):
@@ -57,6 +57,28 @@ from .critic import (
     CriticAnalysisError,
 )
 
+from .translator import (
+    # Main class
+    TranslatorLLM,
+    TranslatorConfig,
+    # Abstract base class
+    Translator,
+    # Data classes
+    TranslationResult,
+    RoundtripResult,
+    TranslatorBenchmarkResult,
+    # Strategy Pattern components
+    TranslationStrategy,
+    TranslationStrategyType,
+    LiteralStrategy,
+    ContextualStrategy,
+    LegalDomainStrategy,
+    PedagogicalStrategy,
+    create_translation_strategy,
+    # Exceptions
+    TranslationError,
+)
+
 __all__ = [
     # Logic Generator
     "LogicGeneratorLLM",
@@ -88,4 +110,19 @@ __all__ = [
     "DialecticalStrategy",
     "create_critic_strategy",
     "CriticAnalysisError",
+    # Translator LLM
+    "TranslatorLLM",
+    "TranslatorConfig",
+    "Translator",
+    "TranslationResult",
+    "RoundtripResult",
+    "TranslatorBenchmarkResult",
+    "TranslationStrategy",
+    "TranslationStrategyType",
+    "LiteralStrategy",
+    "ContextualStrategy",
+    "LegalDomainStrategy",
+    "PedagogicalStrategy",
+    "create_translation_strategy",
+    "TranslationError",
 ]
