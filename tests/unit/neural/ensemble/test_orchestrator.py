@@ -74,6 +74,15 @@ def mock_llm_interface():
 
 
 @pytest.fixture
+def mock_orchestrator(basic_config, mock_llm_interface):
+    """Create a mock orchestrator for testing route_task validation."""
+    return EnsembleOrchestrator(
+        config=basic_config,
+        llm_interface=mock_llm_interface,
+    )
+
+
+@pytest.fixture
 def sample_model_responses():
     """Create sample model responses for testing voting."""
     return [
@@ -959,3 +968,120 @@ class TestOrchestratorIntegration:
         metrics = orchestrator.get_performance_metrics()
         assert metrics["test_model"].failed_requests == 1
         assert "TimeoutError" in metrics["test_model"].error_types
+
+
+# =============================================================================
+# Test Input Validation (Issue #203)
+# =============================================================================
+
+
+class TestOrchestratorConfigValidation:
+    """Tests for OrchestratorConfig input validation."""
+
+    def test_invalid_cache_ttl_seconds(self):
+        """Test that negative cache_ttl_seconds raises ValueError."""
+        with pytest.raises(ValueError, match="cache_ttl_seconds must be non-negative"):
+            OrchestratorConfig(cache_ttl_seconds=-1)
+
+    def test_zero_cache_ttl_seconds_allowed(self):
+        """Test that zero cache_ttl_seconds is allowed."""
+        config = OrchestratorConfig(cache_ttl_seconds=0)
+        assert config.cache_ttl_seconds == 0
+
+
+class TestWeightedVotingStrategyValidation:
+    """Tests for WeightedVotingStrategy input validation."""
+
+    def test_zero_confidence_allowed(self):
+        """Test that zero confidence is allowed."""
+        strategy = WeightedVotingStrategy()
+        responses = [
+            ModelResponse(
+                model_type="test_model",
+                result="test result",
+                confidence=0.0,
+                latency_ms=100.0,
+            )
+        ]
+        result = strategy.vote(responses)
+        assert result.decision == "test result"
+
+    def test_negative_confidence_clamped_to_zero(self):
+        """Test that negative confidence is clamped to 0.0 by ModelResponse."""
+        # ModelResponse.__post_init__ clamps confidence to [0.0, 1.0]
+        response = ModelResponse(
+            model_type="test_model",
+            result="test result",
+            confidence=-0.5,
+            latency_ms=100.0,
+        )
+        # Verify clamping occurred
+        assert response.confidence == 0.0
+
+        # Verify WeightedVotingStrategy works with clamped value
+        strategy = WeightedVotingStrategy()
+        result = strategy.vote([response])
+        assert result.decision == "test result"
+
+    def test_confidence_above_one_clamped_to_one(self):
+        """Test that confidence > 1.0 is clamped to 1.0 by ModelResponse."""
+        response = ModelResponse(
+            model_type="test_model",
+            result="test result",
+            confidence=1.5,
+            latency_ms=100.0,
+        )
+        # Verify clamping occurred
+        assert response.confidence == 1.0
+
+
+class TestRouteTaskInputValidation:
+    """Tests for EnsembleOrchestrator.route_task() input validation."""
+
+    def test_none_input_data_raises_error(self, mock_orchestrator):
+        """Test that None input_data raises TaskRoutingError."""
+        with pytest.raises(TaskRoutingError, match="input_data cannot be None"):
+            mock_orchestrator.route_task(TaskType.RULE_GENERATION, None)
+
+    def test_empty_string_input_data_raises_error(self, mock_orchestrator):
+        """Test that empty string input_data raises TaskRoutingError."""
+        with pytest.raises(TaskRoutingError, match="input_data cannot be empty"):
+            mock_orchestrator.route_task(TaskType.RULE_GENERATION, "")
+
+    def test_whitespace_only_input_data_raises_error(self, mock_orchestrator):
+        """Test that whitespace-only string raises TaskRoutingError."""
+        with pytest.raises(TaskRoutingError, match="input_data cannot be empty"):
+            mock_orchestrator.route_task(TaskType.RULE_GENERATION, "   ")
+
+    def test_empty_dict_input_data_raises_error(self, mock_orchestrator):
+        """Test that empty dict input_data raises TaskRoutingError."""
+        with pytest.raises(
+            TaskRoutingError, match="input_data cannot be an empty dictionary"
+        ):
+            mock_orchestrator.route_task(TaskType.RULE_GENERATION, {})
+
+    def test_empty_list_input_data_raises_error(self, mock_orchestrator):
+        """Test that empty list input_data raises TaskRoutingError."""
+        with pytest.raises(
+            TaskRoutingError, match="input_data cannot be an empty list"
+        ):
+            mock_orchestrator.route_task(TaskType.RULE_GENERATION, [])
+
+
+class TestCacheTTLBoundaryValues:
+    """Tests for cache_ttl_seconds boundary values."""
+
+    def test_positive_cache_ttl_allowed(self):
+        """Test that positive cache_ttl_seconds is allowed."""
+        config = OrchestratorConfig(cache_ttl_seconds=3600)
+        assert config.cache_ttl_seconds == 3600
+
+    def test_large_cache_ttl_allowed(self):
+        """Test that large cache_ttl_seconds is allowed."""
+        config = OrchestratorConfig(cache_ttl_seconds=86400)  # 1 day
+        assert config.cache_ttl_seconds == 86400
+
+    def test_boundary_negative_one_raises_error(self):
+        """Test that -1 cache_ttl_seconds raises ValueError."""
+        with pytest.raises(ValueError, match="cache_ttl_seconds must be non-negative"):
+            OrchestratorConfig(cache_ttl_seconds=-1)
