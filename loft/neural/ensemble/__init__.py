@@ -149,6 +149,36 @@ from .orchestrator import (
     FallbackExhaustedError,
 )
 
+from .prompt_optimizer import (
+    # Main class
+    ModelPromptOptimizer,
+    PromptOptimizerConfig,
+    # Abstract base class
+    PromptOptimizer,
+    # Supporting classes
+    PromptRegistry,
+    PromptPerformanceTracker,
+    ABTestingFramework,
+    # Data classes
+    ModelProfile,
+    PromptTemplate,
+    PromptPerformanceRecord,
+    ABTestResult,
+    PromptEvolutionResult,
+    OptimizationSuggestion,
+    # Enums
+    ModelType,
+    PromptTaskType,
+    PromptVariantStatus,
+    ABTestStatus,
+    # Factory functions
+    create_prompt_optimizer,
+    create_default_model_profiles,
+    # Exceptions
+    PromptOptimizationError,
+    ABTestingError,
+)
+
 __all__ = [
     # Logic Generator
     "LogicGeneratorLLM",
@@ -245,4 +275,25 @@ __all__ = [
     "VotingError",
     "DisagreementResolutionError",
     "FallbackExhaustedError",
+    # Prompt Optimizer
+    "ModelPromptOptimizer",
+    "PromptOptimizerConfig",
+    "PromptOptimizer",
+    "PromptRegistry",
+    "PromptPerformanceTracker",
+    "ABTestingFramework",
+    "ModelProfile",
+    "PromptTemplate",
+    "PromptPerformanceRecord",
+    "ABTestResult",
+    "PromptEvolutionResult",
+    "OptimizationSuggestion",
+    "ModelType",
+    "PromptTaskType",
+    "PromptVariantStatus",
+    "ABTestStatus",
+    "create_prompt_optimizer",
+    "create_default_model_profiles",
+    "PromptOptimizationError",
+    "ABTestingError",
 ]
