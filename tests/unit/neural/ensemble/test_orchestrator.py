@@ -1571,9 +1571,9 @@ class TestThreadSafety:
         # Verify total requests match expected
         total_requests = sum(m.total_requests for m in metrics.values())
         expected_requests = num_threads * updates_per_thread
-        assert total_requests == expected_requests, (
-            f"Expected {expected_requests} requests, got {total_requests}"
-        )
+        assert (
+            total_requests == expected_requests
+        ), f"Expected {expected_requests} requests, got {total_requests}"
 
     def test_concurrent_cache_operations(self, mock_llm_interface):
         """Test that concurrent cache read/write operations are thread-safe."""
@@ -1680,7 +1680,12 @@ class TestThreadSafety:
 
         def read_status(thread_id: int):
             try:
-                model_types = ["logic_generator", "critic", "translator", "meta_reasoner"]
+                model_types = [
+                    "logic_generator",
+                    "critic",
+                    "translator",
+                    "meta_reasoner",
+                ]
                 for i in range(reads_per_thread):
                     model_type = model_types[i % len(model_types)]
                     status = orchestrator.get_model_status(model_type)
