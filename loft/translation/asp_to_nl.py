@@ -37,6 +37,88 @@ LEGAL_PREDICATE_TEMPLATES = {
     "involved_in": "{arg1} is involved in {arg2}",
 }
 
+# Extended statement templates for semantic-preserving round-trip translation
+# Maps predicate patterns to declarative statement forms
+STATEMENT_TEMPLATES = {
+    # Contract formation
+    "contract_valid": "A contract is valid when it has all required elements",
+    "contract_requires": "A contract requires {elements}",
+    "requires_offer": "A contract requires an offer",
+    "requires_acceptance": "A contract requires acceptance",
+    "requires_consideration": "A contract requires consideration",
+    "has_offer": "{arg} has a valid offer",
+    "has_acceptance": "{arg} has valid acceptance",
+    "has_consideration": "{arg} has valid consideration",
+    # Statute of frauds
+    "requires_writing": "{arg} must be in writing",
+    "requires_written_form": "{arg} must be in writing",
+    "writing_required": "A written document is required for {arg}",
+    "statute_of_frauds_applies": "The statute of frauds applies to {arg}",
+    "land_sale": "{arg} is a contract for the sale of land",
+    "goods_over_500": "{arg} is a contract for goods over $500",
+    "suretyship": "{arg} is a suretyship agreement",
+    "suretyship_agreement": "{arg} is a suretyship agreement",
+    "within_one_year": "{arg} cannot be performed within one year",
+    "cannot_perform_within_year": "{arg} cannot be performed within one year",
+    # Exceptions and satisfactions
+    "part_performance": "Part performance can satisfy the statute of frauds",
+    "satisfies_sof": "{arg} satisfies the statute of frauds",
+    "exception_applies": "An exception applies to {arg}",
+    "promissory_estoppel": "Promissory estoppel may overcome the statute of frauds",
+    # Electronic signatures
+    "electronic_signature_valid": "Electronic signatures are valid",
+    "esign_applies": "The ESIGN Act applies to {arg}",
+    "electronic_signature": "{arg} has a valid electronic signature",
+    # UCC specific
+    "ucc_applies": "The UCC applies to {arg}",
+    "merchant": "{arg} is a merchant",
+    "merchant_confirmation": "A merchant confirmation creates an enforceable contract",
+    "specially_manufactured": "{arg} involves specially manufactured goods",
+    "specially_manufactured_goods": "Specially manufactured goods are exempt from the writing requirement",
+    # Admission
+    "admission_in_court": "An admission in court satisfies the statute of frauds",
+    "court_admission": "{arg} was admitted in court",
+    # Written memorandum
+    "written_memorandum": "{arg} has a written memorandum",
+    "requires_memorandum": "{arg} requires a written memorandum",
+}
+
+# Comprehensive rule templates that map ASP rule patterns to full statements
+RULE_STATEMENT_TEMPLATES = {
+    # Contract requirements rules
+    "contract_valid(X) :- has_offer(X), has_acceptance(X), has_consideration(X)": (
+        "A contract is valid if it has offer, acceptance, and consideration"
+    ),
+    "enforceable(X) :- contract(X), satisfies_sof(X)": (
+        "A contract is enforceable if it satisfies the statute of frauds"
+    ),
+    "requires_writing(X) :- land_sale(X)": ("Land sale contracts must be in writing"),
+    "requires_writing(X) :- goods_over_500(X)": (
+        "Contracts for goods over $500 require a written memorandum"
+    ),
+    "requires_writing(X) :- suretyship(X)": (
+        "Suretyship agreements must be in writing"
+    ),
+    "satisfies_sof(X) :- part_performance(X)": (
+        "Part performance can satisfy the statute of frauds"
+    ),
+    "valid_signature(X) :- electronic_signature(X), esign_applies(X)": (
+        "Electronic signatures are valid under the ESIGN Act"
+    ),
+    "exception(X) :- specially_manufactured(X)": (
+        "Specially manufactured goods are exempt from the writing requirement"
+    ),
+    "enforceable(X) :- merchant_confirmation(X)": (
+        "Merchant confirmation creates enforceable contract"
+    ),
+    "requires_writing(X) :- cannot_perform_within_year(X)": (
+        "Contracts that cannot be performed within one year require writing"
+    ),
+    "satisfies_sof(X) :- court_admission(X)": (
+        "Admission in court satisfies the statute of frauds"
+    ),
+}
+
 # ASP pattern templates for rule translation
 ASP_RULE_PATTERNS = [
     # Simple rule: head :- body
@@ -636,3 +718,369 @@ def enrich_context(query: str, asp_core: ASPCore) -> str:
     context_parts.append(asp_to_nl(query, asp_core))
 
     return "\n".join(context_parts)
+
+
+def asp_to_nl_statement(
+    asp_code: str,
+    context: Optional[ASPCore] = None,
+    original_nl: Optional[str] = None,
+) -> str:
+    """
+    Convert ASP code to a semantic-preserving natural language statement.
+
+    Unlike asp_to_nl() which generates questions, this function generates
+    declarative statements that preserve semantic content for round-trip
+    translation validation.
+
+    Args:
+        asp_code: ASP rule, fact, or query to translate
+        context: Optional ASP core for enriched context
+        original_nl: Optional original NL text to help with reconstruction
+
+    Returns:
+        Natural language statement preserving semantic content
+
+    Examples:
+        >>> asp_to_nl_statement("requires_writing(X) :- land_sale(X).")
+        'Land sale contracts must be in writing'
+
+        >>> asp_to_nl_statement("contract_valid(X) :- has_offer(X), has_acceptance(X).")
+        'A contract is valid if it has offer and acceptance'
+    """
+    asp_code = asp_code.strip()
+
+    # Check for exact rule match in templates first (highest fidelity)
+    normalized_rule = _normalize_asp_rule(asp_code)
+    if normalized_rule in RULE_STATEMENT_TEMPLATES:
+        return RULE_STATEMENT_TEMPLATES[normalized_rule]
+
+    # Try fuzzy matching with rule templates
+    best_match = _find_best_rule_match(asp_code)
+    if best_match:
+        return best_match
+
+    # Parse the ASP code and generate a statement
+    if ":-" in asp_code:
+        return _rule_to_statement(asp_code)
+    else:
+        return _fact_to_statement(asp_code)
+
+
+def _normalize_asp_rule(rule: str) -> str:
+    """Normalize ASP rule for template matching.
+
+    Removes whitespace variations and standardizes format.
+    """
+    # Remove extra whitespace
+    normalized = " ".join(rule.split())
+    # Standardize spacing around operators
+    normalized = re.sub(r"\s*:-\s*", " :- ", normalized)
+    normalized = re.sub(r"\s*,\s*", ", ", normalized)
+    # Ensure ends with period
+    if not normalized.endswith("."):
+        normalized += "."
+    return normalized
+
+
+def _find_best_rule_match(asp_code: str) -> Optional[str]:
+    """Find the best matching rule template using predicate overlap.
+
+    Returns the template statement if a good match is found.
+    """
+    predicates = extract_predicates(asp_code)
+    if not predicates:
+        return None
+
+    best_score = 0
+    best_template = None
+
+    for rule_pattern, statement in RULE_STATEMENT_TEMPLATES.items():
+        pattern_predicates = extract_predicates(rule_pattern)
+        # Calculate Jaccard similarity
+        common = len(set(predicates) & set(pattern_predicates))
+        total = len(set(predicates) | set(pattern_predicates))
+        score = common / total if total > 0 else 0
+
+        if score > best_score and score >= 0.5:  # Require at least 50% overlap
+            best_score = score
+            best_template = statement
+
+    return best_template
+
+
+def _rule_to_statement(rule: str) -> str:
+    """Convert an ASP rule to a declarative statement.
+
+    Handles rules of the form: head :- body.
+    """
+    rule = rule.strip().rstrip(".")
+
+    if ":-" not in rule:
+        return _fact_to_statement(rule + ".")
+
+    head_part, body_part = rule.split(":-", 1)
+    head = head_part.strip()
+    body = body_part.strip()
+
+    # Parse head predicate
+    head_pred, head_args = parse_predicate_call(head)
+    head_statement = _predicate_to_statement(head_pred, head_args)
+
+    # Parse body conditions
+    body_conditions = _parse_body_conditions(body)
+
+    if body_conditions:
+        return f"{head_statement} if {body_conditions}"
+    else:
+        return head_statement
+
+
+def _fact_to_statement(fact: str) -> str:
+    """Convert an ASP fact to a declarative statement."""
+    fact = fact.strip().rstrip(".")
+
+    predicate, args = parse_predicate_call(fact)
+    return _predicate_to_statement(predicate, args)
+
+
+def _predicate_to_statement(predicate: str, args: List[str]) -> str:
+    """Convert a predicate to a natural language statement.
+
+    Uses STATEMENT_TEMPLATES for known predicates, falls back to
+    LEGAL_PREDICATE_TEMPLATES, then generic translation.
+    """
+    # Check statement templates first (for single-predicate statements)
+    if predicate in STATEMENT_TEMPLATES:
+        template = STATEMENT_TEMPLATES[predicate]
+        if "{arg}" in template and args:
+            return template.format(arg=_humanize_entity(args[0]))
+        elif "{elements}" in template and args:
+            return template.format(elements=", ".join(args))
+        elif "{" not in template:
+            return template
+        else:
+            return template
+
+    # Check legal predicate templates
+    if predicate in LEGAL_PREDICATE_TEMPLATES:
+        template = LEGAL_PREDICATE_TEMPLATES[predicate]
+        if len(args) == 1:
+            humanized = _humanize_entity(args[0])
+            return template.format(arg=humanized, arg1=humanized)
+        elif len(args) >= 2:
+            arg1_human = _humanize_entity(args[0])
+            arg2_human = _humanize_entity(args[1])
+            return template.format(arg=arg1_human, arg1=arg1_human, arg2=arg2_human)
+
+    # Generate from predicate name
+    pred_human = humanize_predicate_name(predicate)
+
+    if not args:
+        return pred_human.capitalize()
+    elif len(args) == 1:
+        entity = _humanize_entity(args[0])
+        # Generate a natural statement
+        if pred_human.startswith("is_") or pred_human.startswith("has_"):
+            verb = pred_human.replace("_", " ")
+            return f"{entity} {verb}"
+        elif pred_human.startswith("requires_"):
+            requirement = pred_human.replace("requires_", "").replace("_", " ")
+            return f"{entity} requires {requirement}"
+        else:
+            return f"{entity} {pred_human.replace('_', ' ')}"
+    else:
+        args_human = [_humanize_entity(arg) for arg in args]
+        return f"{pred_human.replace('_', ' ')} applies to {', '.join(args_human)}"
+
+
+def _humanize_entity(entity: str) -> str:
+    """Convert an ASP entity to human-readable form.
+
+    Handles variables (X, Y), constants (c1, w1), and compound terms.
+    """
+    # Handle anonymous variable
+    if entity == "_":
+        return "any entity"
+
+    # Handle single uppercase variable
+    if len(entity) == 1 and entity.isupper():
+        entity_mapping = {
+            "X": "a contract",
+            "Y": "an entity",
+            "C": "a contract",
+            "W": "a writing",
+            "P": "a party",
+            "S": "a signature",
+        }
+        return entity_mapping.get(entity, "an entity")
+
+    # Handle variable names
+    if entity.isupper() or (entity[0].isupper() and "_" not in entity):
+        return f"the {entity.lower()}"
+
+    # Handle constants with type prefixes
+    type_prefixes = {
+        "contract_": "contract ",
+        "writing_": "writing ",
+        "party_": "party ",
+        "c": "contract ",
+        "w": "writing ",
+        "p": "party ",
+    }
+
+    for prefix, replacement in type_prefixes.items():
+        if entity.startswith(prefix) and len(entity) > len(prefix):
+            remainder = entity[len(prefix) :]
+            if remainder.isdigit() or remainder.isalnum():
+                return replacement + remainder
+
+    # Handle snake_case entities
+    if "_" in entity:
+        return entity.replace("_", " ")
+
+    return entity
+
+
+def _parse_body_conditions(body: str) -> str:
+    """Parse ASP rule body conditions into natural language.
+
+    Handles conjunction (,), negation (not), and comparisons.
+    """
+    parts = []
+
+    # Split by comma, handling parentheses
+    literals = _split_body_literals(body)
+
+    for literal in literals:
+        literal = literal.strip()
+
+        # Handle negation
+        if literal.startswith("not "):
+            negated = literal[4:].strip()
+            pred, args = parse_predicate_call(negated)
+            pred_statement = _predicate_to_statement(pred, args)
+            parts.append(f"it is not the case that {pred_statement}")
+        # Handle comparisons
+        elif any(op in literal for op in [">=", "<=", ">", "<", "=", "!="]):
+            parts.append(_translate_comparison(literal))
+        else:
+            pred, args = parse_predicate_call(literal)
+            pred_statement = _predicate_to_statement(pred, args)
+            # Use "it" for repeated variables
+            pred_statement = pred_statement.replace("a contract", "it")
+            pred_statement = pred_statement.replace("the contract", "it")
+            parts.append(pred_statement)
+
+    if len(parts) == 0:
+        return ""
+    elif len(parts) == 1:
+        return parts[0]
+    elif len(parts) == 2:
+        return f"{parts[0]} and {parts[1]}"
+    else:
+        return ", ".join(parts[:-1]) + f", and {parts[-1]}"
+
+
+def _split_body_literals(body: str) -> List[str]:
+    """Split ASP body by commas while respecting parentheses."""
+    literals = []
+    current = []
+    paren_depth = 0
+
+    for char in body:
+        if char == "(":
+            paren_depth += 1
+            current.append(char)
+        elif char == ")":
+            paren_depth -= 1
+            current.append(char)
+        elif char == "," and paren_depth == 0:
+            literals.append("".join(current).strip())
+            current = []
+        else:
+            current.append(char)
+
+    if current:
+        literals.append("".join(current).strip())
+
+    return literals
+
+
+def _translate_comparison(comparison: str) -> str:
+    """Translate an ASP comparison to natural language."""
+    op_translations = {
+        ">=": "is at least",
+        "<=": "is at most",
+        ">": "is greater than",
+        "<": "is less than",
+        "=": "equals",
+        "!=": "is not equal to",
+    }
+
+    for op, translation in op_translations.items():
+        if op in comparison:
+            parts = comparison.split(op)
+            if len(parts) == 2:
+                left = parts[0].strip()
+                right = parts[1].strip()
+                return f"{left} {translation} {right}"
+
+    return comparison
+
+
+class SemanticPreservingTranslator:
+    """Translator optimized for round-trip semantic preservation.
+
+    This class provides high-fidelity ASP↔NL translation that preserves
+    semantic content through translation round-trips.
+    """
+
+    def __init__(self, domain: str = "legal"):
+        """Initialize the semantic-preserving translator.
+
+        Args:
+            domain: Domain for specialized templates (default: "legal")
+        """
+        self.domain = domain
+        self.statement_templates = STATEMENT_TEMPLATES.copy()
+        self.rule_templates = RULE_STATEMENT_TEMPLATES.copy()
+        logger.info(f"Initialized SemanticPreservingTranslator for domain: {domain}")
+
+    def translate_asp_to_statement(
+        self,
+        asp_code: str,
+        original_nl: Optional[str] = None,
+    ) -> TranslationResult:
+        """Translate ASP to a semantic-preserving statement.
+
+        Args:
+            asp_code: ASP code to translate
+            original_nl: Optional original NL for reference
+
+        Returns:
+            TranslationResult with statement and metadata
+        """
+        statement = asp_to_nl_statement(asp_code, original_nl=original_nl)
+        predicates = extract_predicates(asp_code)
+
+        # Calculate confidence based on template coverage
+        template_coverage = self._calculate_template_coverage(predicates)
+
+        return TranslationResult(
+            natural_language=statement,
+            asp_source=asp_code,
+            predicates_used=predicates,
+            confidence=template_coverage,
+        )
+
+    def _calculate_template_coverage(self, predicates: List[str]) -> float:
+        """Calculate what proportion of predicates have templates."""
+        if not predicates:
+            return 1.0
+
+        covered = sum(
+            1
+            for p in predicates
+            if p in self.statement_templates or p in LEGAL_PREDICATE_TEMPLATES
+        )
+        return covered / len(predicates)
