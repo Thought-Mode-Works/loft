@@ -436,9 +436,7 @@ class TestOrchestratorCoordination:
             min_confidence_threshold=0.7,  # High threshold
             default_voting_strategy=VotingStrategyType.WEIGHTED,
         )
-        orchestrator = EnsembleOrchestrator(
-            config=config, llm_interface=mock_interface
-        )
+        orchestrator = EnsembleOrchestrator(config=config, llm_interface=mock_interface)
 
         assert orchestrator.config.min_confidence_threshold == 0.7
 
@@ -717,7 +715,9 @@ class TestMVPValidation:
         assert single_result.confidence == 1.0  # Single model also 100%
         assert len(ensemble_result.dissenting_models) == 0  # Consensus reached
         # More models = more robust agreement
-        assert len(ensemble_result.participating_models) > len(single_result.participating_models)
+        assert len(ensemble_result.participating_models) > len(
+            single_result.participating_models
+        )
 
     def test_specialized_models_outperform_general(self):
         """Validate: Specialized models outperform general-purpose."""

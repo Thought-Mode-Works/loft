@@ -520,7 +520,9 @@ class TestDeferToConfidenceResolver:
         """Test that highest confidence response is selected."""
         resolver = DeferToConfidenceResolver()
 
-        resolution, explanation = resolver.resolve(confidence_skewed_responses, "Confidence test")
+        resolution, explanation = resolver.resolve(
+            confidence_skewed_responses, "Confidence test"
+        )
 
         assert resolution == "high_conf_rule(X) :- strong_evidence(X)."
         assert "confidence" in explanation.lower()
@@ -730,7 +732,9 @@ class TestVotingDisagreementIntegration:
             # and returns the result from the first critic response found
             # In split_responses fixture, model_b has result "rule_b(X) :- cond_b(X)."
             # which will be found if there's a critic model
-            resolution, explanation = resolver.resolve(split_responses, "Split vote fallback")
+            resolution, explanation = resolver.resolve(
+                split_responses, "Split vote fallback"
+            )
             # The resolver returns the first available result or the highest confidence
             assert resolution is not None
             assert "critic" in explanation.lower() or "fall" in explanation.lower()
@@ -826,9 +830,11 @@ class TestVotingEdgeCases:
 
     def test_very_long_result_strings(self):
         """Test voting with very long result strings."""
-        long_result = "very_long_rule(X) :- " + ", ".join(
-            [f"condition_{i}(X)" for i in range(100)]
-        ) + "."
+        long_result = (
+            "very_long_rule(X) :- "
+            + ", ".join([f"condition_{i}(X)" for i in range(100)])
+            + "."
+        )
 
         responses = [
             ModelResponse(
