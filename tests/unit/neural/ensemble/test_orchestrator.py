@@ -333,6 +333,78 @@ class TestMajorityVotingStrategy:
         with pytest.raises(VotingError, match="No responses"):
             strategy.vote([])
 
+    def test_tie_breaking_by_vote_count(self):
+        """Test tie-breaking when vote counts are equal - uses avg confidence."""
+        strategy = MajorityVotingStrategy()
+
+        # Create tied vote scenario: 2 votes for "resultA", 2 votes for "resultB"
+        # resultA has higher avg confidence (0.9 vs 0.7)
+        responses = [
+            ModelResponse(
+                model_type="model1", result="resultA", confidence=0.9, latency_ms=100
+            ),
+            ModelResponse(
+                model_type="model2", result="resultA", confidence=0.9, latency_ms=100
+            ),
+            ModelResponse(
+                model_type="model3", result="resultB", confidence=0.7, latency_ms=100
+            ),
+            ModelResponse(
+                model_type="model4", result="resultB", confidence=0.7, latency_ms=100
+            ),
+        ]
+
+        result = strategy.vote(responses)
+
+        # Should choose resultA due to higher average confidence
+        assert result.decision == "resultA"
+        assert result.confidence == 0.4  # No majority, so reduced confidence
+
+    def test_tie_breaking_by_lexicographic(self):
+        """Test tie-breaking when vote count and confidence are equal - uses lexicographic order."""
+        strategy = MajorityVotingStrategy()
+
+        # Create completely tied scenario: same vote count, same avg confidence
+        # Should use lexicographic order ("aaa" < "bbb")
+        responses = [
+            ModelResponse(
+                model_type="model1", result="bbb", confidence=0.8, latency_ms=100
+            ),
+            ModelResponse(
+                model_type="model2", result="bbb", confidence=0.8, latency_ms=100
+            ),
+            ModelResponse(
+                model_type="model3", result="aaa", confidence=0.8, latency_ms=100
+            ),
+            ModelResponse(
+                model_type="model4", result="aaa", confidence=0.8, latency_ms=100
+            ),
+        ]
+
+        result = strategy.vote(responses)
+
+        # Should choose "aaa" lexicographically
+        assert result.decision == "aaa"
+        assert result.confidence == 0.4  # No majority
+
+    def test_tie_breaking_determinism(self):
+        """Test that tie-breaking produces same result across multiple runs."""
+        strategy = MajorityVotingStrategy()
+
+        # Create tied scenario
+        responses = [
+            ModelResponse(
+                model_type="model1", result="option1", confidence=0.8, latency_ms=100
+            ),
+            ModelResponse(
+                model_type="model2", result="option2", confidence=0.8, latency_ms=100
+            ),
+        ]
+
+        # Run multiple times and verify same result
+        results = [strategy.vote(responses).decision for _ in range(10)]
+        assert len(set(results)) == 1  # All results should be identical
+
 
 class TestWeightedVotingStrategy:
     """Tests for WeightedVotingStrategy."""
