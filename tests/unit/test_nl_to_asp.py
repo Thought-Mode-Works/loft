@@ -240,23 +240,23 @@ class TestNLToASPRule:
         """Test translating simple rule."""
         nl = "A contract is enforceable if it is valid"
         rule = nl_to_asp_rule(nl)
-        assert "enforceable" in rule.lower()
-        assert ":-" in rule
-        assert rule.endswith(".")
+        assert "enforceable" in rule[0].lower()
+        assert ":-" in rule[0]
+        assert rule[0].endswith(".")
 
     def test_rule_with_negation(self) -> None:
         """Test rule with unless (negation)."""
         nl = "A contract is enforceable unless proven unenforceable"
         rule = nl_to_asp_rule(nl)
-        assert "enforceable" in rule.lower()
-        assert "not" in rule.lower()
+        assert "enforceable" in rule[0].lower()
+        assert "not" in rule[0].lower()
 
     def test_unparseable_rule(self) -> None:
         """Test with unparseable rule."""
         nl = "Some random text"
         rule = nl_to_asp_rule(nl)
         # Should return comment for unparseable rules
-        assert "%" in rule or ":-" in rule
+        assert "%" in rule[0] or ":-" in rule[0]
 
 
 class TestNLToASPTranslator:

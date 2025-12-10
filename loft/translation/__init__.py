@@ -58,6 +58,10 @@ from .quality import (
     QualityMetrics,
 )
 
+# Context-preserving translation
+from .context import TranslationContext
+from .context_preserving_translator import ContextPreservingTranslator
+
 __all__ = [
     # ASP → NL
     "asp_to_nl",
@@ -73,6 +77,9 @@ __all__ = [
     "nl_to_asp_rule",
     "NLToASPTranslator",
     "NLToASPResult",
+    # Context-preserving translation
+    "TranslationContext",
+    "ContextPreservingTranslator",
     # Schemas
     "ContractFact",
     "Party",
