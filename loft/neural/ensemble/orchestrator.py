@@ -84,6 +84,74 @@ class FallbackExhaustedError(OrchestratorError):
     pass
 
 
+class AggregatedOrchestrationError(OrchestratorError):
+    """Exception that aggregates multiple model errors during orchestration.
+
+    This exception is raised when orchestration fails and provides detailed
+    context about which models were tried and why they failed.
+
+    Attributes:
+        model_errors: List of ModelError instances describing each failure
+        attempted_models: List of model IDs that were attempted
+        task_type: The type of task that failed
+        message: Human-readable summary of the failures
+    """
+
+    def __init__(
+        self,
+        message: str,
+        model_errors: Optional[List["ModelError"]] = None,
+        attempted_models: Optional[List[str]] = None,
+        task_type: Optional["TaskType"] = None,
+    ):
+        """Initialize the aggregated orchestration error.
+
+        Args:
+            message: Human-readable error message
+            model_errors: List of individual model errors
+            attempted_models: List of model IDs that were attempted
+            task_type: The task type that was being performed
+        """
+        super().__init__(message)
+        self.model_errors = model_errors or []
+        self.attempted_models = attempted_models or []
+        self.task_type = task_type
+
+    def __str__(self) -> str:
+        """Return detailed string representation of the error."""
+        parts = [self.args[0] if self.args else "Orchestration failed"]
+        if self.attempted_models:
+            parts.append(f"Attempted models: {', '.join(self.attempted_models)}")
+        if self.model_errors:
+            error_summaries = [
+                f"{e.model_id}: {e.error_type} - {e.message}" for e in self.model_errors
+            ]
+            parts.append(f"Errors: {'; '.join(error_summaries)}")
+        return " | ".join(parts)
+
+    def get_error_summary(self) -> Dict[str, Any]:
+        """Get a structured summary of all errors.
+
+        Returns:
+            Dictionary with error details suitable for logging or reporting
+        """
+        return {
+            "message": self.args[0] if self.args else "Orchestration failed",
+            "task_type": self.task_type.value if self.task_type else None,
+            "attempted_models": self.attempted_models,
+            "model_errors": [
+                {
+                    "model_id": e.model_id,
+                    "error_type": e.error_type,
+                    "message": e.message,
+                    "timestamp": e.timestamp,
+                }
+                for e in self.model_errors
+            ],
+            "total_failures": len(self.model_errors),
+        }
+
+
 # =============================================================================
 # Enums and Types
 # =============================================================================
@@ -235,6 +303,42 @@ ResponseMetadata = Dict[str, Any]
 # =============================================================================
 # Data Classes
 # =============================================================================
+
+
+@dataclass
+class ModelError:
+    """Represents an error from a specific model during orchestration.
+
+    This dataclass captures detailed information about a model failure,
+    enabling structured error reporting and debugging.
+
+    Attributes:
+        model_id: Identifier of the model that failed (e.g., 'logic_generator')
+        error_type: Type/class of the error (e.g., 'TimeoutError', 'ValueError')
+        message: Human-readable error message
+        timestamp: Unix timestamp when the error occurred
+        context: Optional additional context about the failure
+    """
+
+    model_id: str
+    error_type: str
+    message: str
+    timestamp: float = field(default_factory=time.time)
+    context: Optional[Dict[str, Any]] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary representation.
+
+        Returns:
+            Dictionary with all error details
+        """
+        return {
+            "model_id": self.model_id,
+            "error_type": self.error_type,
+            "message": self.message,
+            "timestamp": self.timestamp,
+            "context": self.context,
+        }
 
 
 @dataclass
@@ -397,6 +501,8 @@ class OrchestrationResult:
         total_latency_ms: Total time for orchestration
         from_cache: Whether result was from cache
         metadata: Additional metadata
+        errors: List of errors that occurred during orchestration (Issue #201)
+        failed_models: List of model IDs that failed during orchestration (Issue #201)
     """
 
     task_type: TaskType
@@ -407,6 +513,39 @@ class OrchestrationResult:
     total_latency_ms: float = 0.0
     from_cache: bool = False
     metadata: ResponseMetadata = field(default_factory=dict)
+    errors: List[ModelError] = field(default_factory=list)
+    failed_models: List[str] = field(default_factory=list)
+
+    @property
+    def has_errors(self) -> bool:
+        """Check if any errors occurred during orchestration.
+
+        Returns:
+            True if there were any errors, False otherwise
+        """
+        return len(self.errors) > 0
+
+    @property
+    def partial_success(self) -> bool:
+        """Check if orchestration partially succeeded (some models worked, some failed).
+
+        Returns:
+            True if there were both successful responses and errors
+        """
+        return len(self.model_responses) > 0 and len(self.errors) > 0
+
+    def get_error_summary(self) -> Dict[str, Any]:
+        """Get a structured summary of all errors.
+
+        Returns:
+            Dictionary with error details suitable for logging or reporting
+        """
+        return {
+            "total_errors": len(self.errors),
+            "failed_models": self.failed_models,
+            "successful_models": [r.model_type for r in self.model_responses],
+            "errors": [e.to_dict() for e in self.errors],
+        }
 
 
 # =============================================================================
@@ -1380,9 +1519,36 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
 
         except Exception as e:
             logger.error(f"Task routing failed: {e}")
+
+            # Determine primary model for error reporting (Issue #201)
+            primary_model_map = {
+                TaskType.RULE_GENERATION: "logic_generator",
+                TaskType.RULE_CRITICISM: "critic",
+                TaskType.TRANSLATION_TO_NL: "translator",
+                TaskType.TRANSLATION_TO_ASP: "translator",
+                TaskType.META_ANALYSIS: "meta_reasoner",
+                TaskType.FULL_PIPELINE: "logic_generator",
+            }
+            primary_model = primary_model_map.get(task_type, "unknown")
+
             if self.config.enable_fallback:
-                return self._handle_fallback(task_type, input_data, context, e)
-            raise TaskRoutingError(f"Task routing failed: {e}") from e
+                return self._handle_fallback(
+                    task_type, input_data, context, e, primary_model
+                )
+
+            # Raise aggregated error with detailed context (Issue #201)
+            model_error = ModelError(
+                model_id=primary_model,
+                error_type=type(e).__name__,
+                message=str(e),
+                context={"task_type": task_type.value},
+            )
+            raise AggregatedOrchestrationError(
+                message=f"Task routing failed for {task_type.value}",
+                model_errors=[model_error],
+                attempted_models=[primary_model],
+                task_type=task_type,
+            ) from e
 
     def _route_rule_generation(
         self,
@@ -1770,31 +1936,80 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
         input_data: TaskInputData,
         context: Optional[ContextDict],
         original_error: Exception,
+        primary_model: str = "unknown",
     ) -> OrchestrationResult:
-        """Handle fallback when primary routing fails."""
+        """Handle fallback when primary routing fails.
+
+        Tracks all attempted models and their errors for comprehensive error
+        reporting (Issue #201).
+
+        Args:
+            task_type: Type of task being performed
+            input_data: Input data for the task
+            context: Additional context
+            original_error: The original error from the primary model
+            primary_model: ID of the primary model that failed
+
+        Returns:
+            OrchestrationResult with fallback result and error details
+
+        Raises:
+            AggregatedOrchestrationError: When all fallbacks are exhausted
+        """
         logger.warning(f"Attempting fallback for {task_type.value}")
+
+        # Track all errors that occurred (Issue #201)
+        all_errors: List[ModelError] = []
+        attempted_models: List[str] = [primary_model]
+
+        # Record the original error
+        original_model_error = ModelError(
+            model_id=primary_model,
+            error_type=type(original_error).__name__,
+            message=str(original_error),
+            context={"task_type": task_type.value, "role": "primary"},
+        )
+        all_errors.append(original_model_error)
 
         # Try alternative models based on task type
         fallback_models = self._get_fallback_models(task_type)
 
         for fallback_model in fallback_models:
+            attempted_models.append(fallback_model)
             try:
                 logger.info(f"Trying fallback model: {fallback_model}")
                 # Simplified fallback - just return a placeholder
+                # In a full implementation, this would actually call the fallback model
                 return OrchestrationResult(
                     task_type=task_type,
                     final_result=None,
+                    errors=all_errors,
+                    failed_models=[e.model_id for e in all_errors],
                     metadata={
                         "fallback": True,
                         "fallback_model": fallback_model,
                         "original_error": str(original_error),
+                        "attempted_models": attempted_models,
                     },
                 )
             except Exception as e:
                 logger.warning(f"Fallback {fallback_model} also failed: {e}")
+                fallback_error = ModelError(
+                    model_id=fallback_model,
+                    error_type=type(e).__name__,
+                    message=str(e),
+                    context={"task_type": task_type.value, "role": "fallback"},
+                )
+                all_errors.append(fallback_error)
                 continue
 
-        raise FallbackExhaustedError(f"All fallbacks exhausted for {task_type.value}")
+        # All fallbacks exhausted - raise aggregated error with full context
+        raise AggregatedOrchestrationError(
+            message=f"All fallbacks exhausted for {task_type.value}",
+            model_errors=all_errors,
+            attempted_models=attempted_models,
+            task_type=task_type,
+        )
 
     def _get_fallback_models(self, task_type: TaskType) -> List[str]:
         """Get list of fallback models for a task type."""

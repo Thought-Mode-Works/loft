@@ -43,6 +43,10 @@ from loft.neural.ensemble.orchestrator import (
     VotingError,
     DisagreementResolutionError,
     FallbackExhaustedError,
+    # Error handling (Issue #201)
+    AggregatedOrchestrationError,
+    ModelError,
+    OrchestrationResult,
 )
 
 
@@ -1157,3 +1161,356 @@ class TestCacheTTLBoundaryValues:
         """Test that -1 cache_ttl_seconds raises ValueError."""
         with pytest.raises(ValueError, match="cache_ttl_seconds must be non-negative"):
             OrchestratorConfig(cache_ttl_seconds=-1)
+
+
+# =============================================================================
+# Test Error Handling (Issue #201)
+# =============================================================================
+
+
+class TestModelError:
+    """Tests for ModelError dataclass (Issue #201)."""
+
+    def test_create_model_error(self):
+        """Test creating a ModelError with basic attributes."""
+        error = ModelError(
+            model_id="logic_generator",
+            error_type="TimeoutError",
+            message="Model timed out after 60 seconds",
+        )
+        assert error.model_id == "logic_generator"
+        assert error.error_type == "TimeoutError"
+        assert error.message == "Model timed out after 60 seconds"
+        assert error.timestamp > 0
+        assert error.context is None
+
+    def test_model_error_with_context(self):
+        """Test creating a ModelError with additional context."""
+        context = {"task_type": "rule_generation", "input_length": 1500}
+        error = ModelError(
+            model_id="critic",
+            error_type="ValueError",
+            message="Invalid rule format",
+            context=context,
+        )
+        assert error.context == context
+        assert error.context["task_type"] == "rule_generation"
+
+    def test_model_error_to_dict(self):
+        """Test ModelError.to_dict() method."""
+        error = ModelError(
+            model_id="translator",
+            error_type="ConnectionError",
+            message="Failed to connect to LLM API",
+            context={"retry_count": 3},
+        )
+        error_dict = error.to_dict()
+
+        assert error_dict["model_id"] == "translator"
+        assert error_dict["error_type"] == "ConnectionError"
+        assert error_dict["message"] == "Failed to connect to LLM API"
+        assert "timestamp" in error_dict
+        assert error_dict["context"] == {"retry_count": 3}
+
+
+class TestOrchestrationResultErrorHandling:
+    """Tests for OrchestrationResult error handling fields (Issue #201)."""
+
+    def test_orchestration_result_with_errors(self):
+        """Test OrchestrationResult with error tracking."""
+        errors = [
+            ModelError(
+                model_id="logic_generator",
+                error_type="TimeoutError",
+                message="Request timed out",
+            ),
+        ]
+        result = OrchestrationResult(
+            task_type=TaskType.RULE_GENERATION,
+            final_result=None,
+            errors=errors,
+            failed_models=["logic_generator"],
+        )
+
+        assert result.has_errors is True
+        assert len(result.errors) == 1
+        assert result.failed_models == ["logic_generator"]
+
+    def test_orchestration_result_no_errors(self):
+        """Test OrchestrationResult without errors."""
+        result = OrchestrationResult(
+            task_type=TaskType.RULE_GENERATION,
+            final_result="rule(X) :- condition(X).",
+        )
+
+        assert result.has_errors is False
+        assert len(result.errors) == 0
+        assert result.failed_models == []
+
+    def test_orchestration_result_partial_success(self):
+        """Test OrchestrationResult with partial success."""
+        result = OrchestrationResult(
+            task_type=TaskType.FULL_PIPELINE,
+            final_result="rule(X) :- cond(X).",
+            model_responses=[
+                ModelResponse(
+                    model_type="logic_generator",
+                    result="rule(X) :- cond(X).",
+                    confidence=0.85,
+                    latency_ms=150.0,
+                )
+            ],
+            errors=[
+                ModelError(
+                    model_id="critic",
+                    error_type="TimeoutError",
+                    message="Critic timed out",
+                )
+            ],
+            failed_models=["critic"],
+        )
+
+        assert result.partial_success is True
+        assert result.has_errors is True
+        assert len(result.model_responses) == 1
+
+    def test_orchestration_result_get_error_summary(self):
+        """Test OrchestrationResult.get_error_summary() method."""
+        result = OrchestrationResult(
+            task_type=TaskType.RULE_GENERATION,
+            final_result=None,
+            model_responses=[
+                ModelResponse(
+                    model_type="translator",
+                    result="fallback_rule(X).",
+                    confidence=0.7,
+                    latency_ms=200.0,
+                )
+            ],
+            errors=[
+                ModelError(
+                    model_id="logic_generator",
+                    error_type="ValueError",
+                    message="Invalid input",
+                ),
+                ModelError(
+                    model_id="critic",
+                    error_type="ConnectionError",
+                    message="API unavailable",
+                ),
+            ],
+            failed_models=["logic_generator", "critic"],
+        )
+
+        summary = result.get_error_summary()
+
+        assert summary["total_errors"] == 2
+        assert summary["failed_models"] == ["logic_generator", "critic"]
+        assert summary["successful_models"] == ["translator"]
+        assert len(summary["errors"]) == 2
+
+
+class TestAggregatedOrchestrationError:
+    """Tests for AggregatedOrchestrationError (Issue #201)."""
+
+    def test_aggregated_error_basic(self):
+        """Test creating a basic AggregatedOrchestrationError."""
+        error = AggregatedOrchestrationError(
+            message="All models failed",
+        )
+        assert str(error) == "All models failed"
+
+    def test_aggregated_error_with_model_errors(self):
+        """Test AggregatedOrchestrationError with model errors."""
+        model_errors = [
+            ModelError(
+                model_id="logic_generator",
+                error_type="TimeoutError",
+                message="Timed out",
+            ),
+            ModelError(
+                model_id="translator",
+                error_type="ValueError",
+                message="Invalid format",
+            ),
+        ]
+
+        error = AggregatedOrchestrationError(
+            message="Orchestration failed",
+            model_errors=model_errors,
+            attempted_models=["logic_generator", "translator"],
+            task_type=TaskType.RULE_GENERATION,
+        )
+
+        assert len(error.model_errors) == 2
+        assert error.attempted_models == ["logic_generator", "translator"]
+        assert error.task_type == TaskType.RULE_GENERATION
+
+    def test_aggregated_error_str_format(self):
+        """Test AggregatedOrchestrationError string representation."""
+        model_errors = [
+            ModelError(
+                model_id="model1",
+                error_type="Error1",
+                message="msg1",
+            ),
+        ]
+
+        error = AggregatedOrchestrationError(
+            message="Test failure",
+            model_errors=model_errors,
+            attempted_models=["model1", "model2"],
+        )
+
+        error_str = str(error)
+        assert "Test failure" in error_str
+        assert "model1" in error_str
+        assert "model2" in error_str
+        assert "Error1" in error_str
+
+    def test_aggregated_error_get_error_summary(self):
+        """Test AggregatedOrchestrationError.get_error_summary() method."""
+        model_errors = [
+            ModelError(
+                model_id="logic_generator",
+                error_type="TimeoutError",
+                message="Timed out",
+            ),
+        ]
+
+        error = AggregatedOrchestrationError(
+            message="Pipeline failed",
+            model_errors=model_errors,
+            attempted_models=["logic_generator"],
+            task_type=TaskType.FULL_PIPELINE,
+        )
+
+        summary = error.get_error_summary()
+
+        assert summary["message"] == "Pipeline failed"
+        assert summary["task_type"] == "full_pipeline"
+        assert summary["attempted_models"] == ["logic_generator"]
+        assert summary["total_failures"] == 1
+        assert len(summary["model_errors"]) == 1
+
+
+class TestFallbackErrorHandling:
+    """Tests for fallback error handling with aggregated errors (Issue #201)."""
+
+    def test_handle_fallback_tracks_errors(self, mock_llm_interface):
+        """Test that _handle_fallback tracks all errors."""
+        config = OrchestratorConfig(enable_fallback=True)
+        orchestrator = EnsembleOrchestrator(
+            config=config, llm_interface=mock_llm_interface
+        )
+
+        original_error = ValueError("Primary model failed")
+        result = orchestrator._handle_fallback(
+            task_type=TaskType.RULE_GENERATION,
+            input_data="test input",
+            context=None,
+            original_error=original_error,
+            primary_model="logic_generator",
+        )
+
+        # Should have error info from the primary model
+        assert result.errors is not None
+        assert len(result.errors) >= 1
+        assert result.errors[0].model_id == "logic_generator"
+        assert result.errors[0].error_type == "ValueError"
+        assert "Primary model failed" in result.errors[0].message
+
+    def test_handle_fallback_includes_attempted_models(self, mock_llm_interface):
+        """Test that _handle_fallback tracks attempted models."""
+        config = OrchestratorConfig(enable_fallback=True)
+        orchestrator = EnsembleOrchestrator(
+            config=config, llm_interface=mock_llm_interface
+        )
+
+        original_error = TimeoutError("Timed out")
+        result = orchestrator._handle_fallback(
+            task_type=TaskType.RULE_GENERATION,
+            input_data="test",
+            context=None,
+            original_error=original_error,
+            primary_model="logic_generator",
+        )
+
+        # Should have metadata with attempted models
+        assert "attempted_models" in result.metadata
+        assert "logic_generator" in result.metadata["attempted_models"]
+
+    def test_fallback_exhausted_raises_aggregated_error(self, mock_llm_interface):
+        """Test that exhausted fallbacks raise AggregatedOrchestrationError."""
+        config = OrchestratorConfig(enable_fallback=True)
+        orchestrator = EnsembleOrchestrator(
+            config=config, llm_interface=mock_llm_interface
+        )
+
+        # Override _get_fallback_models to return empty list (no fallbacks)
+        original_method = orchestrator._get_fallback_models
+        orchestrator._get_fallback_models = lambda task_type: []
+
+        try:
+            with pytest.raises(AggregatedOrchestrationError) as exc_info:
+                orchestrator._handle_fallback(
+                    task_type=TaskType.FULL_PIPELINE,
+                    input_data="test",
+                    context=None,
+                    original_error=ValueError("Failed"),
+                    primary_model="logic_generator",
+                )
+
+            error = exc_info.value
+            assert error.task_type == TaskType.FULL_PIPELINE
+            assert len(error.model_errors) >= 1
+            assert "logic_generator" in error.attempted_models
+        finally:
+            orchestrator._get_fallback_models = original_method
+
+
+class TestRouteTaskErrorHandling:
+    """Tests for route_task error handling (Issue #201)."""
+
+    def test_route_task_raises_aggregated_error_when_fallback_disabled(
+        self, mock_llm_interface
+    ):
+        """Test that route_task raises AggregatedOrchestrationError when fallback is disabled."""
+        config = OrchestratorConfig(enable_fallback=False)
+        orchestrator = EnsembleOrchestrator(
+            config=config, llm_interface=mock_llm_interface
+        )
+
+        # This will fail because the mock LLM interface isn't properly set up
+        with pytest.raises(AggregatedOrchestrationError) as exc_info:
+            orchestrator.route_task(
+                TaskType.RULE_GENERATION,
+                {"principle": "test principle", "domain": "legal"},
+            )
+
+        error = exc_info.value
+        assert error.task_type == TaskType.RULE_GENERATION
+        assert len(error.model_errors) >= 1
+        assert "logic_generator" in error.attempted_models
+
+    def test_route_task_includes_error_context(self, mock_llm_interface):
+        """Test that route_task errors include proper context."""
+        config = OrchestratorConfig(enable_fallback=False)
+        orchestrator = EnsembleOrchestrator(
+            config=config, llm_interface=mock_llm_interface
+        )
+
+        with pytest.raises(AggregatedOrchestrationError) as exc_info:
+            orchestrator.route_task(
+                TaskType.META_ANALYSIS,
+                {"failures": [], "insights": []},
+            )
+
+        error = exc_info.value
+        # Should identify meta_reasoner as the primary model for META_ANALYSIS
+        assert "meta_reasoner" in error.attempted_models
+
+        # Check error summary has proper structure
+        summary = error.get_error_summary()
+        assert summary["task_type"] == "meta_analysis"
+        assert summary["total_failures"] >= 1
