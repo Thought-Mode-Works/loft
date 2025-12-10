@@ -119,6 +119,429 @@ RULE_STATEMENT_TEMPLATES = {
     ),
 }
 
+# Structural templates for preserving sentence structure in translations
+# Maps rule types to declarative sentence patterns
+STRUCTURAL_TEMPLATES = {
+    # Requirement patterns - "X requires Y"
+    "requirement": "{subject} requires {object}",
+    "requirement_plural": "{subject} require {object}",
+    # Condition patterns - "X is valid if Y"
+    "condition": "{subject} is {state} if {conditions}",
+    "condition_when": "{subject} is {state} when {conditions}",
+    # Obligation patterns - "X must Y"
+    "obligation": "{subject} must {action}",
+    "obligation_plural": "{subject} must {action}",
+    # Prohibition patterns - "X must not Y"
+    "prohibition": "{subject} must not {action}",
+    "prohibition_cannot": "{subject} cannot {action}",
+    # Exception patterns - "X is exempt when Y"
+    "exception": "{subject} is exempt when {conditions}",
+    "exception_unless": "{subject} applies unless {conditions}",
+    "exception_except": "{subject} except when {conditions}",
+    # Satisfaction patterns - "X satisfies Y"
+    "satisfaction": "{subject} satisfies {requirement}",
+    "satisfaction_can": "{subject} can satisfy {requirement}",
+    # Disjunction patterns - "X or Y"
+    "disjunction": "{subject} may {option1} or {option2}",
+    "disjunction_either": "Either {option1} or {option2}",
+    # Conjunction patterns - "X and Y"
+    "conjunction": "{subject} must have {element1} and {element2}",
+    "conjunction_both": "{subject} requires both {element1} and {element2}",
+    # Validity patterns - "X is valid/enforceable"
+    "validity": "{subject} is {validity_state}",
+    "validity_if": "{subject} is {validity_state} if {conditions}",
+    # Default patterns - "X by default unless Y"
+    "default": "{subject} by default unless {exception}",
+    "default_presumed": "{subject} is presumed unless {exception}",
+    # Equivalence patterns - "X means Y"
+    "equivalence": "{term1} means {term2}",
+    "equivalence_is": "{term1} is {term2}",
+}
+
+# Rule type indicators for classification
+RULE_TYPE_INDICATORS = {
+    "requirement": [
+        "requires",
+        "require",
+        "must have",
+        "needs",
+        "necessary",
+        "essential",
+        "required",
+    ],
+    "obligation": [
+        "must be",
+        "shall be",
+        "has to be",
+        "need to be",
+        "obligated",
+        "mandatory",
+    ],
+    "prohibition": [
+        "must not",
+        "cannot",
+        "shall not",
+        "may not",
+        "prohibited",
+        "forbidden",
+        "not allowed",
+    ],
+    "exception": [
+        "unless",
+        "except",
+        "exempt",
+        "exemption",
+        "notwithstanding",
+        "provided that",
+    ],
+    "condition": ["if", "when", "where", "provided", "in case", "conditional upon"],
+    "satisfaction": [
+        "satisfies",
+        "satisfy",
+        "meets",
+        "fulfills",
+        "complies with",
+        "sufficient",
+    ],
+    "validity": [
+        "valid",
+        "enforceable",
+        "binding",
+        "effective",
+        "void",
+        "voidable",
+        "invalid",
+    ],
+    "default": ["by default", "presumed", "assumed", "unless proven"],
+}
+
+
+def detect_rule_type(asp_rule: str) -> str:
+    """
+    Detect the structural type of an ASP rule.
+
+    Analyzes the rule structure to determine its logical pattern
+    (requirement, condition, prohibition, etc.) for template selection.
+
+    Args:
+        asp_rule: ASP rule string
+
+    Returns:
+        Rule type identifier (e.g., "requirement", "condition", "prohibition")
+
+    Examples:
+        >>> detect_rule_type("requires_writing(X) :- land_sale(X).")
+        'requirement'
+        >>> detect_rule_type("enforceable(X) :- contract(X), signed(X).")
+        'condition'
+        >>> detect_rule_type("unenforceable(X) :- not has_writing(X).")
+        'prohibition'
+    """
+    rule = asp_rule.strip().lower()
+
+    # Check if it's a fact (no body)
+    if ":-" not in rule:
+        return "fact"
+
+    head_part, body_part = rule.split(":-", 1)
+    head = head_part.strip()
+    body = body_part.strip()
+
+    # Extract head predicate
+    head_pred_match = re.match(r"(\w+)\s*\(", head)
+    head_pred = head_pred_match.group(1) if head_pred_match else ""
+
+    # Check for negation in body (prohibition or exception pattern)
+    has_negation = "not " in body or "not(" in body
+
+    # Check for disjunction in body
+    has_disjunction = ";" in body
+
+    # Check for multiple conditions (conjunction)
+    condition_count = body.count(",") + 1
+
+    # Check for disjunction first (highest priority structural pattern)
+    if has_disjunction:
+        return "disjunction"
+
+    # Classify based on head predicate and structure
+    if head_pred.startswith("requires_") or head_pred == "requires":
+        return "requirement"
+
+    if head_pred.startswith("unenforceable") or head_pred.startswith("invalid"):
+        if has_negation:
+            return "prohibition"
+        return "validity"
+
+    if head_pred.startswith("enforceable") or head_pred.startswith("valid"):
+        # Prefer conjunction for multi-condition validity rules
+        if condition_count >= 3:
+            return "conjunction"
+        return "validity" if condition_count == 1 else "condition"
+
+    if head_pred.startswith("satisfies_") or head_pred == "satisfies":
+        return "satisfaction"
+
+    if head_pred.startswith("exception") or head_pred.startswith("exempt"):
+        return "exception"
+
+    if has_negation:
+        # Check if it's a default rule (single negation condition)
+        if condition_count == 1:
+            # "default" or "assumed" patterns are default rules
+            if (
+                "default" in head_pred
+                or "assumed" in head_pred
+                or "presumed" in head_pred
+            ):
+                return "default"
+            # Also default if the negation is the primary pattern
+            return "default"
+        return "exception"
+
+    if condition_count >= 2:
+        return "conjunction"
+
+    # Default to condition for rules with body
+    return "condition"
+
+
+def apply_structural_template(
+    rule_type: str,
+    head_predicate: str,
+    head_args: List[str],
+    body_predicates: List[tuple],
+    original_asp: str,
+) -> str:
+    """
+    Apply a structural template to generate a well-formed sentence.
+
+    Uses the detected rule type to select an appropriate sentence structure
+    that preserves the declarative form and improves round-trip fidelity.
+
+    Args:
+        rule_type: Type of rule (from detect_rule_type)
+        head_predicate: The head predicate name
+        head_args: Arguments of the head predicate
+        body_predicates: List of (predicate, args) tuples from body
+        original_asp: Original ASP rule for fallback
+
+    Returns:
+        Natural language sentence with proper structure
+
+    Examples:
+        >>> apply_structural_template(
+        ...     "requirement", "requires_writing", ["X"],
+        ...     [("land_sale", ["X"])], "requires_writing(X) :- land_sale(X)."
+        ... )
+        'Land sale contracts must be in writing'
+    """
+    # Humanize head predicate and arguments
+    head_human = _humanize_predicate_for_structure(head_predicate)
+    subject = _get_subject_from_args(head_args)
+
+    # Build condition string from body predicates
+    conditions = _build_conditions_string(body_predicates)
+
+    # Select template based on rule type
+    if rule_type == "requirement":
+        if "writing" in head_predicate or "written" in head_predicate:
+            return f"{_get_contract_subject(body_predicates)} must be in writing"
+        if conditions:
+            return f"{subject} requires {conditions}"
+        return f"{subject} {head_human}"
+
+    elif rule_type == "obligation":
+        return f"{subject} must be {head_human}"
+
+    elif rule_type == "prohibition":
+        if conditions:
+            return f"{subject} is not {head_human} if {conditions}"
+        return f"{subject} must not be {head_human}"
+
+    elif rule_type == "exception":
+        return f"{subject} is exempt when {conditions}"
+
+    elif rule_type == "satisfaction":
+        requirement = _extract_requirement(head_predicate)
+        if conditions:
+            return f"{conditions} can satisfy {requirement}"
+        return f"{subject} satisfies {requirement}"
+
+    elif rule_type == "validity":
+        validity_state = _extract_validity_state(head_predicate)
+        if conditions:
+            return f"{subject} is {validity_state} if {conditions}"
+        return f"{subject} is {validity_state}"
+
+    elif rule_type == "condition":
+        state = _extract_state(head_predicate)
+        if conditions:
+            return f"{subject} is {state} if {conditions}"
+        return f"{subject} is {state}"
+
+    elif rule_type == "conjunction":
+        if len(body_predicates) >= 2:
+            elements = [
+                _humanize_predicate_for_structure(p[0]) for p in body_predicates
+            ]
+            if len(elements) == 2:
+                return f"{subject} requires {elements[0]} and {elements[1]}"
+            else:
+                return (
+                    f"{subject} requires {', '.join(elements[:-1])}, and {elements[-1]}"
+                )
+        return f"{subject} is {head_human} if {conditions}"
+
+    elif rule_type == "disjunction":
+        # Handle disjunction (;) in body
+        return f"{subject} may satisfy {head_human} through alternative means"
+
+    elif rule_type == "default":
+        return f"{subject} is {head_human} by default unless otherwise proven"
+
+    elif rule_type == "fact":
+        return f"{subject} {head_human}"
+
+    # Fallback to basic translation
+    return f"{subject} is {head_human}" + (f" if {conditions}" if conditions else "")
+
+
+def _humanize_predicate_for_structure(predicate: str) -> str:
+    """Convert predicate name to human-readable form for structural templates."""
+    # Remove common prefixes
+    for prefix in ["requires_", "has_", "is_", "can_", "must_"]:
+        if predicate.startswith(prefix):
+            predicate = predicate[len(prefix) :]
+            break
+
+    # Convert snake_case to spaces
+    result = predicate.replace("_", " ")
+
+    # Handle common legal terms
+    replacements = {
+        "sof": "the statute of frauds",
+        "writing": "a written document",
+        "ucc": "the UCC",
+        "esign": "the ESIGN Act",
+    }
+
+    for term, replacement in replacements.items():
+        if result == term:
+            return replacement
+
+    return result
+
+
+def _get_subject_from_args(args: List[str]) -> str:
+    """Extract subject from predicate arguments."""
+    if not args:
+        return "the contract"
+
+    first_arg = args[0]
+
+    # Handle single uppercase variable
+    if len(first_arg) == 1 and first_arg.isupper():
+        var_mapping = {
+            "X": "a contract",
+            "Y": "an entity",
+            "C": "a contract",
+            "W": "a writing",
+            "P": "a party",
+            "S": "a signature",
+            "A": "an agreement",
+        }
+        return var_mapping.get(first_arg, "the entity")
+
+    # Handle entity IDs
+    if first_arg.startswith("contract"):
+        return "the contract"
+    if first_arg.startswith("writing"):
+        return "the writing"
+
+    return f"the {first_arg.replace('_', ' ')}"
+
+
+def _get_contract_subject(body_predicates: List[tuple]) -> str:
+    """Extract a descriptive contract subject from body predicates."""
+    for pred, args in body_predicates:
+        if pred == "land_sale":
+            return "Land sale contracts"
+        if pred == "goods_over_500":
+            return "Contracts for goods over $500"
+        if pred == "suretyship":
+            return "Suretyship agreements"
+        if pred == "cannot_perform_within_year":
+            return "Contracts that cannot be performed within one year"
+        if pred == "marriage_promise":
+            return "Promises made in consideration of marriage"
+
+    return "The contract"
+
+
+def _build_conditions_string(body_predicates: List[tuple]) -> str:
+    """Build a natural language conditions string from body predicates."""
+    if not body_predicates:
+        return ""
+
+    condition_parts = []
+    for pred, args in body_predicates:
+        # Handle negation
+        if pred.startswith("not_"):
+            pred = pred[4:]
+            condition_parts.append(
+                f"it does not have {_humanize_predicate_for_structure(pred)}"
+            )
+        else:
+            humanized = _humanize_predicate_for_structure(pred)
+            if args and len(args[0]) == 1 and args[0].isupper():
+                condition_parts.append(f"it has {humanized}")
+            else:
+                condition_parts.append(humanized)
+
+    if len(condition_parts) == 0:
+        return ""
+    elif len(condition_parts) == 1:
+        return condition_parts[0]
+    elif len(condition_parts) == 2:
+        return f"{condition_parts[0]} and {condition_parts[1]}"
+    else:
+        return ", ".join(condition_parts[:-1]) + f", and {condition_parts[-1]}"
+
+
+def _extract_requirement(predicate: str) -> str:
+    """Extract requirement name from predicate."""
+    if "sof" in predicate or "statute" in predicate:
+        return "the statute of frauds"
+    if "writing" in predicate:
+        return "the writing requirement"
+    return predicate.replace("satisfies_", "").replace("_", " ")
+
+
+def _extract_validity_state(predicate: str) -> str:
+    """Extract validity state from predicate."""
+    if "unenforceable" in predicate:
+        return "unenforceable"
+    if "enforceable" in predicate:
+        return "enforceable"
+    if "invalid" in predicate:
+        return "invalid"
+    if "valid" in predicate:
+        return "valid"
+    if "void" in predicate:
+        return "void"
+    return predicate.replace("_", " ")
+
+
+def _extract_state(predicate: str) -> str:
+    """Extract state description from predicate."""
+    # Remove common prefixes and convert
+    for prefix in ["is_", "has_", "can_"]:
+        if predicate.startswith(prefix):
+            return predicate[len(prefix) :].replace("_", " ")
+    return predicate.replace("_", " ")
+
+
 # ASP pattern templates for rule translation
 ASP_RULE_PATTERNS = [
     # Simple rule: head :- body
@@ -724,6 +1147,7 @@ def asp_to_nl_statement(
     asp_code: str,
     context: Optional[ASPCore] = None,
     original_nl: Optional[str] = None,
+    use_structural_templates: bool = True,
 ) -> str:
     """
     Convert ASP code to a semantic-preserving natural language statement.
@@ -736,6 +1160,8 @@ def asp_to_nl_statement(
         asp_code: ASP rule, fact, or query to translate
         context: Optional ASP core for enriched context
         original_nl: Optional original NL text to help with reconstruction
+        use_structural_templates: Whether to use structural templates for
+            improved sentence structure (default: True)
 
     Returns:
         Natural language statement preserving semantic content
@@ -759,11 +1185,95 @@ def asp_to_nl_statement(
     if best_match:
         return best_match
 
+    # Use structural templates for better sentence structure
+    if use_structural_templates and ":-" in asp_code:
+        structural_result = _apply_structural_translation(asp_code)
+        if structural_result:
+            return structural_result
+
     # Parse the ASP code and generate a statement
     if ":-" in asp_code:
         return _rule_to_statement(asp_code)
     else:
         return _fact_to_statement(asp_code)
+
+
+def _apply_structural_translation(asp_code: str) -> Optional[str]:
+    """
+    Apply structural template-based translation for improved sentence structure.
+
+    Uses rule type detection and structural templates to generate
+    well-formed declarative sentences that improve structural accuracy
+    in round-trip translation.
+
+    Args:
+        asp_code: ASP rule to translate
+
+    Returns:
+        Structured natural language sentence, or None if cannot apply
+    """
+    try:
+        # Detect the rule type
+        rule_type = detect_rule_type(asp_code)
+
+        # Parse head and body
+        asp_clean = asp_code.strip().rstrip(".")
+        if ":-" not in asp_clean:
+            return None
+
+        head_part, body_part = asp_clean.split(":-", 1)
+        head = head_part.strip()
+        body = body_part.strip()
+
+        # Parse head predicate
+        head_pred, head_args = parse_predicate_call(head)
+
+        # Parse body predicates
+        body_predicates = _parse_body_predicates(body)
+
+        # Apply structural template
+        result = apply_structural_template(
+            rule_type=rule_type,
+            head_predicate=head_pred,
+            head_args=head_args,
+            body_predicates=body_predicates,
+            original_asp=asp_code,
+        )
+
+        return result
+
+    except Exception as e:
+        logger.debug(f"Structural translation failed: {e}")
+        return None
+
+
+def _parse_body_predicates(body: str) -> List[tuple]:
+    """
+    Parse body literals into list of (predicate, args) tuples.
+
+    Handles conjunction (,), negation (not), and comparisons.
+    """
+    predicates = []
+    literals = _split_body_literals(body)
+
+    for literal in literals:
+        literal = literal.strip()
+
+        # Skip comparisons for now
+        if any(op in literal for op in [">=", "<=", ">", "<", "="]):
+            continue
+
+        # Handle negation
+        if literal.startswith("not "):
+            literal = literal[4:].strip()
+            pred, args = parse_predicate_call(literal)
+            predicates.append((f"not_{pred}", args))
+        else:
+            pred, args = parse_predicate_call(literal)
+            if pred:  # Only add if we got a valid predicate
+                predicates.append((pred, args))
+
+    return predicates
 
 
 def _normalize_asp_rule(rule: str) -> str:
