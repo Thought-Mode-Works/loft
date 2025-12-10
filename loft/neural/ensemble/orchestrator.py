@@ -565,7 +565,17 @@ class MajorityVotingStrategy(VotingStrategy):
                 )
 
         # No majority - return most common with reduced confidence
-        most_common_key = max(result_groups.keys(), key=lambda k: len(result_groups[k]))
+        # Use deterministic tie-breaking: vote count (desc), avg confidence (desc), result key (asc)
+        def tie_breaking_key(result_key: str) -> tuple:
+            group = result_groups[result_key]
+            avg_conf = statistics.mean([r.confidence for r in group])
+            return (
+                -len(group),  # Primary: vote count (negative for descending)
+                -avg_conf,  # Secondary: average confidence (negative for descending)
+                result_key,  # Tertiary: lexicographic for determinism (ascending)
+            )
+
+        most_common_key = min(result_groups.keys(), key=tie_breaking_key)
         most_common = result_groups[most_common_key]
         dissenting = [
             r.model_type
