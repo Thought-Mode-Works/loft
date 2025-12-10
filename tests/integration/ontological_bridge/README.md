@@ -85,9 +85,10 @@ pytest tests/integration/ontological_bridge/test_representational_adequacy.py::T
 Calculates semantic similarity between texts using sentence embeddings.
 
 **Features:**
-- Sentence-BERT embeddings (if available)
+- Sentence-BERT embeddings (if available) with in-memory caching of embeddings
+- Configurable toggle (`LOFT_USE_EMBEDDING_SIMILARITY=true|false`)
 - Fallback to token-based Jaccard similarity
-- Batch similarity calculation
+- Batch similarity calculation with cached vectors
 - Cosine similarity utilities
 
 **Usage:**
@@ -131,14 +132,10 @@ print(metrics.hallucination_rate)  # 0.15
 Required:
 - `pytest` - Test framework
 - `numpy` - Numerical operations
+- `sentence-transformers` - For semantic similarity
 
 Optional (recommended):
-- `sentence-transformers` - For semantic similarity
-  ```bash
-  pip install sentence-transformers
-  ```
-
-If `sentence-transformers` is not available, falls back to token-based similarity.
+- If `sentence-transformers` is not available, falls back to token-based similarity.
 
 ## Running Tests
 
