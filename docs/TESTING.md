@@ -1300,26 +1300,144 @@ if result.disagreement_records:
     print(f"Disagreements resolved: {len(result.disagreement_records)}")
 ```
 
-### Future: Ensemble Autonomous Testing
+### Ensemble Autonomous Testing (Issue #207)
 
-> **Note:** The following features are tracked in GitHub issues #205-207 and are not yet implemented.
+Issue #207 enables ensemble orchestrator integration with the autonomous test runner. This provides multi-LLM coordination for ASP rule generation with voting, disagreement resolution, and comprehensive diagnostics.
 
-Once issue #207 is implemented, ensemble testing will be available via CLI:
+#### CLI Usage
+
+Enable ensemble processing with the `--enable-ensemble` flag:
 
 ```bash
-# Future: Enable ensemble processing
+# Basic ensemble test (requires --enable-llm)
 python3 -m loft.autonomous.cli start \
   --dataset datasets/contracts/ \
   --enable-llm \
-  --enable-ensemble \  # Issue #207
+  --enable-ensemble \
+  --model claude-3-5-haiku-20241022 \
   --duration 30m \
   --output /tmp/ensemble_test/
+
+# Full ensemble test with multiple domains
+python3 -m loft.autonomous.cli start \
+  --dataset datasets/contracts/ \
+  --dataset datasets/torts/ \
+  --dataset datasets/property_law/ \
+  --enable-llm \
+  --enable-ensemble \
+  --model claude-3-5-haiku-20241022 \
+  --duration 1h \
+  --checkpoint-interval 5 \
+  --output /tmp/ensemble_1hr_test/ \
+  --log-level DEBUG
+```
+
+**Important:** `--enable-ensemble` requires `--enable-llm`. Ensemble mode uses multiple specialized LLMs coordinated by the `EnsembleOrchestrator`.
+
+#### Ensemble Diagnostics
+
+When ensemble mode is enabled, additional diagnostics are collected and logged:
+
+| Metric | Description |
+|--------|-------------|
+| `total_tasks_processed` | Number of cases processed through ensemble |
+| `consensus_rate` | Percentage of cases achieving multi-model consensus |
+| `escalation_count` | Times disagreement required human escalation |
+| `critic_intervention_count` | Times CriticLLM refined generated rules |
+| `elapsed_seconds` | Total processing time |
+
+#### Diagnostics Output
+
+At run completion, ensemble diagnostics are logged:
+
+```
+Ensemble Diagnostics (issue #207):
+  Tasks processed: 50
+  Consensus rate: 78.0%
+  Escalation count: 3
+  Critic interventions: 12
+  Elapsed time: 1823.5s
+```
+
+These metrics are also included in checkpoint files for monitoring long-running tests.
+
+#### Python API for Ensemble Testing
+
+```python
+from loft.autonomous import AutonomousTestRunner, AutonomousRunConfig
+from loft.autonomous.cli import EnsembleCaseProcessorAdapter
+
+# Configure run
+config = AutonomousRunConfig(
+    max_duration_hours=0.5,
+    max_cases=20,
+    checkpoint_interval_minutes=2,
+    llm_model="claude-3-5-haiku-20241022",
+)
+
+runner = AutonomousTestRunner(config, output_dir="data/ensemble_runs")
+
+# Use ensemble adapter for multi-LLM processing
+ensemble_adapter = EnsembleCaseProcessorAdapter(
+    model="claude-3-5-haiku-20241022"
+)
+runner.set_batch_harness(ensemble_adapter)
+
+# Run test
+result = runner.start(dataset_paths=["datasets/contracts/"])
+
+# Access ensemble diagnostics
+diagnostics = ensemble_adapter.get_diagnostics_dict()
+print(f"Consensus rate: {diagnostics['consensus_rate']:.1%}")
+print(f"Tasks processed: {diagnostics['total_tasks_processed']}")
+```
+
+#### Ensemble vs Single-LLM Comparison
+
+To compare ensemble performance against single-LLM:
+
+```bash
+# Single LLM baseline
+python3 -m loft.autonomous.cli start \
+  --dataset datasets/contracts/ \
+  --enable-llm \
+  --duration 30m \
+  --output /tmp/single_llm_test/
+
+# Ensemble comparison
+python3 -m loft.autonomous.cli start \
+  --dataset datasets/contracts/ \
+  --enable-llm \
+  --enable-ensemble \
+  --duration 30m \
+  --output /tmp/ensemble_test/
+
+# Compare results
+python3 -c "
+import json
+single = json.load(open('/tmp/single_llm_test/*/reports/final_report.json'))
+ensemble = json.load(open('/tmp/ensemble_test/*/reports/final_report.json'))
+print(f'Single LLM accuracy: {single[\"final_metrics\"][\"overall_accuracy\"]:.2%}')
+print(f'Ensemble accuracy: {ensemble[\"final_metrics\"][\"overall_accuracy\"]:.2%}')
+"
+```
+
+#### Unit Tests
+
+Run ensemble adapter unit tests:
+
+```bash
+# Test EnsembleCaseProcessorAdapter and diagnostics
+python3 -m pytest tests/unit/autonomous/test_cli_adapter.py -v -k "ensemble"
+
+# All CLI adapter tests
+python3 -m pytest tests/unit/autonomous/test_cli_adapter.py -v
 ```
 
 ### Related Issues
 
 - #193: Model-specific prompt optimization (OPEN)
 - #205: Ensemble integration tests (OPEN)
-- #206: MVP validation benchmarks (OPEN)
-- #207: Ensemble diagnostics in autonomous testing (OPEN)
+- #206: MVP validation benchmarks (MERGED - PR #212)
+- #207: Ensemble diagnostics in autonomous testing (IN PROGRESS)
 - #200-204: Orchestrator code quality improvements (OPEN)
