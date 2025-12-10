@@ -1,11 +1,13 @@
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List
 import hashlib
+
 
 @dataclass
 class TranslationContext:
     """Preserved context from NL→ASP translation."""
+
     original_nl: str
     asp_code: str
     predicates_used: List[str]

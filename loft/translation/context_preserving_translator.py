@@ -1,11 +1,12 @@
-from dataclasses import dataclass, field
-from datetime import datetime
 from typing import Dict, List, Optional, Tuple
-import hashlib
 
 from loft.translation.context import TranslationContext
 from loft.translation.nl_to_asp import NLToASPTranslator
-from loft.translation.asp_to_nl import ASPToNLTranslator, extract_predicates, asp_to_nl_statement
+from loft.translation.asp_to_nl import (
+    ASPToNLTranslator,
+    extract_predicates,
+    asp_to_nl_statement,
+)
 
 
 class ContextPreservingTranslator:
@@ -35,29 +36,24 @@ class ContextPreservingTranslator:
             asp_code=asp_code,
             predicates_used=predicates,
             key_entities=key_entities,
-            key_terms=key_terms
+            key_terms=key_terms,
         )
         self._store_context(context)
 
         return asp_code, context.context_id
 
     def translate_asp_to_nl(
-        self,
-        asp_code: str,
-        context_id: Optional[str] = None
+        self, asp_code: str, context_id: Optional[str] = None
     ) -> str:
         """Translate ASP to NL, using context if available."""
         if context_id and context_id in self.context_cache:
             return self._reconstruct_with_context(
-                asp_code,
-                self.context_cache[context_id]
+                asp_code, self.context_cache[context_id]
             )
         return asp_to_nl_statement(asp_code)
 
     def _reconstruct_with_context(
-        self,
-        asp_code: str,
-        context: TranslationContext
+        self, asp_code: str, context: TranslationContext
     ) -> str:
         """Use original context to guide reconstruction."""
         prompt = f"""
@@ -81,13 +77,12 @@ class ContextPreservingTranslator:
         if len(self.context_cache) >= self.max_cache_size:
             # Remove oldest entry
             oldest_id = min(
-                self.context_cache,
-                key=lambda k: self.context_cache[k].timestamp
+                self.context_cache, key=lambda k: self.context_cache[k].timestamp
             )
             del self.context_cache[oldest_id]
 
         self.context_cache[context.context_id] = context
-    
+
     def _extract_key_terms(self, nl_text: str) -> List[str]:
         """Placeholder for key term extraction."""
         return []

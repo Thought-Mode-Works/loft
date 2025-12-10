@@ -7,6 +7,7 @@ from natural language and converting them to ASP facts.
 
 from typing import List, Optional
 from pydantic import BaseModel, Field
+from loft.translation.utils import normalize_predicate
 
 
 class LegalEntity(BaseModel):
@@ -196,7 +197,8 @@ class LegalRule(BaseModel):
         """Convert legal rule to ASP syntax."""
         # Build head
         head_args = ", ".join(self.head_arguments)
-        head = f"{self.head_predicate}({head_args})"
+        normalized_head = normalize_predicate(self.head_predicate)
+        head = f"{normalized_head}({head_args})"
 
         # Build body
         if not self.body_conditions:

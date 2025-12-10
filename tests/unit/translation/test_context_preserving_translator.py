@@ -23,10 +23,7 @@ class MockNLToASPTranslator:
     def translate(self, nl_text: str) -> NLToASPResult:
         if "contract is valid" in nl_text:
             return self.translate_to_rule(nl_text)
-        return NLToASPResult(
-            asp_facts=[f"% Translated: {nl_text}"],
-            source_nl=nl_text
-        )
+        return NLToASPResult(asp_facts=[f"% Translated: {nl_text}"], source_nl=nl_text)
 
     def translate_to_rule(self, nl_text: str) -> NLToASPResult:
         rule = "contract_valid(C) :- has_offer(C), has_acceptance(C), has_consideration(C)."
@@ -36,6 +33,7 @@ class MockNLToASPTranslator:
             confidence=0.9,
             extraction_method="llm_constrained",
         )
+
 
 class TestContextPreservingTranslator(unittest.TestCase):
     def setUp(self):

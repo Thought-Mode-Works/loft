@@ -82,6 +82,8 @@ class TestNegationHandling:
 
         result = nl_to_asp.translate(text)
 
+        print(result.asp_code)
+
         # Should contain negation operator
         assert (
             "not" in result.asp_code.lower() or "~" in result.asp_code
@@ -188,6 +190,8 @@ class TestContradictionHandling:
 
         # Should handle implicit contradiction
         assert result.asp_code, "Should produce code for implicit contradiction"
+        assert "requires_writing" in result.asp_code
+        assert "valid" in result.asp_code
 
 
 class TestDomainSpecificEdgeCases:
