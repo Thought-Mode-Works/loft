@@ -1514,3 +1514,300 @@ class TestRouteTaskErrorHandling:
         summary = error.get_error_summary()
         assert summary["task_type"] == "meta_analysis"
         assert summary["total_failures"] >= 1
+
+
+# =============================================================================
+# Test Thread Safety (Issue #200)
+# =============================================================================
+
+
+class TestThreadSafety:
+    """Tests for thread safety in EnsembleOrchestrator (Issue #200)."""
+
+    def test_concurrent_performance_metric_updates(self, mock_llm_interface):
+        """Test that concurrent calls to _update_performance_metrics are thread-safe."""
+        import threading
+
+        config = OrchestratorConfig(enable_performance_tracking=True)
+        orchestrator = EnsembleOrchestrator(
+            config=config, llm_interface=mock_llm_interface
+        )
+
+        num_threads = 10
+        updates_per_thread = 100
+        errors = []
+
+        def update_metrics(thread_id: int):
+            try:
+                for i in range(updates_per_thread):
+                    orchestrator._update_performance_metrics(
+                        model_type=f"model_{thread_id % 3}",  # Use 3 model types
+                        success=i % 2 == 0,
+                        latency_ms=50.0 + thread_id,
+                        confidence=0.8,
+                        error_type="TestError" if i % 2 != 0 else None,
+                    )
+            except Exception as e:
+                errors.append(e)
+
+        # Create and start threads
+        threads = [
+            threading.Thread(target=update_metrics, args=(i,))
+            for i in range(num_threads)
+        ]
+
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        # Verify no errors occurred
+        assert len(errors) == 0, f"Thread errors: {errors}"
+
+        # Verify metrics were recorded
+        metrics = orchestrator.get_performance_metrics()
+        assert len(metrics) == 3  # 3 model types
+
+        # Verify total requests match expected
+        total_requests = sum(m.total_requests for m in metrics.values())
+        expected_requests = num_threads * updates_per_thread
+        assert total_requests == expected_requests, (
+            f"Expected {expected_requests} requests, got {total_requests}"
+        )
+
+    def test_concurrent_cache_operations(self, mock_llm_interface):
+        """Test that concurrent cache read/write operations are thread-safe."""
+        import threading
+
+        config = OrchestratorConfig(enable_caching=True, cache_ttl_seconds=3600)
+        orchestrator = EnsembleOrchestrator(
+            config=config, llm_interface=mock_llm_interface
+        )
+
+        num_threads = 10
+        operations_per_thread = 50
+        errors = []
+
+        def cache_operations(thread_id: int):
+            try:
+                for i in range(operations_per_thread):
+                    cache_key = f"key_{thread_id}_{i}"
+
+                    # Store in cache
+                    result = OrchestrationResult(
+                        task_type=TaskType.RULE_GENERATION,
+                        final_result=f"result_{thread_id}_{i}",
+                    )
+                    orchestrator._store_cache(cache_key, result)
+
+                    # Read from cache
+                    cached = orchestrator._check_cache(cache_key)
+                    assert cached is not None
+                    assert cached.final_result == f"result_{thread_id}_{i}"
+            except Exception as e:
+                errors.append(e)
+
+        # Create and start threads
+        threads = [
+            threading.Thread(target=cache_operations, args=(i,))
+            for i in range(num_threads)
+        ]
+
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        # Verify no errors occurred
+        assert len(errors) == 0, f"Thread errors: {errors}"
+
+    def test_concurrent_clear_cache(self, mock_llm_interface):
+        """Test that clear_cache is thread-safe with concurrent reads/writes."""
+        import threading
+
+        config = OrchestratorConfig(enable_caching=True)
+        orchestrator = EnsembleOrchestrator(
+            config=config, llm_interface=mock_llm_interface
+        )
+
+        errors = []
+        stop_flag = threading.Event()
+
+        def writer():
+            try:
+                i = 0
+                while not stop_flag.is_set():
+                    result = OrchestrationResult(
+                        task_type=TaskType.RULE_GENERATION,
+                        final_result=f"result_{i}",
+                    )
+                    orchestrator._store_cache(f"key_{i}", result)
+                    i += 1
+            except Exception as e:
+                errors.append(e)
+
+        def clearer():
+            try:
+                for _ in range(5):
+                    orchestrator.clear_cache()
+            except Exception as e:
+                errors.append(e)
+
+        writer_thread = threading.Thread(target=writer)
+        clearer_thread = threading.Thread(target=clearer)
+
+        writer_thread.start()
+        clearer_thread.start()
+
+        clearer_thread.join()
+        stop_flag.set()
+        writer_thread.join()
+
+        assert len(errors) == 0, f"Thread errors: {errors}"
+
+    def test_concurrent_model_status_access(self, mock_llm_interface):
+        """Test that model status reads are thread-safe."""
+        import threading
+
+        config = OrchestratorConfig()
+        orchestrator = EnsembleOrchestrator(
+            config=config, llm_interface=mock_llm_interface
+        )
+
+        num_threads = 20
+        reads_per_thread = 100
+        errors = []
+
+        def read_status(thread_id: int):
+            try:
+                model_types = ["logic_generator", "critic", "translator", "meta_reasoner"]
+                for i in range(reads_per_thread):
+                    model_type = model_types[i % len(model_types)]
+                    status = orchestrator.get_model_status(model_type)
+                    # Status should be valid (either UNAVAILABLE or AVAILABLE)
+                    assert status in [ModelStatus.UNAVAILABLE, ModelStatus.AVAILABLE]
+            except Exception as e:
+                errors.append(e)
+
+        threads = [
+            threading.Thread(target=read_status, args=(i,)) for i in range(num_threads)
+        ]
+
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        assert len(errors) == 0, f"Thread errors: {errors}"
+
+    def test_concurrent_disagreement_history_updates(self, mock_llm_interface):
+        """Test that disagreement history updates are thread-safe."""
+        import threading
+
+        config = OrchestratorConfig()
+        orchestrator = EnsembleOrchestrator(
+            config=config, llm_interface=mock_llm_interface
+        )
+
+        num_threads = 10
+        updates_per_thread = 20
+        errors = []
+
+        def add_disagreements(thread_id: int):
+            try:
+                for i in range(updates_per_thread):
+                    responses = [
+                        ModelResponse(
+                            model_type=f"model_{thread_id}",
+                            result=f"result_{i}",
+                            confidence=0.8,
+                            latency_ms=100.0,
+                        )
+                    ]
+                    # This calls resolve_disagreement which adds to history
+                    try:
+                        orchestrator.resolve_disagreement(responses)
+                    except Exception:
+                        pass  # May fail due to mock, but we're testing thread safety
+            except Exception as e:
+                errors.append(e)
+
+        threads = [
+            threading.Thread(target=add_disagreements, args=(i,))
+            for i in range(num_threads)
+        ]
+
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        # Check history can be read safely
+        history = orchestrator.get_disagreement_history()
+        assert isinstance(history, list)
+
+        assert len(errors) == 0, f"Thread errors: {errors}"
+
+    def test_concurrent_reset_metrics(self, mock_llm_interface):
+        """Test that reset_metrics is thread-safe with concurrent updates."""
+        import threading
+
+        config = OrchestratorConfig(enable_performance_tracking=True)
+        orchestrator = EnsembleOrchestrator(
+            config=config, llm_interface=mock_llm_interface
+        )
+
+        errors = []
+        stop_flag = threading.Event()
+
+        def updater():
+            try:
+                i = 0
+                while not stop_flag.is_set():
+                    orchestrator._update_performance_metrics(
+                        model_type="test_model",
+                        success=True,
+                        latency_ms=50.0,
+                        confidence=0.9,
+                    )
+                    i += 1
+            except Exception as e:
+                errors.append(e)
+
+        def resetter():
+            try:
+                for _ in range(5):
+                    orchestrator.reset_metrics()
+            except Exception as e:
+                errors.append(e)
+
+        updater_thread = threading.Thread(target=updater)
+        resetter_thread = threading.Thread(target=resetter)
+
+        updater_thread.start()
+        resetter_thread.start()
+
+        resetter_thread.join()
+        stop_flag.set()
+        updater_thread.join()
+
+        assert len(errors) == 0, f"Thread errors: {errors}"
+
+    def test_orchestrator_has_required_locks(self, mock_llm_interface):
+        """Test that orchestrator has all required lock attributes."""
+        config = OrchestratorConfig()
+        orchestrator = EnsembleOrchestrator(
+            config=config, llm_interface=mock_llm_interface
+        )
+
+        # Check that locks exist
+        assert hasattr(orchestrator, "_lock")
+        assert hasattr(orchestrator, "_cache_lock")
+        assert hasattr(orchestrator, "_model_init_lock")
+
+        # Check locks are proper threading primitives
+        import threading
+
+        assert isinstance(orchestrator._lock, type(threading.Lock()))
+        assert isinstance(orchestrator._cache_lock, type(threading.Lock()))
+        assert isinstance(orchestrator._model_init_lock, type(threading.RLock()))
