@@ -4,8 +4,12 @@ Metrics for ontological bridge fidelity.
 Calculates translation fidelity, information loss, and hallucination rates.
 """
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
+
+from tests.integration.ontological_bridge.utils.semantic_similarity import (
+    SemanticSimilarityCalculator,
+)
 
 
 @dataclass
@@ -32,11 +36,35 @@ class FidelityMetrics:
 class FidelityCalculator:
     """Calculate translation fidelity metrics."""
 
+    def __init__(
+        self,
+        *,
+        use_embeddings: Optional[bool] = None,
+        model_name: str = "all-MiniLM-L6-v2",
+    ):
+        """
+        Initialize fidelity calculator with semantic similarity backend.
+
+        Args:
+            use_embeddings: Force enable/disable embeddings (overrides env flag).
+            model_name: Embedding model name.
+        """
+        self._similarity_calculator = SemanticSimilarityCalculator(model_name=model_name)
+
+        if use_embeddings is not None:
+            self._similarity_calculator.embedding_calculator.enable_embeddings = (
+                use_embeddings
+                and self._similarity_calculator.embedding_calculator.model is not None
+            )
+
     def calculate_fidelity(
         self,
         original_text: str,
         translated_text: str,
-        semantic_similarity_score: float,
+        semantic_similarity_score: Optional[float] = None,
+        *,
+        use_embeddings: Optional[bool] = None,
+        similarity_calculator: Optional[SemanticSimilarityCalculator] = None,
     ) -> FidelityMetrics:
         """
         Calculate comprehensive fidelity metrics.
@@ -44,11 +72,23 @@ class FidelityCalculator:
         Args:
             original_text: Original text
             translated_text: Translated text
-            semantic_similarity_score: Pre-calculated semantic similarity
+            semantic_similarity_score: Pre-calculated semantic similarity. If None,
+                calculate using the configured similarity backend.
+            use_embeddings: Optional override for enabling embeddings at call time.
+            similarity_calculator: Custom similarity calculator to use (primarily for
+                testing/benchmarking).
 
         Returns:
             Fidelity metrics
         """
+        semantic_similarity_score = self._get_semantic_similarity(
+            original_text=original_text,
+            translated_text=translated_text,
+            semantic_similarity_score=semantic_similarity_score,
+            use_embeddings=use_embeddings,
+            similarity_calculator=similarity_calculator,
+        )
+
         # Calculate information preservation (based on length and content)
         info_preservation = self._calculate_information_preservation(
             original_text, translated_text
@@ -75,6 +115,28 @@ class FidelityCalculator:
             structural_accuracy=structural,
             overall_fidelity=overall,
         )
+
+    def _get_semantic_similarity(
+        self,
+        original_text: str,
+        translated_text: str,
+        semantic_similarity_score: Optional[float],
+        use_embeddings: Optional[bool],
+        similarity_calculator: Optional[SemanticSimilarityCalculator],
+    ) -> float:
+        """Calculate or return provided semantic similarity."""
+        if semantic_similarity_score is not None:
+            return semantic_similarity_score
+
+        calculator = similarity_calculator or self._similarity_calculator
+
+        if use_embeddings is not None:
+            calculator.embedding_calculator.enable_embeddings = (
+                use_embeddings
+                and calculator.embedding_calculator.model is not None
+            )
+
+        return calculator.calculate_similarity(original_text, translated_text)
 
     def _calculate_information_preservation(
         self, original: str, translated: str
@@ -162,7 +224,10 @@ class FidelityCalculator:
 def calculate_fidelity(
     original_text: str,
     translated_text: str,
-    semantic_similarity_score: float,
+    semantic_similarity_score: Optional[float] = None,
+    *,
+    use_embeddings: Optional[bool] = None,
+    similarity_calculator: Optional[SemanticSimilarityCalculator] = None,
 ) -> FidelityMetrics:
     """
     Quick function to calculate fidelity metrics.
@@ -170,14 +235,21 @@ def calculate_fidelity(
     Args:
         original_text: Original text
         translated_text: Translated text
-        semantic_similarity_score: Pre-calculated semantic similarity
+        semantic_similarity_score: Pre-calculated semantic similarity. If None,
+            the function will calculate using embeddings if available.
+        use_embeddings: Optional override to enable/disable embeddings.
+        similarity_calculator: Custom similarity calculator to use.
 
     Returns:
         Fidelity metrics
     """
-    calculator = FidelityCalculator()
+    calculator = FidelityCalculator(use_embeddings=use_embeddings)
     return calculator.calculate_fidelity(
-        original_text, translated_text, semantic_similarity_score
+        original_text,
+        translated_text,
+        semantic_similarity_score,
+        use_embeddings=use_embeddings,
+        similarity_calculator=similarity_calculator,
     )
 
 
