@@ -49,7 +49,9 @@ class FidelityCalculator:
             use_embeddings: Force enable/disable embeddings (overrides env flag).
             model_name: Embedding model name.
         """
-        self._similarity_calculator = SemanticSimilarityCalculator(model_name=model_name)
+        self._similarity_calculator = SemanticSimilarityCalculator(
+            model_name=model_name
+        )
 
         if use_embeddings is not None:
             self._similarity_calculator.embedding_calculator.enable_embeddings = (
@@ -132,8 +134,7 @@ class FidelityCalculator:
 
         if use_embeddings is not None:
             calculator.embedding_calculator.enable_embeddings = (
-                use_embeddings
-                and calculator.embedding_calculator.model is not None
+                use_embeddings and calculator.embedding_calculator.model is not None
             )
 
         return calculator.calculate_similarity(original_text, translated_text)

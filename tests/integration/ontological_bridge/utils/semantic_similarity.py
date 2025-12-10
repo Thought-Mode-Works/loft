@@ -65,7 +65,9 @@ class EmbeddingSemanticSimilarity:
         """
         self.model_name = model_name
         self.enable_embeddings = (
-            _use_embeddings_default() if enable_embeddings is None else enable_embeddings
+            _use_embeddings_default()
+            if enable_embeddings is None
+            else enable_embeddings
         )
         self.model = None
         self._cache: Dict[str, "np.ndarray"] = {}
@@ -96,9 +98,7 @@ class EmbeddingSemanticSimilarity:
 
         return self._token_similarity.calculate(text1, text2)
 
-    def calculate_batch_similarity(
-        self, pairs: List[Tuple[str, str]]
-    ) -> List[float]:
+    def calculate_batch_similarity(self, pairs: List[Tuple[str, str]]) -> List[float]:
         """
         Efficiently calculate similarity for multiple pairs with caching.
 
