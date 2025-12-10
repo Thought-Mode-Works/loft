@@ -361,6 +361,28 @@ class TestCLIOptions:
         else:
             pytest.fail("enable_ensemble parameter not found")
 
+    def test_enable_ensemble_requires_enable_llm(self):
+        """Test that --enable-ensemble without --enable-llm raises UsageError."""
+        from click.testing import CliRunner
+        from loft.autonomous.cli import cli
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "start",
+                "--dataset",
+                "datasets/contracts/",
+                "--enable-ensemble",  # Without --enable-llm
+                "--duration",
+                "1m",
+            ],
+        )
+
+        # Should fail with usage error
+        assert result.exit_code != 0
+        assert "--enable-ensemble requires --enable-llm" in result.output
+
 
 class TestEnsembleDiagnostics:
     """Tests for the EnsembleDiagnostics class (issue #207)."""
