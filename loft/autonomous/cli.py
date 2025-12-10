@@ -219,9 +219,9 @@ class EnsembleDiagnostics:
         )
         self.total_tasks_processed += 1
         if was_unanimous:
-            unanimous_count = sum(
-                1 for v in self.voting_results if v.vote_count == 1
-            ) + 1
+            unanimous_count = (
+                sum(1 for v in self.voting_results if v.vote_count == 1) + 1
+            )
             self.consensus_rate = unanimous_count / len(self.voting_results)
 
     def record_disagreement(
@@ -252,9 +252,7 @@ class EnsembleDiagnostics:
     ) -> None:
         """Update performance metrics for a model."""
         if model_name not in self.model_performance:
-            self.model_performance[model_name] = ModelPerformance(
-                model_name=model_name
-            )
+            self.model_performance[model_name] = ModelPerformance(model_name=model_name)
 
         perf = self.model_performance[model_name]
         perf.total_requests += 1
@@ -262,12 +260,8 @@ class EnsembleDiagnostics:
             perf.successful_requests += 1
         # Update running averages
         n = perf.total_requests
-        perf.average_confidence = (
-            perf.average_confidence * (n - 1) + confidence
-        ) / n
-        perf.average_latency_ms = (
-            perf.average_latency_ms * (n - 1) + latency_ms
-        ) / n
+        perf.average_confidence = (perf.average_confidence * (n - 1) + confidence) / n
+        perf.average_latency_ms = (perf.average_latency_ms * (n - 1) + latency_ms) / n
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert diagnostics to dictionary for checkpoint serialization."""
@@ -409,7 +403,9 @@ class EnsembleCaseProcessorAdapter:
                 "status": "success",
                 "rules_generated": 1 if generated_rule else 0,
                 "rules_accepted": 1 if confidence >= 0.6 else 0,
-                "rules_rejected": 0 if confidence >= 0.6 else (1 if generated_rule else 0),
+                "rules_rejected": (
+                    0 if confidence >= 0.6 else (1 if generated_rule else 0)
+                ),
                 "processing_time_ms": processing_time_ms,
                 "error_message": None,
                 "confidence": confidence,
@@ -964,11 +960,11 @@ def start(
                 f"  Critic interventions: {diagnostics['critic_intervention_count']}\n"
                 f"  Elapsed time: {diagnostics['elapsed_seconds']:.1f}s"
             )
-            if diagnostics['voting_strategy_distribution']:
+            if diagnostics["voting_strategy_distribution"]:
                 logger.info(
                     f"  Voting strategies used: {diagnostics['voting_strategy_distribution']}"
                 )
-            if diagnostics['disagreement_resolutions']:
+            if diagnostics["disagreement_resolutions"]:
                 logger.info(
                     f"  Disagreement resolutions: {diagnostics['disagreement_resolutions']}"
                 )

@@ -488,7 +488,10 @@ class TestEnsembleCaseProcessorAdapter:
 
     def test_adapter_get_diagnostics(self):
         """Test that get_diagnostics returns the diagnostics object."""
-        from loft.autonomous.cli import EnsembleCaseProcessorAdapter, EnsembleDiagnostics
+        from loft.autonomous.cli import (
+            EnsembleCaseProcessorAdapter,
+            EnsembleDiagnostics,
+        )
 
         adapter = EnsembleCaseProcessorAdapter()
         diagnostics = adapter.get_diagnostics()
