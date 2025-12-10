@@ -5,9 +5,11 @@ This module implements the reverse translation layer that converts LLM
 natural language responses back into ASP facts and rules.
 """
 
-from typing import List, Optional, Type, TypeVar, Dict, Any
+import re
+from typing import List, Optional, Type, TypeVar, Dict, Any, Set, FrozenSet
 from dataclasses import dataclass, field
 from pydantic import BaseModel
+from loguru import logger
 
 from .schemas import ContractFact, ExtractedEntities, LegalRule
 from .patterns import (
@@ -18,6 +20,187 @@ from .patterns import (
 )
 
 T = TypeVar("T", bound=BaseModel)
+
+
+# =============================================================================
+# Canonical Predicate Vocabulary
+# =============================================================================
+#
+# This vocabulary defines the set of allowed predicates for NL→ASP translation.
+# Using a constrained vocabulary ensures bidirectional template matching between
+# NL→ASP and ASP→NL translations, improving round-trip fidelity.
+#
+# Categories:
+#   - Contract Formation: Core elements of valid contracts
+#   - Statute of Frauds: Writing requirements and triggers
+#   - Exceptions: Ways to satisfy/bypass SOF requirements
+#   - Signatures: Electronic and traditional signature predicates
+#   - Enforceability: Contract validity states
+#   - Parties & Entities: Contract participants
+#   - UCC Specific: Uniform Commercial Code predicates
+
+CANONICAL_PREDICATES: FrozenSet[str] = frozenset(
+    {
+        # Contract Formation (core elements)
+        "contract",
+        "contract_valid",
+        "has_offer",
+        "has_acceptance",
+        "has_consideration",
+        "has_mutual_assent",
+        "legal_capacity",
+        "has_writing",
+        "signed",
+        "signed_by",
+        # Statute of Frauds (writing requirement triggers)
+        "requires_writing",
+        "satisfies_sof",
+        "land_sale",
+        "land_sale_contract",
+        "suretyship",
+        "suretyship_agreement",
+        "goods_over_500",
+        "cannot_perform_within_year",
+        "within_one_year",
+        "marriage_promise",
+        "executor_promise",
+        # Exceptions (ways to satisfy/bypass SOF)
+        "part_performance",
+        "promissory_estoppel",
+        "merchant_confirmation",
+        "specially_manufactured",
+        "specially_manufactured_goods",
+        "court_admission",
+        "admission_in_court",
+        "written_memorandum",
+        "exception",
+        "exception_applies",
+        # Signatures
+        "electronic_signature",
+        "valid_signature",
+        "esign_applies",
+        "ueta_applies",
+        # Enforceability states
+        "enforceable",
+        "unenforceable",
+        "valid",
+        "invalid",
+        "void",
+        "voidable",
+        "binding",
+        # Parties and entities
+        "party",
+        "merchant",
+        "buyer",
+        "seller",
+        "promisor",
+        "promisee",
+        "involved_in",
+        # UCC specific
+        "ucc_applies",
+        "goods",
+        "sale_of_goods",
+        "price",
+        "quantity",
+        # Additional common predicates
+        "offer",
+        "acceptance",
+        "consideration",
+        "writing",
+        "memorandum",
+    }
+)
+
+# Predicate aliases for normalization (maps variations to canonical form)
+PREDICATE_ALIASES: Dict[str, str] = {
+    # CamelCase to snake_case
+    "ContractValid": "contract_valid",
+    "HasOffer": "has_offer",
+    "HasAcceptance": "has_acceptance",
+    "HasConsideration": "has_consideration",
+    "HasMutualAssent": "has_mutual_assent",
+    "LegalCapacity": "legal_capacity",
+    "HasWriting": "has_writing",
+    "RequiresWriting": "requires_writing",
+    "SatisfiesSof": "satisfies_sof",
+    "SatisfiesStatuteOfFrauds": "satisfies_sof",
+    "LandSale": "land_sale",
+    "LandSaleContract": "land_sale_contract",
+    "Suretyship": "suretyship",
+    "SuretyshipAgreement": "suretyship_agreement",
+    "GoodsOver500": "goods_over_500",
+    "CannotPerformWithinYear": "cannot_perform_within_year",
+    "PartPerformance": "part_performance",
+    "PromissoryEstoppel": "promissory_estoppel",
+    "MerchantConfirmation": "merchant_confirmation",
+    "SpeciallyManufactured": "specially_manufactured",
+    "CourtAdmission": "court_admission",
+    "ElectronicSignature": "electronic_signature",
+    "ValidSignature": "valid_signature",
+    "EsignApplies": "esign_applies",
+    "Enforceable": "enforceable",
+    "Unenforceable": "unenforceable",
+    "Valid": "valid",
+    "Invalid": "invalid",
+    "Void": "void",
+    "Voidable": "voidable",
+    "UccApplies": "ucc_applies",
+    # Common variations
+    "satisfy_sof": "satisfies_sof",
+    "statute_of_frauds": "satisfies_sof",
+    "writing_required": "requires_writing",
+    "must_be_in_writing": "requires_writing",
+    "is_valid": "valid",
+    "is_enforceable": "enforceable",
+    "contract_enforceable": "enforceable",
+    "contract_valid_if": "contract_valid",
+}
+
+# Concept to predicate mapping for legal terms
+LEGAL_CONCEPT_TO_PREDICATE: Dict[str, str] = {
+    # Contract elements
+    "offer": "has_offer",
+    "acceptance": "has_acceptance",
+    "consideration": "has_consideration",
+    "mutual assent": "has_mutual_assent",
+    "meeting of minds": "has_mutual_assent",
+    "capacity": "legal_capacity",
+    "written": "has_writing",
+    "writing": "has_writing",
+    "in writing": "has_writing",
+    "signed": "signed",
+    "signature": "signed",
+    # Contract types
+    "land sale": "land_sale",
+    "real estate": "land_sale",
+    "real property": "land_sale",
+    "sale of land": "land_sale",
+    "suretyship": "suretyship",
+    "guaranty": "suretyship",
+    "guarantee": "suretyship",
+    "goods over $500": "goods_over_500",
+    "goods over 500": "goods_over_500",
+    "ucc": "ucc_applies",
+    # Statute of frauds
+    "statute of frauds": "satisfies_sof",
+    "sof": "satisfies_sof",
+    # Exceptions
+    "part performance": "part_performance",
+    "partial performance": "part_performance",
+    "promissory estoppel": "promissory_estoppel",
+    "estoppel": "promissory_estoppel",
+    "specially manufactured": "specially_manufactured",
+    "custom goods": "specially_manufactured",
+    "merchant confirmation": "merchant_confirmation",
+    "confirmatory memo": "merchant_confirmation",
+    "court admission": "court_admission",
+    "admitted in court": "court_admission",
+    # Electronic
+    "electronic signature": "electronic_signature",
+    "e-signature": "electronic_signature",
+    "esign": "esign_applies",
+    "ueta": "ueta_applies",
+}
 
 
 @dataclass
@@ -372,3 +555,525 @@ class NLToASPTranslator:
             ExtractedEntities with all found entities
         """
         return nl_to_structured(nl_text, ExtractedEntities, self.llm_interface)
+
+
+# =============================================================================
+# Predicate Validation and Normalization Functions
+# =============================================================================
+
+
+def normalize_predicate(predicate: str) -> str:
+    """
+    Normalize a predicate name to canonical form.
+
+    Handles:
+    - CamelCase to snake_case conversion
+    - Known alias mapping
+    - Whitespace trimming
+
+    Args:
+        predicate: Raw predicate name from LLM output
+
+    Returns:
+        Normalized predicate name in snake_case
+
+    Examples:
+        >>> normalize_predicate("ContractValid")
+        'contract_valid'
+        >>> normalize_predicate("HasOffer")
+        'has_offer'
+        >>> normalize_predicate("statute_of_frauds")
+        'satisfies_sof'
+    """
+    predicate = predicate.strip()
+
+    # Check alias mapping first (handles both CamelCase and variations)
+    if predicate in PREDICATE_ALIASES:
+        return PREDICATE_ALIASES[predicate]
+
+    # Convert CamelCase to snake_case
+    # Insert underscore before uppercase letters and convert to lowercase
+    snake_case = re.sub(r"(?<!^)(?=[A-Z])", "_", predicate).lower()
+
+    # Check alias after conversion
+    if snake_case in PREDICATE_ALIASES:
+        return PREDICATE_ALIASES[snake_case]
+
+    return snake_case
+
+
+def extract_predicates_from_asp(asp_code: str) -> List[str]:
+    """
+    Extract all predicate names from ASP code.
+
+    Args:
+        asp_code: ASP code string (rules, facts, or queries)
+
+    Returns:
+        List of predicate names found
+
+    Examples:
+        >>> extract_predicates_from_asp("contract_valid(X) :- has_offer(X).")
+        ['contract_valid', 'has_offer']
+    """
+    # Match predicate names: word followed by (
+    pattern = r"(\w+)\s*\("
+    matches = re.findall(pattern, asp_code)
+
+    # Filter out ASP keywords and duplicates
+    keywords = {"not", "if", "then", "else", "or", "and"}
+    predicates = []
+    seen: Set[str] = set()
+
+    for pred in matches:
+        if pred not in keywords and pred not in seen:
+            predicates.append(pred)
+            seen.add(pred)
+
+    return predicates
+
+
+def validate_predicates(
+    predicates: List[str],
+    canonical_vocabulary: FrozenSet[str] = CANONICAL_PREDICATES,
+) -> tuple:
+    """
+    Validate predicates against canonical vocabulary.
+
+    Args:
+        predicates: List of predicate names to validate
+        canonical_vocabulary: Set of allowed predicates
+
+    Returns:
+        Tuple of (valid_predicates, invalid_predicates)
+
+    Examples:
+        >>> valid, invalid = validate_predicates(["has_offer", "UnknownPred"])
+        >>> print(valid)
+        ['has_offer']
+        >>> print(invalid)
+        ['UnknownPred']
+    """
+    valid = []
+    invalid = []
+
+    for pred in predicates:
+        normalized = normalize_predicate(pred)
+        if normalized in canonical_vocabulary:
+            valid.append(normalized)
+        else:
+            invalid.append(pred)
+
+    return valid, invalid
+
+
+def find_closest_predicate(
+    predicate: str,
+    vocabulary: FrozenSet[str] = CANONICAL_PREDICATES,
+) -> Optional[str]:
+    """
+    Find the closest matching canonical predicate for an invalid one.
+
+    Uses simple substring and word matching heuristics.
+
+    Args:
+        predicate: Invalid predicate name
+        vocabulary: Set of canonical predicates
+
+    Returns:
+        Closest matching canonical predicate, or None if no good match
+
+    Examples:
+        >>> find_closest_predicate("ContractIsValid")
+        'contract_valid'
+        >>> find_closest_predicate("RequireWriting")
+        'requires_writing'
+    """
+    normalized = normalize_predicate(predicate).lower()
+
+    # Direct match after normalization
+    if normalized in vocabulary:
+        return normalized
+
+    # Check concept mapping
+    for concept, canonical in LEGAL_CONCEPT_TO_PREDICATE.items():
+        if concept in normalized or normalized in concept:
+            return canonical
+
+    # Try substring matching
+    candidates = []
+    for canonical in vocabulary:
+        # Score based on common substrings
+        score = 0
+        pred_words = set(normalized.replace("_", " ").split())
+        canon_words = set(canonical.replace("_", " ").split())
+
+        # Count common words
+        common = pred_words & canon_words
+        score = len(common)
+
+        # Bonus for prefix match
+        if canonical.startswith(normalized[:4]) or normalized.startswith(canonical[:4]):
+            score += 2
+
+        # Bonus for key terms
+        key_terms = ["valid", "offer", "accept", "consider", "write", "sign", "enforce"]
+        for term in key_terms:
+            if term in normalized and term in canonical:
+                score += 3
+
+        if score > 0:
+            candidates.append((canonical, score))
+
+    if candidates:
+        # Return highest scoring match
+        candidates.sort(key=lambda x: x[1], reverse=True)
+        return candidates[0][0]
+
+    return None
+
+
+@dataclass
+class PredicateValidationResult:
+    """Result of predicate validation and correction."""
+
+    original_asp: str
+    corrected_asp: str
+    valid_predicates: List[str]
+    invalid_predicates: List[str]
+    corrections_made: Dict[str, str]  # Maps invalid -> corrected
+    compliance_rate: float  # Percentage of predicates that were valid
+    is_fully_compliant: bool
+
+    def __post_init__(self):
+        """Calculate compliance rate if not set."""
+        total = len(self.valid_predicates) + len(self.invalid_predicates)
+        if total > 0 and self.compliance_rate == 0.0:
+            self.compliance_rate = len(self.valid_predicates) / total
+
+
+class ConstrainedNLToASPTranslator:
+    """
+    NL→ASP translator that enforces a constrained predicate vocabulary.
+
+    Forces the LLM to use only canonical predicates, improving round-trip
+    translation fidelity by ensuring ASP→NL templates can match.
+
+    Attributes:
+        llm_interface: LLM interface for translation
+        vocabulary: Set of allowed predicates
+        auto_correct: Whether to automatically correct invalid predicates
+        strict_mode: If True, reject translations with uncorrectable predicates
+    """
+
+    def __init__(
+        self,
+        llm_interface: Optional[Any] = None,
+        vocabulary: FrozenSet[str] = CANONICAL_PREDICATES,
+        auto_correct: bool = True,
+        strict_mode: bool = False,
+    ):
+        """
+        Initialize constrained translator.
+
+        Args:
+            llm_interface: LLM interface for translation
+            vocabulary: Set of allowed predicates (default: CANONICAL_PREDICATES)
+            auto_correct: Whether to auto-correct invalid predicates
+            strict_mode: If True, raise error for uncorrectable predicates
+        """
+        self.llm_interface = llm_interface
+        self.vocabulary = vocabulary
+        self.auto_correct = auto_correct
+        self.strict_mode = strict_mode
+
+        # Fallback to base translator for pattern-based extraction
+        self._base_translator = NLToASPTranslator(llm_interface)
+
+    def _build_constrained_prompt(self, nl_text: str) -> str:
+        """
+        Build a prompt that constrains LLM to use canonical predicates.
+
+        Args:
+            nl_text: Natural language text to translate
+
+        Returns:
+            Prompt string with vocabulary constraints
+        """
+        sorted_predicates = sorted(self.vocabulary)
+        predicate_list = ", ".join(sorted_predicates)
+
+        return f"""Translate this legal statement to ASP (Answer Set Programming) using ONLY these predicates:
+
+ALLOWED PREDICATES:
+{predicate_list}
+
+RULES:
+1. DO NOT invent new predicates - only use predicates from the list above
+2. Use snake_case for all predicates (e.g., has_offer, not HasOffer)
+3. Variables should be single uppercase letters (X, Y, C, W)
+4. Map legal concepts to the closest canonical predicate
+5. If no exact predicate exists, use the closest semantic match
+
+CONCEPT MAPPINGS:
+- "offer" → has_offer(X)
+- "acceptance" → has_acceptance(X)
+- "consideration" → has_consideration(X)
+- "must be in writing" → requires_writing(X)
+- "land sale contract" → land_sale(X)
+- "statute of frauds" → satisfies_sof(X)
+- "part performance" → part_performance(X)
+
+STATEMENT TO TRANSLATE:
+{nl_text}
+
+ASP OUTPUT (use only allowed predicates):"""
+
+    def translate(self, nl_text: str) -> NLToASPResult:
+        """
+        Translate NL to ASP with vocabulary constraints.
+
+        Args:
+            nl_text: Natural language text to translate
+
+        Returns:
+            NLToASPResult with validated/corrected ASP code
+        """
+        # If no LLM, use pattern-based translation
+        if self.llm_interface is None:
+            base_result = self._base_translator.translate(nl_text)
+            validation = self._validate_and_correct(base_result.asp_code)
+
+            return NLToASPResult(
+                asp_facts=[validation.corrected_asp],
+                source_nl=nl_text,
+                confidence=base_result.confidence * validation.compliance_rate,
+                extraction_method="pattern_constrained",
+                metadata={
+                    "validation": {
+                        "valid_predicates": validation.valid_predicates,
+                        "invalid_predicates": validation.invalid_predicates,
+                        "corrections": validation.corrections_made,
+                        "compliance_rate": validation.compliance_rate,
+                    }
+                },
+            )
+
+        # Use LLM with constrained prompt
+        prompt = self._build_constrained_prompt(nl_text)
+
+        try:
+            response = self.llm_interface.query(prompt)
+            asp_code = (
+                response.content if hasattr(response, "content") else str(response)
+            )
+        except Exception as e:
+            logger.warning(f"LLM translation failed: {e}, falling back to patterns")
+            base_result = self._base_translator.translate(nl_text)
+            asp_code = base_result.asp_code
+
+        # Validate and correct
+        validation = self._validate_and_correct(asp_code)
+
+        # If not fully compliant and auto_correct is off, try LLM correction
+        if not validation.is_fully_compliant and self.llm_interface is not None:
+            validation = self._request_llm_correction(asp_code, validation)
+
+        # Check strict mode
+        if self.strict_mode and not validation.is_fully_compliant:
+            raise ValueError(
+                f"Translation contains invalid predicates that could not be corrected: "
+                f"{validation.invalid_predicates}"
+            )
+
+        return NLToASPResult(
+            asp_facts=[validation.corrected_asp],
+            source_nl=nl_text,
+            confidence=0.9 * validation.compliance_rate,
+            extraction_method="llm_constrained",
+            metadata={
+                "validation": {
+                    "valid_predicates": validation.valid_predicates,
+                    "invalid_predicates": validation.invalid_predicates,
+                    "corrections": validation.corrections_made,
+                    "compliance_rate": validation.compliance_rate,
+                    "original_asp": validation.original_asp,
+                }
+            },
+        )
+
+    def _validate_and_correct(self, asp_code: str) -> PredicateValidationResult:
+        """
+        Validate ASP code predicates and attempt automatic correction.
+
+        Args:
+            asp_code: ASP code to validate
+
+        Returns:
+            PredicateValidationResult with corrections applied
+        """
+        # Extract predicates from ASP
+        predicates = extract_predicates_from_asp(asp_code)
+
+        # Validate against vocabulary
+        valid, invalid = validate_predicates(predicates, self.vocabulary)
+
+        # Attempt corrections
+        corrections: Dict[str, str] = {}
+        corrected_asp = asp_code
+
+        if self.auto_correct and invalid:
+            for inv_pred in invalid:
+                # First try normalization
+                normalized = normalize_predicate(inv_pred)
+                if normalized in self.vocabulary:
+                    corrections[inv_pred] = normalized
+                    # Replace in ASP code (word boundary match)
+                    corrected_asp = re.sub(
+                        rf"\b{re.escape(inv_pred)}\s*\(",
+                        f"{normalized}(",
+                        corrected_asp,
+                    )
+                else:
+                    # Try to find closest match
+                    closest = find_closest_predicate(inv_pred, self.vocabulary)
+                    if closest:
+                        corrections[inv_pred] = closest
+                        corrected_asp = re.sub(
+                            rf"\b{re.escape(inv_pred)}\s*\(",
+                            f"{closest}(",
+                            corrected_asp,
+                        )
+
+        # Recalculate valid/invalid after corrections
+        corrected_predicates = extract_predicates_from_asp(corrected_asp)
+        final_valid, final_invalid = validate_predicates(
+            corrected_predicates, self.vocabulary
+        )
+
+        total = len(final_valid) + len(final_invalid)
+        compliance = len(final_valid) / total if total > 0 else 1.0
+
+        return PredicateValidationResult(
+            original_asp=asp_code,
+            corrected_asp=corrected_asp,
+            valid_predicates=final_valid,
+            invalid_predicates=final_invalid,
+            corrections_made=corrections,
+            compliance_rate=compliance,
+            is_fully_compliant=len(final_invalid) == 0,
+        )
+
+    def _request_llm_correction(
+        self,
+        original_asp: str,
+        validation: PredicateValidationResult,
+    ) -> PredicateValidationResult:
+        """
+        Request LLM to correct invalid predicates.
+
+        Args:
+            original_asp: Original ASP code
+            validation: Current validation result
+
+        Returns:
+            Updated PredicateValidationResult after LLM correction
+        """
+        if not validation.invalid_predicates or self.llm_interface is None:
+            return validation
+
+        correction_prompt = f"""The following ASP code contains invalid predicates that are not in the allowed vocabulary.
+
+INVALID PREDICATES: {', '.join(validation.invalid_predicates)}
+
+ALLOWED PREDICATES:
+{', '.join(sorted(self.vocabulary))}
+
+ORIGINAL ASP:
+{original_asp}
+
+Rewrite the ASP code using ONLY allowed predicates. Replace each invalid predicate with the closest semantic match from the allowed list.
+
+CORRECTED ASP:"""
+
+        try:
+            response = self.llm_interface.query(correction_prompt)
+            corrected_code = (
+                response.content if hasattr(response, "content") else str(response)
+            )
+
+            # Re-validate the corrected code
+            return self._validate_and_correct(corrected_code)
+        except Exception as e:
+            logger.warning(f"LLM correction failed: {e}")
+            return validation
+
+    def get_vocabulary_stats(self) -> Dict[str, Any]:
+        """
+        Get statistics about the predicate vocabulary.
+
+        Returns:
+            Dictionary with vocabulary statistics
+        """
+        return {
+            "total_predicates": len(self.vocabulary),
+            "categories": {
+                "contract_formation": len(
+                    [
+                        p
+                        for p in self.vocabulary
+                        if "offer" in p or "accept" in p or "consider" in p
+                    ]
+                ),
+                "statute_of_frauds": len(
+                    [
+                        p
+                        for p in self.vocabulary
+                        if "sof" in p or "writing" in p or "land" in p
+                    ]
+                ),
+                "exceptions": len(
+                    [
+                        p
+                        for p in self.vocabulary
+                        if "exception" in p or "performance" in p
+                    ]
+                ),
+                "enforceability": len(
+                    [
+                        p
+                        for p in self.vocabulary
+                        if "enforce" in p or "valid" in p or "void" in p
+                    ]
+                ),
+            },
+            "aliases_count": len(PREDICATE_ALIASES),
+            "concept_mappings_count": len(LEGAL_CONCEPT_TO_PREDICATE),
+        }
+
+
+def get_predicate_compliance_rate(
+    asp_code: str,
+    vocabulary: FrozenSet[str] = CANONICAL_PREDICATES,
+) -> float:
+    """
+    Calculate predicate compliance rate for ASP code.
+
+    Args:
+        asp_code: ASP code to analyze
+        vocabulary: Canonical vocabulary to check against
+
+    Returns:
+        Compliance rate as float between 0 and 1
+
+    Examples:
+        >>> rate = get_predicate_compliance_rate("has_offer(X) :- contract(X).")
+        >>> print(f"{rate:.2%}")
+        '100.00%'
+    """
+    predicates = extract_predicates_from_asp(asp_code)
+    if not predicates:
+        return 1.0
+
+    valid, invalid = validate_predicates(predicates, vocabulary)
+    return len(valid) / (len(valid) + len(invalid))
