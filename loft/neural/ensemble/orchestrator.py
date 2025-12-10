@@ -1310,7 +1310,12 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
         self._cache: Dict[str, Tuple[OrchestrationResult, float]] = {}
         self._cache_lock = threading.Lock()
 
-        # Model status
+        # Model initialization lock (Issue #200 - thread safety)
+        # Using RLock to allow nested locking if a model initializer
+        # needs to call another method that also acquires the lock
+        self._model_init_lock = threading.RLock()
+
+        # Model status (protected by _model_init_lock for writes, _lock for reads)
         self._model_status: Dict[str, ModelStatus] = {}
 
         logger.info(
@@ -1321,61 +1326,103 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
 
     @property
     def logic_generator(self) -> LogicGeneratorLLM:
-        """Lazy initialization of LogicGenerator."""
-        if self._logic_generator is None:
-            if self._llm_interface is None:
-                raise OrchestratorError(
-                    "LLM interface required to initialize LogicGenerator"
+        """Lazy initialization of LogicGenerator.
+
+        Thread-safe: Uses double-checked locking pattern (Issue #200).
+        """
+        # Fast path: check without lock
+        if self._logic_generator is not None:
+            return self._logic_generator
+
+        # Slow path: acquire lock and check again
+        with self._model_init_lock:
+            # Double-check after acquiring lock
+            if self._logic_generator is None:
+                if self._llm_interface is None:
+                    raise OrchestratorError(
+                        "LLM interface required to initialize LogicGenerator"
+                    )
+                self._logic_generator = LogicGeneratorLLM(
+                    config=LogicGeneratorConfig(),
+                    llm_interface=self._llm_interface,
                 )
-            self._logic_generator = LogicGeneratorLLM(
-                config=LogicGeneratorConfig(),
-                llm_interface=self._llm_interface,
-            )
-            self._model_status["logic_generator"] = ModelStatus.AVAILABLE
-        return self._logic_generator
+                self._model_status["logic_generator"] = ModelStatus.AVAILABLE
+            return self._logic_generator
 
     @property
     def critic(self) -> CriticLLM:
-        """Lazy initialization of Critic."""
-        if self._critic is None:
-            if self._llm_interface is None:
-                raise OrchestratorError("LLM interface required to initialize Critic")
-            self._critic = CriticLLM(
-                config=CriticConfig(),
-                llm_interface=self._llm_interface,
-            )
-            self._model_status["critic"] = ModelStatus.AVAILABLE
-        return self._critic
+        """Lazy initialization of Critic.
+
+        Thread-safe: Uses double-checked locking pattern (Issue #200).
+        """
+        # Fast path: check without lock
+        if self._critic is not None:
+            return self._critic
+
+        # Slow path: acquire lock and check again
+        with self._model_init_lock:
+            # Double-check after acquiring lock
+            if self._critic is None:
+                if self._llm_interface is None:
+                    raise OrchestratorError(
+                        "LLM interface required to initialize Critic"
+                    )
+                self._critic = CriticLLM(
+                    config=CriticConfig(),
+                    llm_interface=self._llm_interface,
+                )
+                self._model_status["critic"] = ModelStatus.AVAILABLE
+            return self._critic
 
     @property
     def translator(self) -> TranslatorLLM:
-        """Lazy initialization of Translator."""
-        if self._translator is None:
-            if self._llm_interface is None:
-                raise OrchestratorError(
-                    "LLM interface required to initialize Translator"
+        """Lazy initialization of Translator.
+
+        Thread-safe: Uses double-checked locking pattern (Issue #200).
+        """
+        # Fast path: check without lock
+        if self._translator is not None:
+            return self._translator
+
+        # Slow path: acquire lock and check again
+        with self._model_init_lock:
+            # Double-check after acquiring lock
+            if self._translator is None:
+                if self._llm_interface is None:
+                    raise OrchestratorError(
+                        "LLM interface required to initialize Translator"
+                    )
+                self._translator = TranslatorLLM(
+                    config=TranslatorConfig(),
+                    llm_interface=self._llm_interface,
                 )
-            self._translator = TranslatorLLM(
-                config=TranslatorConfig(),
-                llm_interface=self._llm_interface,
-            )
-            self._model_status["translator"] = ModelStatus.AVAILABLE
-        return self._translator
+                self._model_status["translator"] = ModelStatus.AVAILABLE
+            return self._translator
 
     @property
     def meta_reasoner(self) -> MetaReasonerLLM:
-        """Lazy initialization of MetaReasoner."""
-        if self._meta_reasoner is None:
-            if self._llm_interface is None:
-                raise OrchestratorError(
-                    "LLM interface required to initialize MetaReasoner"
+        """Lazy initialization of MetaReasoner.
+
+        Thread-safe: Uses double-checked locking pattern (Issue #200).
+        """
+        # Fast path: check without lock
+        if self._meta_reasoner is not None:
+            return self._meta_reasoner
+
+        # Slow path: acquire lock and check again
+        with self._model_init_lock:
+            # Double-check after acquiring lock
+            if self._meta_reasoner is None:
+                if self._llm_interface is None:
+                    raise OrchestratorError(
+                        "LLM interface required to initialize MetaReasoner"
+                    )
+                self._meta_reasoner = MetaReasonerLLM(
+                    config=MetaReasonerConfig(),
+                    llm_interface=self._llm_interface,
                 )
-            self._meta_reasoner = MetaReasonerLLM(
-                config=MetaReasonerConfig(),
-                llm_interface=self._llm_interface,
-            )
-            self._model_status["meta_reasoner"] = ModelStatus.AVAILABLE
-        return self._meta_reasoner
+                self._model_status["meta_reasoner"] = ModelStatus.AVAILABLE
+            return self._meta_reasoner
 
     def _get_cache_key(
         self,
@@ -2096,13 +2143,16 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
     def get_model_status(self, model_type: str) -> ModelStatus:
         """Get the status of a specific model.
 
+        Thread-safe: Uses lock for consistent read (Issue #200).
+
         Args:
             model_type: Type of model to check
 
         Returns:
             ModelStatus enum value
         """
-        return self._model_status.get(model_type, ModelStatus.UNAVAILABLE)
+        with self._model_init_lock:
+            return self._model_status.get(model_type, ModelStatus.UNAVAILABLE)
 
     def get_performance_metrics(self) -> Dict[str, ModelPerformanceMetrics]:
         """Get performance metrics for all models.
