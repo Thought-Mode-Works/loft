@@ -58,6 +58,7 @@ STATEMENT_TEMPLATES = {
     "goods_over_500": "{arg} is a contract for goods over $500",
     "suretyship": "{arg} is a suretyship agreement",
     "suretyship_agreement": "{arg} is a suretyship agreement",
+    "goods_contract": "{arg} is a contract for sale of goods",
     "within_one_year": "{arg} cannot be performed within one year",
     "cannot_perform_within_year": "{arg} cannot be performed within one year",
     # Exceptions and satisfactions
@@ -93,11 +94,18 @@ RULE_STATEMENT_TEMPLATES = {
         "A contract is enforceable if it satisfies the statute of frauds"
     ),
     "requires_writing(X) :- land_sale(X)": ("Land sale contracts must be in writing"),
+    "requires_writing(X) :- land_sale_contract(X)": ("Land sale contracts must be in writing"),
     "requires_writing(X) :- goods_over_500(X)": (
         "Contracts for goods over $500 require a written memorandum"
     ),
     "requires_writing(X) :- suretyship(X)": (
         "Suretyship agreements must be in writing"
+    ),
+    "requires_writing(X) :- suretyship_agreement(X)": (
+        "Suretyship agreements must be in writing"
+    ),
+    "requires_writing(X) :- goods_contract(X)": (
+        "Contracts for sale of goods require a written memorandum"
     ),
     "satisfies_sof(X) :- part_performance(X)": (
         "Part performance can satisfy the statute of frauds"
@@ -1279,7 +1287,7 @@ def _parse_body_predicates(body: str) -> List[tuple]:
 def _normalize_asp_rule(rule: str) -> str:
     """Normalize ASP rule for template matching.
 
-    Removes whitespace variations and standardizes format.
+    Removes whitespace variations, standardizes format, and normalizes variables.
     """
     # Remove extra whitespace
     normalized = " ".join(rule.split())
@@ -1289,7 +1297,36 @@ def _normalize_asp_rule(rule: str) -> str:
     # Ensure ends with period
     if not normalized.endswith("."):
         normalized += "."
-    return normalized
+        
+    # Normalize variables to X, Y, Z...
+    # Find all variables (single uppercase letters)
+    variables = []
+    for match in re.finditer(r"\b([A-Z])\b", normalized):
+        var = match.group(1)
+        if var not in variables:
+            variables.append(var)
+            
+    # Create mapping to X, Y, Z...
+    standard_vars = ["X", "Y", "Z", "W", "V", "U"]
+    var_map = {}
+    for i, var in enumerate(variables):
+        if i < len(standard_vars):
+            var_map[var] = standard_vars[i]
+            
+    # Apply mapping (careful not to replace parts of words)
+    # We rebuild the string to safely replace variables
+    result = ""
+    i = 0
+    while i < len(normalized):
+        char = normalized[i]
+        # Check if this is a variable (uppercase, word boundary)
+        if char.isupper() and (i == 0 or not normalized[i-1].isalnum()) and (i == len(normalized)-1 or not normalized[i+1].isalnum()):
+            result += var_map.get(char, char)
+        else:
+            result += char
+        i += 1
+        
+    return result
 
 
 def _find_best_rule_match(asp_code: str) -> Optional[str]:
