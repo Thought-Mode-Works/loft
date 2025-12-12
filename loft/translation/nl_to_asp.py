@@ -90,9 +90,36 @@ def nl_to_structured(
         500000.0
     """
     if llm_interface is not None:
+        # Determine prompt based on schema
+        from .schemas import LegalRule
+        
+        is_rule_schema = False
+        try:
+            # Check if schema is LegalRule or List[LegalRule]
+            if schema == LegalRule or (hasattr(schema, "__origin__") and schema.__origin__ is list and schema.__args__[0] == LegalRule):
+                is_rule_schema = True
+        except (AttributeError, IndexError):
+            pass
+
+        if is_rule_schema:
+            prompt = (
+                f"Extract legal rules from this text into ASP (Answer Set Programming) structure: {nl_response}\n"
+                "Ensure 'head_predicate' and 'body_conditions' use valid ASP syntax (lowercase, underscores, variables like C, X).\n"
+                "For negation, use 'not predicate(X)' in body_conditions. "
+                "For negative heads, use 'minus_predicate(X)' or 'unenforceable(X)' as appropriate.\n"
+                "IMPORTANT: You MUST use specific predicates for contract types:\n"
+                "- 'land_sale_contract(C)' for land sale contracts\n"
+                "- 'suretyship_agreement(C)' for suretyship agreements\n"
+                "- 'goods_contract(C)' for sale of goods\n"
+                "Do not just use 'contract(C)' for these.\n"
+                "For writing requirements, use 'requires_writing(X)' as the head predicate."
+            )
+        else:
+            prompt = f"Extract legal entities from this text: {nl_response}"
+
         # Use LLM for extraction with structured output
         response = llm_interface.query(
-            question=f"Extract legal entities from this text: {nl_response}",
+            question=prompt,
             output_schema=schema,
         )
         return response.content
