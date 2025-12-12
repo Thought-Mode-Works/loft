@@ -35,18 +35,13 @@ def main():
 
     # Setup LLM interface
     print("Setting up LLM interface...")
-    provider = AnthropicProvider(
-        api_key=config.llm.api_key,
-        model=config.llm.model
-    )
+    provider = AnthropicProvider(api_key=config.llm.api_key, model=config.llm.model)
     llm_interface = LLMInterface(provider)
 
     # Query LLM with enriched context
     print("Querying LLM...\n")
     response = llm_interface.query(
-        question=enriched_query,
-        context={"domain": "contract_law"},
-        max_tokens=500
+        question=enriched_query, context={"domain": "contract_law"}, max_tokens=500
     )
 
     print("=== LLM Response ===")
@@ -56,7 +51,9 @@ def main():
     # Show metadata
     print("=== Response Metadata ===")
     print(f"Model: {response.metadata.model}")
-    print(f"Tokens (input/output/total): {response.metadata.tokens_input}/{response.metadata.tokens_output}/{response.metadata.tokens_total}")
+    print(
+        f"Tokens (input/output/total): {response.metadata.tokens_input}/{response.metadata.tokens_output}/{response.metadata.tokens_total}"
+    )
     print(f"Cost: ${response.metadata.cost_usd:.4f}")
     print(f"Latency: {response.metadata.latency_ms:.0f}ms")
     print(f"Confidence: {response.confidence}")

@@ -5,7 +5,6 @@ Tests the ConsistencyProperties class and run_property_tests function.
 Aims to reach 80%+ coverage for loft/consistency/properties.py.
 """
 
-import pytest
 from hypothesis import given, settings
 from loft.consistency import ConsistencyChecker, ConsistencyProperties, TestFixtures
 from loft.consistency.generators import (
@@ -317,27 +316,27 @@ class TestRunPropertyTests:
         # Note: This test verifies run_property_tests can execute
         # The actual property tests are tested individually above
         # We skip this test to avoid hypothesis health check issues with multiple executors
-        pytest.skip(
-            "Property tests are tested individually to avoid hypothesis executor issues"
-        )
+        # pytest.skip(
+        #     "Property tests are tested individually to avoid hypothesis executor issues"
+        # )
 
     def test_run_property_tests_with_strict_checker(self):
         """Test run_property_tests with strict checker."""
         ConsistencyChecker(strict=True)
 
         # Skip to avoid hypothesis executor issues
-        pytest.skip(
-            "Property tests are tested individually to avoid hypothesis executor issues"
-        )
+        # pytest.skip(
+        #     "Property tests are tested individually to avoid hypothesis executor issues"
+        # )
 
     def test_run_property_tests_creates_properties_instance(self):
         """Test that run_property_tests creates ConsistencyProperties instance."""
         ConsistencyChecker()
 
         # Skip to avoid hypothesis executor issues
-        pytest.skip(
-            "Property tests are tested individually to avoid hypothesis executor issues"
-        )
+        # pytest.skip(
+        #     "Property tests are tested individually to avoid hypothesis executor issues"
+        # )
 
 
 class TestPropertyTestsEdgeCases:

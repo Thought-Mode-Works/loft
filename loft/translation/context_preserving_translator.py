@@ -60,7 +60,7 @@ class ContextPreservingTranslator:
         Reconstruct a natural language statement from this ASP code.
 
         Original statement (for reference): {context.original_nl}
-        Key terms to preserve: {', '.join(context.key_terms)}
+        Key terms to preserve: {", ".join(context.key_terms)}
         Entity names: {context.key_entities}
 
         ASP code: {asp_code}

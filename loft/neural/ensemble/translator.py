@@ -1164,8 +1164,7 @@ class TranslatorLLM(Translator):
         context = context or {}
 
         logger.info(
-            f"Starting roundtrip validation: "
-            f"{'ASP→NL→ASP' if is_asp else 'NL→ASP→NL'}"
+            f"Starting roundtrip validation: {'ASP→NL→ASP' if is_asp else 'NL→ASP→NL'}"
         )
 
         # Step 1: First translation

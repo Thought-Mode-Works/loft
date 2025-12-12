@@ -1613,10 +1613,7 @@ class ModelPromptOptimizer(PromptOptimizer):
 
     def _add_predicate_reminder(self, prompt: str) -> str:
         """Add predicate usage reminder to a prompt."""
-        reminder = (
-            "\n\nOnly use predicates from the provided list. "
-            "Do not introduce new predicates."
-        )
+        reminder = "\n\nOnly use predicates from the provided list. Do not introduce new predicates."
         return prompt + reminder
 
     def analyze_model_characteristics(self, model_name: str) -> ModelProfile:

@@ -50,7 +50,9 @@ def demonstrate_comprehensive_system():
 
     print("\nResults:")
     print(f"  Gaps identified: {result2.gaps_identified}")
-    print(f"  Rules incorporated: {result2.rules_incorporated} (duplicates: {result2.gaps_identified - result2.rules_incorporated})")
+    print(
+        f"  Rules incorporated: {result2.rules_incorporated} (duplicates: {result2.gaps_identified - result2.rules_incorporated})"
+    )
     print()
 
     # === SCENARIO 3: Persistence ===
@@ -59,9 +61,9 @@ def demonstrate_comprehensive_system():
     tactical_file = Path(persistence_dir) / "tactical.lp"
     if tactical_file.exists():
         content = tactical_file.read_text()
-        lines = content.strip().split('\n')
-        rule_count = sum(1 for line in lines if line and not line.startswith('%'))
-        metadata_count = sum(1 for line in lines if line.startswith('%'))
+        lines = content.strip().split("\n")
+        rule_count = sum(1 for line in lines if line and not line.startswith("%"))
+        metadata_count = sum(1 for line in lines if line.startswith("%"))
 
         print(f"Persisted file: {tactical_file}")
         print(f"  Total lines: {len(lines)}")
@@ -100,7 +102,7 @@ def demonstrate_comprehensive_system():
     print()
     print("Excerpt (first 40 lines):")
     print("-" * 80)
-    for i, line in enumerate(doc.split('\n')[:40], 1):
+    for i, line in enumerate(doc.split("\n")[:40], 1):
         print(line)
     print("-" * 80)
     print(f"... ({len(doc.split(chr(10))) - 40} more lines)")
@@ -117,7 +119,7 @@ def demonstrate_comprehensive_system():
     print(f"Best Strategy: {report.best_strategy or 'N/A'}")
     print()
     print("System Narrative:")
-    for sentence in report.narrative.split('. ')[:5]:
+    for sentence in report.narrative.split(". ")[:5]:
         if sentence.strip():
             print(f"  • {sentence.strip()}.")
     print()

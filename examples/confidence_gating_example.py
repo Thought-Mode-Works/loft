@@ -58,9 +58,7 @@ decision1 = gate.should_accept(
 
 print(f"Decision: {decision1.action.upper()}")
 print(f"Reasoning: {decision1.reasoning}")
-print(
-    f"Confidence: {decision1.calibrated_confidence:.2f} vs threshold {decision1.threshold:.2f}"
-)
+print(f"Confidence: {decision1.calibrated_confidence:.2f} vs threshold {decision1.threshold:.2f}")
 
 print("\n" + "=" * 70)
 print("Example 2: Medium confidence (borderline) for tactical layer")
@@ -72,9 +70,7 @@ decision2 = gate.should_accept(
 
 print(f"Decision: {decision2.action.upper()}")
 print(f"Reasoning: {decision2.reasoning}")
-print(
-    f"Confidence: {decision2.calibrated_confidence:.2f} vs threshold {decision2.threshold:.2f}"
-)
+print(f"Confidence: {decision2.calibrated_confidence:.2f} vs threshold {decision2.threshold:.2f}")
 
 print("\n" + "=" * 70)
 print("Example 3: Low confidence for tactical layer")
@@ -86,9 +82,7 @@ decision3 = gate.should_accept(
 
 print(f"Decision: {decision3.action.upper()}")
 print(f"Reasoning: {decision3.reasoning}")
-print(
-    f"Confidence: {decision3.calibrated_confidence:.2f} vs threshold {decision3.threshold:.2f}"
-)
+print(f"Confidence: {decision3.calibrated_confidence:.2f} vs threshold {decision3.threshold:.2f}")
 
 print("\n" + "=" * 70)
 print("Example 4: Impact-based threshold adjustment")
@@ -107,8 +101,12 @@ decision_high_impact = gate.should_accept(
     rule_impact="high",  # Raises threshold by 0.1
 )
 
-print(f"Low impact:  {decision_low_impact.action:20} (threshold: {decision_low_impact.threshold:.2f})")
-print(f"High impact: {decision_high_impact.action:20} (threshold: {decision_high_impact.threshold:.2f})")
+print(
+    f"Low impact:  {decision_low_impact.action:20} (threshold: {decision_low_impact.threshold:.2f})"
+)
+print(
+    f"High impact: {decision_high_impact.action:20} (threshold: {decision_high_impact.threshold:.2f})"
+)
 
 print("\n" + "=" * 70)
 print("Example 5: Different layers with same confidence")

@@ -411,9 +411,7 @@ class EnsembleBenchmarkSuite:
                 single_llm_avg_time_ms=1200.0,
                 ensemble_avg_time_ms=3500.0,
                 voting_strategy_used="weighted",
-                details={
-                    "note": "Simulated results - use without --dry-run for real benchmarks"
-                },
+                details={"note": "Simulated results - use without --dry-run for real benchmarks"},
             )
 
         # Real benchmark implementation
@@ -595,14 +593,10 @@ class EnsembleBenchmarkSuite:
                 )
 
         # Calculate metrics
-        avg_fidelity = (
-            sum(fidelity_scores) / len(fidelity_scores) if fidelity_scores else 0
-        )
+        avg_fidelity = sum(fidelity_scores) / len(fidelity_scores) if fidelity_scores else 0
         min_fidelity = min(fidelity_scores) if fidelity_scores else 0
         max_fidelity = max(fidelity_scores) if fidelity_scores else 0
-        success_rate = (
-            successful_roundtrips / len(test_cases) if len(test_cases) > 0 else 0
-        )
+        success_rate = successful_roundtrips / len(test_cases) if len(test_cases) > 0 else 0
 
         return FidelityBenchmarkResult(
             average_fidelity=avg_fidelity,
@@ -828,9 +822,7 @@ class EnsembleBenchmarkSuite:
         avg_latency = summary.get("avg_latency_seconds", 0.0) * 1000
 
         cost_per_case = total_cost / test_cases_count if test_cases_count > 0 else 0
-        tokens_per_case = (
-            total_tokens // test_cases_count if test_cases_count > 0 else 0
-        )
+        tokens_per_case = total_tokens // test_cases_count if test_cases_count > 0 else 0
 
         return CostBenchmarkResult(
             total_tokens_used=total_tokens,
@@ -900,27 +892,21 @@ class EnsembleBenchmarkSuite:
         logger.info(f"  Single LLM accuracy: {result.single_llm_accuracy:.1%}")
         logger.info(f"  Ensemble accuracy: {result.ensemble_accuracy:.1%}")
         logger.info(f"  Improvement: {result.improvement_percentage:+.1f}%")
-        logger.info(
-            f"  MVP target (>20%): {'PASS' if result.mvp_target_met else 'FAIL'}"
-        )
+        logger.info(f"  MVP target (>20%): {'PASS' if result.mvp_target_met else 'FAIL'}")
 
     def _log_fidelity_result(self, result: FidelityBenchmarkResult) -> None:
         """Log fidelity benchmark result."""
         logger.info(f"  Average fidelity: {result.average_fidelity:.1%}")
         logger.info(f"  Min/Max: {result.min_fidelity:.1%} / {result.max_fidelity:.1%}")
         logger.info(f"  Roundtrip success rate: {result.roundtrip_success_rate:.1%}")
-        logger.info(
-            f"  MVP target (>95%): {'PASS' if result.mvp_target_met else 'FAIL'}"
-        )
+        logger.info(f"  MVP target (>95%): {'PASS' if result.mvp_target_met else 'FAIL'}")
 
     def _log_insight_result(self, result: InsightBenchmarkResult) -> None:
         """Log insight benchmark result."""
         logger.info(f"  Total insights: {result.total_insights_generated}")
         logger.info(f"  Actionable: {result.actionable_insights_count}")
         logger.info(f"  Actionability: {result.actionability_percentage:.1f}%")
-        logger.info(
-            f"  MVP target (actionable): {'PASS' if result.mvp_target_met else 'FAIL'}"
-        )
+        logger.info(f"  MVP target (actionable): {'PASS' if result.mvp_target_met else 'FAIL'}")
 
     def _log_cost_result(self, result: CostBenchmarkResult) -> None:
         """Log cost benchmark result."""
@@ -928,9 +914,7 @@ class EnsembleBenchmarkSuite:
         logger.info(f"  Total cost: ${result.total_cost_usd:.4f}")
         logger.info(f"  Cost per case: ${result.cost_per_case_usd:.4f}")
         logger.info(f"  Avg latency: {result.avg_latency_ms:.0f}ms")
-        logger.info(
-            f"  MVP target (optimized): {'PASS' if result.mvp_target_met else 'FAIL'}"
-        )
+        logger.info(f"  MVP target (optimized): {'PASS' if result.mvp_target_met else 'FAIL'}")
 
     def _compile_mvp_summary(self, summary: MVPBenchmarkSummary) -> None:
         """Compile the final MVP summary."""
@@ -968,16 +952,12 @@ class EnsembleBenchmarkSuite:
         logger.info("=" * 60)
         logger.info(f"Criteria met: {criteria_met}")
         logger.info(f"Criteria not met: {criteria_not_met}")
-        logger.info(
-            f"Overall MVP: {'PASSED' if summary.overall_mvp_passed else 'FAILED'}"
-        )
+        logger.info(f"Overall MVP: {'PASSED' if summary.overall_mvp_passed else 'FAILED'}")
 
 
 def main() -> None:
     """Run the benchmark suite."""
-    parser = argparse.ArgumentParser(
-        description="Phase 6 Ensemble MVP Validation Benchmarks"
-    )
+    parser = argparse.ArgumentParser(description="Phase 6 Ensemble MVP Validation Benchmarks")
     parser.add_argument(
         "--model",
         type=str,

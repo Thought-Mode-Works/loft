@@ -698,8 +698,7 @@ class MajorityVotingStrategy(VotingStrategy):
                     participating_models=participating,
                     dissenting_models=dissenting,
                     reasoning=(
-                        f"Majority achieved with {len(group_responses)}/{len(responses)} "
-                        f"votes"
+                        f"Majority achieved with {len(group_responses)}/{len(responses)} votes"
                     ),
                 )
 
