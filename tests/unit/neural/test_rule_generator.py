@@ -415,9 +415,7 @@ class TestFillKnowledgeGap:
         # Verify the instruction text is present
         assert "Dataset Predicates" in prompt or "USE THESE EXACTLY" in prompt
 
-    def test_gap_filling_with_empty_dataset_predicates(
-        self, rule_generator_v1_3, mock_llm
-    ):
+    def test_gap_filling_with_empty_dataset_predicates(self, rule_generator_v1_3, mock_llm):
         """Test gap filling with empty dataset predicates list (issue #166 edge case)."""
         gap_response = GapFillingResponse(
             gap_description="Test gap with empty predicates",
@@ -506,9 +504,7 @@ class TestFillKnowledgeGap:
         # Verify the section header is present
         assert "Dataset Predicates" in prompt
 
-    def test_gap_filling_without_dataset_predicates(
-        self, rule_generator_v1_3, mock_llm
-    ):
+    def test_gap_filling_without_dataset_predicates(self, rule_generator_v1_3, mock_llm):
         """Test gap filling with None dataset predicates (backward compatibility)."""
         gap_response = GapFillingResponse(
             gap_description="Test gap without predicates",

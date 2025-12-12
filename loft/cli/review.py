@@ -224,13 +224,9 @@ class ReviewCLI:
 
         for item in items:
             age_hours = (datetime.now() - item.created_at).total_seconds() / 3600
-            age_str = (
-                f"{age_hours:.1f}h" if age_hours < 24 else f"{age_hours / 24:.1f}d"
-            )
+            age_str = f"{age_hours:.1f}h" if age_hours < 24 else f"{age_hours / 24:.1f}d"
 
-            reason_short = (
-                item.reason[:37] + "..." if len(item.reason) > 40 else item.reason
-            )
+            reason_short = item.reason[:37] + "..." if len(item.reason) > 40 else item.reason
 
             print(f"{item.id:<20} {item.priority:<12} {reason_short:<40} {age_str}")
 
@@ -258,9 +254,7 @@ def main():
 
     # Start command
     start_parser = subparsers.add_parser("start", help="Start review session")
-    start_parser.add_argument(
-        "--reviewer", required=True, help="Reviewer ID (e.g., alice)"
-    )
+    start_parser.add_argument("--reviewer", required=True, help="Reviewer ID (e.g., alice)")
 
     # Stats command
     subparsers.add_parser("stats", help="Show queue statistics")

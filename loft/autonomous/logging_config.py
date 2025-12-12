@@ -224,9 +224,7 @@ class LLMErrorSummarizer:
 
         return f"LLM error: {summary}"
 
-    def _categorize_error(
-        self, error_message: str, last_exception: Optional[str]
-    ) -> str:
+    def _categorize_error(self, error_message: str, last_exception: Optional[str]) -> str:
         """Categorize the error for summary grouping."""
         combined = f"{error_message} {last_exception or ''}"
         combined_lower = combined.lower()
@@ -350,18 +348,10 @@ class ProgressIndicator:
         elapsed_hours = elapsed.total_seconds() / 3600
 
         # Calculate rates
-        cases_per_hour = (
-            self.cases_processed / elapsed_hours if elapsed_hours > 0 else 0
-        )
-        accuracy = (
-            self.cases_successful / self.cases_processed
-            if self.cases_processed > 0
-            else 0
-        )
+        cases_per_hour = self.cases_processed / elapsed_hours if elapsed_hours > 0 else 0
+        accuracy = self.cases_successful / self.cases_processed if self.cases_processed > 0 else 0
         acceptance_rate = (
-            self.rules_accepted / self.rules_generated
-            if self.rules_generated > 0
-            else 0
+            self.rules_accepted / self.rules_generated if self.rules_generated > 0 else 0
         )
 
         self.logger.info(
@@ -472,13 +462,9 @@ def setup_autonomous_logging(
     )
 
     # Create components
-    clingo_filter = ClingoMessageFilter(
-        summary_interval_seconds=clingo_summary_interval
-    )
+    clingo_filter = ClingoMessageFilter(summary_interval_seconds=clingo_summary_interval)
     error_summarizer = LLMErrorSummarizer()
-    progress_indicator = ProgressIndicator(
-        log_interval_seconds=progress_interval_seconds
-    )
+    progress_indicator = ProgressIndicator(log_interval_seconds=progress_interval_seconds)
 
     # Apply Clingo filter to relevant loggers
     if enable_clingo_filter:

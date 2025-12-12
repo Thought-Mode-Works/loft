@@ -310,9 +310,7 @@ class TestPerformanceMonitor:
         """Test resolving performance alert."""
         monitor = PerformanceMonitor()
 
-        alert = monitor.add_alert(
-            severity="medium", category="performance", message="Test alert"
-        )
+        alert = monitor.add_alert(severity="medium", category="performance", message="Test alert")
 
         assert monitor.resolve_alert(alert.alert_id)
         assert alert.resolved is True

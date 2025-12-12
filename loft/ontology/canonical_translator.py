@@ -248,9 +248,7 @@ class CanonicalTranslator:
                 untranslatable_predicates.append(pred)
 
         if strict and untranslatable_predicates:
-            raise ValueError(
-                f"Cannot translate predicates: {untranslatable_predicates}"
-            )
+            raise ValueError(f"Cannot translate predicates: {untranslatable_predicates}")
 
         return translated_rule, translated_predicates, untranslatable_predicates
 

@@ -89,21 +89,11 @@ class TestEmpiricalValidator:
         """Test that accuracy threshold is enforced."""
         # Create test cases where rule gets 60% accuracy (below 70% threshold)
         test_cases = [
-            TestCase(
-                case_id="tc1", description="desc", facts="a.", query="a", expected=True
-            ),
-            TestCase(
-                case_id="tc2", description="desc", facts="b.", query="a", expected=False
-            ),
-            TestCase(
-                case_id="tc3", description="desc", facts="c.", query="a", expected=False
-            ),
-            TestCase(
-                case_id="tc4", description="desc", facts="d.", query="a", expected=False
-            ),
-            TestCase(
-                case_id="tc5", description="desc", facts="e.", query="a", expected=False
-            ),
+            TestCase(case_id="tc1", description="desc", facts="a.", query="a", expected=True),
+            TestCase(case_id="tc2", description="desc", facts="b.", query="a", expected=False),
+            TestCase(case_id="tc3", description="desc", facts="c.", query="a", expected=False),
+            TestCase(case_id="tc4", description="desc", facts="d.", query="a", expected=False),
+            TestCase(case_id="tc5", description="desc", facts="e.", query="a", expected=False),
         ]
 
         # Rule that only gets tc1 and tc2 correct (40%)
@@ -249,12 +239,8 @@ class TestEmpiricalValidator:
     def test_boolean_query_type(self, validator):
         """Test handling of boolean query results."""
         test_cases = [
-            TestCase(
-                case_id="tc1", description="desc", facts="a.", query="a", expected=True
-            ),
-            TestCase(
-                case_id="tc2", description="desc", facts="b.", query="a", expected=False
-            ),
+            TestCase(case_id="tc1", description="desc", facts="a.", query="a", expected=True),
+            TestCase(case_id="tc2", description="desc", facts="b.", query="a", expected=False),
         ]
 
         rule = "a."

@@ -50,9 +50,7 @@ class MockRegressionTestSuite(SimpleTestSuite):
         import random
 
         random.seed(42 + self.test_count)
-        self.current_accuracy = min(
-            1.0, self.current_accuracy + random.uniform(0, 0.01)
-        )
+        self.current_accuracy = min(1.0, self.current_accuracy + random.uniform(0, 0.01))
 
         return {
             "passed": True,
@@ -64,9 +62,7 @@ class MockRegressionTestSuite(SimpleTestSuite):
 class TestMVPCriteria:
     """Test MVP validation criteria from Issue #42."""
 
-    def create_test_rule(
-        self, rule_num: int, confidence: float = 0.85
-    ) -> GeneratedRule:
+    def create_test_rule(self, rule_num: int, confidence: float = 0.85) -> GeneratedRule:
         """Create a numbered test rule."""
         return GeneratedRule(
             asp_rule=f"rule_{rule_num}(X) :- condition_{rule_num}(X).",
@@ -95,9 +91,7 @@ class TestMVPCriteria:
         This demonstrates that the system can autonomously incorporate
         multiple rules following stratification policies.
         """
-        engine = RuleIncorporationEngine(
-            test_suite=MockRegressionTestSuite(initial_accuracy=0.80)
-        )
+        engine = RuleIncorporationEngine(test_suite=MockRegressionTestSuite(initial_accuracy=0.80))
         report = self.create_test_validation_report()
 
         successful_incorporations = 0
@@ -117,9 +111,9 @@ class TestMVPCriteria:
                 successful_incorporations += 1
 
         # MVP criterion: Successfully incorporate 10 rules
-        assert (
-            successful_incorporations == 10
-        ), f"Expected 10 successful incorporations, got {successful_incorporations}"
+        assert successful_incorporations == 10, (
+            f"Expected 10 successful incorporations, got {successful_incorporations}"
+        )
 
         # Verify all are tracked
         stats = engine.get_statistics()
@@ -132,9 +126,7 @@ class TestMVPCriteria:
             assert "timestamp" in history_item
             assert history_item["snapshot_id"] is not None
 
-        print(
-            f"\n✓ MVP Criterion 1 PASSED: {successful_incorporations}/10 rules incorporated"
-        )
+        print(f"\n✓ MVP Criterion 1 PASSED: {successful_incorporations}/10 rules incorporated")
         print(f"  Total modifications: {stats['total_modifications']}")
         print(f"  History tracked: {len(engine.incorporation_history)} entries")
 
@@ -190,9 +182,7 @@ class TestMVPCriteria:
 
         stats = engine.get_statistics()
 
-        print(
-            f"\n✓ MVP Criterion 2 PASSED: Detected and rolled back {rolled_back} harmful changes"
-        )
+        print(f"\n✓ MVP Criterion 2 PASSED: Detected and rolled back {rolled_back} harmful changes")
         print(f"  Successful incorporations: {successful}/5")
         print(f"  Rollbacks: {rolled_back}/5")
         print(f"  Success rate: {stats['success_rate']:.1%}")
@@ -207,9 +197,7 @@ class TestMVPCriteria:
         - Accuracy measurements
         - Reason for success/failure
         """
-        engine = RuleIncorporationEngine(
-            test_suite=MockRegressionTestSuite(initial_accuracy=0.85)
-        )
+        engine = RuleIncorporationEngine(test_suite=MockRegressionTestSuite(initial_accuracy=0.85))
         report = self.create_test_validation_report()
 
         # Incorporate several rules
@@ -383,9 +371,7 @@ class TestRollbackMechanism:
         )
 
         # This should trigger rollback
-        result = engine.incorporate(
-            rule, StratificationLevel.TACTICAL, report, is_autonomous=True
-        )
+        result = engine.incorporate(rule, StratificationLevel.TACTICAL, report, is_autonomous=True)
 
         assert not result.is_success()
         assert len(engine.rollback_history) == 1

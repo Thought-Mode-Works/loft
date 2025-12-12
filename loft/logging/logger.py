@@ -204,9 +204,7 @@ def get_loft_logger(component: str = "system") -> Any:
     return logger.bind(component=component)
 
 
-def log_llm_interaction(
-    logger_instance: Any, event: str, model: str, **kwargs: Any
-) -> None:
+def log_llm_interaction(logger_instance: Any, event: str, model: str, **kwargs: Any) -> None:
     """
     Log an LLM interaction with structured data.
 

@@ -90,9 +90,7 @@ class HealthStatus:
             "run_id": self.run_id,
             "uptime_seconds": self.uptime_seconds,
             "progress": self.progress,
-            "last_updated": (
-                self.last_updated.isoformat() if self.last_updated else None
-            ),
+            "last_updated": (self.last_updated.isoformat() if self.last_updated else None),
             "timestamp": datetime.now().isoformat(),
         }
 
@@ -143,9 +141,7 @@ class HealthRequestHandler(BaseHTTPRequestHandler):
         health_status = self.server.get_health_status()
         ready = health_status.status in ["running", "idle", "completed"]
         status_code = 200 if ready else 503
-        self._send_response(
-            status_code, {"ready": ready, "status": health_status.status}
-        )
+        self._send_response(status_code, {"ready": ready, "status": health_status.status})
 
     def _send_response(self, status_code: int, data: Dict[str, Any]) -> None:
         """Send JSON response.
@@ -237,9 +233,7 @@ class HealthServer:
             self._running = True
             self._thread.start()
 
-            logger.info(
-                f"Health server started on {self._config.host}:{self._config.port}"
-            )
+            logger.info(f"Health server started on {self._config.host}:{self._config.port}")
 
         except Exception as e:
             logger.error(f"Failed to start health server: {e}")
@@ -289,8 +283,7 @@ class HealthServer:
             llm_metrics = {
                 "total_calls": llm_metrics_data.get("total_calls", 0),
                 "total_tokens": (
-                    llm_metrics_data.get("tokens_in", 0)
-                    + llm_metrics_data.get("tokens_out", 0)
+                    llm_metrics_data.get("tokens_in", 0) + llm_metrics_data.get("tokens_out", 0)
                 ),
                 "total_cost_usd": llm_metrics_data.get("cost_usd", 0.0),
                 "calls_per_hour": llm_metrics_data.get("calls_per_hour", 0.0),
@@ -308,9 +301,7 @@ class HealthServer:
 
         healthy = self._current_state.status not in [RunStatus.FAILED]
         progress_dict = (
-            self._current_state.progress.to_dict()
-            if self._current_state.progress
-            else {}
+            self._current_state.progress.to_dict() if self._current_state.progress else {}
         )
 
         # Extract rule metrics from progress if available

@@ -64,9 +64,7 @@ class TestStratificationValidator:
             level=StratificationLevel.CONSTITUTIONAL,
             confidence=1.0,
         )
-        core.add_rule(
-            const_rule, StratificationLevel.CONSTITUTIONAL, bypass_checks=True
-        )
+        core.add_rule(const_rule, StratificationLevel.CONSTITUTIONAL, bypass_checks=True)
 
         # Strategic rule
         strat_rule = create_test_rule(
@@ -136,9 +134,7 @@ class TestStratificationValidator:
             level=StratificationLevel.CONSTITUTIONAL,
             confidence=1.0,
         )
-        core.add_rule(
-            different_rule, StratificationLevel.CONSTITUTIONAL, bypass_checks=True
-        )
+        core.add_rule(different_rule, StratificationLevel.CONSTITUTIONAL, bypass_checks=True)
 
         report = validator.validate_core(core)
 
@@ -163,9 +159,7 @@ class TestStratificationValidator:
 
         # Create core with original + new rule
         core = StratifiedASPCore()
-        core.add_rule(
-            initial_rule, StratificationLevel.CONSTITUTIONAL, bypass_checks=True
-        )
+        core.add_rule(initial_rule, StratificationLevel.CONSTITUTIONAL, bypass_checks=True)
 
         new_rule = create_test_rule(
             rule_id="const_2",
@@ -305,9 +299,7 @@ class TestStratificationValidator:
         report = validator.validate_core(core)
 
         assert not report.valid
-        dep_violations = [
-            v for v in report.violations if v.violation_type == "invalid_dependency"
-        ]
+        dep_violations = [v for v in report.violations if v.violation_type == "invalid_dependency"]
         assert len(dep_violations) > 0
         assert dep_violations[0].severity == "high"
         assert "strategic" in dep_violations[0].description.lower()
@@ -324,9 +316,7 @@ class TestStratificationValidator:
             level=StratificationLevel.CONSTITUTIONAL,
             confidence=1.0,
         )
-        core.add_rule(
-            const_rule, StratificationLevel.CONSTITUTIONAL, bypass_checks=True
-        )
+        core.add_rule(const_rule, StratificationLevel.CONSTITUTIONAL, bypass_checks=True)
 
         # Strategic rule depending on constitutional (allowed)
         strategic_rule = create_test_rule(
@@ -340,9 +330,7 @@ class TestStratificationValidator:
         report = validator.validate_core(core)
 
         assert report.valid
-        dep_violations = [
-            v for v in report.violations if v.violation_type == "invalid_dependency"
-        ]
+        dep_violations = [v for v in report.violations if v.violation_type == "invalid_dependency"]
         assert len(dep_violations) == 0
 
     def test_report_structure(self, validator, core_with_rules):
@@ -412,9 +400,7 @@ class TestStratificationValidator:
             level=StratificationLevel.CONSTITUTIONAL,
             confidence=1.0,
         )
-        validator_with_rules = StratificationValidator(
-            initial_constitutional_rules=[expected_rule]
-        )
+        validator_with_rules = StratificationValidator(initial_constitutional_rules=[expected_rule])
 
         core = StratifiedASPCore()
 
@@ -425,9 +411,7 @@ class TestStratificationValidator:
             level=StratificationLevel.CONSTITUTIONAL,
             confidence=1.0,
         )
-        core.add_rule(
-            different_rule, StratificationLevel.CONSTITUTIONAL, bypass_checks=True
-        )
+        core.add_rule(different_rule, StratificationLevel.CONSTITUTIONAL, bypass_checks=True)
 
         # Violation 2: Circular dependency
         rule_a = create_test_rule(

@@ -87,9 +87,7 @@ class DebateFramework:
             >>> result = framework.run_dialectical_cycle(context)
             >>> print(result.final_rule.asp_rule)
         """
-        logger.info(
-            f"Starting dialectical cycle: {context.knowledge_gap_description[:80]}..."
-        )
+        logger.info(f"Starting dialectical cycle: {context.knowledge_gap_description[:80]}...")
 
         # Round 0: Initial thesis from generator
         logger.info("Round 0: Generating initial thesis")
@@ -124,9 +122,7 @@ class DebateFramework:
 
             # Check if critique recommends acceptance (early convergence)
             if critique.recommendation == "accept":
-                logger.info(
-                    f"Round {round_num}: Critic recommends acceptance. Converging early."
-                )
+                logger.info(f"Round {round_num}: Critic recommends acceptance. Converging early.")
                 debate_round = DebateRound(
                     round_number=round_num,
                     thesis=current_thesis,
@@ -188,9 +184,7 @@ class DebateFramework:
                     f"{self.convergence_threshold})"
                 )
                 converged = True
-                convergence_reason = (
-                    f"Convergence score {convergence_score:.2f} exceeded threshold"
-                )
+                convergence_reason = f"Convergence score {convergence_score:.2f} exceeded threshold"
                 break
 
             # Update thesis for next round
@@ -264,10 +258,7 @@ class DebateFramework:
         )
 
         # Extract recommended rule from response
-        if (
-            response.candidates
-            and len(response.candidates) > response.recommended_index
-        ):
+        if response.candidates and len(response.candidates) > response.recommended_index:
             thesis = response.candidates[response.recommended_index].rule
         else:
             # Fallback: create simple rule
@@ -280,9 +271,7 @@ class DebateFramework:
                 confidence=0.3,
                 reasoning="Fallback rule due to empty generation response",
                 predicates_used=(
-                    context.existing_predicates[:1]
-                    if context.existing_predicates
-                    else []
+                    context.existing_predicates[:1] if context.existing_predicates else []
                 ),
                 source_type="gap_fill",
                 source_text=context.knowledge_gap_description,
@@ -291,9 +280,7 @@ class DebateFramework:
         logger.info(f"Initial thesis: {thesis.asp_rule}")
         return thesis
 
-    def _calculate_convergence(
-        self, thesis: GeneratedRule, synthesis: GeneratedRule
-    ) -> float:
+    def _calculate_convergence(self, thesis: GeneratedRule, synthesis: GeneratedRule) -> float:
         """
         Calculate convergence score between thesis and synthesis.
 

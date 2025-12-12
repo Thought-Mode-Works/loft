@@ -270,9 +270,7 @@ class ImprovementCycle:
             "goals": [g.to_dict() for g in self.goals],
             "actions_taken": [a.to_dict() for a in self.actions_taken],
             "status": self.status.value,
-            "completed_at": (
-                self.completed_at.isoformat() if self.completed_at else None
-            ),
+            "completed_at": (self.completed_at.isoformat() if self.completed_at else None),
             "results": self.results.to_dict() if self.results else None,
             "iteration_number": self.iteration_number,
             "parent_cycle_id": self.parent_cycle_id,
@@ -309,9 +307,7 @@ class ProgressReport:
             "progress_percentage": self.progress_percentage,
             "trend": self.trend,
             "estimated_completion": (
-                self.estimated_completion.isoformat()
-                if self.estimated_completion
-                else None
+                self.estimated_completion.isoformat() if self.estimated_completion else None
             ),
             "recommendations": self.recommendations,
             "generated_at": self.generated_at.isoformat(),
@@ -408,17 +404,12 @@ class SelfImprovementTracker:
             value: Measured value
             context: Optional context
         """
-        measurement = MetricValue(
-            metric_type=metric_type, value=value, context=context or {}
-        )
+        measurement = MetricValue(metric_type=metric_type, value=value, context=context or {})
         self._metrics_history[metric_type].append(measurement)
 
         # Update related goals
         for goal in self._goals.values():
-            if (
-                goal.metric_type == metric_type
-                and goal.status == GoalStatus.IN_PROGRESS
-            ):
+            if goal.metric_type == metric_type and goal.status == GoalStatus.IN_PROGRESS:
                 goal.update_progress(value, context)
 
     def track_progress(self, goal_id: str) -> ProgressReport:
@@ -460,9 +451,7 @@ class SelfImprovementTracker:
             recommendations=recommendations,
         )
 
-    def measure_improvement_rate(
-        self, metric_type: Optional[MetricType] = None
-    ) -> float:
+    def measure_improvement_rate(self, metric_type: Optional[MetricType] = None) -> float:
         """
         Measure overall improvement rate.
 
@@ -534,9 +523,7 @@ class SelfImprovementTracker:
 
         return (value_change / first.value) * 100 / days
 
-    def _estimate_completion(
-        self, goal: ImprovementGoal, trend: str
-    ) -> Optional[datetime]:
+    def _estimate_completion(self, goal: ImprovementGoal, trend: str) -> Optional[datetime]:
         """Estimate when goal will be achieved."""
         if goal.is_achieved:
             return goal.achieved_at
@@ -569,9 +556,7 @@ class SelfImprovementTracker:
         recommendations = []
 
         if goal.is_achieved:
-            recommendations.append(
-                "Goal achieved! Consider setting a more ambitious target."
-            )
+            recommendations.append("Goal achieved! Consider setting a more ambitious target.")
             return recommendations
 
         if goal.is_overdue:
@@ -589,13 +574,9 @@ class SelfImprovementTracker:
             )
 
         if goal.progress_percentage < 25:
-            recommendations.append(
-                "Limited progress. Focus more resources on this goal."
-            )
+            recommendations.append("Limited progress. Focus more resources on this goal.")
         elif goal.progress_percentage > 75:
-            recommendations.append(
-                "Good progress! Continue current approach to achieve goal."
-            )
+            recommendations.append("Good progress! Continue current approach to achieve goal.")
 
         return recommendations
 
@@ -797,11 +778,7 @@ class AutonomousImprover:
             effectiveness = min(
                 1.0,
                 (cycle.results.goals_achieved / max(1, len(cycle.goals))) * 0.5
-                + (
-                    cycle.results.actions_successful
-                    / max(1, cycle.results.actions_executed)
-                )
-                * 0.3
+                + (cycle.results.actions_successful / max(1, cycle.results.actions_executed)) * 0.3
                 + max(0, cycle.results.overall_improvement / 10) * 0.2,
             )
         else:
@@ -811,9 +788,7 @@ class AutonomousImprover:
         lessons = self._extract_lessons(cycle)
 
         # Generate recommendations for next cycle
-        recommendations = self._generate_next_cycle_recommendations(
-            cycle, effectiveness
-        )
+        recommendations = self._generate_next_cycle_recommendations(cycle, effectiveness)
 
         return CycleEvaluation(
             evaluation_id=f"eval_{uuid.uuid4().hex[:8]}",
@@ -868,9 +843,7 @@ class AutonomousImprover:
 
         return actions
 
-    def _create_action_for_goal(
-        self, goal: ImprovementGoal
-    ) -> Optional[ImprovementAction]:
+    def _create_action_for_goal(self, goal: ImprovementGoal) -> Optional[ImprovementAction]:
         """Create an action to improve a specific goal."""
         action_mapping = {
             MetricType.ACCURACY: ActionType.RULE_MODIFICATION,
@@ -883,9 +856,7 @@ class AutonomousImprover:
             MetricType.COVERAGE: ActionType.RULE_MODIFICATION,
         }
 
-        action_type = action_mapping.get(
-            goal.metric_type, ActionType.STRATEGY_ADJUSTMENT
-        )
+        action_type = action_mapping.get(goal.metric_type, ActionType.STRATEGY_ADJUSTMENT)
 
         return ImprovementAction(
             action_id=f"action_{uuid.uuid4().hex[:8]}",
@@ -921,9 +892,7 @@ class AutonomousImprover:
                 metrics[metric_type.value] = history[-1].value
         return metrics
 
-    def _check_degradation(
-        self, before: Dict[str, float], after: Dict[str, float]
-    ) -> bool:
+    def _check_degradation(self, before: Dict[str, float], after: Dict[str, float]) -> bool:
         """Check if metrics degraded beyond threshold."""
         for metric, before_value in before.items():
             after_value = after.get(metric, before_value)
@@ -940,9 +909,7 @@ class AutonomousImprover:
             if rollback_handler and action.rollback_data:
                 try:
                     rollback_handler(action)
-                    cycle.log_event(
-                        "action_rolled_back", {"action_id": action.action_id}
-                    )
+                    cycle.log_event("action_rolled_back", {"action_id": action.action_id})
                 except Exception:
                     cycle.log_event("rollback_failed", {"action_id": action.action_id})
 
@@ -966,9 +933,7 @@ class AutonomousImprover:
                 improvement = ((after_value - before_value) / before_value) * 100
                 improvements.append(improvement)
 
-        overall_improvement = (
-            sum(improvements) / len(improvements) if improvements else 0.0
-        )
+        overall_improvement = sum(improvements) / len(improvements) if improvements else 0.0
 
         duration = (datetime.now() - cycle.started_at).total_seconds()
 
@@ -989,9 +954,7 @@ class AutonomousImprover:
 
         if cycle.results:
             if cycle.results.overall_improvement > 5:
-                lessons.append(
-                    "Significant improvement achieved through current approach"
-                )
+                lessons.append("Significant improvement achieved through current approach")
             elif cycle.results.overall_improvement < 0:
                 lessons.append("Actions led to degradation - review strategy")
 
@@ -999,9 +962,7 @@ class AutonomousImprover:
                 lessons.append("Low action success rate - improve action generation")
 
         if cycle.safety_violations:
-            lessons.append(
-                f"Safety violations occurred: {', '.join(cycle.safety_violations)}"
-            )
+            lessons.append(f"Safety violations occurred: {', '.join(cycle.safety_violations)}")
 
         return lessons
 
@@ -1022,9 +983,7 @@ class AutonomousImprover:
         # Check for unachieved goals
         unachieved = [g for g in cycle.goals if not g.is_achieved]
         if unachieved:
-            recommendations.append(
-                f"Focus on {len(unachieved)} unachieved goals in next cycle"
-            )
+            recommendations.append(f"Focus on {len(unachieved)} unachieved goals in next cycle")
 
         return recommendations
 

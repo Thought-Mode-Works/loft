@@ -125,9 +125,7 @@ class TestCriticSystemMockMode:
 
     def test_critique_rule_basic(self, critic, sample_rule):
         """Test basic rule critique in mock mode."""
-        critique = critic.critique_rule(
-            sample_rule, existing_rules=[], context="Contract law"
-        )
+        critique = critic.critique_rule(sample_rule, existing_rules=[], context="Contract law")
 
         assert isinstance(critique, CritiqueReport)
         assert critique.rule == sample_rule.asp_rule
@@ -245,10 +243,7 @@ class TestCriticSystemMockMode:
         if improved:  # Mock may or may not synthesize
             assert isinstance(improved, GeneratedRule)
             assert "consideration" in improved.asp_rule
-            assert (
-                "Mock synthesis" in improved.reasoning
-                or "Synthesized" in improved.reasoning
-            )
+            assert "Mock synthesis" in improved.reasoning or "Synthesized" in improved.reasoning
 
 
 class TestCriticSystemValidation:
@@ -631,9 +626,7 @@ class TestCriticWithLLM:
         critique = CritiqueReport(
             rule=sample_rule.asp_rule,
             issues=[
-                CritiqueIssue(
-                    category="test", description="test", severity=CritiqueSeverity.LOW
-                )
+                CritiqueIssue(category="test", description="test", severity=CritiqueSeverity.LOW)
             ],
         )
 
@@ -681,9 +674,7 @@ Some text after"""
 
     def test_extract_json_nested_in_text(self, critic):
         """Test extraction when JSON is nested in text."""
-        response = (
-            """Here is the result: {"result": "success", "count": 5} and that's it."""
-        )
+        response = """Here is the result: {"result": "success", "count": 5} and that's it."""
         extracted = critic._extract_json(response)
         data = json.loads(extracted)
         assert data["result"] == "success"

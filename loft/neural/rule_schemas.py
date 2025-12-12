@@ -52,9 +52,7 @@ class CandidateValidationMetrics:
         self.total_candidates_received += 1
         self.valid_candidates_accepted += 1
 
-    def record_invalid(
-        self, candidate_index: int, error_message: str, asp_rule: str
-    ) -> None:
+    def record_invalid(self, candidate_index: int, error_message: str, asp_rule: str) -> None:
         """Record a filtered invalid candidate."""
         self.total_candidates_received += 1
         self.invalid_candidates_filtered += 1
@@ -362,9 +360,7 @@ class GeneratedRule(BaseModel):
     and provenance tracking for validation pipeline integration.
     """
 
-    asp_rule: str = Field(
-        description="ASP rule in Clingo syntax (e.g., 'enforceable(C) :- ...')"
-    )
+    asp_rule: str = Field(description="ASP rule in Clingo syntax (e.g., 'enforceable(C) :- ...')")
     confidence: float = Field(
         ge=0.0, le=1.0, description="Model confidence in rule validity (0.0-1.0)"
     )
@@ -384,9 +380,7 @@ class GeneratedRule(BaseModel):
     source_type: Literal["principle", "case", "gap_fill", "refinement"] = Field(
         description="Type of source that generated this rule"
     )
-    source_text: str = Field(
-        description="Original natural language text that motivated the rule"
-    )
+    source_text: str = Field(description="Original natural language text that motivated the rule")
     citation: Optional[str] = Field(
         default=None, description="Legal citation if from case law or statute"
     )
@@ -460,21 +454,13 @@ class GapFillingResponse(BaseModel):
     recommendations.
     """
 
-    gap_description: str = Field(
-        description="Description of the knowledge gap being addressed"
-    )
-    missing_predicate: str = Field(
-        description="The specific predicate that needs to be defined"
-    )
+    gap_description: str = Field(description="Description of the knowledge gap being addressed")
+    missing_predicate: str = Field(description="The specific predicate that needs to be defined")
     candidates: List[RuleCandidate] = Field(
         description="Candidate rules that could fill the gap", min_length=1
     )
-    recommended_index: int = Field(
-        description="Index of recommended candidate (0-based)", ge=0
-    )
-    requires_validation: bool = Field(
-        description="Whether this gap-fill requires human validation"
-    )
+    recommended_index: int = Field(description="Index of recommended candidate (0-based)", ge=0)
+    requires_validation: bool = Field(description="Whether this gap-fill requires human validation")
     test_cases_needed: List[str] = Field(
         description="Test cases needed to validate the generated rules"
     )
@@ -501,9 +487,7 @@ class ConsensusVote(BaseModel):
     a proposed rule, with detailed justification.
     """
 
-    vote: Literal["accept", "reject", "revise"] = Field(
-        description="Vote on the proposed rule"
-    )
+    vote: Literal["accept", "reject", "revise"] = Field(description="Vote on the proposed rule")
     confidence: float = Field(
         ge=0.0,
         le=1.0,
@@ -520,9 +504,7 @@ class ConsensusVote(BaseModel):
         default_factory=list,
         description="Test cases that should be used to validate the rule",
     )
-    reasoning: str = Field(
-        description="Detailed explanation of the vote and any issues"
-    )
+    reasoning: str = Field(description="Detailed explanation of the vote and any issues")
 
     @field_validator("suggested_revision")
     @classmethod
@@ -541,9 +523,7 @@ class PrincipleToRuleRequest(BaseModel):
     codified legal principles.
     """
 
-    principle_text: str = Field(
-        description="Natural language statement of the legal principle"
-    )
+    principle_text: str = Field(description="Natural language statement of the legal principle")
     domain: str = Field(description="Legal domain (e.g., 'contract_law', 'torts')")
     existing_predicates: List[str] = Field(
         default_factory=list,
@@ -563,9 +543,7 @@ class CaseToRuleRequest(BaseModel):
     """
 
     case_text: str = Field(description="Excerpt from judicial opinion")
-    citation: str = Field(
-        description="Case citation (e.g., 'Smith v. Jones, 123 F.3d 456')"
-    )
+    citation: str = Field(description="Case citation (e.g., 'Smith v. Jones, 123 F.3d 456')")
     jurisdiction: str = Field(description="Jurisdiction (e.g., 'CA', 'Federal')")
     domain: str = Field(description="Legal domain")
     existing_predicates: List[str] = Field(
@@ -591,9 +569,7 @@ class LenientGeneratedRule(BaseModel):
     without validation, then validated separately.
     """
 
-    asp_rule: str = Field(
-        description="ASP rule in Clingo syntax (not validated during parsing)"
-    )
+    asp_rule: str = Field(description="ASP rule in Clingo syntax (not validated during parsing)")
     confidence: float = Field(
         ge=0.0, le=1.0, description="Model confidence in rule validity (0.0-1.0)"
     )
@@ -613,9 +589,7 @@ class LenientGeneratedRule(BaseModel):
     source_type: Literal["principle", "case", "gap_fill", "refinement"] = Field(
         description="Type of source that generated this rule"
     )
-    source_text: str = Field(
-        description="Original natural language text that motivated the rule"
-    )
+    source_text: str = Field(description="Original natural language text that motivated the rule")
     citation: Optional[str] = Field(
         default=None, description="Legal citation if from case law or statute"
     )
@@ -694,21 +668,13 @@ class LenientGapFillingResponse(BaseModel):
         print(f"Filtered {metrics.invalid_candidates_filtered} invalid candidates")
     """
 
-    gap_description: str = Field(
-        description="Description of the knowledge gap being addressed"
-    )
-    missing_predicate: str = Field(
-        description="The specific predicate that needs to be defined"
-    )
+    gap_description: str = Field(description="Description of the knowledge gap being addressed")
+    missing_predicate: str = Field(description="The specific predicate that needs to be defined")
     candidates: List[LenientRuleCandidate] = Field(
         description="Candidate rules (not validated during parsing)", min_length=1
     )
-    recommended_index: int = Field(
-        description="Index of recommended candidate (0-based)", ge=0
-    )
-    requires_validation: bool = Field(
-        description="Whether this gap-fill requires human validation"
-    )
+    recommended_index: int = Field(description="Index of recommended candidate (0-based)", ge=0)
+    requires_validation: bool = Field(description="Whether this gap-fill requires human validation")
     test_cases_needed: List[str] = Field(
         description="Test cases needed to validate the generated rules"
     )

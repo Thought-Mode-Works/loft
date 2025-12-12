@@ -39,18 +39,14 @@ class TestAnthropicProvider:
     def provider(self):
         """Create AnthropicProvider with mocked client."""
         with patch("loft.neural.providers.anthropic.Anthropic"):
-            provider = AnthropicProvider(
-                api_key="test-key", model="claude-3-5-sonnet-20241022"
-            )
+            provider = AnthropicProvider(api_key="test-key", model="claude-3-5-sonnet-20241022")
             provider.client = Mock()
             return provider
 
     def test_init(self):
         """Test provider initialization."""
         with patch("loft.neural.providers.anthropic.Anthropic") as mock_anthropic:
-            provider = AnthropicProvider(
-                api_key="test-key", model="claude-3-5-haiku-20241022"
-            )
+            provider = AnthropicProvider(api_key="test-key", model="claude-3-5-haiku-20241022")
 
             mock_anthropic.assert_called_once_with(api_key="test-key")
             assert provider.model == "claude-3-5-haiku-20241022"
@@ -70,9 +66,7 @@ class TestAnthropicProvider:
     def test_estimate_cost_haiku(self):
         """Test cost estimation for Haiku model."""
         with patch("loft.neural.providers.anthropic.Anthropic"):
-            provider = AnthropicProvider(
-                api_key="test-key", model="claude-3-5-haiku-20241022"
-            )
+            provider = AnthropicProvider(api_key="test-key", model="claude-3-5-haiku-20241022")
             # claude-3-5-haiku-20241022: input=$0.80/M, output=$4.00/M
             cost = provider.estimate_cost(1000, 500)
             expected = (1000 / 1_000_000 * 0.80) + (500 / 1_000_000 * 4.00)
@@ -207,9 +201,7 @@ class TestAnthropicProvider:
         mock_instructor.from_anthropic = Mock(return_value=mock_client)
 
         with patch.dict("sys.modules", {"instructor": mock_instructor}):
-            query = LLMQuery(
-                question="Is this valid?", output_schema=StructuredOutputSchema
-            )
+            query = LLMQuery(question="Is this valid?", output_schema=StructuredOutputSchema)
             response = provider.query(query)
 
             assert isinstance(response.content, StructuredOutputSchema)
@@ -234,9 +226,7 @@ class TestAnthropicProvider:
         """Test handling of timeout errors."""
         import anthropic
 
-        provider.client.messages.create = Mock(
-            side_effect=anthropic.APITimeoutError("Timeout")
-        )
+        provider.client.messages.create = Mock(side_effect=anthropic.APITimeoutError("Timeout"))
 
         query = LLMQuery(question="Test")
         with pytest.raises(LLMTimeoutError) as exc_info:
@@ -328,9 +318,7 @@ class TestOpenAIProvider:
 
     def test_build_messages_custom_system_prompt(self, provider):
         """Test building messages with custom system prompt."""
-        query = LLMQuery(
-            question="Is this valid?", system_prompt="You are a contract expert."
-        )
+        query = LLMQuery(question="Is this valid?", system_prompt="You are a contract expert.")
         messages = provider._build_messages(query)
 
         assert messages[0]["role"] == "system"
@@ -338,9 +326,7 @@ class TestOpenAIProvider:
 
     def test_build_messages_with_context(self, provider):
         """Test building messages with context."""
-        query = LLMQuery(
-            question="Is this enforceable?", context={"type": "sale", "state": "CA"}
-        )
+        query = LLMQuery(question="Is this enforceable?", context={"type": "sale", "state": "CA"})
         messages = provider._build_messages(query)
 
         user_message = messages[1]["content"]
@@ -477,9 +463,7 @@ class TestLocalProvider:
 
     def test_init_custom_url(self):
         """Test initialization with custom URL."""
-        provider = LocalProvider(
-            api_key="", model="llama2", base_url="http://custom:8080"
-        )
+        provider = LocalProvider(api_key="", model="llama2", base_url="http://custom:8080")
         assert provider.base_url == "http://custom:8080"
 
     def test_get_provider_name(self, provider):
@@ -503,9 +487,7 @@ class TestLocalProvider:
 
     def test_build_messages_with_context(self, provider):
         """Test building messages with context."""
-        query = LLMQuery(
-            question="Is this enforceable?", context={"type": "sale", "state": "CA"}
-        )
+        query = LLMQuery(question="Is this enforceable?", context={"type": "sale", "state": "CA"})
         messages = provider._build_messages(query)
 
         user_content = messages[1]["content"]
@@ -565,9 +547,7 @@ class TestLocalProvider:
     def test_query_structured_with_markdown_json(self, provider):
         """Test structured query with JSON in markdown code block."""
         mock_response_data = {
-            "message": {
-                "content": '```json\n{"answer": "Valid", "confidence": 0.85}\n```'
-            },
+            "message": {"content": '```json\n{"answer": "Valid", "confidence": 0.85}\n```'},
             "model": "llama2",
         }
 

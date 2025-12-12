@@ -82,9 +82,7 @@ class ContradictionManager:
                     self.store.save_contradiction(contradiction)
                     contradictions.append(contradiction)
 
-        logger.info(
-            f"Detected {len(contradictions)} contradictions among {len(rules)} rules"
-        )
+        logger.info(f"Detected {len(contradictions)} contradictions among {len(rules)} rules")
 
         return contradictions
 
@@ -213,9 +211,7 @@ class ContradictionManager:
         """
         return self.store.get_interpretations_by_principle(principle)
 
-    def generate_contradiction_alert(
-        self, contradiction: ContradictionReport
-    ) -> Dict[str, Any]:
+    def generate_contradiction_alert(self, contradiction: ContradictionReport) -> Dict[str, Any]:
         """
         Generate alert for a contradiction.
 
@@ -319,9 +315,7 @@ class ContradictionManager:
 
         return None
 
-    def _is_logical_contradiction(
-        self, rule_a: Dict[str, Any], rule_b: Dict[str, Any]
-    ) -> bool:
+    def _is_logical_contradiction(self, rule_a: Dict[str, Any], rule_b: Dict[str, Any]) -> bool:
         """Check if rules are logically contradictory."""
         # Simple heuristic: check for negation patterns
         text_a = rule_a.get("rule_text", "").lower()
@@ -358,9 +352,7 @@ class ContradictionManager:
 
         return False
 
-    def _is_temporal_contradiction(
-        self, rule_a: Dict[str, Any], rule_b: Dict[str, Any]
-    ) -> bool:
+    def _is_temporal_contradiction(self, rule_a: Dict[str, Any], rule_b: Dict[str, Any]) -> bool:
         """Check if newer rule supersedes older."""
         created_a = rule_a.get("created_at")
         created_b = rule_b.get("created_at")
@@ -432,9 +424,7 @@ class ContradictionManager:
 
         return ResolutionStrategy.CONFIDENCE
 
-    def _select_resolution_strategy(
-        self, contradiction: ContradictionReport
-    ) -> ResolutionStrategy:
+    def _select_resolution_strategy(self, contradiction: ContradictionReport) -> ResolutionStrategy:
         """Auto-select best resolution strategy."""
         # Use suggested resolution if available
         if contradiction.suggested_resolution:
@@ -446,9 +436,7 @@ class ContradictionManager:
             contradiction.affects_layers,
         )
 
-    def _resolve_by_stratification(
-        self, contradiction: ContradictionReport
-    ) -> ResolutionResult:
+    def _resolve_by_stratification(self, contradiction: ContradictionReport) -> ResolutionResult:
         """Resolve by stratification: higher layer wins."""
         if len(contradiction.affects_layers) < 2:
             return ResolutionResult(
@@ -480,9 +468,7 @@ class ContradictionManager:
             confidence=0.95,
         )
 
-    def _resolve_by_temporal(
-        self, contradiction: ContradictionReport
-    ) -> ResolutionResult:
+    def _resolve_by_temporal(self, contradiction: ContradictionReport) -> ResolutionResult:
         """Resolve by temporal: newer rule wins."""
         # Would need created_at timestamps from rules
         return ResolutionResult(
@@ -494,9 +480,7 @@ class ContradictionManager:
             requires_validation=True,
         )
 
-    def _resolve_by_context(
-        self, contradiction: ContradictionReport
-    ) -> ResolutionResult:
+    def _resolve_by_context(self, contradiction: ContradictionReport) -> ResolutionResult:
         """Resolve by context: select based on context applicability."""
         return ResolutionResult(
             contradiction_id=contradiction.contradiction_id,
@@ -507,9 +491,7 @@ class ContradictionManager:
             requires_validation=True,
         )
 
-    def _resolve_by_specificity(
-        self, contradiction: ContradictionReport
-    ) -> ResolutionResult:
+    def _resolve_by_specificity(self, contradiction: ContradictionReport) -> ResolutionResult:
         """Resolve by specificity: more specific rule wins."""
         # Would analyze rule conditions for specificity
         return ResolutionResult(
@@ -521,9 +503,7 @@ class ContradictionManager:
             requires_validation=True,
         )
 
-    def _resolve_by_confidence(
-        self, contradiction: ContradictionReport
-    ) -> ResolutionResult:
+    def _resolve_by_confidence(self, contradiction: ContradictionReport) -> ResolutionResult:
         """Resolve by confidence: higher confidence rule wins."""
         return ResolutionResult(
             contradiction_id=contradiction.contradiction_id,
@@ -534,9 +514,7 @@ class ContradictionManager:
             requires_validation=True,
         )
 
-    def _escalate_to_human(
-        self, contradiction: ContradictionReport
-    ) -> ResolutionResult:
+    def _escalate_to_human(self, contradiction: ContradictionReport) -> ResolutionResult:
         """Escalate to human decision."""
         return ResolutionResult(
             contradiction_id=contradiction.contradiction_id,

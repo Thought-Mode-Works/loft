@@ -82,9 +82,7 @@ class EdgeCase:
         """Validate severity values."""
         valid_severities = {"low", "medium", "high", "critical"}
         if self.severity.lower() not in valid_severities:
-            logger.warning(
-                f"Unknown severity '{self.severity}', defaulting to 'medium'"
-            )
+            logger.warning(f"Unknown severity '{self.severity}', defaulting to 'medium'")
             self.severity = "medium"
         self.severity = self.severity.lower()
 
@@ -180,37 +178,25 @@ class CriticResult:
 class EdgeCaseSchema(BaseModel):
     """Schema for LLM-generated edge case analysis."""
 
-    description: str = Field(
-        description="Natural language description of the edge case"
-    )
-    scenario: str = Field(
-        description="Concrete example scenario that triggers the failure"
-    )
+    description: str = Field(description="Natural language description of the edge case")
+    scenario: str = Field(description="Concrete example scenario that triggers the failure")
     failure_mode: str = Field(
         description="How the rule fails: false_positive, false_negative, undefined_behavior"
     )
     severity: str = Field(description="Severity: low, medium, high, critical")
-    confidence: float = Field(
-        ge=0.0, le=1.0, description="Confidence this is a real edge case"
-    )
+    confidence: float = Field(ge=0.0, le=1.0, description="Confidence this is a real edge case")
     suggested_fix: Optional[str] = Field(
         default=None, description="Suggestion for addressing the edge case"
     )
-    related_predicates: List[str] = Field(
-        default_factory=list, description="Predicates involved"
-    )
+    related_predicates: List[str] = Field(default_factory=list, description="Predicates involved")
 
 
 class EdgeCaseAnalysisResult(BaseModel):
     """Schema for complete edge case analysis response."""
 
-    edge_cases: List[EdgeCaseSchema] = Field(
-        description="List of identified edge cases"
-    )
+    edge_cases: List[EdgeCaseSchema] = Field(description="List of identified edge cases")
     analysis_summary: str = Field(description="Summary of the edge case analysis")
-    confidence: float = Field(
-        ge=0.0, le=1.0, description="Overall confidence in the analysis"
-    )
+    confidence: float = Field(ge=0.0, le=1.0, description="Overall confidence in the analysis")
 
 
 class ContradictionSchema(BaseModel):
@@ -218,24 +204,16 @@ class ContradictionSchema(BaseModel):
 
     description: str = Field(description="Description of the contradiction")
     rule1: str = Field(description="First conflicting rule")
-    rule2: str = Field(
-        description="Second conflicting rule or knowledge base reference"
-    )
-    conflict_type: str = Field(
-        description="Type: direct, implicit, contextual, semantic"
-    )
+    rule2: str = Field(description="Second conflicting rule or knowledge base reference")
+    conflict_type: str = Field(description="Type: direct, implicit, contextual, semantic")
     example_trigger: Optional[str] = Field(
         default=None, description="Example that triggers inconsistency"
     )
     resolution_suggestion: Optional[str] = Field(
         default=None, description="How to resolve the conflict"
     )
-    confidence: float = Field(
-        ge=0.0, le=1.0, description="Confidence in this contradiction"
-    )
-    affected_predicates: List[str] = Field(
-        default_factory=list, description="Affected predicates"
-    )
+    confidence: float = Field(ge=0.0, le=1.0, description="Confidence in this contradiction")
+    affected_predicates: List[str] = Field(default_factory=list, description="Affected predicates")
 
 
 class ContradictionAnalysisResult(BaseModel):
@@ -244,35 +222,23 @@ class ContradictionAnalysisResult(BaseModel):
     contradictions: List[ContradictionSchema] = Field(
         description="List of identified contradictions"
     )
-    is_consistent: bool = Field(
-        description="Whether the rule is consistent with existing rules"
-    )
+    is_consistent: bool = Field(description="Whether the rule is consistent with existing rules")
     analysis_summary: str = Field(description="Summary of the contradiction analysis")
-    confidence: float = Field(
-        ge=0.0, le=1.0, description="Overall confidence in the analysis"
-    )
+    confidence: float = Field(ge=0.0, le=1.0, description="Overall confidence in the analysis")
 
 
 class GeneralizationSchema(BaseModel):
     """Schema for LLM-generated generalization assessment."""
 
-    generalization_score: float = Field(
-        ge=0.0, le=1.0, description="Overall generalization score"
-    )
+    generalization_score: float = Field(ge=0.0, le=1.0, description="Overall generalization score")
     coverage_estimate: float = Field(
         ge=0.0, le=1.0, description="Estimated coverage of relevant cases"
     )
     overfitting_risk: float = Field(ge=0.0, le=1.0, description="Risk of overfitting")
-    underfitting_risk: float = Field(
-        ge=0.0, le=1.0, description="Risk of being too general"
-    )
-    test_cases_needed: List[str] = Field(
-        description="Suggested test cases for validation"
-    )
+    underfitting_risk: float = Field(ge=0.0, le=1.0, description="Risk of being too general")
+    test_cases_needed: List[str] = Field(description="Suggested test cases for validation")
     reasoning: str = Field(description="Explanation of the assessment")
-    confidence: float = Field(
-        ge=0.0, le=1.0, description="Confidence in the assessment"
-    )
+    confidence: float = Field(ge=0.0, le=1.0, description="Confidence in the assessment")
 
 
 # =============================================================================
@@ -826,9 +792,7 @@ class CriticLLM(Critic):
         with self._strategy_lock:
             old_strategy = self._strategy.strategy_type.value
             self._strategy = strategy
-            logger.info(
-                f"Strategy changed: {old_strategy} -> {strategy.strategy_type.value}"
-            )
+            logger.info(f"Strategy changed: {old_strategy} -> {strategy.strategy_type.value}")
 
     def find_edge_cases(
         self,
@@ -872,8 +836,7 @@ class CriticLLM(Critic):
 
         # Prepare context strings
         predicates_str = (
-            "\n".join(f"  - {p}" for p in context.get("predicates", []))
-            or "  (none specified)"
+            "\n".join(f"  - {p}" for p in context.get("predicates", [])) or "  (none specified)"
         )
         context_str = (
             "\n".join(f"  - {k}: {v}" for k, v in context.items() if k != "predicates")
@@ -947,9 +910,7 @@ class CriticLLM(Critic):
 
             except (ConnectionError, TimeoutError, OSError) as e:
                 # Network errors - retry with backoff
-                logger.warning(
-                    f"Edge case analysis attempt {attempt + 1} failed (network): {e}"
-                )
+                logger.warning(f"Edge case analysis attempt {attempt + 1} failed (network): {e}")
                 self._total_retries += 1
 
                 if attempt < self.config.max_retries - 1:
@@ -969,9 +930,7 @@ class CriticLLM(Critic):
         if self.config.enable_cache and edge_cases:
             analysis_time_ms = (time.time() - start_time) * 1000
             with self._cache_lock:
-                self._cache_result(
-                    cache_key, rule, edge_cases=edge_cases, time_ms=analysis_time_ms
-                )
+                self._cache_result(cache_key, rule, edge_cases=edge_cases, time_ms=analysis_time_ms)
 
         return edge_cases
 
@@ -1007,9 +966,7 @@ class CriticLLM(Critic):
 
         # Check cache with thread safety (convert list to tuple for hashability)
         existing_rules_tuple = tuple(existing_rules) if existing_rules else ()
-        cache_key = self._get_cache_key(
-            "contradictions", rule, {"existing": existing_rules_tuple}
-        )
+        cache_key = self._get_cache_key("contradictions", rule, {"existing": existing_rules_tuple})
         with self._cache_lock:
             if self.config.enable_cache and cache_key in self._cache:
                 self._cache_hits += 1
@@ -1027,9 +984,7 @@ class CriticLLM(Critic):
             existing_rules=existing_rules_str,
         )
 
-        prompt = current_strategy.prepare_contradiction_prompt(
-            base_prompt, rule, existing_rules
-        )
+        prompt = current_strategy.prepare_contradiction_prompt(base_prompt, rule, existing_rules)
 
         contradictions: List[Contradiction] = []
 
@@ -1079,9 +1034,7 @@ class CriticLLM(Critic):
 
             except (ValidationError, LLMResponseParsingError) as e:
                 # Parsing/validation errors - retry with backoff
-                logger.warning(
-                    f"Contradiction analysis attempt {attempt + 1} failed: {e}"
-                )
+                logger.warning(f"Contradiction analysis attempt {attempt + 1} failed: {e}")
                 self._total_retries += 1
 
                 if attempt < self.config.max_retries - 1:
@@ -1217,9 +1170,7 @@ class CriticLLM(Critic):
 
             except (ValidationError, LLMResponseParsingError) as e:
                 # Parsing/validation errors - retry with backoff
-                logger.warning(
-                    f"Generalization assessment attempt {attempt + 1} failed: {e}"
-                )
+                logger.warning(f"Generalization assessment attempt {attempt + 1} failed: {e}")
                 self._total_retries += 1
 
                 if attempt < self.config.max_retries - 1:
@@ -1287,14 +1238,10 @@ class CriticLLM(Critic):
             )
 
         # Calculate overall quality score
-        quality_score = self._calculate_quality_score(
-            edge_cases, contradictions, generalization
-        )
+        quality_score = self._calculate_quality_score(edge_cases, contradictions, generalization)
 
         # Determine recommendation
-        recommendation = self._determine_recommendation(
-            quality_score, edge_cases, contradictions
-        )
+        recommendation = self._determine_recommendation(quality_score, edge_cases, contradictions)
 
         analysis_time_ms = (time.time() - start_time) * 1000
 
@@ -1350,9 +1297,7 @@ class CriticLLM(Critic):
     ) -> str:
         """Determine recommendation based on analysis."""
         critical_edge_cases = sum(1 for ec in edge_cases if ec.severity == "critical")
-        high_confidence_contradictions = sum(
-            1 for c in contradictions if c.confidence > 0.7
-        )
+        high_confidence_contradictions = sum(1 for c in contradictions if c.confidence > 0.7)
 
         if critical_edge_cases > 0 or high_confidence_contradictions > 0:
             return "reject"
@@ -1374,9 +1319,7 @@ class CriticLLM(Critic):
             "total_contradictions_found": self._total_contradictions_found,
             "cache_hits": self._cache_hits,
             "cache_hit_rate": (
-                self._cache_hits / self._total_analyses
-                if self._total_analyses > 0
-                else 0.0
+                self._cache_hits / self._total_analyses if self._total_analyses > 0 else 0.0
             ),
             "total_retries": self._total_retries,
             "cache_size": len(self._cache),

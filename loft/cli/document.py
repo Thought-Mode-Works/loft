@@ -182,9 +182,7 @@ def stats(document):
 
     import datetime
 
-    last_modified_str = datetime.datetime.fromtimestamp(last_modified).strftime(
-        "%Y-%m-%d %H:%M:%S"
-    )
+    last_modified_str = datetime.datetime.fromtimestamp(last_modified).strftime("%Y-%m-%d %H:%M:%S")
 
     click.echo(f"\nDocument: {document}")
     click.echo("\nFile Statistics:")
@@ -194,9 +192,7 @@ def stats(document):
 
     click.echo("\nContent Statistics:")
     click.echo(f"  Headers: {len(headers)}")
-    click.echo(
-        f"  Code blocks: {code_blocks // 2}"
-    )  # Divide by 2 (opening and closing)
+    click.echo(f"  Code blocks: {code_blocks // 2}")  # Divide by 2 (opening and closing)
     click.echo(f"  Tables: {tables}")
     click.echo(f"  Links: {links}")
 

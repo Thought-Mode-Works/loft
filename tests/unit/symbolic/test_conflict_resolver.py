@@ -213,9 +213,7 @@ class TestSpecificityThenConfidenceResolution:
 
     def test_specificity_takes_priority(self):
         """Specificity should be checked first."""
-        resolver = ConflictResolver(
-            strategy=ResolutionStrategy.SPECIFICITY_THEN_CONFIDENCE
-        )
+        resolver = ConflictResolver(strategy=ResolutionStrategy.SPECIFICITY_THEN_CONFIDENCE)
         derived = {"enforceable(c1)", "unenforceable(c1)"}
         fired_rules = [
             ("enforceable(X) :- a(X), b(X), c(X).", 0.7),  # 3 conditions, lower conf
@@ -230,9 +228,7 @@ class TestSpecificityThenConfidenceResolution:
 
     def test_confidence_breaks_specificity_tie(self):
         """Confidence should break specificity ties."""
-        resolver = ConflictResolver(
-            strategy=ResolutionStrategy.SPECIFICITY_THEN_CONFIDENCE
-        )
+        resolver = ConflictResolver(strategy=ResolutionStrategy.SPECIFICITY_THEN_CONFIDENCE)
         derived = {"enforceable(c1)", "unenforceable(c1)"}
         fired_rules = [
             ("enforceable(X) :- a(X), b(X).", 0.9),  # 2 conditions

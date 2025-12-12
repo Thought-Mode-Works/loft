@@ -39,9 +39,7 @@ from loguru import logger
 class PromptOptimizationError(Exception):
     """Custom exception for prompt optimization failures."""
 
-    def __init__(
-        self, message: str, model: Optional[str] = None, task_type: Optional[str] = None
-    ):
+    def __init__(self, message: str, model: Optional[str] = None, task_type: Optional[str] = None):
         super().__init__(message)
         self.model = model
         self.task_type = task_type
@@ -316,9 +314,7 @@ class ABTestResult:
             "confidence": self.confidence,
             "status": self.status.value,
             "started_at": self.started_at.isoformat(),
-            "completed_at": (
-                self.completed_at.isoformat() if self.completed_at else None
-            ),
+            "completed_at": (self.completed_at.isoformat() if self.completed_at else None),
         }
 
 
@@ -509,9 +505,7 @@ class PromptRegistry:
         self._templates_by_task: Dict[PromptTaskType, List[str]] = {
             task: [] for task in PromptTaskType
         }
-        self._templates_by_model: Dict[ModelType, List[str]] = {
-            model: [] for model in ModelType
-        }
+        self._templates_by_model: Dict[ModelType, List[str]] = {model: [] for model in ModelType}
         self._lock = threading.RLock()
         self._initialize_default_templates()
 
@@ -694,9 +688,7 @@ class PromptRegistry:
         """
         with self._lock:
             template_ids = self._templates_by_task.get(task_type, [])
-            templates = [
-                self._templates[tid] for tid in template_ids if tid in self._templates
-            ]
+            templates = [self._templates[tid] for tid in template_ids if tid in self._templates]
             if status:
                 templates = [t for t in templates if t.status == status]
             return templates
@@ -715,16 +707,12 @@ class PromptRegistry:
         """
         with self._lock:
             template_ids = self._templates_by_model.get(model_type, [])
-            templates = [
-                self._templates[tid] for tid in template_ids if tid in self._templates
-            ]
+            templates = [self._templates[tid] for tid in template_ids if tid in self._templates]
             if status:
                 templates = [t for t in templates if t.status == status]
             return templates
 
-    def update_template_status(
-        self, template_id: str, status: PromptVariantStatus
-    ) -> bool:
+    def update_template_status(self, template_id: str, status: PromptVariantStatus) -> bool:
         """Update a template's status.
 
         Args:
@@ -741,9 +729,7 @@ class PromptRegistry:
                 return True
             return False
 
-    def update_template_performance(
-        self, template_id: str, performance_score: float
-    ) -> bool:
+    def update_template_performance(self, template_id: str, performance_score: float) -> bool:
         """Update a template's performance score.
 
         Args:
@@ -773,9 +759,7 @@ class PromptRegistry:
             Best template or None
         """
         with self._lock:
-            templates = self.get_templates_for_task(
-                task_type, status=PromptVariantStatus.ACTIVE
-            )
+            templates = self.get_templates_for_task(task_type, status=PromptVariantStatus.ACTIVE)
             if model_type:
                 templates = [t for t in templates if t.model_type == model_type]
             if not templates:
@@ -1023,9 +1007,7 @@ class ABTestingFramework:
         template_a = self._registry.get_template(variant_a_id)
         template_b = self._registry.get_template(variant_b_id)
         if not template_a or not template_b:
-            raise ABTestingError(
-                f"Templates not found: A={variant_a_id}, B={variant_b_id}"
-            )
+            raise ABTestingError(f"Templates not found: A={variant_a_id}, B={variant_b_id}")
 
         test_id = f"ab_test_{uuid.uuid4().hex[:8]}"
         test = ABTestResult(
@@ -1113,9 +1095,7 @@ class ABTestingFramework:
                     test.variant_a_avg_quality = (
                         test.variant_a_avg_quality * (n - 1) + quality_score
                     ) / n
-                test.variant_a_avg_latency = (
-                    test.variant_a_avg_latency * (n - 1) + latency_ms
-                ) / n
+                test.variant_a_avg_latency = (test.variant_a_avg_latency * (n - 1) + latency_ms) / n
             elif template_id == test.variant_b_id:
                 test.variant_b_samples += 1
                 n = test.variant_b_samples
@@ -1126,9 +1106,7 @@ class ABTestingFramework:
                     test.variant_b_avg_quality = (
                         test.variant_b_avg_quality * (n - 1) + quality_score
                     ) / n
-                test.variant_b_avg_latency = (
-                    test.variant_b_avg_latency * (n - 1) + latency_ms
-                ) / n
+                test.variant_b_avg_latency = (test.variant_b_avg_latency * (n - 1) + latency_ms) / n
 
             # Check if we have enough samples to conclude
             self._check_test_completion(test)
@@ -1177,12 +1155,8 @@ class ABTestingFramework:
 
             if test.confidence >= self._config.confidence_threshold:
                 # Determine winner based on combined score
-                score_a = (
-                    test.variant_a_success_rate * 0.6 + test.variant_a_avg_quality * 0.4
-                )
-                score_b = (
-                    test.variant_b_success_rate * 0.6 + test.variant_b_avg_quality * 0.4
-                )
+                score_a = test.variant_a_success_rate * 0.6 + test.variant_a_avg_quality * 0.4
+                score_b = test.variant_b_success_rate * 0.6 + test.variant_b_avg_quality * 0.4
 
                 if score_a > score_b + 0.05:  # 5% margin
                     test.winner = "A"
@@ -1200,9 +1174,7 @@ class ABTestingFramework:
                     f"confidence={test.confidence:.2f}"
                 )
         except (ZeroDivisionError, ValueError, TypeError) as e:
-            logger.error(
-                f"Error in statistical calculation for test {test.test_id}: {e}"
-            )
+            logger.error(f"Error in statistical calculation for test {test.test_id}: {e}")
 
     def get_test(self, test_id: str) -> Optional[ABTestResult]:
         """Get a test by ID.
@@ -1301,9 +1273,7 @@ class ModelPromptOptimizer(PromptOptimizer):
         self._config = config or PromptOptimizerConfig()
         self._registry = PromptRegistry()
         self._tracker = PromptPerformanceTracker()
-        self._ab_framework = ABTestingFramework(
-            self._registry, self._tracker, self._config
-        )
+        self._ab_framework = ABTestingFramework(self._registry, self._tracker, self._config)
         self._optimization_suggestions: List[OptimizationSuggestion] = []
         self._lock = threading.RLock()
         logger.info("ModelPromptOptimizer initialized")
@@ -1389,9 +1359,7 @@ class ModelPromptOptimizer(PromptOptimizer):
 
         # Render template with context
         rendered = template.render(**context)
-        logger.debug(
-            f"Using template {template.template_id} for {model_name}/{task_type}"
-        )
+        logger.debug(f"Using template {template.template_id} for {model_name}/{task_type}")
         return rendered
 
     def get_template_for_execution(
@@ -1497,9 +1465,7 @@ class ModelPromptOptimizer(PromptOptimizer):
                     f"Auto-deprecating template {template_id} due to low score "
                     f"({combined_score:.2f})"
                 )
-                self._registry.update_template_status(
-                    template_id, PromptVariantStatus.DEPRECATED
-                )
+                self._registry.update_template_status(template_id, PromptVariantStatus.DEPRECATED)
 
     def evolve_prompt(
         self,
@@ -1572,9 +1538,7 @@ class ModelPromptOptimizer(PromptOptimizer):
             original_template_id=template_id,
             evolved_template=new_template,
             changes_made=changes_made,
-            failure_patterns_addressed=[
-                p.get("error_pattern", "") for p in failure_patterns
-            ],
+            failure_patterns_addressed=[p.get("error_pattern", "") for p in failure_patterns],
             expected_improvement="Addresses identified failure patterns",
             confidence=0.6,  # Base confidence
         )
@@ -1596,9 +1560,7 @@ class ModelPromptOptimizer(PromptOptimizer):
 
     def _add_conciseness_instruction(self, prompt: str) -> str:
         """Add conciseness instruction to a prompt."""
-        instruction = (
-            "\n\nBe concise. Provide only the requested output without explanation."
-        )
+        instruction = "\n\nBe concise. Provide only the requested output without explanation."
         return prompt + instruction
 
     def _add_validation_emphasis(self, prompt: str) -> str:
@@ -1614,8 +1576,7 @@ class ModelPromptOptimizer(PromptOptimizer):
     def _add_predicate_reminder(self, prompt: str) -> str:
         """Add predicate usage reminder to a prompt."""
         reminder = (
-            "\n\nOnly use predicates from the provided list. "
-            "Do not introduce new predicates."
+            "\n\nOnly use predicates from the provided list. Do not introduce new predicates."
         )
         return prompt + reminder
 
@@ -1644,9 +1605,7 @@ class ModelPromptOptimizer(PromptOptimizer):
         task_performance: Dict[PromptTaskType, float] = {}
 
         for template in all_templates:
-            metrics = self._tracker.get_aggregate_metrics(
-                template.template_id, model_name
-            )
+            metrics = self._tracker.get_aggregate_metrics(template.template_id, model_name)
             if metrics["sample_count"] > 0:
                 total_success += int(metrics["success_rate"] * metrics["sample_count"])
                 total_count += metrics["sample_count"]
@@ -1697,9 +1656,7 @@ class ModelPromptOptimizer(PromptOptimizer):
         Returns:
             Test ID
         """
-        test = self._ab_framework.create_test(
-            variant_a_id, variant_b_id, model_name, task_type
-        )
+        test = self._ab_framework.create_test(variant_a_id, variant_b_id, model_name, task_type)
         self._ab_framework.start_test(test.test_id)
         return test.test_id
 
@@ -1799,9 +1756,7 @@ class ModelPromptOptimizer(PromptOptimizer):
             Performance report dictionary
         """
         templates = self._registry.get_all_templates()
-        active_templates = [
-            t for t in templates if t.status == PromptVariantStatus.ACTIVE
-        ]
+        active_templates = [t for t in templates if t.status == PromptVariantStatus.ACTIVE]
 
         report: Dict[str, Any] = {
             "total_templates": len(templates),
@@ -1821,11 +1776,7 @@ class ModelPromptOptimizer(PromptOptimizer):
                 report["templates_by_task"][task.value] = {
                     "count": len(task_templates),
                     "active": len(
-                        [
-                            t
-                            for t in task_templates
-                            if t.status == PromptVariantStatus.ACTIVE
-                        ]
+                        [t for t in task_templates if t.status == PromptVariantStatus.ACTIVE]
                     ),
                 }
 
@@ -1836,11 +1787,7 @@ class ModelPromptOptimizer(PromptOptimizer):
                 report["templates_by_model"][model.value] = {
                     "count": len(model_templates),
                     "active": len(
-                        [
-                            t
-                            for t in model_templates
-                            if t.status == PromptVariantStatus.ACTIVE
-                        ]
+                        [t for t in model_templates if t.status == PromptVariantStatus.ACTIVE]
                     ),
                 }
 

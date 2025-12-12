@@ -131,9 +131,7 @@ class BatchLearningHarness:
 
                 # Check for max rules limit
                 if len(self._accumulated_rule_ids) >= self.config.max_total_rules:
-                    logger.info(
-                        f"Reached max rules limit ({self.config.max_total_rules})"
-                    )
+                    logger.info(f"Reached max rules limit ({self.config.max_total_rules})")
                     break
 
                 # Check for too many consecutive errors
@@ -145,9 +143,7 @@ class BatchLearningHarness:
                     break
 
                 # Process the case
-                result = self._process_single_case(
-                    case, case_id, process_case_fn, metrics
-                )
+                result = self._process_single_case(case, case_id, process_case_fn, metrics)
 
                 # Update progress
                 self._update_progress(result)
@@ -159,9 +155,7 @@ class BatchLearningHarness:
                 # Checkpoint if needed
                 if (i + 1) % self.config.checkpoint_interval == 0:
                     pending_ids = [
-                        c.get("id", f"case_{j}")
-                        for j, c in enumerate(test_cases)
-                        if j > i
+                        c.get("id", f"case_{j}") for j, c in enumerate(test_cases) if j > i
                     ]
                     self._create_checkpoint(pending_ids)
 
@@ -182,9 +176,7 @@ class BatchLearningHarness:
             logger.exception(f"Batch processing failed: {e}")
             self._progress.status = BatchStatus.FAILED
             metrics.total_errors += 1
-            metrics.error_types["batch_failure"] = (
-                metrics.error_types.get("batch_failure", 0) + 1
-            )
+            metrics.error_types["batch_failure"] = metrics.error_types.get("batch_failure", 0) + 1
 
         # Finalize metrics
         metrics.completed_at = datetime.now()
@@ -247,9 +239,7 @@ class BatchLearningHarness:
                 self._consecutive_errors += 1
                 metrics.total_errors += 1
                 error_type = result.error_message or "unknown"
-                metrics.error_types[error_type] = (
-                    metrics.error_types.get(error_type, 0) + 1
-                )
+                metrics.error_types[error_type] = metrics.error_types.get(error_type, 0) + 1
 
             # Callback
             if self._on_case_complete:
@@ -336,9 +326,7 @@ class BatchLearningHarness:
         with open(checkpoint_path, "w", encoding="utf-8") as f:
             json.dump(checkpoint.to_dict(), f, indent=2)
 
-        logger.info(
-            f"Created checkpoint {checkpoint_id} at {self._progress.processed_cases} cases"
-        )
+        logger.info(f"Created checkpoint {checkpoint_id} at {self._progress.processed_cases} cases")
 
         # Callback
         if self._on_checkpoint:
@@ -348,12 +336,7 @@ class BatchLearningHarness:
 
     def _get_checkpoint_path(self, checkpoint_id: str) -> Path:
         """Get path for checkpoint file."""
-        return (
-            self.output_dir
-            / self._progress.batch_id
-            / "checkpoints"
-            / f"{checkpoint_id}.json"
-        )
+        return self.output_dir / self._progress.batch_id / "checkpoints" / f"{checkpoint_id}.json"
 
     def resume_from_checkpoint(
         self,
@@ -427,9 +410,7 @@ class BatchLearningHarness:
             "batch_id": result.batch_id,
             "status": result.status.value,
             "started_at": result.started_at.isoformat(),
-            "completed_at": (
-                result.completed_at.isoformat() if result.completed_at else None
-            ),
+            "completed_at": (result.completed_at.isoformat() if result.completed_at else None),
             "total_cases": len(result.case_results),
             "successful_cases": result.success_count,
             "failed_cases": result.failure_count,
@@ -526,7 +507,9 @@ def create_simple_case_processor(
 
             if not prediction_correct:
                 # Generate rule candidates
-                gap_description = f"Case {case_id} predicted {prediction} but should be {ground_truth}"
+                gap_description = (
+                    f"Case {case_id} predicted {prediction} but should be {ground_truth}"
+                )
                 candidates = rule_generator_fn(gap_description, [])
 
                 rules_generated = len(candidates)

@@ -215,9 +215,7 @@ class MetricsTracker:
 
         return deltas
 
-    def check_regression(
-        self, current: Optional[ValidationMetrics] = None
-    ) -> List[str]:
+    def check_regression(self, current: Optional[ValidationMetrics] = None) -> List[str]:
         """
         Check if metrics have regressed from previous measurement.
 

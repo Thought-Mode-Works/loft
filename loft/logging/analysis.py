@@ -84,9 +84,7 @@ class LogAnalyzer:
         if not match:
             return None
 
-        timestamp_str, level, component, module, function, line_no, message = (
-            match.groups()
-        )
+        timestamp_str, level, component, module, function, line_no, message = match.groups()
 
         try:
             timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S.%f")
@@ -337,9 +335,7 @@ class LogAnalyzer:
         report.append("")
 
         report.append("Components:")
-        for component, count in sorted(
-            component_counts.items(), key=lambda x: x[1], reverse=True
-        ):
+        for component, count in sorted(component_counts.items(), key=lambda x: x[1], reverse=True):
             report.append(f"  {component:20s}: {count}")
         report.append("")
 
@@ -414,6 +410,4 @@ def search_logs_cli(
 
     print(f"Found {len(entries)} matching entries:\n")
     for entry in entries:
-        print(
-            f"[{entry.timestamp}] {entry.level:8s} {entry.component:15s} | {entry.message}"
-        )
+        print(f"[{entry.timestamp}] {entry.level:8s} {entry.component:15s} | {entry.message}")

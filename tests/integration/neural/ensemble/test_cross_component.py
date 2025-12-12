@@ -406,27 +406,15 @@ class TestOrchestratorCoordination:
         mock_interface = MagicMock()
 
         # Test with weighted voting
-        config_weighted = OrchestratorConfig(
-            default_voting_strategy=VotingStrategyType.WEIGHTED
-        )
-        orch_weighted = EnsembleOrchestrator(
-            config=config_weighted, llm_interface=mock_interface
-        )
+        config_weighted = OrchestratorConfig(default_voting_strategy=VotingStrategyType.WEIGHTED)
+        orch_weighted = EnsembleOrchestrator(config=config_weighted, llm_interface=mock_interface)
 
         # Test with majority voting
-        config_majority = OrchestratorConfig(
-            default_voting_strategy=VotingStrategyType.MAJORITY
-        )
-        orch_majority = EnsembleOrchestrator(
-            config=config_majority, llm_interface=mock_interface
-        )
+        config_majority = OrchestratorConfig(default_voting_strategy=VotingStrategyType.MAJORITY)
+        orch_majority = EnsembleOrchestrator(config=config_majority, llm_interface=mock_interface)
 
-        assert (
-            orch_weighted.config.default_voting_strategy == VotingStrategyType.WEIGHTED
-        )
-        assert (
-            orch_majority.config.default_voting_strategy == VotingStrategyType.MAJORITY
-        )
+        assert orch_weighted.config.default_voting_strategy == VotingStrategyType.WEIGHTED
+        assert orch_majority.config.default_voting_strategy == VotingStrategyType.MAJORITY
 
     def test_orchestrator_respects_confidence_threshold(self, orchestrator_config):
         """Test that orchestrator respects minimum confidence threshold."""
@@ -715,9 +703,7 @@ class TestMVPValidation:
         assert single_result.confidence == 1.0  # Single model also 100%
         assert len(ensemble_result.dissenting_models) == 0  # Consensus reached
         # More models = more robust agreement
-        assert len(ensemble_result.participating_models) > len(
-            single_result.participating_models
-        )
+        assert len(ensemble_result.participating_models) > len(single_result.participating_models)
 
     def test_specialized_models_outperform_general(self):
         """Validate: Specialized models outperform general-purpose."""

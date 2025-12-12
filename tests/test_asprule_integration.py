@@ -48,9 +48,7 @@ class TestASPRuleIntegration:
         )
 
         # Should be able to add rule to core
-        result = core.add_rule(
-            rule, target_layer=StratificationLevel.TACTICAL, is_autonomous=True
-        )
+        result = core.add_rule(rule, target_layer=StratificationLevel.TACTICAL, is_autonomous=True)
 
         assert result.success is True
         assert len(core.get_rules_by_layer(StratificationLevel.TACTICAL)) == 1
@@ -65,9 +63,7 @@ class TestASPRuleIntegration:
             asp_text="base_pred(X) :- input(X).",
             stratification_level=StratificationLevel.TACTICAL,
             confidence=0.85,
-            metadata=RuleMetadata(
-                provenance="test", timestamp=datetime.now().isoformat()
-            ),
+            metadata=RuleMetadata(provenance="test", timestamp=datetime.now().isoformat()),
         )
 
         result1 = core.add_rule(
@@ -81,9 +77,7 @@ class TestASPRuleIntegration:
             asp_text="high_level(X) :- base_pred(X).",
             stratification_level=StratificationLevel.STRATEGIC,
             confidence=0.95,
-            metadata=RuleMetadata(
-                provenance="test", timestamp=datetime.now().isoformat()
-            ),
+            metadata=RuleMetadata(provenance="test", timestamp=datetime.now().isoformat()),
         )
 
         result2 = core.add_rule(
@@ -103,9 +97,7 @@ class TestASPRuleIntegration:
             asp_text="contract(c1).",
             stratification_level=StratificationLevel.OPERATIONAL,
             confidence=0.75,
-            metadata=RuleMetadata(
-                provenance="test", timestamp=datetime.now().isoformat()
-            ),
+            metadata=RuleMetadata(provenance="test", timestamp=datetime.now().isoformat()),
         )
 
         assert "contract" in fact.new_predicates
@@ -118,9 +110,7 @@ class TestASPRuleIntegration:
             asp_text="enforceable(C) :- contract(C), signed(C, P), party(P), not void(C).",
             stratification_level=StratificationLevel.TACTICAL,
             confidence=0.85,
-            metadata=RuleMetadata(
-                provenance="test", timestamp=datetime.now().isoformat()
-            ),
+            metadata=RuleMetadata(provenance="test", timestamp=datetime.now().isoformat()),
         )
 
         assert "enforceable" in rule.new_predicates
@@ -140,9 +130,7 @@ class TestASPRuleIntegration:
             asp_text="test(X) :- input(X).",
             stratification_level=StratLevel.TACTICAL,
             confidence=0.85,
-            metadata=RuleMetadata(
-                provenance="test", timestamp=datetime.now().isoformat()
-            ),
+            metadata=RuleMetadata(provenance="test", timestamp=datetime.now().isoformat()),
         )
 
         # Should work without issues

@@ -57,15 +57,12 @@ class APIConfig:
         """
         return cls(
             courtlistener_api_key=os.getenv("COURT_LISTENER_API_TOKEN"),
-            courtlistener_enabled=os.getenv("COURTLISTENER_ENABLED", "true").lower()
-            == "true",
+            courtlistener_enabled=os.getenv("COURTLISTENER_ENABLED", "true").lower() == "true",
             timeout=int(os.getenv("LEGAL_API_TIMEOUT", "30")),
             max_retries=int(os.getenv("LEGAL_API_MAX_RETRIES", "3")),
-            cache_enabled=os.getenv("LEGAL_API_CACHE_ENABLED", "true").lower()
-            == "true",
+            cache_enabled=os.getenv("LEGAL_API_CACHE_ENABLED", "true").lower() == "true",
             cache_ttl_seconds=int(os.getenv("LEGAL_API_CACHE_TTL", "3600")),
-            rate_limit_enabled=os.getenv("LEGAL_API_RATE_LIMIT_ENABLED", "true").lower()
-            == "true",
+            rate_limit_enabled=os.getenv("LEGAL_API_RATE_LIMIT_ENABLED", "true").lower() == "true",
             requests_per_minute=int(os.getenv("LEGAL_API_REQUESTS_PER_MINUTE", "60")),
         )
 

@@ -64,9 +64,7 @@ class ContradictionStore:
         Args:
             contradiction: The contradiction to save
         """
-        file_path = (
-            self.base_path / "contradictions" / f"{contradiction.contradiction_id}.json"
-        )
+        file_path = self.base_path / "contradictions" / f"{contradiction.contradiction_id}.json"
 
         with open(file_path, "w") as f:
             json.dump(contradiction.to_dict(), f, indent=2)
@@ -74,9 +72,7 @@ class ContradictionStore:
         # Update indexes
         self._update_indexes(contradiction)
 
-        logger.debug(
-            f"Saved contradiction {contradiction.contradiction_id} to {file_path}"
-        )
+        logger.debug(f"Saved contradiction {contradiction.contradiction_id} to {file_path}")
 
     def get_contradiction(self, contradiction_id: str) -> Optional[ContradictionReport]:
         """
@@ -123,9 +119,7 @@ class ContradictionStore:
         logger.debug(f"Loaded {len(contradictions)} contradictions")
         return contradictions
 
-    def query_by_severity(
-        self, severity: ContradictionSeverity
-    ) -> List[ContradictionReport]:
+    def query_by_severity(self, severity: ContradictionSeverity) -> List[ContradictionReport]:
         """
         Query contradictions by severity.
 
@@ -138,9 +132,7 @@ class ContradictionStore:
         all_contradictions = self.get_all_contradictions()
         return [c for c in all_contradictions if c.severity == severity]
 
-    def query_by_type(
-        self, contradiction_type: ContradictionType
-    ) -> List[ContradictionReport]:
+    def query_by_type(self, contradiction_type: ContradictionType) -> List[ContradictionReport]:
         """
         Query contradictions by type.
 
@@ -151,9 +143,7 @@ class ContradictionStore:
             List of matching contradictions
         """
         all_contradictions = self.get_all_contradictions()
-        return [
-            c for c in all_contradictions if c.contradiction_type == contradiction_type
-        ]
+        return [c for c in all_contradictions if c.contradiction_type == contradiction_type]
 
     def query_by_rule(self, rule_id: str) -> List[ContradictionReport]:
         """
@@ -166,11 +156,7 @@ class ContradictionStore:
             List of contradictions involving this rule
         """
         all_contradictions = self.get_all_contradictions()
-        return [
-            c
-            for c in all_contradictions
-            if c.rule_a_id == rule_id or c.rule_b_id == rule_id
-        ]
+        return [c for c in all_contradictions if c.rule_a_id == rule_id or c.rule_b_id == rule_id]
 
     def query_unresolved(self) -> List[ContradictionReport]:
         """
@@ -198,22 +184,14 @@ class ContradictionStore:
         Args:
             interpretation: The interpretation to save
         """
-        file_path = (
-            self.base_path
-            / "interpretations"
-            / f"{interpretation.interpretation_id}.json"
-        )
+        file_path = self.base_path / "interpretations" / f"{interpretation.interpretation_id}.json"
 
         with open(file_path, "w") as f:
             json.dump(interpretation.to_dict(), f, indent=2)
 
-        logger.debug(
-            f"Saved interpretation {interpretation.interpretation_id} to {file_path}"
-        )
+        logger.debug(f"Saved interpretation {interpretation.interpretation_id} to {file_path}")
 
-    def get_interpretation(
-        self, interpretation_id: str
-    ) -> Optional[RuleInterpretation]:
+    def get_interpretation(self, interpretation_id: str) -> Optional[RuleInterpretation]:
         """
         Get a specific interpretation.
 
@@ -234,9 +212,7 @@ class ContradictionStore:
 
         return RuleInterpretation.from_dict(data)
 
-    def get_interpretations_by_principle(
-        self, principle: str
-    ) -> List[RuleInterpretation]:
+    def get_interpretations_by_principle(self, principle: str) -> List[RuleInterpretation]:
         """
         Get all interpretations for a specific principle.
 
@@ -259,9 +235,7 @@ class ContradictionStore:
             if interpretation.principle == principle:
                 interpretations.append(interpretation)
 
-        logger.debug(
-            f"Found {len(interpretations)} interpretations for principle '{principle}'"
-        )
+        logger.debug(f"Found {len(interpretations)} interpretations for principle '{principle}'")
         return interpretations
 
     def delete_contradiction(self, contradiction_id: str) -> bool:
@@ -310,9 +284,7 @@ class ContradictionStore:
 
         # Count by type
         for ctype in ContradictionType:
-            count = len(
-                [c for c in all_contradictions if c.contradiction_type == ctype]
-            )
+            count = len([c for c in all_contradictions if c.contradiction_type == ctype])
             stats["by_type"][ctype.value] = count
 
         return stats

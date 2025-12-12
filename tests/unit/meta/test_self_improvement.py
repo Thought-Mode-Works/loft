@@ -73,10 +73,7 @@ class TestMetricType:
         assert MetricType.RULE_ACCEPTANCE_RATE.value == "rule_acceptance_rate"
         assert MetricType.PROMPT_EFFECTIVENESS.value == "prompt_effectiveness"
         assert MetricType.ERROR_DIAGNOSIS_ACCURACY.value == "error_diagnosis_accuracy"
-        assert (
-            MetricType.STRATEGY_SELECTION_ACCURACY.value
-            == "strategy_selection_accuracy"
-        )
+        assert MetricType.STRATEGY_SELECTION_ACCURACY.value == "strategy_selection_accuracy"
         assert MetricType.LATENCY.value == "latency"
         assert MetricType.CONFIDENCE.value == "confidence"
         assert MetricType.COVERAGE.value == "coverage"

@@ -152,16 +152,12 @@ class TranslatorBenchmarkResult:
 class ASPToNLSchema(BaseModel):
     """Schema for ASP to natural language translation."""
 
-    natural_language: str = Field(
-        description="Natural language explanation of the ASP rule"
-    )
+    natural_language: str = Field(description="Natural language explanation of the ASP rule")
     predicates_identified: List[str] = Field(
         default_factory=list, description="Predicates identified in the ASP rule"
     )
     reasoning: str = Field(description="Explanation of how the translation was derived")
-    confidence: float = Field(
-        ge=0.0, le=1.0, description="Confidence in the translation"
-    )
+    confidence: float = Field(ge=0.0, le=1.0, description="Confidence in the translation")
     ambiguities: List[str] = Field(
         default_factory=list,
         description="Ambiguous aspects that could be interpreted differently",
@@ -175,12 +171,8 @@ class NLToASPSchema(BaseModel):
     predicates_used: List[str] = Field(
         default_factory=list, description="Predicates used in the generated rule"
     )
-    reasoning: str = Field(
-        description="Explanation of how predicates were chosen and structured"
-    )
-    confidence: float = Field(
-        ge=0.0, le=1.0, description="Confidence in the translation"
-    )
+    reasoning: str = Field(description="Explanation of how predicates were chosen and structured")
+    confidence: float = Field(ge=0.0, le=1.0, description="Confidence in the translation")
     assumptions: List[str] = Field(
         default_factory=list,
         description="Assumptions made during translation",
@@ -190,9 +182,7 @@ class NLToASPSchema(BaseModel):
 class FidelityAssessmentSchema(BaseModel):
     """Schema for semantic fidelity assessment."""
 
-    fidelity_score: float = Field(
-        ge=0.0, le=1.0, description="Semantic preservation score"
-    )
+    fidelity_score: float = Field(ge=0.0, le=1.0, description="Semantic preservation score")
     preserved_elements: List[str] = Field(
         default_factory=list,
         description="Semantic elements preserved through roundtrip",
@@ -205,9 +195,7 @@ class FidelityAssessmentSchema(BaseModel):
         description="Elements added/hallucinated during translation",
     )
     reasoning: str = Field(description="Explanation of the fidelity assessment")
-    confidence: float = Field(
-        ge=0.0, le=1.0, description="Confidence in the assessment"
-    )
+    confidence: float = Field(ge=0.0, le=1.0, description="Confidence in the assessment")
 
 
 # =============================================================================
@@ -811,9 +799,7 @@ class TranslatorLLM(Translator):
         with self._strategy_lock:
             old_strategy = self._strategy.strategy_type.value
             self._strategy = strategy
-            logger.info(
-                f"Strategy changed: {old_strategy} -> {strategy.strategy_type.value}"
-            )
+            logger.info(f"Strategy changed: {old_strategy} -> {strategy.strategy_type.value}")
 
     def asp_to_nl(
         self,
@@ -872,8 +858,7 @@ class TranslatorLLM(Translator):
 
         # Prepare context strings
         predicates_str = (
-            "\n".join(f"  - {p}" for p in context.get("predicates", []))
-            or "  (infer from rule)"
+            "\n".join(f"  - {p}" for p in context.get("predicates", [])) or "  (infer from rule)"
         )
         context_str = (
             "\n".join(f"  - {k}: {v}" for k, v in context.items() if k != "predicates")
@@ -887,9 +872,7 @@ class TranslatorLLM(Translator):
             predicates=predicates_str,
         )
 
-        prompt = current_strategy.prepare_asp_to_nl_prompt(
-            base_prompt, asp_rule, context
-        )
+        prompt = current_strategy.prepare_asp_to_nl_prompt(base_prompt, asp_rule, context)
 
         result = TranslationResult(
             source=asp_rule,
@@ -932,9 +915,7 @@ class TranslatorLLM(Translator):
                     from_cache=False,
                 )
 
-                logger.info(
-                    f"ASP→NL translation complete: confidence={result.confidence:.2f}"
-                )
+                logger.info(f"ASP→NL translation complete: confidence={result.confidence:.2f}")
                 break
 
             except (ValidationError, LLMResponseParsingError) as e:
@@ -951,9 +932,7 @@ class TranslatorLLM(Translator):
                     )
 
             except (ConnectionError, TimeoutError, OSError) as e:
-                logger.warning(
-                    f"ASP→NL translation attempt {attempt + 1} failed (network): {e}"
-                )
+                logger.warning(f"ASP→NL translation attempt {attempt + 1} failed (network): {e}")
                 self._total_retries += 1
 
                 if attempt < self.config.max_retries - 1:
@@ -1091,9 +1070,7 @@ class TranslatorLLM(Translator):
                     from_cache=False,
                 )
 
-                logger.info(
-                    f"NL→ASP translation complete: confidence={result.confidence:.2f}"
-                )
+                logger.info(f"NL→ASP translation complete: confidence={result.confidence:.2f}")
                 break
 
             except (ValidationError, LLMResponseParsingError) as e:
@@ -1110,9 +1087,7 @@ class TranslatorLLM(Translator):
                     )
 
             except (ConnectionError, TimeoutError, OSError) as e:
-                logger.warning(
-                    f"NL→ASP translation attempt {attempt + 1} failed (network): {e}"
-                )
+                logger.warning(f"NL→ASP translation attempt {attempt + 1} failed (network): {e}")
                 self._total_retries += 1
 
                 if attempt < self.config.max_retries - 1:
@@ -1163,10 +1138,7 @@ class TranslatorLLM(Translator):
         self._roundtrip_count += 1
         context = context or {}
 
-        logger.info(
-            f"Starting roundtrip validation: "
-            f"{'ASP→NL→ASP' if is_asp else 'NL→ASP→NL'}"
-        )
+        logger.info(f"Starting roundtrip validation: {'ASP→NL→ASP' if is_asp else 'NL→ASP→NL'}")
 
         # Step 1: First translation
         if is_asp:
@@ -1191,9 +1163,7 @@ class TranslatorLLM(Translator):
             final = second_result.target
 
         # Step 3: Assess fidelity
-        fidelity_result = self._assess_fidelity(
-            original, intermediate, final, is_asp, context
-        )
+        fidelity_result = self._assess_fidelity(original, intermediate, final, is_asp, context)
 
         total_time = (time.time() - start_time) * 1000
 
@@ -1349,9 +1319,7 @@ class TranslatorLLM(Translator):
         Returns:
             TranslatorBenchmarkResult with comparative metrics
         """
-        logger.info(
-            f"Starting benchmark against general LLM: {len(test_cases)} test cases"
-        )
+        logger.info(f"Starting benchmark against general LLM: {len(test_cases)} test cases")
 
         translator_fidelities: List[float] = []
         general_fidelities: List[float] = []
@@ -1371,9 +1339,7 @@ class TranslatorLLM(Translator):
             # Test specialized translator
             start_time = time.time()
             try:
-                translator_result = self.roundtrip_validate(
-                    input_text, is_asp, predicates, context
-                )
+                translator_result = self.roundtrip_validate(input_text, is_asp, predicates, context)
                 translator_fidelities.append(translator_result.fidelity_score)
                 translator_times.append(translator_result.total_time_ms)
                 if translator_result.fidelity_score >= self.config.fidelity_threshold:
@@ -1400,16 +1366,12 @@ class TranslatorLLM(Translator):
                     resp1 = general_llm.query(question=prompt1, temperature=0.3)
                     intermediate = str(resp1.content)
 
-                    prompt2 = (
-                        f"Translate this ASP back to plain English: {intermediate}"
-                    )
+                    prompt2 = f"Translate this ASP back to plain English: {intermediate}"
                     resp2 = general_llm.query(question=prompt2, temperature=0.3)
                     final = str(resp2.content)
 
                 # Heuristic fidelity for general LLM
-                fidelity_info = self._heuristic_fidelity_assessment(
-                    input_text, final, is_asp
-                )
+                fidelity_info = self._heuristic_fidelity_assessment(input_text, final, is_asp)
                 general_fidelities.append(fidelity_info["fidelity_score"])
                 if fidelity_info["fidelity_score"] >= self.config.fidelity_threshold:
                     general_successes += 1
@@ -1427,17 +1389,11 @@ class TranslatorLLM(Translator):
             else 0.0
         )
         avg_general_fidelity = (
-            sum(general_fidelities) / len(general_fidelities)
-            if general_fidelities
-            else 0.0
+            sum(general_fidelities) / len(general_fidelities) if general_fidelities else 0.0
         )
 
         improvement = (
-            (
-                (avg_translator_fidelity - avg_general_fidelity)
-                / avg_general_fidelity
-                * 100
-            )
+            ((avg_translator_fidelity - avg_general_fidelity) / avg_general_fidelity * 100)
             if avg_general_fidelity > 0
             else 0.0
         )
@@ -1446,9 +1402,7 @@ class TranslatorLLM(Translator):
             translator_fidelity=avg_translator_fidelity,
             general_llm_fidelity=avg_general_fidelity,
             translator_avg_time_ms=(
-                sum(translator_times) / len(translator_times)
-                if translator_times
-                else 0.0
+                sum(translator_times) / len(translator_times) if translator_times else 0.0
             ),
             general_llm_avg_time_ms=(
                 sum(general_times) / len(general_times) if general_times else 0.0
@@ -1474,9 +1428,7 @@ class TranslatorLLM(Translator):
     def get_statistics(self) -> Dict[str, Any]:
         """Get translation statistics."""
         avg_fidelity = (
-            self._total_fidelity_score / self._roundtrip_count
-            if self._roundtrip_count > 0
-            else 0.0
+            self._total_fidelity_score / self._roundtrip_count if self._roundtrip_count > 0 else 0.0
         )
 
         return {
@@ -1490,9 +1442,7 @@ class TranslatorLLM(Translator):
             "average_fidelity_score": avg_fidelity,
             "cache_hits": self._cache_hits,
             "cache_hit_rate": (
-                self._cache_hits / self._total_translations
-                if self._total_translations > 0
-                else 0.0
+                self._cache_hits / self._total_translations if self._total_translations > 0 else 0.0
             ),
             "total_retries": self._total_retries,
             "cache_size": len(self._cache),
@@ -1521,14 +1471,10 @@ class TranslatorLLM(Translator):
             "cache_max_size": self.config.cache_max_size,
             "cache_hits": self._cache_hits,
             "cache_hit_rate": (
-                self._cache_hits / self._total_translations
-                if self._total_translations > 0
-                else 0.0
+                self._cache_hits / self._total_translations if self._total_translations > 0 else 0.0
             ),
             "cache_utilization": (
-                cache_size / self.config.cache_max_size
-                if self.config.cache_max_size > 0
-                else 0.0
+                cache_size / self.config.cache_max_size if self.config.cache_max_size > 0 else 0.0
             ),
             "cache_enabled": self.config.enable_cache,
         }

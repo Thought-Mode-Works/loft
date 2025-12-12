@@ -62,9 +62,7 @@ class RuleEvolutionStore:
 
         logger.debug(f"Saved version {version.rule_id} to {version_file}")
 
-    def get_version(
-        self, rule_family_id: str, version_id: str
-    ) -> Optional[RuleVersion]:
+    def get_version(self, rule_family_id: str, version_id: str) -> Optional[RuleVersion]:
         """
         Get a specific rule version.
 
@@ -75,14 +73,10 @@ class RuleEvolutionStore:
         Returns:
             RuleVersion if found, None otherwise
         """
-        version_file = (
-            self._get_family_path(rule_family_id) / "versions" / f"{version_id}.json"
-        )
+        version_file = self._get_family_path(rule_family_id) / "versions" / f"{version_id}.json"
 
         if not version_file.exists():
-            logger.warning(
-                f"Version {version_id} not found for family {rule_family_id}"
-            )
+            logger.warning(f"Version {version_id} not found for family {rule_family_id}")
             return None
 
         with open(version_file, "r") as f:
@@ -193,8 +187,7 @@ class RuleEvolutionStore:
             for version in versions:
                 if (
                     version.evolution_context
-                    and version.evolution_context.evolution_method.value
-                    == evolution_method
+                    and version.evolution_context.evolution_method.value == evolution_method
                 ):
                     matching.append(version)
 
@@ -253,9 +246,7 @@ class RuleEvolutionStore:
 
         if stratification_level:
             active_rules = [
-                r
-                for r in active_rules
-                if r.stratification_level.value == stratification_level
+                r for r in active_rules if r.stratification_level.value == stratification_level
             ]
 
         lines = []

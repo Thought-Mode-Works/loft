@@ -55,9 +55,7 @@ def make_candidate_data(asp_rule: str = "valid(X) :- fact(X).") -> dict:
     }
 
 
-def make_gap_filling_response_data(
-    candidates: list[dict], recommended_index: int = 0
-) -> dict:
+def make_gap_filling_response_data(candidates: list[dict], recommended_index: int = 0) -> dict:
     """Create gap-filling response data for testing."""
     return {
         "gap_description": "Test gap",

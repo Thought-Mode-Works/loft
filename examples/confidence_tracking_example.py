@@ -26,7 +26,7 @@ for i in range(10):
         is_reliable=True,
     )
     tracker.record(confidence, category="contract_rules")
-    print(f"  Rule {i+1}: {confidence.score:.2f}")
+    print(f"  Rule {i + 1}: {confidence.score:.2f}")
 
 # Simulate recording confidence scores for experimental rules (lower quality)
 print("\nExperimental rules (lower quality):")
@@ -39,7 +39,7 @@ for i in range(10):
         is_reliable=False,
     )
     tracker.record(confidence, category="experimental_rules")
-    print(f"  Rule {i+1}: {confidence.score:.2f}")
+    print(f"  Rule {i + 1}: {confidence.score:.2f}")
 
 # Simulate some mixed quality rules
 print("\nMixed quality rules:")
@@ -53,7 +53,7 @@ for i in range(5):
         is_reliable=True,
     )
     tracker.record(confidence, category="mixed_rules")
-    print(f"  Rule {i+1}: {confidence.score:.2f}")
+    print(f"  Rule {i + 1}: {confidence.score:.2f}")
 
 print("\n" + "=" * 70)
 print("Overall Trends")

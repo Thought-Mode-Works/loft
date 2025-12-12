@@ -157,13 +157,9 @@ class TestPromptTemplate:
         template = PromptTemplate(name="test", version="v1.0", template="Test")
 
         # Record first use
-        template.record_use(
-            success=True, confidence=0.8, latency_ms=100.0, cost_usd=0.01
-        )
+        template.record_use(success=True, confidence=0.8, latency_ms=100.0, cost_usd=0.01)
         # Record second use
-        template.record_use(
-            success=True, confidence=1.0, latency_ms=200.0, cost_usd=0.02
-        )
+        template.record_use(success=True, confidence=1.0, latency_ms=200.0, cost_usd=0.02)
 
         assert template.performance.total_uses == 2
         assert template.performance.avg_confidence == 0.9  # (0.8 + 1.0) / 2

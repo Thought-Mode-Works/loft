@@ -65,9 +65,7 @@ class FidelityValidator:
             logger.debug(f"NL→ASP: '{nl_text}' → '{asp_reconstructed}'")
 
             # Measure semantic equivalence
-            is_equivalent, fidelity = self._semantic_equivalence(
-                asp_original, asp_reconstructed
-            )
+            is_equivalent, fidelity = self._semantic_equivalence(asp_original, asp_reconstructed)
 
             explanation = f"""
 Original ASP: {asp_original}
@@ -186,9 +184,7 @@ Semantically Equivalent: {is_equivalent}
             logger.error(f"Error getting answer sets: {str(e)}")
             return []
 
-    def _answer_sets_match(
-        self, sets1: List[frozenset], sets2: List[frozenset]
-    ) -> bool:
+    def _answer_sets_match(self, sets1: List[frozenset], sets2: List[frozenset]) -> bool:
         """
         Check if two lists of answer sets are equivalent.
 
@@ -210,9 +206,7 @@ Semantically Equivalent: {is_equivalent}
 
         return set_of_sets_1 == set_of_sets_2
 
-    def _compute_answer_set_overlap(
-        self, sets1: List[frozenset], sets2: List[frozenset]
-    ) -> float:
+    def _compute_answer_set_overlap(self, sets1: List[frozenset], sets2: List[frozenset]) -> float:
         """
         Compute similarity score between two lists of answer sets.
 
@@ -281,9 +275,7 @@ Semantically Equivalent: {is_equivalent}
         results = []
 
         for asp_example in asp_examples:
-            result = self.test_roundtrip_fidelity(
-                asp_example, asp_to_nl_fn, nl_to_asp_fn
-            )
+            result = self.test_roundtrip_fidelity(asp_example, asp_to_nl_fn, nl_to_asp_fn)
             results.append(result)
 
         fidelity_scores = [r.fidelity_score for r in results]

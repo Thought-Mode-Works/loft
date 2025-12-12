@@ -53,9 +53,7 @@ def exponential_backoff(
 
                     retries += 1
                     if retries > max_retries:
-                        logger.error(
-                            f"Max retries ({max_retries}) exceeded for rate limit"
-                        )
+                        logger.error(f"Max retries ({max_retries}) exceeded for rate limit")
                         raise
 
                     logger.warning(
@@ -66,9 +64,7 @@ def exponential_backoff(
                 except LLMTimeoutError:
                     retries += 1
                     if retries > max_retries:
-                        logger.error(
-                            f"Max retries ({max_retries}) exceeded for timeout"
-                        )
+                        logger.error(f"Max retries ({max_retries}) exceeded for timeout")
                         raise
 
                     delay = min(delay * exponential_base, max_delay)
@@ -82,9 +78,7 @@ def exponential_backoff(
                     if e.status_code and 500 <= e.status_code < 600:
                         retries += 1
                         if retries > max_retries:
-                            logger.error(
-                                f"Max retries ({max_retries}) exceeded for provider error"
-                            )
+                            logger.error(f"Max retries ({max_retries}) exceeded for provider error")
                             raise
 
                         delay = min(delay * exponential_base, max_delay)

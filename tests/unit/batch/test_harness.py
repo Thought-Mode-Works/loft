@@ -59,9 +59,7 @@ def create_mock_processor(
                 rules_accepted=rules_per_case,
                 prediction_correct=True,
                 confidence=0.85,
-                generated_rule_ids=[
-                    f"rule_{case_id}_{i}" for i in range(rules_per_case)
-                ],
+                generated_rule_ids=[f"rule_{case_id}_{i}" for i in range(rules_per_case)],
             )
         else:
             return CaseResult(

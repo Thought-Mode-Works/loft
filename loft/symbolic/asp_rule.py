@@ -76,9 +76,7 @@ class ASPRule:
     def __post_init__(self) -> None:
         """Validate rule after initialization."""
         if not 0.0 <= self.confidence <= 1.0:
-            raise ValueError(
-                f"Confidence must be between 0.0 and 1.0, got {self.confidence}"
-            )
+            raise ValueError(f"Confidence must be between 0.0 and 1.0, got {self.confidence}")
 
         # Validate confidence meets stratification requirements
         min_confidence = self.get_min_confidence_for_level(self.stratification_level)

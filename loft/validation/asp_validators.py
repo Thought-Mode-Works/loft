@@ -226,9 +226,7 @@ def check_unsafe_variables(rule_text: str) -> Tuple[List[str], List[str]]:
             )
 
     # Check for variables only in negative literals (potential issue)
-    negative_only_vars = _extract_negative_only_variables(
-        body_part, positive_body_variables
-    )
+    negative_only_vars = _extract_negative_only_variables(body_part, positive_body_variables)
     if negative_only_vars:
         for var in sorted(negative_only_vars):
             warnings.append(
@@ -239,9 +237,7 @@ def check_unsafe_variables(rule_text: str) -> Tuple[List[str], List[str]]:
     return errors, warnings
 
 
-def _extract_negative_only_variables(
-    body_part: str, positive_vars: Set[str]
-) -> Set[str]:
+def _extract_negative_only_variables(body_part: str, positive_vars: Set[str]) -> Set[str]:
     """
     Extract variables that appear only in negative literals.
 
@@ -351,9 +347,7 @@ def check_embedded_periods(rule_text: str) -> Tuple[List[str], List[str]]:
     # This catches remaining cases like foo.bar(X)
     # But exclude floating-point numbers like 3.14
     # Using pre-compiled pattern for performance
-    period_positions = [
-        m.start() for m in _GENERAL_PERIOD_PATTERN.finditer(rule_stripped)
-    ]
+    period_positions = [m.start() for m in _GENERAL_PERIOD_PATTERN.finditer(rule_stripped)]
 
     for pos in period_positions:
         # Check if it's part of a floating-point number
@@ -366,9 +360,7 @@ def check_embedded_periods(rule_text: str) -> Tuple[List[str], List[str]]:
 
         # Skip if already captured by OOP or method patterns
         context = rule_stripped[max(0, pos - 20) : min(len(rule_stripped), pos + 20)]
-        already_reported = any(
-            f"{m[0]}.{m[1]}" in context for m in oop_matches + method_matches
-        )
+        already_reported = any(f"{m[0]}.{m[1]}" in context for m in oop_matches + method_matches)
         if not already_reported:
             warnings.append(
                 f"Unexpected period found at position {pos} in rule. "
@@ -489,12 +481,8 @@ class ASPSyntaxValidator:
                 rule_text, existing_predicates
             )
             if predicate_compatibility:
-                details["new_predicates"] = predicate_compatibility.get(
-                    "new_predicates", []
-                )
-                details["used_predicates"] = predicate_compatibility.get(
-                    "used_predicates", []
-                )
+                details["new_predicates"] = predicate_compatibility.get("new_predicates", [])
+                details["used_predicates"] = predicate_compatibility.get("used_predicates", [])
 
             # 6b. Check for undefined predicates (new in issue #101)
             known_pred_names = self._extract_predicate_names(existing_predicates)
@@ -966,9 +954,7 @@ class ASPSemanticValidator:
             logger.error(f"Error counting answer sets: {str(e)}")
             return 0
 
-    def get_answer_sets(
-        self, asp_program: str, max_sets: int = 10
-    ) -> List[List[clingo.Symbol]]:
+    def get_answer_sets(self, asp_program: str, max_sets: int = 10) -> List[List[clingo.Symbol]]:
         """
         Get all answer sets (up to max_sets) for inspection.
 

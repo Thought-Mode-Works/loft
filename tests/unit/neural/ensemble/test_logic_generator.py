@@ -53,9 +53,7 @@ class TestLogicGeneratorConfig:
         assert config.model == "claude-3-5-haiku-20241022"
         assert config.temperature == 0.3
         assert config.max_tokens == 4096
-        assert (
-            config.optimization_strategy == OptimizationStrategyType.PROMPT_OPTIMIZATION
-        )
+        assert config.optimization_strategy == OptimizationStrategyType.PROMPT_OPTIMIZATION
         assert config.enable_syntax_validation is True
         assert config.enable_variable_safety_check is True
         assert config.max_generation_retries == 3
@@ -160,10 +158,7 @@ class TestLogicGeneratorLLM:
         gen = LogicGeneratorLLM(mock_provider, config)
 
         assert gen.config.temperature == 0.5
-        assert (
-            gen.config.optimization_strategy
-            == OptimizationStrategyType.FEW_SHOT_LEARNING
-        )
+        assert gen.config.optimization_strategy == OptimizationStrategyType.FEW_SHOT_LEARNING
 
     def test_validate_rule_valid(self, logic_generator):
         """Test validation of a valid ASP rule."""
@@ -363,9 +358,7 @@ class TestLogicGeneratorLLM:
         # Create a mock for an invalid rule response (can't use GeneratedRule
         # directly since Pydantic validates ASP syntax)
         invalid_rule_mock = MagicMock()
-        invalid_rule_mock.asp_rule = (
-            "invalid(X :- broken"  # Missing period and unbalanced
-        )
+        invalid_rule_mock.asp_rule = "invalid(X :- broken"  # Missing period and unbalanced
         invalid_rule_mock.confidence = 0.5
         invalid_rule_mock.reasoning = "Test reasoning"
 
@@ -412,9 +405,7 @@ class TestOptimizationStrategyType:
 
     def test_enum_values(self):
         """Test all optimization strategy values."""
-        assert (
-            OptimizationStrategyType.PROMPT_OPTIMIZATION.value == "prompt_optimization"
-        )
+        assert OptimizationStrategyType.PROMPT_OPTIMIZATION.value == "prompt_optimization"
         assert OptimizationStrategyType.FEW_SHOT_LEARNING.value == "few_shot_learning"
         assert OptimizationStrategyType.CHAIN_OF_THOUGHT.value == "chain_of_thought"
         assert OptimizationStrategyType.SELF_CONSISTENCY.value == "self_consistency"

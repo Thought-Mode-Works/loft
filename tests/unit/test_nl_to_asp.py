@@ -281,9 +281,7 @@ class TestNLToASPTranslator:
     def test_translate_to_rule(self) -> None:
         """Test translate_to_rule method."""
         translator = NLToASPTranslator()
-        result = translator.translate_to_rule(
-            "A contract is enforceable if it is valid"
-        )
+        result = translator.translate_to_rule("A contract is enforceable if it is valid")
 
         assert result.asp_facts is not None
         assert len(result.asp_facts) > 0
@@ -309,9 +307,7 @@ class TestASPGrounder:
     def test_invalid_syntax(self) -> None:
         """Test rejecting invalid syntax."""
         grounder = ASPGrounder()
-        valid, invalid = grounder.ground_and_validate(
-            ["contract(c1"]
-        )  # Missing closing
+        valid, invalid = grounder.ground_and_validate(["contract(c1"])  # Missing closing
 
         assert len(valid) == 0
         assert len(invalid) > 0
@@ -328,9 +324,7 @@ class TestASPGrounder:
     def test_filters_comments(self) -> None:
         """Test filtering out comments."""
         grounder = ASPGrounder()
-        valid, invalid = grounder.ground_and_validate(
-            ["% This is a comment", "contract(c1)."]
-        )
+        valid, invalid = grounder.ground_and_validate(["% This is a comment", "contract(c1)."])
 
         assert len(valid) == 1
         assert "contract(c1)." in valid
@@ -415,9 +409,7 @@ class TestNLToStructured:
 
         llm = Mock()
         mock_response = Mock()
-        mock_response.content = ContractFact(
-            contract_id="c1", contract_type="land_sale"
-        )
+        mock_response.content = ContractFact(contract_id="c1", contract_type="land_sale")
         llm.query.return_value = mock_response
 
         nl = "This is a land sale contract"

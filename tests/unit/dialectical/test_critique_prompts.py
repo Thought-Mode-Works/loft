@@ -372,11 +372,7 @@ class TestGetSynthesisPrompt:
 
         # Should specify what the synthesis should do
         assert "intent" in prompt.lower() or "maintain" in prompt.lower()
-        assert (
-            "flaw" in prompt.lower()
-            or "fix" in prompt.lower()
-            or "address" in prompt.lower()
-        )
+        assert "flaw" in prompt.lower() or "fix" in prompt.lower() or "address" in prompt.lower()
 
     def test_synthesis_prompt_requests_explanation(self):
         """Test prompt requests explanation of changes."""

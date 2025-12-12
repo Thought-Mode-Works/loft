@@ -153,9 +153,7 @@ class StatuteOfFraudsSystem:
                             # Use positional argument names
                             arg_names = ["C", "W", "P", "D", "Amount", "Exception"]
                             for i, arg in enumerate(atom.arguments):
-                                arg_name = (
-                                    arg_names[i] if i < len(arg_names) else f"arg{i}"
-                                )
+                                arg_name = arg_names[i] if i < len(arg_names) else f"arg{i}"
                                 args[arg_name] = str(arg)
                         results.append(args if args else {predicate: True})
 
@@ -209,17 +207,13 @@ class StatuteOfFraudsSystem:
         missing_writing = self.query("missing_writing_info")
         for result in missing_writing:
             if result.get("C") == contract_id:
-                gaps.append(
-                    "Contract requires writing but no writing information provided"
-                )
+                gaps.append("Contract requires writing but no writing information provided")
 
         # Check for uncertain writing sufficiency
         uncertain_writing = self.query("uncertain_writing_sufficiency")
         for result in uncertain_writing:
             if result.get("C") == contract_id:
-                gaps.append(
-                    f"Uncertain if writing {result.get('W')} contains essential terms"
-                )
+                gaps.append(f"Uncertain if writing {result.get('W')} contains essential terms")
 
         # Check for uncertain exceptions
         uncertain_exceptions = self.query("uncertain_exception")
@@ -265,9 +259,7 @@ class StatuteOfFraudsSystem:
             if has_writing:
                 explanation.append("  - The contract has a sufficient writing")
                 explanation.append("    - A writing references the contract")
-                explanation.append(
-                    "    - The writing is signed by a party to the contract"
-                )
+                explanation.append("    - The writing is signed by a party to the contract")
                 explanation.append("    - The writing contains essential terms")
             else:
                 # Check for exceptions
@@ -275,18 +267,12 @@ class StatuteOfFraudsSystem:
                 has_exception = any(r.get("C") == contract_id for r in exceptions)
 
                 if has_exception:
-                    explanation.append(
-                        "  - An exception to the writing requirement applies"
-                    )
+                    explanation.append("  - An exception to the writing requirement applies")
                 else:
                     explanation.append("  - No sufficient writing exists")
-                    explanation.append(
-                        "  - No exception to the writing requirement applies"
-                    )
+                    explanation.append("  - No exception to the writing requirement applies")
         else:
-            explanation.append(
-                "  - The contract does not fall within the Statute of Frauds"
-            )
+            explanation.append("  - The contract does not fall within the Statute of Frauds")
             explanation.append("  - Therefore, no writing is required")
 
         return "\n".join(explanation)

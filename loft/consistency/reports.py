@@ -71,9 +71,7 @@ class ConsistencyHistory:
         if total_rules == 0:
             score = 1.0
         else:
-            weighted_issues = (
-                (report.errors * 2.0) + (report.warnings * 1.0) + (report.info * 0.5)
-            )
+            weighted_issues = (report.errors * 2.0) + (report.warnings * 1.0) + (report.info * 0.5)
             score = max(0.0, 1.0 - (weighted_issues / total_rules))
 
         metrics = ConsistencyMetrics(
@@ -114,9 +112,7 @@ class ConsistencyHistory:
         # Compare average of first half vs second half
         mid = len(recent) // 2
         first_half_avg = sum(m.consistency_score for m in recent[:mid]) / mid
-        second_half_avg = sum(m.consistency_score for m in recent[mid:]) / (
-            len(recent) - mid
-        )
+        second_half_avg = sum(m.consistency_score for m in recent[mid:]) / (len(recent) - mid)
 
         diff = second_half_avg - first_half_avg
 
@@ -178,9 +174,7 @@ class ConsistencyHistory:
             data = json.load(f)
 
         history = cls()
-        history.metrics = [
-            ConsistencyMetrics.from_dict(m) for m in data.get("metrics", [])
-        ]
+        history.metrics = [ConsistencyMetrics.from_dict(m) for m in data.get("metrics", [])]
 
         return history
 
@@ -197,14 +191,10 @@ class ConsistencyReporter:
         """
         self.history_file = history_file
         self.history = (
-            ConsistencyHistory.load(history_file)
-            if history_file
-            else ConsistencyHistory()
+            ConsistencyHistory.load(history_file) if history_file else ConsistencyHistory()
         )
 
-    def report(
-        self, report: ConsistencyReport, total_rules: int, save_history: bool = True
-    ) -> str:
+    def report(self, report: ConsistencyReport, total_rules: int, save_history: bool = True) -> str:
         """
         Generate enhanced report with historical context.
 
@@ -280,9 +270,7 @@ class ConsistencyReporter:
             if len(inc.rule_ids) >= 2:
                 # Create edges between conflicting rules
                 for i in range(len(inc.rule_ids) - 1):
-                    conflict_edges.append(
-                        (inc.rule_ids[i], inc.rule_ids[i + 1], inc.type.value)
-                    )
+                    conflict_edges.append((inc.rule_ids[i], inc.rule_ids[i + 1], inc.type.value))
 
         if not conflict_edges:
             lines.append("No conflicts detected")

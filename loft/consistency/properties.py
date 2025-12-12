@@ -53,9 +53,7 @@ class ConsistencyProperties:
 
     @given(rule_strategy(), core_state_strategy(min_rules=0, max_rules=5))
     @settings(max_examples=50, deadline=None)
-    def test_adding_rule_preserves_consistency_type(
-        self, new_rule: Rule, state: CoreState
-    ) -> None:
+    def test_adding_rule_preserves_consistency_type(self, new_rule: Rule, state: CoreState) -> None:
         """
         Property: Adding a non-contradictory rule to a consistent state.
 
@@ -81,9 +79,7 @@ class ConsistencyProperties:
 
     @given(core_state_strategy(min_rules=1, max_rules=10))
     @settings(max_examples=50, deadline=None)
-    def test_removing_rule_cannot_introduce_contradictions(
-        self, state: CoreState
-    ) -> None:
+    def test_removing_rule_cannot_introduce_contradictions(self, state: CoreState) -> None:
         """
         Property: Removing a rule cannot introduce new contradictions.
 
@@ -95,9 +91,7 @@ class ConsistencyProperties:
         # Get initial contradiction count
         initial_report = self.checker.check(state)
         initial_contradictions = sum(
-            1
-            for inc in initial_report.inconsistencies
-            if inc.type.value == "contradiction"
+            1 for inc in initial_report.inconsistencies if inc.type.value == "contradiction"
         )
 
         # Remove a rule
@@ -106,9 +100,7 @@ class ConsistencyProperties:
         # Check new consistency
         final_report = self.checker.check(state)
         final_contradictions = sum(
-            1
-            for inc in final_report.inconsistencies
-            if inc.type.value == "contradiction"
+            1 for inc in final_report.inconsistencies if inc.type.value == "contradiction"
         )
 
         # Contradictions should not increase
@@ -126,9 +118,7 @@ class ConsistencyProperties:
         report = self.checker.check(state)
 
         actual_errors = sum(1 for i in report.inconsistencies if i.severity == "error")
-        actual_warnings = sum(
-            1 for i in report.inconsistencies if i.severity == "warning"
-        )
+        actual_warnings = sum(1 for i in report.inconsistencies if i.severity == "warning")
         actual_info = sum(1 for i in report.inconsistencies if i.severity == "info")
 
         assert report.errors == actual_errors

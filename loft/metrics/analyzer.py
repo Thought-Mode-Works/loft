@@ -271,13 +271,9 @@ class MetricsAnalyzer:
 
         # Rules growth rate
         if len(rules_counts) >= 2 and data_points[0].rules_count > 0:
-            total_time = (
-                data_points[-1].timestamp - data_points[0].timestamp
-            ).total_seconds()
+            total_time = (data_points[-1].timestamp - data_points[0].timestamp).total_seconds()
             if total_time > 0:
-                rules_growth_rate = (rules_counts[-1] - rules_counts[0]) / (
-                    total_time / 60
-                )
+                rules_growth_rate = (rules_counts[-1] - rules_counts[0]) / (total_time / 60)
             else:
                 rules_growth_rate = 0.0
         else:
@@ -361,9 +357,7 @@ class MetricsAnalyzer:
                 if drop > 0.1:  # >10% accuracy drop
                     anomalies.append(
                         Anomaly(
-                            timestamp=datetime.fromisoformat(
-                                milestones[i]["timestamp"]
-                            ),
+                            timestamp=datetime.fromisoformat(milestones[i]["timestamp"]),
                             metric_name="accuracy",
                             expected_value=accuracies[i - 1],
                             actual_value=accuracies[i],
@@ -493,9 +487,7 @@ class MetricsAnalyzer:
             latency_vs_rules_correlation=0.0,
         )
 
-    def _calculate_correlation(
-        self, x_values: List[float], y_values: List[float]
-    ) -> float:
+    def _calculate_correlation(self, x_values: List[float], y_values: List[float]) -> float:
         """Calculate Pearson correlation coefficient.
 
         Args:

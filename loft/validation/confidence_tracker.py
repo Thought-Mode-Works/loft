@@ -40,9 +40,7 @@ class ConfidenceTracker:
 
         logger.debug(f"Initialized ConfidenceTracker (history_limit={history_limit})")
 
-    def record(
-        self, confidence: AggregatedConfidence, category: Optional[str] = None
-    ) -> None:
+    def record(self, confidence: AggregatedConfidence, category: Optional[str] = None) -> None:
         """
         Record a confidence score.
 
@@ -77,9 +75,7 @@ class ConfidenceTracker:
 
             # Trim category history
             if len(self.by_category[category]) > self.history_limit:
-                self.by_category[category] = self.by_category[category][
-                    -self.history_limit :
-                ]
+                self.by_category[category] = self.by_category[category][-self.history_limit :]
 
         logger.debug(
             f"Recorded confidence: score={confidence.score:.2f}, "

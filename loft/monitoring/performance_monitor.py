@@ -172,11 +172,7 @@ class PerformanceMonitor:
             degradation = baseline_value - current_value
 
             if degradation > self.regression_threshold:
-                severity = (
-                    "critical"
-                    if degradation > self.regression_threshold * 2
-                    else "warning"
-                )
+                severity = "critical" if degradation > self.regression_threshold * 2 else "warning"
 
                 alert = RegressionAlert(
                     metric=name,
@@ -213,15 +209,11 @@ class PerformanceMonitor:
         if len(self.snapshot_history) < 2:
             return None
 
-        lookback = (
-            lookback_days if lookback_days is not None else self.trend_lookback_days
-        )
+        lookback = lookback_days if lookback_days is not None else self.trend_lookback_days
         cutoff_date = datetime.now() - timedelta(days=lookback)
 
         # Filter snapshots within lookback window
-        recent_snapshots = [
-            s for s in self.snapshot_history if s.timestamp >= cutoff_date
-        ]
+        recent_snapshots = [s for s in self.snapshot_history if s.timestamp >= cutoff_date]
 
         if len(recent_snapshots) < 2:
             return None
@@ -258,9 +250,7 @@ class PerformanceMonitor:
 
         # Scale change rate to per-day
         if n > 1:
-            days_span = (
-                recent_snapshots[-1].timestamp - recent_snapshots[0].timestamp
-            ).days
+            days_span = (recent_snapshots[-1].timestamp - recent_snapshots[0].timestamp).days
             if days_span > 0:
                 change_rate = change_rate * n / days_span
 
@@ -326,9 +316,7 @@ class PerformanceMonitor:
                 trends[metric] = trend
 
         # Generate recommendations
-        recommendations = self._generate_recommendations(
-            current_snapshot, trends, regressions
-        )
+        recommendations = self._generate_recommendations(current_snapshot, trends, regressions)
 
         report = PerformanceReport(
             generated_at=datetime.now(),
@@ -452,13 +440,9 @@ class PerformanceMonitor:
                 )
 
         # Trend recommendations
-        degrading_trends = [
-            t for t in trends.values() if t.trend_direction == "degrading"
-        ]
+        degrading_trends = [t for t in trends.values() if t.trend_direction == "degrading"]
         if degrading_trends:
-            high_concern = [
-                t for t in degrading_trends if t.alert_level in ["warning", "critical"]
-            ]
+            high_concern = [t for t in degrading_trends if t.alert_level in ["warning", "critical"]]
             if high_concern:
                 metrics = ", ".join([t.metric_name for t in high_concern])
                 recommendations.append(
@@ -476,8 +460,7 @@ class PerformanceMonitor:
         if current_snapshot and current_snapshot.rollbacks_today > 0:
             if current_snapshot.rules_incorporated_today > 0:
                 rollback_rate = (
-                    current_snapshot.rollbacks_today
-                    / current_snapshot.rules_incorporated_today
+                    current_snapshot.rollbacks_today / current_snapshot.rules_incorporated_today
                 )
                 if rollback_rate > 0.2:
                     recommendations.append(
@@ -487,9 +470,7 @@ class PerformanceMonitor:
 
         # Test coverage recommendations
         if current_snapshot and current_snapshot.test_cases_total > 0:
-            pass_rate = (
-                current_snapshot.test_cases_passing / current_snapshot.test_cases_total
-            )
+            pass_rate = current_snapshot.test_cases_passing / current_snapshot.test_cases_total
             if pass_rate < 0.95:
                 recommendations.append(
                     f"Test pass rate is {pass_rate:.1%}. "

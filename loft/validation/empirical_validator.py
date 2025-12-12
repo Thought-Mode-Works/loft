@@ -56,9 +56,7 @@ class EmpiricalValidator:
             min_accuracy_threshold: Minimum accuracy required for validation (0.0-1.0)
         """
         self.min_accuracy_threshold = min_accuracy_threshold
-        logger.debug(
-            f"Initialized EmpiricalValidator with threshold={min_accuracy_threshold}"
-        )
+        logger.debug(f"Initialized EmpiricalValidator with threshold={min_accuracy_threshold}")
 
     def validate_rule(
         self,
@@ -95,9 +93,7 @@ class EmpiricalValidator:
             >>> assert result.is_valid
         """
         # Evaluate with new rule
-        with_rule_results = self._evaluate_test_cases(
-            test_cases, rule_text, baseline_rules
-        )
+        with_rule_results = self._evaluate_test_cases(test_cases, rule_text, baseline_rules)
 
         # Evaluate baseline (without new rule)
         baseline_results = (
@@ -122,13 +118,9 @@ class EmpiricalValidator:
         failures = []
 
         for tc in test_cases:
-            with_rule_correct = self._is_test_case_correct(
-                tc, rule_text, baseline_rules
-            )
+            with_rule_correct = self._is_test_case_correct(tc, rule_text, baseline_rules)
             baseline_correct = (
-                self._is_test_case_correct(tc, None, baseline_rules)
-                if baseline_rules
-                else False
+                self._is_test_case_correct(tc, None, baseline_rules) if baseline_rules else False
             )
 
             if with_rule_correct and not baseline_correct:
@@ -138,9 +130,7 @@ class EmpiricalValidator:
                 # Failure
                 actual = self._get_test_case_result(tc, rule_text, baseline_rules)
                 baseline = (
-                    self._get_test_case_result(tc, None, baseline_rules)
-                    if baseline_rules
-                    else None
+                    self._get_test_case_result(tc, None, baseline_rules) if baseline_rules else None
                 )
 
                 failure_type = "incorrect"
@@ -348,9 +338,7 @@ class EmpiricalValidator:
             category=data.get("category", "general"),
         )
 
-    def get_validation_stats(
-        self, results: List[EmpiricalValidationResult]
-    ) -> Dict[str, Any]:
+    def get_validation_stats(self, results: List[EmpiricalValidationResult]) -> Dict[str, Any]:
         """
         Get aggregate statistics across multiple validation results.
 

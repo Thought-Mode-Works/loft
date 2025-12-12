@@ -352,18 +352,14 @@ class TestStrategyEvaluator:
             confidence=0.6,
         )
 
-        metrics = evaluator.evaluate_strategy(
-            evaluator.strategies["checklist"], "contracts"
-        )
+        metrics = evaluator.evaluate_strategy(evaluator.strategies["checklist"], "contracts")
         assert metrics.total_cases == 2
         assert metrics.successful_cases == 1
         assert metrics.accuracy == 0.5
 
     def test_evaluate_strategy_no_data(self, evaluator):
         """Test evaluating strategy with no history."""
-        metrics = evaluator.evaluate_strategy(
-            evaluator.strategies["checklist"], "contracts"
-        )
+        metrics = evaluator.evaluate_strategy(evaluator.strategies["checklist"], "contracts")
         assert metrics.total_cases == 0
         assert metrics.accuracy == 0.0
 
@@ -373,9 +369,7 @@ class TestStrategyEvaluator:
         evaluator.record_result("checklist", "statute_of_frauds", True, 120.0)
         evaluator.record_result("checklist", "contracts", False, 90.0)
 
-        metrics = evaluator.evaluate_strategy(
-            evaluator.strategies["checklist"], domain=None
-        )
+        metrics = evaluator.evaluate_strategy(evaluator.strategies["checklist"], domain=None)
         assert metrics.total_cases == 3
         assert metrics.successful_cases == 2
 
@@ -833,9 +827,7 @@ class TestExplainSelectionWithoutArgs:
         case = SimpleCase(case_id="c1", domain="contracts")
         selector_with_history.select_strategy(case)
 
-        explanation = selector_with_history.explain_selection(
-            include_counterfactuals=False
-        )
+        explanation = selector_with_history.explain_selection(include_counterfactuals=False)
 
         assert len(explanation.counterfactuals) == 0
 
@@ -867,11 +859,7 @@ class TestCounterfactualGeneration:
 
         # Find rule_based counterfactual
         rule_cf = next(
-            (
-                cf
-                for cf in explanation.counterfactuals
-                if cf.alternative == "rule_based"
-            ),
+            (cf for cf in explanation.counterfactuals if cf.alternative == "rule_based"),
             None,
         )
         if rule_cf:
@@ -890,17 +878,12 @@ class TestCounterfactualGeneration:
 
         # Find dialectical counterfactual
         dial_cf = next(
-            (
-                cf
-                for cf in explanation.counterfactuals
-                if cf.alternative == "dialectical"
-            ),
+            (cf for cf in explanation.counterfactuals if cf.alternative == "dialectical"),
             None,
         )
         if dial_cf:
             assert (
-                "slow" in dial_cf.why_not_selected.lower()
-                or "slower" in dial_cf.comparison_factors
+                "slow" in dial_cf.why_not_selected.lower() or "slower" in dial_cf.comparison_factors
             )
 
     def test_counterfactual_no_history(self):
@@ -918,11 +901,7 @@ class TestCounterfactualGeneration:
 
         # Find an alternative with no history
         no_history_cf = next(
-            (
-                cf
-                for cf in explanation.counterfactuals
-                if cf.hypothetical_performance == 0.0
-            ),
+            (cf for cf in explanation.counterfactuals if cf.hypothetical_performance == 0.0),
             None,
         )
         if no_history_cf:
@@ -931,9 +910,7 @@ class TestCounterfactualGeneration:
                 or "no_history" in no_history_cf.comparison_factors
             )
 
-    def test_counterfactual_confidence_calculation(
-        self, selector_with_varied_performance
-    ):
+    def test_counterfactual_confidence_calculation(self, selector_with_varied_performance):
         """Test that counterfactual confidence is calculated."""
         case = SimpleCase(case_id="c1", domain="contracts")
         selector_with_varied_performance.select_strategy(case)

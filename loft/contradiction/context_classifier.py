@@ -68,9 +68,7 @@ class ContextClassifier:
             jurisdiction=case_facts.get("jurisdiction"),
         )
 
-        logger.debug(
-            f"Classified context as '{context_type}' with confidence {confidence:.2f}"
-        )
+        logger.debug(f"Classified context as '{context_type}' with confidence {confidence:.2f}")
 
         return classification
 

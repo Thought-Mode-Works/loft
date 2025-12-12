@@ -633,23 +633,15 @@ class PromptOptimizer:
 
         for domain, rate in domain_breakdown.items():
             if rate < overall_effectiveness - 0.1:
-                weakness_areas.append(
-                    f"Low performance in {domain} domain ({rate:.1%})"
-                )
+                weakness_areas.append(f"Low performance in {domain} domain ({rate:.1%})")
             elif rate > overall_effectiveness + 0.1:
-                strength_areas.append(
-                    f"High performance in {domain} domain ({rate:.1%})"
-                )
+                strength_areas.append(f"High performance in {domain} domain ({rate:.1%})")
 
         if metrics.syntax_validity_rate < 0.9:
-            weakness_areas.append(
-                f"Syntax validity issues ({metrics.syntax_validity_rate:.1%})"
-            )
+            weakness_areas.append(f"Syntax validity issues ({metrics.syntax_validity_rate:.1%})")
 
         if metrics.average_latency_ms > 5000:
-            weakness_areas.append(
-                f"High latency ({metrics.average_latency_ms:.0f}ms average)"
-            )
+            weakness_areas.append(f"High latency ({metrics.average_latency_ms:.0f}ms average)")
 
         # Generate recommendations
         recommendations = self._generate_recommendations(
@@ -714,9 +706,7 @@ class PromptOptimizer:
 
         return candidates
 
-    def identify_underperforming_prompts(
-        self, threshold: float = 0.7
-    ) -> List[Tuple[str, float]]:
+    def identify_underperforming_prompts(self, threshold: float = 0.7) -> List[Tuple[str, float]]:
         """
         Identify prompts performing below threshold.
 
@@ -758,9 +748,7 @@ class PromptOptimizer:
         total_latency = sum(m.total_latency_ms for m in self._metrics.values())
 
         overall_success_rate = total_successes / total_uses if total_uses > 0 else 0.0
-        overall_avg_confidence = (
-            total_confidence / total_uses if total_uses > 0 else 0.0
-        )
+        overall_avg_confidence = total_confidence / total_uses if total_uses > 0 else 0.0
         overall_avg_latency = total_latency / total_uses if total_uses > 0 else 0.0
 
         # Build per-prompt reports
@@ -1162,11 +1150,7 @@ class PromptOptimizer:
         late_successes = sum(1 for h in history[mid_point:] if h["success"])
 
         early_rate = early_successes / mid_point if mid_point > 0 else 0
-        late_rate = (
-            late_successes / (len(history) - mid_point)
-            if len(history) > mid_point
-            else 0
-        )
+        late_rate = late_successes / (len(history) - mid_point) if len(history) > mid_point else 0
 
         if late_rate > early_rate + 0.05:
             return "improving"
@@ -1186,14 +1170,10 @@ class PromptOptimizer:
                 "Consider major prompt restructuring - effectiveness is below 70%"
             )
         elif effectiveness < 0.85:
-            recommendations.append(
-                "Prompt has room for improvement - target 85%+ effectiveness"
-            )
+            recommendations.append("Prompt has room for improvement - target 85%+ effectiveness")
 
         if weaknesses:
-            recommendations.append(
-                f"Address identified weaknesses: {'; '.join(weaknesses[:2])}"
-            )
+            recommendations.append(f"Address identified weaknesses: {'; '.join(weaknesses[:2])}")
 
         if trend == "degrading":
             recommendations.append(
@@ -1205,9 +1185,7 @@ class PromptOptimizer:
             )
 
         if not recommendations:
-            recommendations.append(
-                "Prompt is performing well - consider A/B testing variations"
-            )
+            recommendations.append("Prompt is performing well - consider A/B testing variations")
 
         return recommendations
 
@@ -1484,9 +1462,7 @@ class PromptABTester:
         )
 
         # Generate recommendation
-        recommendation = self._generate_recommendation(
-            metrics_a, metrics_b, is_significant, winner
-        )
+        recommendation = self._generate_recommendation(metrics_a, metrics_b, is_significant, winner)
 
         result = ABTestResult(
             test_id=test_id,

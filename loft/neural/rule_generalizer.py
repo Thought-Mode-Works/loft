@@ -45,9 +45,7 @@ class GeneralizationStats:
             "constants_replaced": self.constants_replaced,
             "validation_failures": self.validation_failures,
             "modification_rate": (
-                self.rules_modified / self.rules_processed
-                if self.rules_processed > 0
-                else 0.0
+                self.rules_modified / self.rules_processed if self.rules_processed > 0 else 0.0
             ),
         }
 

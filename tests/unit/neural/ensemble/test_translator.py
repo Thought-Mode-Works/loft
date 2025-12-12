@@ -378,10 +378,7 @@ class TestTranslatorLLMInit:
         config = TranslatorConfig(strategy=TranslationStrategyType.PEDAGOGICAL)
         with patch("loft.neural.ensemble.translator.LLMInterface"):
             translator = TranslatorLLM(mock_provider, config)
-            assert (
-                translator._strategy.strategy_type
-                == TranslationStrategyType.PEDAGOGICAL
-            )
+            assert translator._strategy.strategy_type == TranslationStrategyType.PEDAGOGICAL
 
 
 class TestTranslatorLLMSetStrategy:
@@ -496,9 +493,7 @@ class TestNLToASP:
         with pytest.raises(ValueError, match="description cannot be empty"):
             translator.nl_to_asp("   ", sample_predicates)
 
-    def test_nl_to_asp_successful(
-        self, translator, sample_nl_description, sample_predicates
-    ):
+    def test_nl_to_asp_successful(self, translator, sample_nl_description, sample_predicates):
         """Test successful NL to ASP translation."""
         mock_response = MagicMock()
         mock_response.content = NLToASPSchema(
@@ -547,9 +542,7 @@ class TestRoundtripValidate:
         with pytest.raises(ValueError, match="original cannot be empty"):
             translator.roundtrip_validate("", is_asp=True)
 
-    def test_roundtrip_asp_original(
-        self, translator, sample_asp_rule, sample_predicates
-    ):
+    def test_roundtrip_asp_original(self, translator, sample_asp_rule, sample_predicates):
         """Test roundtrip validation starting with ASP."""
         # Mock ASP to NL
         mock_asp_to_nl = MagicMock()
@@ -597,9 +590,7 @@ class TestRoundtripValidate:
         assert result.original == sample_asp_rule
         assert result.fidelity_score == 0.92
 
-    def test_roundtrip_nl_original(
-        self, translator, sample_nl_description, sample_predicates
-    ):
+    def test_roundtrip_nl_original(self, translator, sample_nl_description, sample_predicates):
         """Test roundtrip validation starting with NL."""
         # Mock NL to ASP
         mock_nl_to_asp = MagicMock()
@@ -757,18 +748,14 @@ class TestPredicateExtraction:
 
     def test_extract_predicates_simple(self, translator):
         """Test extracting predicates from simple rule."""
-        predicates = translator._extract_predicates(
-            "enforceable(C) :- contract(C), signed(C)."
-        )
+        predicates = translator._extract_predicates("enforceable(C) :- contract(C), signed(C).")
         assert "enforceable" in predicates
         assert "contract" in predicates
         assert "signed" in predicates
 
     def test_extract_predicates_with_negation(self, translator):
         """Test extracting predicates excludes 'not'."""
-        predicates = translator._extract_predicates(
-            "enforceable(C) :- contract(C), not void(C)."
-        )
+        predicates = translator._extract_predicates("enforceable(C) :- contract(C), not void(C).")
         assert "not" not in predicates
         assert "void" in predicates
 

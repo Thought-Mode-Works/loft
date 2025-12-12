@@ -38,10 +38,7 @@ def demonstrate_persistence_and_llm():
 
     # Initialize system with LLM and persistence
     print("1. Initializing Self-Modifying System...")
-    system = SelfModifyingSystem(
-        enable_llm=enable_llm,
-        persistence_dir=persistence_dir
-    )
+    system = SelfModifyingSystem(enable_llm=enable_llm, persistence_dir=persistence_dir)
 
     # Check if rules were loaded from previous run
     initial_rules = {}
@@ -109,7 +106,7 @@ def demonstrate_persistence_and_llm():
     # Show excerpt from living document
     print("6. Living Document Excerpt:")
     print("   " + "-" * 76)
-    lines = doc.split('\n')
+    lines = doc.split("\n")
     for line in lines[:25]:  # Show first 25 lines
         print(f"   {line}")
     print("   " + "-" * 76)

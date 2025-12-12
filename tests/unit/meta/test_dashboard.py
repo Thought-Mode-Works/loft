@@ -662,9 +662,7 @@ class TestDashboardGenerator:
         dashboard = generator.generate()
 
         # Should have critical alert for high error rate
-        critical_alerts = [
-            a for a in dashboard.alerts if a.severity == AlertSeverity.CRITICAL
-        ]
+        critical_alerts = [a for a in dashboard.alerts if a.severity == AlertSeverity.CRITICAL]
         assert len(critical_alerts) >= 1
         assert dashboard.system_health == HealthStatus.CRITICAL
 
@@ -686,9 +684,7 @@ class TestDashboardGenerator:
         dashboard = generator.generate()
 
         # Should have warning/critical alert for low accuracy
-        accuracy_alerts = [
-            a for a in dashboard.alerts if "accuracy" in a.message.lower()
-        ]
+        accuracy_alerts = [a for a in dashboard.alerts if "accuracy" in a.message.lower()]
         assert len(accuracy_alerts) >= 1
 
     def test_system_health_calculation(self, mock_observer):
@@ -932,9 +928,7 @@ class TestDashboardIntegration:
             create_test_alert(severity=AlertSeverity.INFO, message="Info alert"),
             create_test_alert(severity=AlertSeverity.WARNING, message="Warning alert"),
             create_test_alert(severity=AlertSeverity.ERROR, message="Error alert"),
-            create_test_alert(
-                severity=AlertSeverity.CRITICAL, message="Critical alert"
-            ),
+            create_test_alert(severity=AlertSeverity.CRITICAL, message="Critical alert"),
         ]
 
         dashboard = MetaReasoningDashboard(

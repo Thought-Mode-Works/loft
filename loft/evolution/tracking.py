@@ -94,9 +94,7 @@ class ABTestResult:
         return {
             "test_id": self.test_id,
             "started_at": self.started_at.isoformat(),
-            "completed_at": (
-                self.completed_at.isoformat() if self.completed_at else None
-            ),
+            "completed_at": (self.completed_at.isoformat() if self.completed_at else None),
             "variant_a_id": self.variant_a_id,
             "variant_b_id": self.variant_b_id,
             "variant_a_accuracy": self.variant_a_accuracy,
@@ -114,9 +112,7 @@ class ABTestResult:
             test_id=data["test_id"],
             started_at=datetime.fromisoformat(data["started_at"]),
             completed_at=(
-                datetime.fromisoformat(data["completed_at"])
-                if data.get("completed_at")
-                else None
+                datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None
             ),
             variant_a_id=data.get("variant_a_id", ""),
             variant_b_id=data.get("variant_b_id", ""),
@@ -197,9 +193,7 @@ class RuleMetadata:
 
     # Stratification
     current_layer: StratificationLayer = StratificationLayer.OPERATIONAL
-    layer_history: List[Tuple[datetime, StratificationLayer]] = field(
-        default_factory=list
-    )
+    layer_history: List[Tuple[datetime, StratificationLayer]] = field(default_factory=list)
     stability_score: float = 0.0
 
     # Impact analysis
@@ -239,17 +233,11 @@ class RuleMetadata:
             "dialectical": self.dialectical.to_dict(),
             "validation_results": [v.to_dict() for v in self.validation_results],
             "test_case_results": self.test_case_results,
-            "accuracy_history": [
-                (ts.isoformat(), acc) for ts, acc in self.accuracy_history
-            ],
+            "accuracy_history": [(ts.isoformat(), acc) for ts, acc in self.accuracy_history],
             "ab_test_id": self.ab_test_id,
-            "ab_test_result": (
-                self.ab_test_result.to_dict() if self.ab_test_result else None
-            ),
+            "ab_test_result": (self.ab_test_result.to_dict() if self.ab_test_result else None),
             "current_layer": self.current_layer.value,
-            "layer_history": [
-                (ts.isoformat(), layer.value) for ts, layer in self.layer_history
-            ],
+            "layer_history": [(ts.isoformat(), layer.value) for ts, layer in self.layer_history],
             "stability_score": self.stability_score,
             "downstream_rules": self.downstream_rules,
             "upstream_rules": self.upstream_rules,
@@ -274,13 +262,11 @@ class RuleMetadata:
             parent_rule_id=data.get("parent_rule_id"),
             dialectical=DialecticalHistory.from_dict(data.get("dialectical", {})),
             validation_results=[
-                ValidationResult.from_dict(v)
-                for v in data.get("validation_results", [])
+                ValidationResult.from_dict(v) for v in data.get("validation_results", [])
             ],
             test_case_results=data.get("test_case_results", {}),
             accuracy_history=[
-                (datetime.fromisoformat(ts), acc)
-                for ts, acc in data.get("accuracy_history", [])
+                (datetime.fromisoformat(ts), acc) for ts, acc in data.get("accuracy_history", [])
             ],
             ab_test_id=data.get("ab_test_id"),
             ab_test_result=(
@@ -601,9 +587,7 @@ class RuleEvolutionTracker:
         metadata.current_layer = to_layer
         metadata.layer_history.append((datetime.now(), to_layer))
 
-        logger.info(
-            f"Promoted rule {rule_id}: {old_layer.value} -> {to_layer.value} ({reason})"
-        )
+        logger.info(f"Promoted rule {rule_id}: {old_layer.value} -> {to_layer.value} ({reason})")
 
     def deprecate_rule(
         self,
@@ -623,9 +607,7 @@ class RuleEvolutionTracker:
             raise ValueError(f"Rule {rule_id} not found")
 
         metadata = self._rules[rule_id]
-        metadata.status = (
-            RuleStatus.SUPERSEDED if superseded_by else RuleStatus.DEPRECATED
-        )
+        metadata.status = RuleStatus.SUPERSEDED if superseded_by else RuleStatus.DEPRECATED
         metadata.deprecation_reason = reason
         metadata.superseded_by = superseded_by
 

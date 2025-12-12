@@ -226,9 +226,7 @@ class SelectionExplanation:
         if self.reasons:
             parts.append(f"Reasons: {'; '.join(self.reasons)}.")
         if self.domain_performance is not None:
-            parts.append(
-                f"Historical accuracy in this domain: {self.domain_performance:.1%}."
-            )
+            parts.append(f"Historical accuracy in this domain: {self.domain_performance:.1%}.")
         parts.append(f"Selection confidence: {self.confidence:.1%}.")
 
         # Add counterfactual reasoning
@@ -504,8 +502,7 @@ class AnalogicalStrategy(ReasoningStrategy):
             name=name,
             strategy_type=StrategyType.ANALOGICAL,
             description="Reason by analogy to similar precedent cases",
-            applicable_domains=applicable_domains
-            or ["property_law", "adverse_possession"],
+            applicable_domains=applicable_domains or ["property_law", "adverse_possession"],
             characteristics=StrategyCharacteristics(
                 speed="medium",
                 accuracy_profile="balanced",
@@ -550,8 +547,8 @@ class StrategyEvaluator:
             strategies: Available strategies (defaults to DEFAULT_STRATEGIES)
         """
         self.strategies = strategies or dict(DEFAULT_STRATEGIES)
-        self._performance_history: Dict[str, Dict[str, List[Dict[str, Any]]]] = (
-            defaultdict(lambda: defaultdict(list))
+        self._performance_history: Dict[str, Dict[str, List[Dict[str, Any]]]] = defaultdict(
+            lambda: defaultdict(list)
         )
 
     def register_strategy(self, strategy: ReasoningStrategy) -> None:
@@ -717,9 +714,7 @@ class StrategyEvaluator:
             statistical_significance=significant,
         )
 
-    def _generate_recommendations(
-        self, rankings: List[Dict[str, Any]], domain: str
-    ) -> List[str]:
+    def _generate_recommendations(self, rankings: List[Dict[str, Any]], domain: str) -> List[str]:
         """Generate recommendations based on comparison.
 
         Args:
@@ -737,9 +732,7 @@ class StrategyEvaluator:
 
         best = rankings[0]
         if best["total_cases"] < 10:
-            recommendations.append(
-                f"More data needed: only {best['total_cases']} cases evaluated"
-            )
+            recommendations.append(f"More data needed: only {best['total_cases']} cases evaluated")
 
         if best["accuracy"] < 0.7:
             recommendations.append(
@@ -786,9 +779,7 @@ class StrategySelector:
         }
 
         # Selection callbacks
-        self._on_selection: Optional[Callable[[str, str, ReasoningStrategy], None]] = (
-            None
-        )
+        self._on_selection: Optional[Callable[[str, str, ReasoningStrategy], None]] = None
 
         # Track most recent selection for explain_selection() without args
         self._last_selection: Optional[Dict[str, Any]] = None
@@ -910,9 +901,7 @@ class StrategySelector:
 
         return best_strategy or candidates[0]
 
-    def _select_by_speed(
-        self, candidates: List[ReasoningStrategy]
-    ) -> ReasoningStrategy:
+    def _select_by_speed(self, candidates: List[ReasoningStrategy]) -> ReasoningStrategy:
         """Select fastest strategy.
 
         Args:
@@ -1024,9 +1013,7 @@ class StrategySelector:
         reasons.append(f"Speed profile: {strategy.characteristics.speed}")
 
         if strategy.characteristics.best_for:
-            reasons.append(
-                f"Best for: {', '.join(strategy.characteristics.best_for[:2])}"
-            )
+            reasons.append(f"Best for: {', '.join(strategy.characteristics.best_for[:2])}")
 
         # Get alternatives
         alternatives = [
@@ -1102,9 +1089,7 @@ class StrategySelector:
                     )
                     comparison_factors.append(f"accuracy_delta={accuracy_diff:.1%}")
                 elif accuracy_diff < 0:
-                    comparison_factors.append(
-                        f"higher_accuracy={alt_metrics.accuracy:.1%}"
-                    )
+                    comparison_factors.append(f"higher_accuracy={alt_metrics.accuracy:.1%}")
             elif alt_metrics.total_cases == 0:
                 why_not_reasons.append("No historical performance data")
                 comparison_factors.append("no_history")

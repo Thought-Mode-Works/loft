@@ -71,15 +71,11 @@ def track_llm_call(
                     response_length = 0
 
                     if isinstance(result, str):
-                        response_preview = (
-                            result[:500] + "..." if len(result) > 500 else result
-                        )
+                        response_preview = result[:500] + "..." if len(result) > 500 else result
                         response_length = len(result)
                     elif isinstance(result, dict) and "content" in result:
                         content = result["content"]
-                        response_preview = (
-                            content[:500] + "..." if len(content) > 500 else content
-                        )
+                        response_preview = content[:500] + "..." if len(content) > 500 else content
                         response_length = len(content)
 
                     log_llm_interaction(

@@ -520,9 +520,7 @@ class TestDeferToConfidenceResolver:
         """Test that highest confidence response is selected."""
         resolver = DeferToConfidenceResolver()
 
-        resolution, explanation = resolver.resolve(
-            confidence_skewed_responses, "Confidence test"
-        )
+        resolution, explanation = resolver.resolve(confidence_skewed_responses, "Confidence test")
 
         assert resolution == "high_conf_rule(X) :- strong_evidence(X)."
         assert "confidence" in explanation.lower()
@@ -646,16 +644,12 @@ class TestDisagreementResolverFactory:
 
     def test_create_defer_to_critic(self):
         """Test creating defer_to_critic resolver via factory."""
-        resolver = create_disagreement_resolver(
-            DisagreementStrategyType.DEFER_TO_CRITIC
-        )
+        resolver = create_disagreement_resolver(DisagreementStrategyType.DEFER_TO_CRITIC)
         assert isinstance(resolver, DeferToCriticResolver)
 
     def test_create_defer_to_confidence(self):
         """Test creating defer_to_confidence resolver via factory."""
-        resolver = create_disagreement_resolver(
-            DisagreementStrategyType.DEFER_TO_CONFIDENCE
-        )
+        resolver = create_disagreement_resolver(DisagreementStrategyType.DEFER_TO_CONFIDENCE)
         assert isinstance(resolver, DeferToConfidenceResolver)
 
     def test_create_synthesize(self):
@@ -714,9 +708,7 @@ class TestVotingDisagreementIntegration:
 
         # If no consensus, resolve disagreement
         if len(voting_result.dissenting_models) > 0:
-            resolution, explanation = resolver.resolve(
-                responses, "Voting produced no consensus"
-            )
+            resolution, explanation = resolver.resolve(responses, "Voting produced no consensus")
             assert resolution is not None
 
     def test_majority_voting_with_critic_fallback(self, split_responses):
@@ -732,9 +724,7 @@ class TestVotingDisagreementIntegration:
             # and returns the result from the first critic response found
             # In split_responses fixture, model_b has result "rule_b(X) :- cond_b(X)."
             # which will be found if there's a critic model
-            resolution, explanation = resolver.resolve(
-                split_responses, "Split vote fallback"
-            )
+            resolution, explanation = resolver.resolve(split_responses, "Split vote fallback")
             # The resolver returns the first available result or the highest confidence
             assert resolution is not None
             assert "critic" in explanation.lower() or "fall" in explanation.lower()
@@ -778,9 +768,7 @@ class TestVotingDisagreementIntegration:
         voting_result = voting_strategy.vote(responses)
 
         if len(voting_result.dissenting_models) > 0:
-            resolution, explanation = resolver.resolve(
-                responses, "Dialectical synthesis needed"
-            )
+            resolution, explanation = resolver.resolve(responses, "Dialectical synthesis needed")
             # Synthesize resolver returns result with synthesis explanation
             assert resolution is not None
             assert "synth" in explanation.lower() or resolution is not None
@@ -831,9 +819,7 @@ class TestVotingEdgeCases:
     def test_very_long_result_strings(self):
         """Test voting with very long result strings."""
         long_result = (
-            "very_long_rule(X) :- "
-            + ", ".join([f"condition_{i}(X)" for i in range(100)])
-            + "."
+            "very_long_rule(X) :- " + ", ".join([f"condition_{i}(X)" for i in range(100)]) + "."
         )
 
         responses = [

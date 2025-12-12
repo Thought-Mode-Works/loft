@@ -34,8 +34,7 @@ def sample_dataset(tmp_path):
     dataset_dir.mkdir()
 
     cases = [
-        {"id": f"case_{i}", "domain": "contracts", "facts": f"Test case {i}"}
-        for i in range(5)
+        {"id": f"case_{i}", "domain": "contracts", "facts": f"Test case {i}"} for i in range(5)
     ]
 
     with open(dataset_dir / "cases.json", "w") as f:

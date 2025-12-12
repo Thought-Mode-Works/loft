@@ -280,16 +280,12 @@ class TestPromptRegistry:
 
     def test_get_templates_for_task(self, prompt_registry):
         """Test getting templates by task type."""
-        templates = prompt_registry.get_templates_for_task(
-            PromptTaskType.ASP_GENERATION
-        )
+        templates = prompt_registry.get_templates_for_task(PromptTaskType.ASP_GENERATION)
         assert len(templates) > 0
         for t in templates:
             assert t.task_type == PromptTaskType.ASP_GENERATION
 
-    def test_get_templates_for_task_with_status_filter(
-        self, prompt_registry, sample_template
-    ):
+    def test_get_templates_for_task_with_status_filter(self, prompt_registry, sample_template):
         """Test getting templates with status filter."""
         sample_template.status = PromptVariantStatus.TESTING
         prompt_registry.register_template(sample_template)
@@ -331,9 +327,7 @@ class TestPromptRegistry:
     def test_update_template_performance(self, prompt_registry, sample_template):
         """Test updating template performance score."""
         prompt_registry.register_template(sample_template)
-        result = prompt_registry.update_template_performance(
-            sample_template.template_id, 0.85
-        )
+        result = prompt_registry.update_template_performance(sample_template.template_id, 0.85)
         assert result is True
         retrieved = prompt_registry.get_template(sample_template.template_id)
         assert retrieved.performance_score == 0.85
@@ -399,9 +393,7 @@ class TestPromptPerformanceTracker:
         all_records = performance_tracker.get_records("tmpl_001")
         assert len(all_records) == 5
 
-        model_a_records = performance_tracker.get_records(
-            "tmpl_001", model_name="model-a"
-        )
+        model_a_records = performance_tracker.get_records("tmpl_001", model_name="model-a")
         assert len(model_a_records) == 3
 
     def test_get_aggregate_metrics(self, performance_tracker):
@@ -491,16 +483,12 @@ class TestABTestingFramework:
     @pytest.fixture
     def ab_framework(self, prompt_registry, performance_tracker, optimizer_config):
         """Create an ABTestingFramework for testing."""
-        return ABTestingFramework(
-            prompt_registry, performance_tracker, optimizer_config
-        )
+        return ABTestingFramework(prompt_registry, performance_tracker, optimizer_config)
 
     def test_create_test(self, ab_framework, prompt_registry):
         """Test creating an A/B test."""
         # Get two default templates
-        templates = prompt_registry.get_templates_for_task(
-            PromptTaskType.ASP_GENERATION
-        )
+        templates = prompt_registry.get_templates_for_task(PromptTaskType.ASP_GENERATION)
         assert len(templates) >= 1
 
         # Register a second template
@@ -537,9 +525,7 @@ class TestABTestingFramework:
 
     def test_start_test(self, ab_framework, prompt_registry):
         """Test starting an A/B test."""
-        templates = prompt_registry.get_templates_for_task(
-            PromptTaskType.ASP_GENERATION
-        )
+        templates = prompt_registry.get_templates_for_task(PromptTaskType.ASP_GENERATION)
         template_b = PromptTemplate(
             template_id="variant_b2",
             name="Variant B",
@@ -564,9 +550,7 @@ class TestABTestingFramework:
 
     def test_select_variant(self, ab_framework, prompt_registry):
         """Test variant selection for A/B test."""
-        templates = prompt_registry.get_templates_for_task(
-            PromptTaskType.ASP_GENERATION
-        )
+        templates = prompt_registry.get_templates_for_task(PromptTaskType.ASP_GENERATION)
         template_b = PromptTemplate(
             template_id="variant_b3",
             name="Variant B",
@@ -594,9 +578,7 @@ class TestABTestingFramework:
 
     def test_record_result(self, ab_framework, prompt_registry):
         """Test recording A/B test results."""
-        templates = prompt_registry.get_templates_for_task(
-            PromptTaskType.ASP_GENERATION
-        )
+        templates = prompt_registry.get_templates_for_task(PromptTaskType.ASP_GENERATION)
         template_b = PromptTemplate(
             template_id="variant_b4",
             name="Variant B",
@@ -616,9 +598,7 @@ class TestABTestingFramework:
         ab_framework.start_test(test.test_id)
 
         # Record results for variant A
-        ab_framework.record_result(
-            test.test_id, templates[0].template_id, True, 0.9, 100.0
-        )
+        ab_framework.record_result(test.test_id, templates[0].template_id, True, 0.9, 100.0)
 
         updated_test = ab_framework.get_test(test.test_id)
         assert updated_test.variant_a_samples == 1
@@ -626,9 +606,7 @@ class TestABTestingFramework:
 
     def test_cancel_test(self, ab_framework, prompt_registry):
         """Test cancelling an A/B test."""
-        templates = prompt_registry.get_templates_for_task(
-            PromptTaskType.ASP_GENERATION
-        )
+        templates = prompt_registry.get_templates_for_task(PromptTaskType.ASP_GENERATION)
         template_b = PromptTemplate(
             template_id="variant_b5",
             name="Variant B",
@@ -712,9 +690,7 @@ class TestModelPromptOptimizer:
 
     def test_record_performance(self, prompt_optimizer):
         """Test recording performance."""
-        templates = prompt_optimizer.registry.get_templates_for_task(
-            PromptTaskType.ASP_GENERATION
-        )
+        templates = prompt_optimizer.registry.get_templates_for_task(PromptTaskType.ASP_GENERATION)
         template = templates[0]
 
         prompt_optimizer.record_performance(
@@ -731,9 +707,7 @@ class TestModelPromptOptimizer:
 
     def test_evolve_prompt(self, prompt_optimizer):
         """Test prompt evolution."""
-        templates = prompt_optimizer.registry.get_templates_for_task(
-            PromptTaskType.ASP_GENERATION
-        )
+        templates = prompt_optimizer.registry.get_templates_for_task(PromptTaskType.ASP_GENERATION)
         template = templates[0]
 
         failure_patterns = [
@@ -751,16 +725,12 @@ class TestModelPromptOptimizer:
         with pytest.raises(PromptOptimizationError):
             prompt_optimizer.evolve_prompt("nonexistent", [])
 
-    def test_analyze_model_characteristics(
-        self, prompt_optimizer, sample_model_profile
-    ):
+    def test_analyze_model_characteristics(self, prompt_optimizer, sample_model_profile):
         """Test analyzing model characteristics."""
         prompt_optimizer.register_model_profile("test-model", sample_model_profile)
 
         # Record some performance data
-        templates = prompt_optimizer.registry.get_templates_for_task(
-            PromptTaskType.ASP_GENERATION
-        )
+        templates = prompt_optimizer.registry.get_templates_for_task(PromptTaskType.ASP_GENERATION)
         for i in range(5):
             prompt_optimizer.record_performance(
                 template_id=templates[0].template_id,
@@ -777,9 +747,7 @@ class TestModelPromptOptimizer:
 
     def test_start_ab_test(self, prompt_optimizer):
         """Test starting A/B test through optimizer."""
-        templates = prompt_optimizer.registry.get_templates_for_task(
-            PromptTaskType.ASP_GENERATION
-        )
+        templates = prompt_optimizer.registry.get_templates_for_task(PromptTaskType.ASP_GENERATION)
 
         # Create a second template
         template_b = PromptTemplate(
@@ -838,14 +806,10 @@ class TestModelPromptOptimizer:
             confidence=0.5,
         )
 
-        model_a_suggestions = prompt_optimizer.get_optimization_suggestions(
-            model_name="model-a"
-        )
+        model_a_suggestions = prompt_optimizer.get_optimization_suggestions(model_name="model-a")
         assert len(model_a_suggestions) == 1
 
-        high_confidence = prompt_optimizer.get_optimization_suggestions(
-            min_confidence=0.8
-        )
+        high_confidence = prompt_optimizer.get_optimization_suggestions(min_confidence=0.8)
         assert len(high_confidence) == 1
 
     def test_get_performance_report(self, prompt_optimizer):
@@ -867,9 +831,7 @@ class TestModelPromptOptimizer:
             rationale="Test",
         )
 
-        templates = prompt_optimizer.registry.get_templates_for_task(
-            PromptTaskType.ASP_GENERATION
-        )
+        templates = prompt_optimizer.registry.get_templates_for_task(PromptTaskType.ASP_GENERATION)
         prompt_optimizer.record_performance(
             template_id=templates[0].template_id,
             model_name="test",
@@ -1068,9 +1030,7 @@ class TestThreadSafety:
             prompt_registry.register_template(template)
             results.append(i)
 
-        threads = [
-            threading.Thread(target=register_template, args=(i,)) for i in range(10)
-        ]
+        threads = [threading.Thread(target=register_template, args=(i,)) for i in range(10)]
         for t in threads:
             t.start()
         for t in threads:
@@ -1091,9 +1051,7 @@ class TestThreadSafety:
             )
             performance_tracker.record(record)
 
-        threads = [
-            threading.Thread(target=record_performance, args=(i,)) for i in range(20)
-        ]
+        threads = [threading.Thread(target=record_performance, args=(i,)) for i in range(20)]
         for t in threads:
             t.start()
         for t in threads:
@@ -1143,9 +1101,7 @@ class TestIntegrationScenarios:
 
     def test_ab_test_to_completion(self):
         """Test A/B test running to completion."""
-        config = PromptOptimizerConfig(
-            min_samples_for_ab_test=5, confidence_threshold=0.5
-        )
+        config = PromptOptimizerConfig(min_samples_for_ab_test=5, confidence_threshold=0.5)
         optimizer = create_prompt_optimizer(config=config)
 
         # Create variant templates
@@ -1206,9 +1162,7 @@ class TestIntegrationScenarios:
         optimizer = create_prompt_optimizer()
 
         # Get a template
-        templates = optimizer.registry.get_templates_for_task(
-            PromptTaskType.ASP_GENERATION
-        )
+        templates = optimizer.registry.get_templates_for_task(PromptTaskType.ASP_GENERATION)
         original_template = templates[0]
 
         # Record failures
@@ -1227,9 +1181,7 @@ class TestIntegrationScenarios:
         patterns = optimizer.tracker.get_failure_patterns(original_template.template_id)
 
         # Evolve the prompt
-        evolution_result = optimizer.evolve_prompt(
-            original_template.template_id, patterns
-        )
+        evolution_result = optimizer.evolve_prompt(original_template.template_id, patterns)
 
         assert evolution_result.evolved_template is not None
         assert (

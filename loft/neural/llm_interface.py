@@ -255,11 +255,7 @@ class LLMInterface:
                     get_global_metrics_tracker,
                 )
 
-                op_type = (
-                    operation_type
-                    or self._default_operation_type
-                    or OperationType.OTHER
-                )
+                op_type = operation_type or self._default_operation_type or OperationType.OTHER
                 self._metrics_tracker.record_call(
                     operation_type=op_type,
                     input_tokens=response.metadata.tokens_input,
@@ -277,11 +273,7 @@ class LLMInterface:
 
                 global_tracker = get_global_metrics_tracker()
                 if global_tracker is not None and success:
-                    op_type = (
-                        operation_type
-                        or self._default_operation_type
-                        or OperationType.OTHER
-                    )
+                    op_type = operation_type or self._default_operation_type or OperationType.OTHER
                     global_tracker.record_call(
                         operation_type=op_type,
                         input_tokens=response.metadata.tokens_input,

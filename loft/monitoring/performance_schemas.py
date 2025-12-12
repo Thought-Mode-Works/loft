@@ -217,9 +217,7 @@ class PerformanceReport:
                     "high": "🟠",
                     "critical": "🔴",
                 }[alert.severity]
-                lines.append(
-                    f"- {severity_emoji} **{alert.category}**: {alert.message}"
-                )
+                lines.append(f"- {severity_emoji} **{alert.category}**: {alert.message}")
             lines.append("")
 
         lines.append("### Recommendations")

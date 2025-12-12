@@ -53,12 +53,8 @@ class SimpleTestSuite:
         if split_point == 0:
             split_point = len(self.test_cases) // 2
 
-        suite1 = SimpleTestSuite(
-            self.test_cases[:split_point] if self.test_cases else []
-        )
-        suite2 = SimpleTestSuite(
-            self.test_cases[split_point:] if self.test_cases else []
-        )
+        suite1 = SimpleTestSuite(self.test_cases[:split_point] if self.test_cases else [])
+        suite2 = SimpleTestSuite(self.test_cases[split_point:] if self.test_cases else [])
 
         return suite1, suite2
 
@@ -102,11 +98,7 @@ class SimpleTestSuite:
         recall = min(1.0, max(0.0, recall))
 
         # Calculate F1
-        f1 = (
-            2 * (precision * recall) / (precision + recall)
-            if (precision + recall) > 0
-            else 0.0
-        )
+        f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
 
         return {
             "accuracy": accuracy,
@@ -150,9 +142,7 @@ class ABTestingFramework:
         self.selection_criterion = selection_criterion
         self.test_history: List[ABTestResult] = []
 
-        logger.info(
-            f"Initialized ABTestingFramework (criterion: {selection_criterion.value})"
-        )
+        logger.info(f"Initialized ABTestingFramework (criterion: {selection_criterion.value})")
 
     def test_variants(
         self,
@@ -195,16 +185,12 @@ class ABTestingFramework:
             final_performance = self._test_single_variant(
                 winner_variant, target_layer, holdout_tests
             )
-            logger.debug(
-                f"Winner validation on holdout: {final_performance.f1_score:.3f}"
-            )
+            logger.debug(f"Winner validation on holdout: {final_performance.f1_score:.3f}")
 
         # Calculate performance gap
         sorted_results = sorted(results, key=self._get_score, reverse=True)
         if len(sorted_results) > 1:
-            gap = self._get_score(sorted_results[0]) - self._get_score(
-                sorted_results[1]
-            )
+            gap = self._get_score(sorted_results[0]) - self._get_score(sorted_results[1])
         else:
             gap = 0.0
 
@@ -225,9 +211,7 @@ class ABTestingFramework:
 
         self.test_history.append(result)
 
-        logger.info(
-            f"Winner: {winner_variant.variant_id} (strategy: {winner_variant.strategy})"
-        )
+        logger.info(f"Winner: {winner_variant.variant_id} (strategy: {winner_variant.strategy})")
         logger.info(f"Performance gap: {gap:.3f}, Confidence: {confidence:.2%}")
 
         return result

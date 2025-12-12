@@ -51,9 +51,7 @@ class TransformationType(Enum):
 
     PARTY_PERMUTATION = auto()  # Swap party identities
     AMOUNT_SCALING = auto()  # Scale monetary values proportionally
-    TEMPORAL_SHIFT = (
-        auto()
-    )  # Shift dates by constant offset (implemented in temporal.py)
+    TEMPORAL_SHIFT = auto()  # Shift dates by constant offset (implemented in temporal.py)
     CONTENT_SUBSTITUTION = auto()  # Replace content labels with equivalent ones
 
 
@@ -122,11 +120,7 @@ class EquivarianceReport:
             lines.append("### Breakdown by Constraint")
             lines.append("")
             for constraint_name, breakdown in self.constraint_breakdown.items():
-                status = (
-                    "✅"
-                    if breakdown.get("passed", 0) == breakdown.get("total", 0)
-                    else "❌"
-                )
+                status = "✅" if breakdown.get("passed", 0) == breakdown.get("total", 0) else "❌"
                 lines.append(
                     f"- {status} **{constraint_name}**: "
                     f"{breakdown.get('passed', 0)}/{breakdown.get('total', 0)} passed"
@@ -392,17 +386,12 @@ class PartyPermutationEquivariance(EquivarianceConstraint):
         self._scan_for_parties(case, parties)
         return parties
 
-    def _scan_for_parties(
-        self, obj: Any, found: Set[str], current_key: str = ""
-    ) -> None:
+    def _scan_for_parties(self, obj: Any, found: Set[str], current_key: str = "") -> None:
         """Recursively scan for party values."""
         if isinstance(obj, dict):
             for key, value in obj.items():
-                is_party_field = (
-                    self.party_fields is not None and key in self.party_fields
-                ) or (
-                    self.party_fields is None
-                    and key.lower() in self.PARTY_FIELD_PATTERNS
+                is_party_field = (self.party_fields is not None and key in self.party_fields) or (
+                    self.party_fields is None and key.lower() in self.PARTY_FIELD_PATTERNS
                 )
 
                 if is_party_field and isinstance(value, str):
@@ -446,11 +435,8 @@ class PartyPermutationEquivariance(EquivarianceConstraint):
             result = {}
             for key, value in obj.items():
                 # Check if this is a party field
-                is_party_field = (
-                    self.party_fields is not None and key in self.party_fields
-                ) or (
-                    self.party_fields is None
-                    and key.lower() in self.PARTY_FIELD_PATTERNS
+                is_party_field = (self.party_fields is not None and key in self.party_fields) or (
+                    self.party_fields is None and key.lower() in self.PARTY_FIELD_PATTERNS
                 )
 
                 if is_party_field and isinstance(value, str):
@@ -585,10 +571,7 @@ class AmountScalingEquivariance(EquivarianceConstraint):
                 new_path = f"{path}.{key}" if path else key
                 is_amount_field = (
                     self.amount_fields is not None and key in self.amount_fields
-                ) or (
-                    self.amount_fields is None
-                    and key.lower() in self.AMOUNT_FIELD_PATTERNS
-                )
+                ) or (self.amount_fields is None and key.lower() in self.AMOUNT_FIELD_PATTERNS)
 
                 if is_amount_field and isinstance(value, (int, float)):
                     found[new_path] = float(value)
@@ -630,10 +613,7 @@ class AmountScalingEquivariance(EquivarianceConstraint):
             for key, value in obj.items():
                 is_amount_field = (
                     self.amount_fields is not None and key in self.amount_fields
-                ) or (
-                    self.amount_fields is None
-                    and key.lower() in self.AMOUNT_FIELD_PATTERNS
-                )
+                ) or (self.amount_fields is None and key.lower() in self.AMOUNT_FIELD_PATTERNS)
 
                 if is_amount_field and isinstance(value, (int, float)):
                     result[key] = value * scale_factor
@@ -643,9 +623,7 @@ class AmountScalingEquivariance(EquivarianceConstraint):
         elif isinstance(obj, list):
             return [self._apply_scaling_recursive(item, scale_factor) for item in obj]
         elif isinstance(obj, tuple):
-            return tuple(
-                self._apply_scaling_recursive(item, scale_factor) for item in obj
-            )
+            return tuple(self._apply_scaling_recursive(item, scale_factor) for item in obj)
         else:
             return obj
 
@@ -793,10 +771,7 @@ class ContentSubstitutionEquivariance(EquivarianceConstraint):
 
                 is_content_field = (
                     self.content_fields is not None and key in self.content_fields
-                ) or (
-                    self.content_fields is None
-                    and key.lower() in self.CONTENT_FIELD_PATTERNS
-                )
+                ) or (self.content_fields is None and key.lower() in self.CONTENT_FIELD_PATTERNS)
 
                 if is_content_field and isinstance(value, str):
                     result[key] = mapping.get(value, value)
@@ -806,9 +781,7 @@ class ContentSubstitutionEquivariance(EquivarianceConstraint):
         elif isinstance(obj, list):
             return [self._apply_substitution_recursive(item, mapping) for item in obj]
         elif isinstance(obj, tuple):
-            return tuple(
-                self._apply_substitution_recursive(item, mapping) for item in obj
-            )
+            return tuple(self._apply_substitution_recursive(item, mapping) for item in obj)
         else:
             return obj
 
@@ -826,9 +799,7 @@ class ContentSubstitutionEquivariance(EquivarianceConstraint):
         if not content_mapping:
             return output
 
-        return self._apply_substitution_recursive(
-            copy.deepcopy(output), content_mapping
-        )
+        return self._apply_substitution_recursive(copy.deepcopy(output), content_mapping)
 
     def generate_transformations(
         self,
@@ -852,9 +823,7 @@ class ContentSubstitutionEquivariance(EquivarianceConstraint):
 
         return [{"content_mapping": mapping}]
 
-    def _scan_for_content(
-        self, obj: Any, found: Set[str], current_key: str = ""
-    ) -> None:
+    def _scan_for_content(self, obj: Any, found: Set[str], current_key: str = "") -> None:
         """Recursively scan for content values."""
         if isinstance(obj, dict):
             for key, value in obj.items():
@@ -863,10 +832,7 @@ class ContentSubstitutionEquivariance(EquivarianceConstraint):
 
                 is_content_field = (
                     self.content_fields is not None and key in self.content_fields
-                ) or (
-                    self.content_fields is None
-                    and key.lower() in self.CONTENT_FIELD_PATTERNS
-                )
+                ) or (self.content_fields is None and key.lower() in self.CONTENT_FIELD_PATTERNS)
 
                 if is_content_field and isinstance(value, str):
                     found.add(value)
@@ -941,9 +907,7 @@ class EquivarianceVerifier:
                     constraint_total += 1
                     total_tests += 1
 
-                    is_equivariant, violation = constraint.verify_equivariance(
-                        rule, case, params
-                    )
+                    is_equivariant, violation = constraint.verify_equivariance(rule, case, params)
 
                     if is_equivariant:
                         constraint_passed += 1
@@ -1007,8 +971,6 @@ class EquivarianceVerifier:
             transformations = constraint.generate_transformations(case)
             for params in transformations:
                 transformed = constraint.apply_transform(case, params)
-                transformed_cases.append(
-                    (transformed, constraint.transformation_type, params)
-                )
+                transformed_cases.append((transformed, constraint.transformation_type, params))
 
         return transformed_cases

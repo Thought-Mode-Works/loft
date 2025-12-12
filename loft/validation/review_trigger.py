@@ -119,8 +119,7 @@ class ReviewTrigger:
             consensus_result = validation_report.stage_results["consensus"]
             if (
                 hasattr(consensus_result, "consensus_strength")
-                and consensus_result.consensus_strength
-                < self.config.consensus_strength_threshold
+                and consensus_result.consensus_strength < self.config.consensus_strength_threshold
             ):
                 triggers.append(
                     (

@@ -52,7 +52,7 @@ framework = DebateFramework(
     critic=critic,
     synthesizer=synthesizer,
     max_rounds=3,
-    convergence_threshold=0.85
+    convergence_threshold=0.85,
 )
 
 # Define debate context
@@ -61,7 +61,16 @@ print("=" * 80)
 context = DebateContext(
     knowledge_gap_description="A contract is enforceable when there is mutual agreement, consideration exchanged, legal capacity of parties, and lawful purpose",
     existing_rules=[],
-    existing_predicates=["enforceable", "contract", "signed", "offer", "acceptance", "consideration", "capacity", "legal_purpose"],
+    existing_predicates=[
+        "enforceable",
+        "contract",
+        "signed",
+        "offer",
+        "acceptance",
+        "consideration",
+        "capacity",
+        "legal_purpose",
+    ],
     target_layer="tactical",
     max_rounds=3,
 )

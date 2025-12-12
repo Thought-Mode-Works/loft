@@ -155,9 +155,7 @@ class SelfModifyingSystem:
 
         # Capture baseline performance
         baseline_snapshot = self._capture_baseline_snapshot()
-        baseline_accuracy = (
-            baseline_snapshot.overall_accuracy if baseline_snapshot else 0.85
-        )
+        baseline_accuracy = baseline_snapshot.overall_accuracy if baseline_snapshot else 0.85
 
         # 1. Identify knowledge gaps
         logger.info("Step 1: Identifying knowledge gaps...")
@@ -189,9 +187,7 @@ class SelfModifyingSystem:
             logger.info(f"Generated {len(variants)} variants")
 
             # A/B test variants
-            ab_result = self.ab_testing.test_variants(
-                variants=variants, target_layer=target_layer
-            )
+            ab_result = self.ab_testing.test_variants(variants=variants, target_layer=target_layer)
 
             winner = ab_result.winner
             logger.info(
@@ -239,9 +235,7 @@ class SelfModifyingSystem:
                     successful_incorporations.append(inc_result)
 
                     # Track this rule as incorporated
-                    self._incorporated_this_session.add(
-                        (winner.rule.asp_rule, target_layer)
-                    )
+                    self._incorporated_this_session.add((winner.rule.asp_rule, target_layer))
 
                     # Persist the rule to disk with metadata
                     metadata = {
@@ -262,20 +256,15 @@ class SelfModifyingSystem:
                     rule=winner.rule,
                     validation_report=validation_report,
                     priority="medium",
-                    reason=validation_report.flag_reason
-                    or "Validation flagged for review",
+                    reason=validation_report.flag_reason or "Validation flagged for review",
                 )
 
             else:
-                logger.info(
-                    f"✗ Validation rejected: {validation_report.rejection_reason}"
-                )
+                logger.info(f"✗ Validation rejected: {validation_report.rejection_reason}")
 
         # 3. Capture final performance
         final_snapshot = self._capture_final_snapshot()
-        final_accuracy = (
-            final_snapshot.overall_accuracy if final_snapshot else baseline_accuracy
-        )
+        final_accuracy = final_snapshot.overall_accuracy if final_snapshot else baseline_accuracy
 
         # 4. Generate cycle summary
         result = self._create_cycle_result(
@@ -403,9 +392,7 @@ class SelfModifyingSystem:
 
         # If no rule generator, create mock variants for testing
         if self.rule_generator is None:
-            logger.warning(
-                "No rule generator available - creating mock variants for testing"
-            )
+            logger.warning("No rule generator available - creating mock variants for testing")
             strategies = ["conservative", "balanced", "permissive"]
 
             for strategy in strategies:
@@ -415,9 +402,7 @@ class SelfModifyingSystem:
                 # Generate different rules based on strategy and gap
                 if "enforceability" in gap.description.lower():
                     if strategy == "conservative":
-                        asp_rule = (
-                            "enforceable(C) :- contract(C), written(C), signed(C)."
-                        )
+                        asp_rule = "enforceable(C) :- contract(C), written(C), signed(C)."
                         confidence = 0.85
                     elif strategy == "balanced":
                         asp_rule = "enforceable(C) :- contract(C), written(C)."
@@ -435,10 +420,7 @@ class SelfModifyingSystem:
                     else:
                         asp_rule = "valid_consideration(C) :- contract(C)."
                         confidence = 0.70
-                elif (
-                    "offer" in gap.description.lower()
-                    or "acceptance" in gap.description.lower()
-                ):
+                elif "offer" in gap.description.lower() or "acceptance" in gap.description.lower():
                     if strategy == "conservative":
                         asp_rule = "valid_acceptance(C) :- offer(C), acceptance(C), same_terms(C)."
                         confidence = 0.86
@@ -450,9 +432,7 @@ class SelfModifyingSystem:
                         confidence = 0.72
                 elif "capacity" in gap.description.lower():
                     if strategy == "conservative":
-                        asp_rule = (
-                            "has_capacity(P) :- party(P), adult(P), sound_mind(P)."
-                        )
+                        asp_rule = "has_capacity(P) :- party(P), adult(P), sound_mind(P)."
                         confidence = 0.90
                     elif strategy == "balanced":
                         asp_rule = "has_capacity(P) :- party(P), adult(P)."
@@ -460,12 +440,11 @@ class SelfModifyingSystem:
                     else:
                         asp_rule = "has_capacity(P) :- party(P)."
                         confidence = 0.73
-                elif (
-                    "assent" in gap.description.lower()
-                    or "mutual" in gap.description.lower()
-                ):
+                elif "assent" in gap.description.lower() or "mutual" in gap.description.lower():
                     if strategy == "conservative":
-                        asp_rule = "mutual_assent(C) :- contract(C), meeting_of_minds(C), no_fraud(C)."
+                        asp_rule = (
+                            "mutual_assent(C) :- contract(C), meeting_of_minds(C), no_fraud(C)."
+                        )
                         confidence = 0.87
                     elif strategy == "balanced":
                         asp_rule = "mutual_assent(C) :- contract(C), agreement(C)."
@@ -602,9 +581,7 @@ class SelfModifyingSystem:
         return SelfAnalysisReport(
             generated_at=datetime.now(),
             narrative=narrative,
-            incorporation_success_rate=(
-                successes / total_attempts if total_attempts > 0 else 0.0
-            ),
+            incorporation_success_rate=(successes / total_attempts if total_attempts > 0 else 0.0),
             best_strategy=(
                 max(strategy_stats.items(), key=lambda x: x[1].win_rate)[0]
                 if strategy_stats
@@ -646,9 +623,7 @@ class SelfModifyingSystem:
             )
 
         # Trend analysis
-        degrading_metrics = [
-            m for m, t in trends.items() if t.trend_direction == "degrading"
-        ]
+        degrading_metrics = [m for m, t in trends.items() if t.trend_direction == "degrading"]
         if degrading_metrics:
             narrative.append(
                 f"I have noticed my {', '.join(degrading_metrics)} metrics are declining."
@@ -672,9 +647,7 @@ class SelfModifyingSystem:
         weak_predicates = ["complex_consideration", "unconscionability", "duress"]
         return weak_predicates
 
-    def _calculate_self_confidence(
-        self, successes: int, attempts: int, trends: Dict
-    ) -> float:
+    def _calculate_self_confidence(self, successes: int, attempts: int, trends: Dict) -> float:
         """Calculate system's confidence in its own performance."""
         if attempts == 0:
             return 0.5
@@ -684,12 +657,8 @@ class SelfModifyingSystem:
         confidence = success_rate
 
         # Adjust based on trends
-        improving_count = sum(
-            1 for t in trends.values() if t.trend_direction == "improving"
-        )
-        degrading_count = sum(
-            1 for t in trends.values() if t.trend_direction == "degrading"
-        )
+        improving_count = sum(1 for t in trends.values() if t.trend_direction == "improving")
+        degrading_count = sum(1 for t in trends.values() if t.trend_direction == "degrading")
 
         if improving_count > degrading_count:
             confidence = min(1.0, confidence + 0.1)
@@ -730,9 +699,7 @@ class SelfModifyingSystem:
         recent_rollbacks = len(self.incorporation_engine.rollback_history[-10:])
 
         # Alerts
-        active_alerts = len(
-            [a for a in self.performance_monitor.active_alerts if not a.resolved]
-        )
+        active_alerts = len([a for a in self.performance_monitor.active_alerts if not a.resolved])
 
         # Pending reviews
         pending_reviews = self.review_queue.get_statistics().pending
@@ -751,9 +718,7 @@ class SelfModifyingSystem:
         if pending_reviews > 0:
             recommendations.append(f"Review {pending_reviews} pending rule(s)")
         if recent_rollbacks > 2:
-            recommendations.append(
-                "High rollback rate - review rule generation quality"
-            )
+            recommendations.append("High rollback rate - review rule generation quality")
         if not recommendations:
             recommendations.append("System is healthy - continue normal operation")
 
@@ -790,9 +755,7 @@ class SelfModifyingSystem:
                 return None
 
             # Initialize provider
-            provider = AnthropicProvider(
-                api_key=config.llm.api_key, model=config.llm.model
-            )
+            provider = AnthropicProvider(api_key=config.llm.api_key, model=config.llm.model)
 
             # Initialize LLM interface
             llm = LLMInterface(provider=provider, enable_cache=True, max_retries=3)
@@ -802,9 +765,7 @@ class SelfModifyingSystem:
                 llm=llm, asp_core=self.asp_core, domain="legal", prompt_version="latest"
             )
 
-            logger.info(
-                f"Initialized LLM rule generator with model: {config.llm.model}"
-            )
+            logger.info(f"Initialized LLM rule generator with model: {config.llm.model}")
             return rule_generator
 
         except Exception as e:
@@ -826,11 +787,7 @@ class SelfModifyingSystem:
                     # Parse and track loaded rules (store in a set for duplicate detection)
                     for line in rules_text.strip().split("\n"):
                         line = line.strip()
-                        if (
-                            line
-                            and not line.startswith("%")
-                            and not line.startswith("#")
-                        ):
+                        if line and not line.startswith("%") and not line.startswith("#"):
                             # Store rule in a loaded rules tracking set
                             if not hasattr(self, "_loaded_rules"):
                                 self._loaded_rules = set()
@@ -843,9 +800,7 @@ class SelfModifyingSystem:
         except Exception as e:
             logger.warning(f"Failed to load persisted rules: {e}")
 
-    def _persist_rule(
-        self, rule: str, layer: StratificationLevel, metadata: dict = None
-    ) -> None:
+    def _persist_rule(self, rule: str, layer: StratificationLevel, metadata: dict = None) -> None:
         """Persist a single rule to disk with metadata."""
         try:
             layer_file = self.persistence_dir / f"{layer.value}.lp"
@@ -912,9 +867,7 @@ class SelfModifyingSystem:
 
         # Generate document
         try:
-            document = generator.generate(
-                output_path=output_path, include_metadata=True
-            )
+            document = generator.generate(output_path=output_path, include_metadata=True)
             logger.info(f"Generated living document at {output_path}")
             return document
         except Exception as e:

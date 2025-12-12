@@ -276,11 +276,7 @@ class MetaReasoningOrchestrator:
                 "category": category,
                 "count": count,
                 "percentage": round(percentage, 1),
-                "priority": (
-                    "high"
-                    if percentage > 30
-                    else "medium" if percentage > 10 else "low"
-                ),
+                "priority": ("high" if percentage > 30 else "medium" if percentage > 10 else "low"),
             }
 
             # Generate specific recommendations based on category
@@ -297,9 +293,7 @@ class MetaReasoningOrchestrator:
                     "Periods appearing in fact atoms cause parsing errors. "
                     "Add period sanitization to fact preprocessing."
                 )
-                suggestion["recommended_action"] = (
-                    "Sanitize periods in facts before ASP processing"
-                )
+                suggestion["recommended_action"] = "Sanitize periods in facts before ASP processing"
             elif category == "syntax_error":
                 suggestion["description"] = (
                     "ASP syntax errors in generated rules. "
@@ -313,25 +307,19 @@ class MetaReasoningOrchestrator:
                     "Invalid arithmetic expressions in rules. "
                     "Restrict or guide arithmetic usage in prompts."
                 )
-                suggestion["recommended_action"] = (
-                    "Add arithmetic constraints to rule templates"
-                )
+                suggestion["recommended_action"] = "Add arithmetic constraints to rule templates"
             elif category == "grounding_error":
                 suggestion["description"] = (
                     "Rules cannot be grounded due to infinite domains. "
                     "Add domain restriction guidance to prompts."
                 )
-                suggestion["recommended_action"] = (
-                    "Include domain bounding examples in prompts"
-                )
+                suggestion["recommended_action"] = "Include domain bounding examples in prompts"
             elif category == "json_parse_error":
                 suggestion["description"] = (
                     "LLM responses not parseable as JSON. "
                     "Add stricter JSON formatting requirements."
                 )
-                suggestion["recommended_action"] = (
-                    "Enforce JSON schema in prompt instructions"
-                )
+                suggestion["recommended_action"] = "Enforce JSON schema in prompt instructions"
             elif category == "validation_error":
                 suggestion["description"] = (
                     "Generated rules fail validation checks. "
@@ -342,9 +330,7 @@ class MetaReasoningOrchestrator:
                 )
             else:
                 suggestion["description"] = f"Unknown failure category: {category}"
-                suggestion["recommended_action"] = (
-                    "Investigate and categorize these failures"
-                )
+                suggestion["recommended_action"] = "Investigate and categorize these failures"
 
             suggestions.append(suggestion)
 
@@ -417,9 +403,7 @@ class MetaReasoningOrchestrator:
                 cycle_result.failure_patterns = failure_report.pattern_descriptions
 
             if self._config.enable_autonomous_improvement and self._improver:
-                result = self._run_improver_cycle(
-                    case_results, failure_report, current_accuracy
-                )
+                result = self._run_improver_cycle(case_results, failure_report, current_accuracy)
                 actions_taken = result.get("actions_taken", 0)
                 improvements_made = result.get("improvements_made", 0)
 
@@ -475,9 +459,7 @@ class MetaReasoningOrchestrator:
                 error_message=str(e),
             )
 
-    def _analyze_failures(
-        self, case_results: List[Dict[str, Any]]
-    ) -> FailureAnalysisReport:
+    def _analyze_failures(self, case_results: List[Dict[str, Any]]) -> FailureAnalysisReport:
         """Analyze failures from case results.
 
         Args:
@@ -666,9 +648,7 @@ class MetaReasoningOrchestrator:
         if self._failure_analyzer and hasattr(self._failure_analyzer, "restore_state"):
             self._failure_analyzer.restore_state(state.analyzer_state)
 
-        if self._strategy_selector and hasattr(
-            self._strategy_selector, "restore_state"
-        ):
+        if self._strategy_selector and hasattr(self._strategy_selector, "restore_state"):
             self._strategy_selector.restore_state(state.selector_state)
 
     def get_metrics_summary(self) -> Dict[str, Any]:
@@ -699,11 +679,7 @@ class MetaReasoningOrchestrator:
             "total_strategy_changes": total_strategy_changes,
             "accuracy_trend": accuracy_trend,
             "failure_patterns": list(
-                set(
-                    pattern
-                    for cr in self._cycle_history
-                    for pattern in cr.failure_patterns
-                )
+                set(pattern for cr in self._cycle_history for pattern in cr.failure_patterns)
             ),
             # Processor failure patterns for meta-reasoning (issue #169)
             "processor_failure_patterns": dict(self._processor_failure_patterns),

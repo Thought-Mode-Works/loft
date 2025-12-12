@@ -164,14 +164,10 @@ class PersistenceManager:
 
         self._rotate_checkpoints()
 
-        logger.info(
-            f"Saved checkpoint {checkpoint.checkpoint_number} to {checkpoint_path}"
-        )
+        logger.info(f"Saved checkpoint {checkpoint.checkpoint_number} to {checkpoint_path}")
         return checkpoint_path
 
-    def load_checkpoint(
-        self, checkpoint_path: Optional[Path] = None
-    ) -> Optional[RunCheckpoint]:
+    def load_checkpoint(self, checkpoint_path: Optional[Path] = None) -> Optional[RunCheckpoint]:
         """Load a checkpoint for resume.
 
         Args:
@@ -239,9 +235,7 @@ class PersistenceManager:
                         events.append(json.loads(line))
         return events
 
-    def save_metrics(
-        self, metrics: RunMetrics, filename: str = "run_metrics.json"
-    ) -> None:
+    def save_metrics(self, metrics: RunMetrics, filename: str = "run_metrics.json") -> None:
         """Save run metrics.
 
         Args:
@@ -269,9 +263,7 @@ class PersistenceManager:
             return RunMetrics.from_dict(data)
         return None
 
-    def save_rules(
-        self, rules: List[Dict[str, Any]], filename: str = "evolved_rules.json"
-    ) -> None:
+    def save_rules(self, rules: List[Dict[str, Any]], filename: str = "evolved_rules.json") -> None:
         """Save accumulated rules.
 
         Args:
@@ -474,9 +466,7 @@ class PersistenceManager:
         for subdir in ["checkpoints", "metrics", "rules", "reports"]:
             subdir_path = self._run_dir / subdir
             if subdir_path.exists():
-                total_size = sum(
-                    f.stat().st_size for f in subdir_path.rglob("*") if f.is_file()
-                )
+                total_size = sum(f.stat().st_size for f in subdir_path.rglob("*") if f.is_file())
                 usage[subdir] = total_size
             else:
                 usage[subdir] = 0

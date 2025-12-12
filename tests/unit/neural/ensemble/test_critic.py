@@ -287,9 +287,7 @@ class TestAdversarialStrategy:
         rule = "valid(C) :- contract(C)."
         existing_rules = ["enforceable(C) :- valid(C)."]
 
-        prompt = strategy.prepare_contradiction_prompt(
-            base_prompt, rule, existing_rules
-        )
+        prompt = strategy.prepare_contradiction_prompt(base_prompt, rule, existing_rules)
 
         assert "Check contradictions:" in prompt
         assert "Adversarial" in prompt
@@ -893,9 +891,7 @@ class TestCriticAnalysisError:
 
     def test_exception_creation(self):
         """Test exception creation with message."""
-        error = CriticAnalysisError(
-            "Analysis failed", analysis_type="edge_cases", attempts=3
-        )
+        error = CriticAnalysisError("Analysis failed", analysis_type="edge_cases", attempts=3)
 
         assert str(error) == "Analysis failed"
         assert error.analysis_type == "edge_cases"

@@ -28,9 +28,7 @@ class TestNotificationConfig:
 
     def test_valid_webhook_url(self):
         """Test valid Slack webhook URL is accepted."""
-        config = NotificationConfig(
-            slack_webhook_url="https://hooks.slack.com/services/xxx"
-        )
+        config = NotificationConfig(slack_webhook_url="https://hooks.slack.com/services/xxx")
         assert config.slack_webhook_url == "https://hooks.slack.com/services/xxx"
 
     def test_invalid_webhook_url(self):

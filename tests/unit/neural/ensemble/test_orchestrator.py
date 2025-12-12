@@ -236,10 +236,7 @@ class TestOrchestratorConfig:
         """Test default configuration values."""
         config = OrchestratorConfig()
         assert config.default_voting_strategy == VotingStrategyType.WEIGHTED
-        assert (
-            config.default_disagreement_strategy
-            == DisagreementStrategyType.DEFER_TO_CONFIDENCE
-        )
+        assert config.default_disagreement_strategy == DisagreementStrategyType.DEFER_TO_CONFIDENCE
         assert config.enable_caching is True
         assert config.cache_ttl_seconds == 3600
         assert config.max_retries == 3
@@ -260,9 +257,7 @@ class TestOrchestratorConfig:
 
     def test_invalid_confidence_threshold(self):
         """Test that invalid confidence threshold raises ValueError."""
-        with pytest.raises(
-            ValueError, match="min_confidence_threshold must be between"
-        ):
+        with pytest.raises(ValueError, match="min_confidence_threshold must be between"):
             OrchestratorConfig(min_confidence_threshold=1.5)
 
 
@@ -344,18 +339,10 @@ class TestMajorityVotingStrategy:
         # Create tied vote scenario: 2 votes for "resultA", 2 votes for "resultB"
         # resultA has higher avg confidence (0.9 vs 0.7)
         responses = [
-            ModelResponse(
-                model_type="model1", result="resultA", confidence=0.9, latency_ms=100
-            ),
-            ModelResponse(
-                model_type="model2", result="resultA", confidence=0.9, latency_ms=100
-            ),
-            ModelResponse(
-                model_type="model3", result="resultB", confidence=0.7, latency_ms=100
-            ),
-            ModelResponse(
-                model_type="model4", result="resultB", confidence=0.7, latency_ms=100
-            ),
+            ModelResponse(model_type="model1", result="resultA", confidence=0.9, latency_ms=100),
+            ModelResponse(model_type="model2", result="resultA", confidence=0.9, latency_ms=100),
+            ModelResponse(model_type="model3", result="resultB", confidence=0.7, latency_ms=100),
+            ModelResponse(model_type="model4", result="resultB", confidence=0.7, latency_ms=100),
         ]
 
         result = strategy.vote(responses)
@@ -371,18 +358,10 @@ class TestMajorityVotingStrategy:
         # Create completely tied scenario: same vote count, same avg confidence
         # Should use lexicographic order ("aaa" < "bbb")
         responses = [
-            ModelResponse(
-                model_type="model1", result="bbb", confidence=0.8, latency_ms=100
-            ),
-            ModelResponse(
-                model_type="model2", result="bbb", confidence=0.8, latency_ms=100
-            ),
-            ModelResponse(
-                model_type="model3", result="aaa", confidence=0.8, latency_ms=100
-            ),
-            ModelResponse(
-                model_type="model4", result="aaa", confidence=0.8, latency_ms=100
-            ),
+            ModelResponse(model_type="model1", result="bbb", confidence=0.8, latency_ms=100),
+            ModelResponse(model_type="model2", result="bbb", confidence=0.8, latency_ms=100),
+            ModelResponse(model_type="model3", result="aaa", confidence=0.8, latency_ms=100),
+            ModelResponse(model_type="model4", result="aaa", confidence=0.8, latency_ms=100),
         ]
 
         result = strategy.vote(responses)
@@ -397,12 +376,8 @@ class TestMajorityVotingStrategy:
 
         # Create tied scenario
         responses = [
-            ModelResponse(
-                model_type="model1", result="option1", confidence=0.8, latency_ms=100
-            ),
-            ModelResponse(
-                model_type="model2", result="option2", confidence=0.8, latency_ms=100
-            ),
+            ModelResponse(model_type="model1", result="option1", confidence=0.8, latency_ms=100),
+            ModelResponse(model_type="model2", result="option2", confidence=0.8, latency_ms=100),
         ]
 
         # Run multiple times and verify same result
@@ -471,10 +446,7 @@ class TestDialecticalVotingStrategy:
         strategy = DialecticalVotingStrategy()
         result = strategy.vote(responses)
 
-        assert (
-            "agree" in result.reasoning.lower()
-            or "consensus" in result.reasoning.lower()
-        )
+        assert "agree" in result.reasoning.lower() or "consensus" in result.reasoning.lower()
 
     def test_dialectical_fallback(self, disagreeing_responses):
         """Test fallback when dialectical process incomplete."""
@@ -653,16 +625,12 @@ class TestCreateDisagreementResolver:
 
     def test_create_defer_to_critic(self):
         """Test creating defer to critic resolver."""
-        resolver = create_disagreement_resolver(
-            DisagreementStrategyType.DEFER_TO_CRITIC
-        )
+        resolver = create_disagreement_resolver(DisagreementStrategyType.DEFER_TO_CRITIC)
         assert isinstance(resolver, DeferToCriticResolver)
 
     def test_create_defer_to_confidence(self):
         """Test creating defer to confidence resolver."""
-        resolver = create_disagreement_resolver(
-            DisagreementStrategyType.DEFER_TO_CONFIDENCE
-        )
+        resolver = create_disagreement_resolver(DisagreementStrategyType.DEFER_TO_CONFIDENCE)
         assert isinstance(resolver, DeferToConfidenceResolver)
 
     def test_create_synthesize(self):
@@ -699,9 +667,7 @@ class TestEnsembleOrchestratorInit:
 
     def test_custom_config(self, basic_config, mock_llm_interface):
         """Test initialization with custom config."""
-        orchestrator = EnsembleOrchestrator(
-            config=basic_config, llm_interface=mock_llm_interface
-        )
+        orchestrator = EnsembleOrchestrator(config=basic_config, llm_interface=mock_llm_interface)
 
         assert orchestrator.config == basic_config
 
@@ -722,9 +688,7 @@ class TestEnsembleOrchestratorAggregation:
         assert isinstance(result, VotingResult)
         assert result.decision is not None
 
-    def test_aggregate_with_specific_strategy(
-        self, sample_model_responses, mock_llm_interface
-    ):
+    def test_aggregate_with_specific_strategy(self, sample_model_responses, mock_llm_interface):
         """Test aggregating with specific strategy."""
         orchestrator = EnsembleOrchestrator(llm_interface=mock_llm_interface)
         result = orchestrator.aggregate_responses(
@@ -751,18 +715,14 @@ class TestEnsembleOrchestratorDisagreement:
         assert result is not None
         assert explanation != ""
 
-    def test_resolve_with_specific_strategy(
-        self, disagreeing_responses, mock_llm_interface
-    ):
+    def test_resolve_with_specific_strategy(self, disagreeing_responses, mock_llm_interface):
         """Test resolving with specific strategy."""
         orchestrator = EnsembleOrchestrator(llm_interface=mock_llm_interface)
         result, explanation = orchestrator.resolve_disagreement(
             disagreeing_responses, DisagreementStrategyType.CONSERVATIVE
         )
 
-        assert (
-            "conservative" in explanation.lower() or "cautious" in explanation.lower()
-        )
+        assert "conservative" in explanation.lower() or "cautious" in explanation.lower()
 
     def test_resolve_empty_raises(self, mock_llm_interface):
         """Test that empty responses raises error."""
@@ -803,15 +763,9 @@ class TestEnsembleOrchestratorCache:
         """Test cache key generation."""
         orchestrator = EnsembleOrchestrator(llm_interface=mock_llm_interface)
 
-        key1 = orchestrator._get_cache_key(
-            TaskType.RULE_GENERATION, "input1", {"context": "a"}
-        )
-        key2 = orchestrator._get_cache_key(
-            TaskType.RULE_GENERATION, "input1", {"context": "a"}
-        )
-        key3 = orchestrator._get_cache_key(
-            TaskType.RULE_GENERATION, "input2", {"context": "a"}
-        )
+        key1 = orchestrator._get_cache_key(TaskType.RULE_GENERATION, "input1", {"context": "a"})
+        key2 = orchestrator._get_cache_key(TaskType.RULE_GENERATION, "input1", {"context": "a"})
+        key3 = orchestrator._get_cache_key(TaskType.RULE_GENERATION, "input2", {"context": "a"})
 
         assert key1 == key2  # Same input = same key
         assert key1 != key3  # Different input = different key
@@ -929,9 +883,7 @@ class TestEnums:
     def test_disagreement_strategy_types(self):
         """Test DisagreementStrategyType enum values."""
         assert DisagreementStrategyType.DEFER_TO_CRITIC.value == "defer_to_critic"
-        assert (
-            DisagreementStrategyType.DEFER_TO_CONFIDENCE.value == "defer_to_confidence"
-        )
+        assert DisagreementStrategyType.DEFER_TO_CONFIDENCE.value == "defer_to_confidence"
         assert DisagreementStrategyType.SYNTHESIZE.value == "synthesize"
         assert DisagreementStrategyType.ESCALATE.value == "escalate"
         assert DisagreementStrategyType.CONSERVATIVE.value == "conservative"
@@ -997,9 +949,7 @@ class TestOrchestratorIntegration:
         assert len(voting_result.participating_models) == 3
         assert voting_result.confidence > 0
 
-    def test_full_disagreement_workflow(
-        self, disagreeing_responses, mock_llm_interface
-    ):
+    def test_full_disagreement_workflow(self, disagreeing_responses, mock_llm_interface):
         """Test complete disagreement resolution workflow."""
         orchestrator = EnsembleOrchestrator(llm_interface=mock_llm_interface)
 
@@ -1131,16 +1081,12 @@ class TestRouteTaskInputValidation:
 
     def test_empty_dict_input_data_raises_error(self, mock_orchestrator):
         """Test that empty dict input_data raises TaskRoutingError."""
-        with pytest.raises(
-            TaskRoutingError, match="input_data cannot be an empty dictionary"
-        ):
+        with pytest.raises(TaskRoutingError, match="input_data cannot be an empty dictionary"):
             mock_orchestrator.route_task(TaskType.RULE_GENERATION, {})
 
     def test_empty_list_input_data_raises_error(self, mock_orchestrator):
         """Test that empty list input_data raises TaskRoutingError."""
-        with pytest.raises(
-            TaskRoutingError, match="input_data cannot be an empty list"
-        ):
+        with pytest.raises(TaskRoutingError, match="input_data cannot be an empty list"):
             mock_orchestrator.route_task(TaskType.RULE_GENERATION, [])
 
 
@@ -1400,9 +1346,7 @@ class TestFallbackErrorHandling:
     def test_handle_fallback_tracks_errors(self, mock_llm_interface):
         """Test that _handle_fallback tracks all errors."""
         config = OrchestratorConfig(enable_fallback=True)
-        orchestrator = EnsembleOrchestrator(
-            config=config, llm_interface=mock_llm_interface
-        )
+        orchestrator = EnsembleOrchestrator(config=config, llm_interface=mock_llm_interface)
 
         original_error = ValueError("Primary model failed")
         result = orchestrator._handle_fallback(
@@ -1423,9 +1367,7 @@ class TestFallbackErrorHandling:
     def test_handle_fallback_includes_attempted_models(self, mock_llm_interface):
         """Test that _handle_fallback tracks attempted models."""
         config = OrchestratorConfig(enable_fallback=True)
-        orchestrator = EnsembleOrchestrator(
-            config=config, llm_interface=mock_llm_interface
-        )
+        orchestrator = EnsembleOrchestrator(config=config, llm_interface=mock_llm_interface)
 
         original_error = TimeoutError("Timed out")
         result = orchestrator._handle_fallback(
@@ -1443,9 +1385,7 @@ class TestFallbackErrorHandling:
     def test_fallback_exhausted_raises_aggregated_error(self, mock_llm_interface):
         """Test that exhausted fallbacks raise AggregatedOrchestrationError."""
         config = OrchestratorConfig(enable_fallback=True)
-        orchestrator = EnsembleOrchestrator(
-            config=config, llm_interface=mock_llm_interface
-        )
+        orchestrator = EnsembleOrchestrator(config=config, llm_interface=mock_llm_interface)
 
         # Override _get_fallback_models to return empty list (no fallbacks)
         original_method = orchestrator._get_fallback_models
@@ -1472,14 +1412,10 @@ class TestFallbackErrorHandling:
 class TestRouteTaskErrorHandling:
     """Tests for route_task error handling (Issue #201)."""
 
-    def test_route_task_raises_aggregated_error_when_fallback_disabled(
-        self, mock_llm_interface
-    ):
+    def test_route_task_raises_aggregated_error_when_fallback_disabled(self, mock_llm_interface):
         """Test that route_task raises AggregatedOrchestrationError when fallback is disabled."""
         config = OrchestratorConfig(enable_fallback=False)
-        orchestrator = EnsembleOrchestrator(
-            config=config, llm_interface=mock_llm_interface
-        )
+        orchestrator = EnsembleOrchestrator(config=config, llm_interface=mock_llm_interface)
 
         # This will fail because the mock LLM interface isn't properly set up
         with pytest.raises(AggregatedOrchestrationError) as exc_info:
@@ -1496,9 +1432,7 @@ class TestRouteTaskErrorHandling:
     def test_route_task_includes_error_context(self, mock_llm_interface):
         """Test that route_task errors include proper context."""
         config = OrchestratorConfig(enable_fallback=False)
-        orchestrator = EnsembleOrchestrator(
-            config=config, llm_interface=mock_llm_interface
-        )
+        orchestrator = EnsembleOrchestrator(config=config, llm_interface=mock_llm_interface)
 
         with pytest.raises(AggregatedOrchestrationError) as exc_info:
             orchestrator.route_task(
@@ -1529,9 +1463,7 @@ class TestThreadSafety:
         import threading
 
         config = OrchestratorConfig(enable_performance_tracking=True)
-        orchestrator = EnsembleOrchestrator(
-            config=config, llm_interface=mock_llm_interface
-        )
+        orchestrator = EnsembleOrchestrator(config=config, llm_interface=mock_llm_interface)
 
         num_threads = 10
         updates_per_thread = 100
@@ -1551,10 +1483,7 @@ class TestThreadSafety:
                 errors.append(e)
 
         # Create and start threads
-        threads = [
-            threading.Thread(target=update_metrics, args=(i,))
-            for i in range(num_threads)
-        ]
+        threads = [threading.Thread(target=update_metrics, args=(i,)) for i in range(num_threads)]
 
         for t in threads:
             t.start()
@@ -1571,18 +1500,16 @@ class TestThreadSafety:
         # Verify total requests match expected
         total_requests = sum(m.total_requests for m in metrics.values())
         expected_requests = num_threads * updates_per_thread
-        assert (
-            total_requests == expected_requests
-        ), f"Expected {expected_requests} requests, got {total_requests}"
+        assert total_requests == expected_requests, (
+            f"Expected {expected_requests} requests, got {total_requests}"
+        )
 
     def test_concurrent_cache_operations(self, mock_llm_interface):
         """Test that concurrent cache read/write operations are thread-safe."""
         import threading
 
         config = OrchestratorConfig(enable_caching=True, cache_ttl_seconds=3600)
-        orchestrator = EnsembleOrchestrator(
-            config=config, llm_interface=mock_llm_interface
-        )
+        orchestrator = EnsembleOrchestrator(config=config, llm_interface=mock_llm_interface)
 
         num_threads = 10
         operations_per_thread = 50
@@ -1608,10 +1535,7 @@ class TestThreadSafety:
                 errors.append(e)
 
         # Create and start threads
-        threads = [
-            threading.Thread(target=cache_operations, args=(i,))
-            for i in range(num_threads)
-        ]
+        threads = [threading.Thread(target=cache_operations, args=(i,)) for i in range(num_threads)]
 
         for t in threads:
             t.start()
@@ -1626,9 +1550,7 @@ class TestThreadSafety:
         import threading
 
         config = OrchestratorConfig(enable_caching=True)
-        orchestrator = EnsembleOrchestrator(
-            config=config, llm_interface=mock_llm_interface
-        )
+        orchestrator = EnsembleOrchestrator(config=config, llm_interface=mock_llm_interface)
 
         errors = []
         stop_flag = threading.Event()
@@ -1670,9 +1592,7 @@ class TestThreadSafety:
         import threading
 
         config = OrchestratorConfig()
-        orchestrator = EnsembleOrchestrator(
-            config=config, llm_interface=mock_llm_interface
-        )
+        orchestrator = EnsembleOrchestrator(config=config, llm_interface=mock_llm_interface)
 
         num_threads = 20
         reads_per_thread = 100
@@ -1694,9 +1614,7 @@ class TestThreadSafety:
             except Exception as e:
                 errors.append(e)
 
-        threads = [
-            threading.Thread(target=read_status, args=(i,)) for i in range(num_threads)
-        ]
+        threads = [threading.Thread(target=read_status, args=(i,)) for i in range(num_threads)]
 
         for t in threads:
             t.start()
@@ -1710,9 +1628,7 @@ class TestThreadSafety:
         import threading
 
         config = OrchestratorConfig()
-        orchestrator = EnsembleOrchestrator(
-            config=config, llm_interface=mock_llm_interface
-        )
+        orchestrator = EnsembleOrchestrator(config=config, llm_interface=mock_llm_interface)
 
         num_threads = 10
         updates_per_thread = 20
@@ -1738,8 +1654,7 @@ class TestThreadSafety:
                 errors.append(e)
 
         threads = [
-            threading.Thread(target=add_disagreements, args=(i,))
-            for i in range(num_threads)
+            threading.Thread(target=add_disagreements, args=(i,)) for i in range(num_threads)
         ]
 
         for t in threads:
@@ -1758,9 +1673,7 @@ class TestThreadSafety:
         import threading
 
         config = OrchestratorConfig(enable_performance_tracking=True)
-        orchestrator = EnsembleOrchestrator(
-            config=config, llm_interface=mock_llm_interface
-        )
+        orchestrator = EnsembleOrchestrator(config=config, llm_interface=mock_llm_interface)
 
         errors = []
         stop_flag = threading.Event()
@@ -1801,9 +1714,7 @@ class TestThreadSafety:
     def test_orchestrator_has_required_locks(self, mock_llm_interface):
         """Test that orchestrator has all required lock attributes."""
         config = OrchestratorConfig()
-        orchestrator = EnsembleOrchestrator(
-            config=config, llm_interface=mock_llm_interface
-        )
+        orchestrator = EnsembleOrchestrator(config=config, llm_interface=mock_llm_interface)
 
         # Check that locks exist
         assert hasattr(orchestrator, "_lock")

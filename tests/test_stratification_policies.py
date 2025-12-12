@@ -94,18 +94,10 @@ class TestPolicyEnhancements:
 
     def test_cooldown_hierarchy(self):
         """Test cooldown periods decrease as we go down layers."""
-        const_cooldown = get_policy(
-            StratificationLevel.CONSTITUTIONAL
-        ).modification_cooldown_hours
-        strat_cooldown = get_policy(
-            StratificationLevel.STRATEGIC
-        ).modification_cooldown_hours
-        tact_cooldown = get_policy(
-            StratificationLevel.TACTICAL
-        ).modification_cooldown_hours
-        op_cooldown = get_policy(
-            StratificationLevel.OPERATIONAL
-        ).modification_cooldown_hours
+        const_cooldown = get_policy(StratificationLevel.CONSTITUTIONAL).modification_cooldown_hours
+        strat_cooldown = get_policy(StratificationLevel.STRATEGIC).modification_cooldown_hours
+        tact_cooldown = get_policy(StratificationLevel.TACTICAL).modification_cooldown_hours
+        op_cooldown = get_policy(StratificationLevel.OPERATIONAL).modification_cooldown_hours
 
         # Constitutional never allows modification
         assert const_cooldown == float("inf")

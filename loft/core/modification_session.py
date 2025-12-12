@@ -258,9 +258,7 @@ class ModificationSession:
         """
         start_time = datetime.now()
 
-        logger.info(
-            f"Starting improvement cycle: {num_gaps} gaps, {target_layer.value} layer"
-        )
+        logger.info(f"Starting improvement cycle: {num_gaps} gaps, {target_layer.value} layer")
 
         self._log_action(
             "session_start",
@@ -276,9 +274,7 @@ class ModificationSession:
         self._log_action("gap_identification_complete", f"Identified {len(gaps)} gaps")
 
         # 2. Generate candidates
-        self._log_action(
-            "rule_generation", f"Generating {candidates_per_gap} candidates per gap"
-        )
+        self._log_action("rule_generation", f"Generating {candidates_per_gap} candidates per gap")
         candidates = []
         for gap in gaps:
             response = self.rule_generator.fill_knowledge_gap(
@@ -288,22 +284,16 @@ class ModificationSession:
             )
             candidates.extend(response["candidates"])
 
-        self._log_action(
-            "rule_generation_complete", f"Generated {len(candidates)} candidates"
-        )
+        self._log_action("rule_generation_complete", f"Generated {len(candidates)} candidates")
 
         # 3. Validate each candidate
         self._log_action("validation", f"Validating {len(candidates)} candidates")
         validated = []
         for candidate in candidates:
-            report = self.validation_pipeline.validate(
-                candidate, target_layer=target_layer.value
-            )
+            report = self.validation_pipeline.validate(candidate, target_layer=target_layer.value)
             validated.append((candidate, report))
 
-        accepted_count = sum(
-            1 for _, report in validated if report.final_decision == "accept"
-        )
+        accepted_count = sum(1 for _, report in validated if report.final_decision == "accept")
         self._log_action(
             "validation_complete", f"Accepted {accepted_count}/{len(candidates)} rules"
         )
@@ -368,9 +358,7 @@ class ModificationSession:
             accuracy_after=accuracy_after,
         )
 
-        logger.info(
-            f"Improvement cycle complete: {len(incorporated)} rules incorporated"
-        )
+        logger.info(f"Improvement cycle complete: {len(incorporated)} rules incorporated")
 
         return report
 

@@ -379,14 +379,8 @@ class TestEvolutionIntegration:
 
         assert len(top_performers) == 3
         # Should be sorted by confidence descending
-        assert (
-            top_performers[0].performance.confidence
-            >= top_performers[1].performance.confidence
-        )
-        assert (
-            top_performers[1].performance.confidence
-            >= top_performers[2].performance.confidence
-        )
+        assert top_performers[0].performance.confidence >= top_performers[1].performance.confidence
+        assert top_performers[1].performance.confidence >= top_performers[2].performance.confidence
 
     def test_most_iterated_families(self, tracker):
         """Test finding most iterated rule families."""

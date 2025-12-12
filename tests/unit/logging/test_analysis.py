@@ -399,9 +399,7 @@ class TestLogAnalyzer:
             )
 
             analyzer = LogAnalyzer(log_dir=log_dir)
-            entries = analyzer.get_validation_failures(
-                after=datetime(2024, 1, 1, 12, 30, 0)
-            )
+            entries = analyzer.get_validation_failures(after=datetime(2024, 1, 1, 12, 30, 0))
 
             assert len(entries) == 1
             assert entries[0].message == "FAIL: test 2"
@@ -494,15 +492,9 @@ class TestLogAnalyzer:
         analyzer = LogAnalyzer()
 
         entries = [
-            LogEntry(
-                datetime(2024, 1, 1, 12, 0, 0), "INFO", "llm", "func", 1, "msg", {}
-            ),
-            LogEntry(
-                datetime(2024, 1, 1, 12, 30, 0), "INFO", "llm", "func", 1, "msg", {}
-            ),
-            LogEntry(
-                datetime(2024, 1, 1, 13, 0, 0), "INFO", "llm", "func", 1, "msg", {}
-            ),
+            LogEntry(datetime(2024, 1, 1, 12, 0, 0), "INFO", "llm", "func", 1, "msg", {}),
+            LogEntry(datetime(2024, 1, 1, 12, 30, 0), "INFO", "llm", "func", 1, "msg", {}),
+            LogEntry(datetime(2024, 1, 1, 13, 0, 0), "INFO", "llm", "func", 1, "msg", {}),
         ]
 
         metrics = analyzer.get_metrics_over_time(entries, interval=timedelta(hours=1))
@@ -716,7 +708,9 @@ class TestEdgeCases:
     def test_parse_log_line_with_extra_pipes(self):
         """Test parsing log line with pipes in the message."""
         analyzer = LogAnalyzer()
-        line = "2024-01-01 12:00:00.123 | INFO     | llm | module:function:42 | Message | with | pipes"
+        line = (
+            "2024-01-01 12:00:00.123 | INFO     | llm | module:function:42 | Message | with | pipes"
+        )
         entry = analyzer.parse_log_line(line)
 
         # Should parse correctly, message includes the extra pipes
@@ -769,20 +763,12 @@ class TestEdgeCases:
         analyzer = LogAnalyzer()
 
         entries = [
-            LogEntry(
-                datetime(2024, 1, 1, 12, 0, 0), "INFO", "llm", "func", 1, "msg", {}
-            ),
-            LogEntry(
-                datetime(2024, 1, 1, 12, 10, 0), "INFO", "llm", "func", 1, "msg", {}
-            ),
-            LogEntry(
-                datetime(2024, 1, 1, 12, 20, 0), "INFO", "llm", "func", 1, "msg", {}
-            ),
+            LogEntry(datetime(2024, 1, 1, 12, 0, 0), "INFO", "llm", "func", 1, "msg", {}),
+            LogEntry(datetime(2024, 1, 1, 12, 10, 0), "INFO", "llm", "func", 1, "msg", {}),
+            LogEntry(datetime(2024, 1, 1, 12, 20, 0), "INFO", "llm", "func", 1, "msg", {}),
         ]
 
         # Use 15-minute intervals
-        metrics = analyzer.get_metrics_over_time(
-            entries, interval=timedelta(minutes=15)
-        )
+        metrics = analyzer.get_metrics_over_time(entries, interval=timedelta(minutes=15))
 
         assert len(metrics) > 0

@@ -298,9 +298,7 @@ class TestConsensusValidator:
         assert result.votes[2].confidence == 0.0
         assert "voting_error" in result.votes[2].issues_found
 
-    def test_validate_rule_with_existing_predicates(
-        self, validator, mock_rule_generators
-    ):
+    def test_validate_rule_with_existing_predicates(self, validator, mock_rule_generators):
         """Test that existing predicates are passed to voters."""
         for gen in mock_rule_generators:
             gen.get_consensus_vote.return_value = ConsensusVote(
@@ -386,9 +384,7 @@ class TestConsensusValidator:
         rules = ["rule1.", "rule2."]
         reasonings = ["reason1."]  # Mismatch
 
-        with pytest.raises(
-            ValueError, match="Number of rules must match number of reasonings"
-        ):
+        with pytest.raises(ValueError, match="Number of rules must match number of reasonings"):
             validator.validate_batch(rules, reasonings)
 
     def test_consensus_strength_calculation(self, validator, mock_rule_generators):
@@ -475,9 +471,7 @@ class TestConsensusValidator:
         )
 
         # Should collect suggested revisions from revise votes
-        assert (
-            len(result.suggested_revisions) == 2
-        )  # From v0 and v1 (both have suggested_revision)
+        assert len(result.suggested_revisions) == 2  # From v0 and v1 (both have suggested_revision)
         # v0 has a single string "Add negation; Check consistency"
         # v1 has "Simplify"
         # v2 (accept) has no suggestion

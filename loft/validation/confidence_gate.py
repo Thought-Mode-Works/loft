@@ -89,9 +89,7 @@ class ConfidenceGate:
         """
         # Get base threshold for layer
         if target_layer not in self.thresholds:
-            logger.warning(
-                f"Unknown layer '{target_layer}', defaulting to 'tactical' threshold"
-            )
+            logger.warning(f"Unknown layer '{target_layer}', defaulting to 'tactical' threshold")
             target_layer = "tactical"
 
         base_threshold = self.thresholds[target_layer]
@@ -144,16 +142,12 @@ class ConfidenceGate:
             )
 
             if not confidence.is_reliable:
-                reasoning += (
-                    " (High variance indicates disagreement among validation sources)"
-                )
+                reasoning += " (High variance indicates disagreement among validation sources)"
 
         # Special case: constitutional layer always requires review
         if target_layer == "constitutional":
             action = "flag_for_review"
-            reasoning = (
-                "Constitutional layer requires human approval regardless of confidence"
-            )
+            reasoning = "Constitutional layer requires human approval regardless of confidence"
 
         logger.info(
             f"Gate decision: {action} (confidence={confidence_score:.2f}, "
@@ -267,9 +261,7 @@ class ConfidenceGate:
         old_threshold = self.thresholds.get(layer)
         self.thresholds[layer] = new_threshold
 
-        logger.info(
-            f"Updated threshold for {layer} layer: {old_threshold} -> {new_threshold}"
-        )
+        logger.info(f"Updated threshold for {layer} layer: {old_threshold} -> {new_threshold}")
 
     def get_thresholds(self) -> dict[str, float]:
         """Get current thresholds for all layers."""

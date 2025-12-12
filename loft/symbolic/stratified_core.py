@@ -74,8 +74,7 @@ class StratifiedASPCore:
         from loft.symbolic.stratification import MODIFICATION_POLICIES
 
         self.policies = {
-            level.value: policy
-            for level, policy in (policies or MODIFICATION_POLICIES).items()
+            level.value: policy for level, policy in (policies or MODIFICATION_POLICIES).items()
         }
 
         # Rules organized by layer
@@ -128,9 +127,7 @@ class StratifiedASPCore:
 
             # Check 1: Policy allows autonomous modification
             if not policy.autonomous_allowed and is_autonomous:
-                logger.warning(
-                    f"Autonomous modification not allowed for {layer_key} layer"
-                )
+                logger.warning(f"Autonomous modification not allowed for {layer_key} layer")
                 return AddRuleResult(
                     success=False,
                     reason=f"Autonomous modification not allowed for {layer_key} layer",
@@ -150,9 +147,7 @@ class StratifiedASPCore:
             # Check 3: Cooldown period
             last_modification = self.last_modification_time[layer_key]
             if last_modification and policy.modification_cooldown_hours < float("inf"):
-                hours_since = (
-                    datetime.now() - last_modification
-                ).total_seconds() / 3600
+                hours_since = (datetime.now() - last_modification).total_seconds() / 3600
                 if hours_since < policy.modification_cooldown_hours:
                     remaining = policy.modification_cooldown_hours - hours_since
                     logger.warning(
@@ -164,9 +159,7 @@ class StratifiedASPCore:
                     )
 
             # Check 4: Stratification dependencies
-            dependency_violation = self._check_stratification_dependencies(
-                rule, target_layer
-            )
+            dependency_violation = self._check_stratification_dependencies(rule, target_layer)
             if dependency_violation:
                 logger.warning(f"Stratification violation: {dependency_violation}")
                 return AddRuleResult(
@@ -197,9 +190,7 @@ class StratifiedASPCore:
             )
         )
 
-        logger.info(
-            f"Successfully added rule to {layer_key} layer: {rule.asp_text[:50]}..."
-        )
+        logger.info(f"Successfully added rule to {layer_key} layer: {rule.asp_text[:50]}...")
 
         return AddRuleResult(
             success=True,
@@ -280,9 +271,7 @@ class StratifiedASPCore:
             if last_mod and policy.modification_cooldown_hours < float("inf"):
                 hours_since = (datetime.now() - last_mod).total_seconds() / 3600
                 if hours_since < policy.modification_cooldown_hours:
-                    cooldown_remaining = (
-                        policy.modification_cooldown_hours - hours_since
-                    )
+                    cooldown_remaining = policy.modification_cooldown_hours - hours_since
 
             stats[layer_key] = ModificationStats(
                 total_modifications=len(events),

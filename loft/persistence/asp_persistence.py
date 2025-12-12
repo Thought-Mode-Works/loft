@@ -296,9 +296,7 @@ class ASPPersistenceManager:
                     with self._atomic_write(layer_file) as f:
                         self._write_layer_header(f, layer)
                         for rule in rules:
-                            comment_block = self._generate_linkedasp_comment(
-                                rule, layer, None
-                            )
+                            comment_block = self._generate_linkedasp_comment(rule, layer, None)
                             if comment_block:
                                 f.write(comment_block)
                                 f.write("\n")
@@ -308,15 +306,11 @@ class ASPPersistenceManager:
                     for rule in rules:
                         self.save_rule(rule, layer)
 
-                logger.info(
-                    f"Saved {len(rules)} rules to {layer.value}.lp (overwrite={overwrite})"
-                )
+                logger.info(f"Saved {len(rules)} rules to {layer.value}.lp (overwrite={overwrite})")
 
             except Exception as e:
                 logger.error(f"Failed to save rules for {layer.value}: {e}")
-                raise PersistenceError(
-                    f"Could not save layer {layer.value}: {e}"
-                ) from e
+                raise PersistenceError(f"Could not save layer {layer.value}: {e}") from e
 
     @contextmanager
     def _atomic_write(self, filepath: Path):
@@ -396,9 +390,7 @@ class ASPPersistenceManager:
 
         return rules_by_layer
 
-    def _parse_lp_file(
-        self, filepath: Path, layer: StratificationLevel
-    ) -> List[ASPRule]:
+    def _parse_lp_file(self, filepath: Path, layer: StratificationLevel) -> List[ASPRule]:
         """
         Parse .lp file and extract ASP rules with metadata.
 
@@ -457,12 +449,8 @@ class ASPPersistenceManager:
                         # Create metadata
                         rule_metadata = RuleMetadata(
                             provenance=provenance,
-                            timestamp=current_metadata.get(
-                                "Added", datetime.now().isoformat()
-                            ),
-                            validation_score=float(
-                                current_metadata.get("Confidence", 1.0)
-                            ),
+                            timestamp=current_metadata.get("Added", datetime.now().isoformat()),
+                            validation_score=float(current_metadata.get("Confidence", 1.0)),
                         )
 
                         # Create rule
@@ -483,9 +471,7 @@ class ASPPersistenceManager:
 
         return rules
 
-    def create_snapshot(
-        self, cycle_number: int, description: Optional[str] = None
-    ) -> Path:
+    def create_snapshot(self, cycle_number: int, description: Optional[str] = None) -> Path:
         """
         Create snapshot of current rule state.
 
@@ -618,9 +604,7 @@ class ASPPersistenceManager:
                     metadata = SnapshotMetadata.from_dict(data)
                     snapshots.append(metadata)
                 except Exception as e:
-                    logger.warning(
-                        f"Could not load snapshot metadata from {snapshot_dir}: {e}"
-                    )
+                    logger.warning(f"Could not load snapshot metadata from {snapshot_dir}: {e}")
                     continue
 
         return snapshots
@@ -715,9 +699,7 @@ class ASPPersistenceManager:
                 stats["layers"][layer.value] = {
                     "count": count,
                     "file_size": layer_file.stat().st_size,
-                    "last_modified": datetime.fromtimestamp(
-                        layer_file.stat().st_mtime
-                    ).isoformat(),
+                    "last_modified": datetime.fromtimestamp(layer_file.stat().st_mtime).isoformat(),
                 }
                 stats["total_rules"] += count
             else:

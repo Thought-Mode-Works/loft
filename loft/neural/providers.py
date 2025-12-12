@@ -70,9 +70,7 @@ class AnthropicProvider(LLMProvider):
             if response_model or llm_query.output_schema:
                 schema = response_model or llm_query.output_schema
                 assert schema is not None  # Type narrowing
-                response = self._query_structured(
-                    messages, system_prompt, schema, llm_query
-                )
+                response = self._query_structured(messages, system_prompt, schema, llm_query)
             else:
                 response = self._query_unstructured(messages, system_prompt, llm_query)
 
@@ -211,9 +209,7 @@ class AnthropicProvider(LLMProvider):
             tokens_output=response.usage.output_tokens,
             tokens_total=response.usage.input_tokens + response.usage.output_tokens,
             latency_ms=0.0,  # Set by caller
-            cost_usd=self.estimate_cost(
-                response.usage.input_tokens, response.usage.output_tokens
-            ),
+            cost_usd=self.estimate_cost(response.usage.input_tokens, response.usage.output_tokens),
             timestamp=datetime.utcnow().isoformat(),
             provider="anthropic",
         )

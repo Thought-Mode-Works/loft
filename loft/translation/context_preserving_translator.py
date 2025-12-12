@@ -42,25 +42,19 @@ class ContextPreservingTranslator:
 
         return asp_code, context.context_id
 
-    def translate_asp_to_nl(
-        self, asp_code: str, context_id: Optional[str] = None
-    ) -> str:
+    def translate_asp_to_nl(self, asp_code: str, context_id: Optional[str] = None) -> str:
         """Translate ASP to NL, using context if available."""
         if context_id and context_id in self.context_cache:
-            return self._reconstruct_with_context(
-                asp_code, self.context_cache[context_id]
-            )
+            return self._reconstruct_with_context(asp_code, self.context_cache[context_id])
         return asp_to_nl_statement(asp_code)
 
-    def _reconstruct_with_context(
-        self, asp_code: str, context: TranslationContext
-    ) -> str:
+    def _reconstruct_with_context(self, asp_code: str, context: TranslationContext) -> str:
         """Use original context to guide reconstruction."""
         prompt = f"""
         Reconstruct a natural language statement from this ASP code.
 
         Original statement (for reference): {context.original_nl}
-        Key terms to preserve: {', '.join(context.key_terms)}
+        Key terms to preserve: {", ".join(context.key_terms)}
         Entity names: {context.key_entities}
 
         ASP code: {asp_code}
@@ -76,9 +70,7 @@ class ContextPreservingTranslator:
         """Store context with LRU eviction."""
         if len(self.context_cache) >= self.max_cache_size:
             # Remove oldest entry
-            oldest_id = min(
-                self.context_cache, key=lambda k: self.context_cache[k].timestamp
-            )
+            oldest_id = min(self.context_cache, key=lambda k: self.context_cache[k].timestamp)
             del self.context_cache[oldest_id]
 
         self.context_cache[context.context_id] = context

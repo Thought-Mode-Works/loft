@@ -119,9 +119,7 @@ class SelfAnalysisReport:
         if self.performance_trends:
             lines.append("## Performance Trends")
             for metric, trend in self.performance_trends.items():
-                emoji = {"improving": "↑", "stable": "→", "degrading": "↓"}[
-                    trend.trend_direction
-                ]
+                emoji = {"improving": "↑", "stable": "→", "degrading": "↓"}[trend.trend_direction]
                 lines.append(f"- {metric}: {trend.trend_direction} {emoji}")
             lines.append("")
 
@@ -140,9 +138,7 @@ class SelfAnalysisReport:
             "narrative": self.narrative,
             "incorporation_success_rate": self.incorporation_success_rate,
             "best_strategy": self.best_strategy,
-            "performance_trends": {
-                k: v.to_dict() for k, v in self.performance_trends.items()
-            },
+            "performance_trends": {k: v.to_dict() for k, v in self.performance_trends.items()},
             "identified_weaknesses": self.identified_weaknesses,
             "confidence_in_self": self.confidence_in_self,
         }
@@ -165,9 +161,7 @@ class SystemHealthReport:
 
     def to_markdown(self) -> str:
         """Generate markdown report."""
-        health_emoji = {"healthy": "✅", "degraded": "⚠️", "critical": "🔴"}[
-            self.overall_health
-        ]
+        health_emoji = {"healthy": "✅", "degraded": "⚠️", "critical": "🔴"}[self.overall_health]
 
         lines = [
             "# System Health Report",
@@ -178,9 +172,7 @@ class SystemHealthReport:
         ]
 
         for component, status in self.components_status.items():
-            status_emoji = {"healthy": "✅", "degraded": "⚠️", "critical": "🔴"}.get(
-                status, "❓"
-            )
+            status_emoji = {"healthy": "✅", "degraded": "⚠️", "critical": "🔴"}.get(status, "❓")
             lines.append(f"- {component}: {status} {status_emoji}")
 
         lines.extend(

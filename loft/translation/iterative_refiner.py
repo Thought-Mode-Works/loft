@@ -244,8 +244,7 @@ Improved translation (provide ONLY the improved sentence, no explanation):"""
         final_fidelity = final_metrics.overall
 
         logger.info(
-            f"Max iterations ({self.max_iterations}) reached: "
-            f"final_fidelity={final_fidelity:.2f}"
+            f"Max iterations ({self.max_iterations}) reached: final_fidelity={final_fidelity:.2f}"
         )
 
         return RefinementResult(

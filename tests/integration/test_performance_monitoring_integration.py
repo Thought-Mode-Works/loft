@@ -222,9 +222,7 @@ class TestPerformanceMonitoringIntegration:
         report = monitor.generate_report()
 
         # Verify violation appears in recommendations
-        violation_recs = [
-            r for r in report.recommendations if "stratification" in r.lower()
-        ]
+        violation_recs = [r for r in report.recommendations if "stratification" in r.lower()]
         assert len(violation_recs) > 0
         assert "3" in violation_recs[0]
 

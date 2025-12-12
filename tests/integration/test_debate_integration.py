@@ -182,9 +182,7 @@ class TestDebateConvergence:
 
         # Transcript should have arguments from all agents
         speakers = {arg.speaker for arg in result.debate_transcript}
-        assert (
-            "generator" in speakers or "critic" in speakers or "synthesizer" in speakers
-        )
+        assert "generator" in speakers or "critic" in speakers or "synthesizer" in speakers
 
         # Transcript should be non-empty
         assert len(result.debate_transcript) >= 2  # At least thesis + antithesis
@@ -243,10 +241,7 @@ class TestDebateWithRuleEvolution:
                 prev_round = result.debate_rounds[i - 1]
                 if round_item.synthesis and prev_round.synthesis:
                     # Confidence should not drop significantly
-                    assert (
-                        round_item.synthesis.confidence
-                        >= prev_round.synthesis.confidence - 0.2
-                    )
+                    assert round_item.synthesis.confidence >= prev_round.synthesis.confidence - 0.2
 
 
 @pytest.mark.e2e

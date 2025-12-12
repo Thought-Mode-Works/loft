@@ -19,14 +19,10 @@ class AggregatedConfidence(BaseModel):
     """
 
     score: float = Field(ge=0.0, le=1.0, description="Aggregate confidence score")
-    components: Dict[str, float] = Field(
-        description="Individual confidence scores by source"
-    )
+    components: Dict[str, float] = Field(description="Individual confidence scores by source")
     weights: Dict[str, float] = Field(description="Weights used in aggregation")
     variance: float = Field(ge=0.0, description="Variance among component scores")
-    is_reliable: bool = Field(
-        description="Whether variance is low enough to trust score"
-    )
+    is_reliable: bool = Field(description="Whether variance is low enough to trust score")
     timestamp: datetime = Field(
         default_factory=datetime.now, description="When confidence was computed"
     )
@@ -58,9 +54,7 @@ class CalibrationPoint(BaseModel):
     predicted: float = Field(ge=0.0, le=1.0, description="Predicted confidence")
     actual: float = Field(ge=0.0, le=1.0, description="Actual accuracy")
     rule_id: str = Field(description="Identifier for the rule")
-    timestamp: datetime = Field(
-        default_factory=datetime.now, description="When point was recorded"
-    )
+    timestamp: datetime = Field(default_factory=datetime.now, description="When point was recorded")
 
 
 class CalibrationReport(BaseModel):
@@ -105,20 +99,14 @@ class GateDecision(BaseModel):
     Determines whether to accept, reject, or flag a rule based on confidence.
     """
 
-    action: Literal["accept", "reject", "flag_for_review"] = Field(
-        description="Action to take"
-    )
+    action: Literal["accept", "reject", "flag_for_review"] = Field(description="Action to take")
     reasoning: str = Field(description="Explanation for decision")
     raw_confidence: float = Field(ge=0.0, le=1.0, description="Uncalibrated score")
     calibrated_confidence: float = Field(ge=0.0, le=1.0, description="Calibrated score")
     threshold: float = Field(ge=0.0, le=1.0, description="Threshold used")
-    target_layer: str = Field(
-        description="Stratification layer (operational/tactical/strategic)"
-    )
+    target_layer: str = Field(description="Stratification layer (operational/tactical/strategic)")
     rule_impact: str = Field(description="Estimated impact (low/medium/high)")
-    timestamp: datetime = Field(
-        default_factory=datetime.now, description="When decision was made"
-    )
+    timestamp: datetime = Field(default_factory=datetime.now, description="When decision was made")
 
 
 class ConfidenceTrends(BaseModel):
@@ -162,9 +150,7 @@ class ConfidenceAnalysis(BaseModel):
         default_factory=list,
         description="Predicates where confidence exceeds actual accuracy",
     )
-    calibration_quality: float = Field(
-        description="Overall calibration quality (1 - ECE)"
-    )
+    calibration_quality: float = Field(description="Overall calibration quality (1 - ECE)")
     num_samples: int = Field(description="Number of samples analyzed")
     timestamp: datetime = Field(default_factory=datetime.now)
 

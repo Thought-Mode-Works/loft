@@ -503,9 +503,7 @@ class TestRegisterRealHandlers:
 
     def test_register_both_handlers(self, improver, optimizer, selector):
         """Test registering both handlers."""
-        result = register_real_handlers(
-            improver, optimizer=optimizer, selector=selector
-        )
+        result = register_real_handlers(improver, optimizer=optimizer, selector=selector)
 
         assert result == {"prompt_refinement": True, "strategy_adjustment": True}
 

@@ -228,9 +228,7 @@ class TestMVPCriterion1_BottleneckIdentification:
                 validation_bottleneck = bottleneck
                 break
 
-        assert (
-            validation_bottleneck is not None
-        ), "Should identify validation as bottleneck"
+        assert validation_bottleneck is not None, "Should identify validation as bottleneck"
         assert validation_bottleneck.avg_duration_ms >= 400  # Allow some tolerance
         assert validation_bottleneck.severity in ["medium", "high"]
 
@@ -442,9 +440,9 @@ class TestMVPCriterion2_PromptEffectiveness:
         relative_improvement = (
             (treatment_success_rate - control_success_rate) / control_success_rate * 100
         )
-        assert (
-            relative_improvement > 15
-        ), f"Expected >15% improvement, got {relative_improvement:.1f}%"
+        assert relative_improvement > 15, (
+            f"Expected >15% improvement, got {relative_improvement:.1f}%"
+        )
 
     def test_prompt_improvement_suggestions(self):
         """Test that optimizer generates actionable improvement suggestions."""
@@ -511,9 +509,7 @@ class TestMVPCriterion3_FailureAnalysis:
         ]
 
         # Create chain using helper function
-        chain = create_reasoning_chain_from_steps(
-            "case_novel", "contracts", steps, False, True
-        )
+        chain = create_reasoning_chain_from_steps("case_novel", "contracts", steps, False, True)
 
         # Use record_chain_error which is the proper API
         error = analyzer.record_chain_error(chain)
@@ -552,9 +548,7 @@ class TestMVPCriterion3_FailureAnalysis:
             ),
         ]
 
-        chain = create_reasoning_chain_from_steps(
-            "case_ambiguous", "contracts", steps, False, True
-        )
+        chain = create_reasoning_chain_from_steps("case_ambiguous", "contracts", steps, False, True)
         error = analyzer.record_chain_error(chain)
 
         # Analyze root cause using identify_root_cause method
@@ -610,9 +604,7 @@ class TestMVPCriterion3_FailureAnalysis:
         assert len(patterns) > 0
 
         # Check pattern properties - patterns have affected_domains list
-        has_property_pattern = any(
-            "property_law" in p.affected_domains for p in patterns
-        )
+        has_property_pattern = any("property_law" in p.affected_domains for p in patterns)
         assert has_property_pattern
         # Pattern should have error_count >= 3 (our min_occurrences)
         assert any(p.error_count >= 3 for p in patterns)
@@ -653,8 +645,7 @@ class TestMVPCriterion3_FailureAnalysis:
         # (these are the recommendations for TRANSLATION_ERROR category)
         rec_categories = [r.category for r in recommendations]
         assert any(
-            cat.value in ["prompt_improvement", "validation_enhancement"]
-            for cat in rec_categories
+            cat.value in ["prompt_improvement", "validation_enhancement"] for cat in rec_categories
         )
 
 
@@ -802,9 +793,7 @@ class TestMVPCriterion5_AutonomousImprovement:
         # Check progress
         report = tracker.track_progress(goal.goal_id)
         assert report.current_value == 0.87
-        assert report.progress_percentage == pytest.approx(
-            70.0
-        )  # 70% of way from 0.80 to 0.90
+        assert report.progress_percentage == pytest.approx(70.0)  # 70% of way from 0.80 to 0.90
         assert report.trend == "improving"
 
     def test_autonomous_cycle_execution(self):
@@ -819,9 +808,7 @@ class TestMVPCriterion5_AutonomousImprovement:
             action.impact_value = 0.05  # 5% improvement
             return True
 
-        improver.register_action_handler(
-            ActionType.RULE_MODIFICATION, mock_rule_handler
-        )
+        improver.register_action_handler(ActionType.RULE_MODIFICATION, mock_rule_handler)
 
         # Create goals
         goal = create_improvement_goal(
@@ -864,9 +851,7 @@ class TestMVPCriterion5_AutonomousImprovement:
             action.success = True
             return True
 
-        improver.register_action_handler(
-            ActionType.RULE_MODIFICATION, degrading_handler
-        )
+        improver.register_action_handler(ActionType.RULE_MODIFICATION, degrading_handler)
 
         # Set initial metric
         tracker.record_metric(MetricType.ACCURACY, 0.85)
@@ -980,9 +965,7 @@ class TestMetaReasoningCoherence:
             ),
         ]
 
-        chain_id = observer.observe_reasoning_chain(
-            "case_1", "contracts", steps, False, True
-        )
+        chain_id = observer.observe_reasoning_chain("case_1", "contracts", steps, False, True)
 
         # Diagnosis should work
         diagnosis = meta_reasoner.diagnose_reasoning_failure(chain_id)
@@ -993,18 +976,12 @@ class TestMetaReasoningCoherence:
         assert patterns is not None
 
         # Verify FAILURE patterns are auto-generated from error messages
-        failure_patterns = [
-            p for p in patterns if p.pattern_type == PatternType.FAILURE
-        ]
+        failure_patterns = [p for p in patterns if p.pattern_type == PatternType.FAILURE]
         assert len(failure_patterns) >= 1, "Should auto-generate FAILURE patterns"
 
         # Verify the error-based pattern has expected characteristics
-        error_patterns = [
-            p for p in failure_patterns if p.characteristics.get("error_message")
-        ]
-        assert (
-            len(error_patterns) >= 1
-        ), "Should have error-message-based FAILURE pattern"
+        error_patterns = [p for p in failure_patterns if p.characteristics.get("error_message")]
+        assert len(error_patterns) >= 1, "Should have error-message-based FAILURE pattern"
         assert "Rule conflict" in error_patterns[0].characteristics["error_message"]
         assert "contracts" in error_patterns[0].domains
 
@@ -1028,9 +1005,7 @@ class TestMetaReasoningCoherence:
                     error_message="Rule gap",
                 ),
             ]
-            chain = create_reasoning_chain_from_steps(
-                f"case_{i}", "torts", steps, False, True
-            )
+            chain = create_reasoning_chain_from_steps(f"case_{i}", "torts", steps, False, True)
             analyzer.record_chain_error(chain)
 
         # Find patterns and generate recommendations
@@ -1106,18 +1081,14 @@ class TestMetaReasoningCoherence:
                 ),
             ]
 
-            observer.observe_reasoning_chain(
-                f"case_{i}", "torts", steps, success, success
-            )
+            observer.observe_reasoning_chain(f"case_{i}", "torts", steps, success, success)
 
             # Record strategy result
             evaluator.record_result("causal_chain", "torts", success, 150, 0.7)
 
             # Record failures in analyzer
             if not success:
-                chain = create_reasoning_chain_from_steps(
-                    f"case_{i}", "torts", steps, False, True
-                )
+                chain = create_reasoning_chain_from_steps(f"case_{i}", "torts", steps, False, True)
                 analyzer.record_chain_error(chain)
 
         # Phase 2: Analyze patterns and bottlenecks
@@ -1282,9 +1253,7 @@ class TestRealActionHandlers:
         improver = create_improver(tracker)
 
         # Register both handlers using convenience function
-        registered = register_real_handlers(
-            improver, optimizer=optimizer, selector=selector
-        )
+        registered = register_real_handlers(improver, optimizer=optimizer, selector=selector)
 
         assert registered == {"prompt_refinement": True, "strategy_adjustment": True}
 
@@ -1471,9 +1440,7 @@ class TestPhilosophicalValidation:
             ),
         ]
 
-        chain_id = observer.observe_reasoning_chain(
-            "case_reflexive", "torts", steps, False, True
-        )
+        chain_id = observer.observe_reasoning_chain("case_reflexive", "torts", steps, False, True)
 
         diagnosis = meta_reasoner.diagnose_reasoning_failure(chain_id)
 

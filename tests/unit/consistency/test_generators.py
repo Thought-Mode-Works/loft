@@ -227,9 +227,7 @@ class TestAspRuleStrategy:
         rules_without_negation = 0
 
         @given(asp_rule_strategy())
-        @settings(
-            max_examples=50, suppress_health_check=[HealthCheck.large_base_example]
-        )
+        @settings(max_examples=50, suppress_health_check=[HealthCheck.large_base_example])
         def classify_rules(rule):
             nonlocal rules_with_negation, rules_without_negation
             body = rule.split(":-")[1]

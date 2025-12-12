@@ -33,9 +33,7 @@ class ValidationCase:
     description: str
     asp_facts: str  # Facts to add for this test case
     expected_results: Dict[str, bool]  # predicate_name -> expected truth value
-    reasoning_chain: List[str] = field(
-        default_factory=list
-    )  # Expected inference steps (optional)
+    reasoning_chain: List[str] = field(default_factory=list)  # Expected inference steps (optional)
     confidence_level: str = "high"  # "high", "medium", "low"
 
 
@@ -54,9 +52,7 @@ class TestResult:
 class TestCaseValidator:
     """Validates ASP programs against test cases."""
 
-    def validate_test_case(
-        self, asp_program: str, test_case: ValidationCase
-    ) -> TestResult:
+    def validate_test_case(self, asp_program: str, test_case: ValidationCase) -> TestResult:
         """
         Run ASP program with test case facts and check results.
 
@@ -98,11 +94,7 @@ class TestCaseValidator:
                 # For each expected predicate, check if it appears in answer set
                 for pred_name in test_case.expected_results.keys():
                     # Check if any atom with this predicate name exists
-                    atoms = [
-                        atom
-                        for atom in model.symbols(shown=True)
-                        if atom.name == pred_name
-                    ]
+                    atoms = [atom for atom in model.symbols(shown=True) if atom.name == pred_name]
                     actual_results[pred_name] = len(atoms) > 0
 
             # Solve
@@ -168,9 +160,7 @@ class TestCaseValidator:
 
         return "\n".join(lines)
 
-    def batch_validate(
-        self, asp_program: str, test_cases: List[ValidationCase]
-    ) -> Dict[str, Any]:
+    def batch_validate(self, asp_program: str, test_cases: List[ValidationCase]) -> Dict[str, Any]:
         """
         Run all test cases and compute metrics.
 

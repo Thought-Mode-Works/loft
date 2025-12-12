@@ -43,9 +43,7 @@ def view_rules_by_layer(layer: Optional[str] = None):
             level = StratificationLevel(layer.lower())
         except ValueError:
             print(f"❌ Invalid layer: {layer}")
-            print(
-                f"   Valid layers: {', '.join(lvl.value for lvl in StratificationLevel)}"
-            )
+            print(f"   Valid layers: {', '.join(lvl.value for lvl in StratificationLevel)}")
             return
 
         rules = core.get_rules_by_layer(level)
@@ -125,9 +123,7 @@ def check_integrity():
         print(f"  Total modifications: {stats.total_modifications}")
         print(f"  Current rules: {stats.rules_current}")
         if stats.last_modification:
-            print(
-                f"  Last modified: {stats.last_modification.strftime('%Y-%m-%d %H:%M:%S')}"
-            )
+            print(f"  Last modified: {stats.last_modification.strftime('%Y-%m-%d %H:%M:%S')}")
         if stats.cooldown_remaining_hours:
             print(f"  Cooldown remaining: {stats.cooldown_remaining_hours:.1f} hours")
         print()
@@ -164,14 +160,10 @@ def show_modification_stats():
         print(f"  Cooldown: {policy.modification_cooldown_hours}h")
 
         if layer_stats.last_modification:
-            print(
-                f"  Last Modified: {layer_stats.last_modification.strftime('%Y-%m-%d %H:%M:%S')}"
-            )
+            print(f"  Last Modified: {layer_stats.last_modification.strftime('%Y-%m-%d %H:%M:%S')}")
 
         if layer_stats.cooldown_remaining_hours:
-            print(
-                f"  ⏳ Cooldown Remaining: {layer_stats.cooldown_remaining_hours:.1f}h"
-            )
+            print(f"  ⏳ Cooldown Remaining: {layer_stats.cooldown_remaining_hours:.1f}h")
 
 
 def show_policies():
@@ -205,9 +197,7 @@ def show_dependency_graph():
 
     # Display by layer
     for level in StratificationLevel:
-        layer_preds = [
-            p for p, info in predicate_info.items() if info["layer"] == level.value
-        ]
+        layer_preds = [p for p, info in predicate_info.items() if info["layer"] == level.value]
 
         if layer_preds:
             print(f"{level.value.upper()}:")
@@ -249,9 +239,7 @@ def main():
     subparsers.add_parser("show-policies", help="Display modification policies")
 
     # Dependency graph command
-    subparsers.add_parser(
-        "show-dependencies", help="Display predicate dependency graph"
-    )
+    subparsers.add_parser("show-dependencies", help="Display predicate dependency graph")
 
     args = parser.parse_args()
 

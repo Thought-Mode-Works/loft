@@ -32,7 +32,9 @@ def verify_dataset(dataset_path: Path, expected_min_scenarios: int = 5) -> bool:
     print(f"✓ Loaded {len(scenarios)} scenarios")
 
     if len(scenarios) < expected_min_scenarios:
-        print(f"⚠ WARNING: Only {len(scenarios)} scenarios (expected at least {expected_min_scenarios})")
+        print(
+            f"⚠ WARNING: Only {len(scenarios)} scenarios (expected at least {expected_min_scenarios})"
+        )
 
     # Get statistics
     stats = loader.get_statistics()
@@ -47,7 +49,14 @@ def verify_dataset(dataset_path: Path, expected_min_scenarios: int = 5) -> bool:
 
     # Verify each scenario has required fields
     print("\nValidating scenario fields...")
-    required_fields = ["scenario_id", "description", "facts", "question", "ground_truth", "rationale"]
+    required_fields = [
+        "scenario_id",
+        "description",
+        "facts",
+        "question",
+        "ground_truth",
+        "rationale",
+    ]
 
     for scenario in scenarios:
         missing = []

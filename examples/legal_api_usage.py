@@ -37,10 +37,7 @@ def example_basic_usage():
     print(f"\nAvailable providers: {providers}")
 
     # Simple search
-    query = SearchQuery(
-        query_text="contract law",
-        max_results=5
-    )
+    query = SearchQuery(query_text="contract law", max_results=5)
 
     print(f"\nSearching for: '{query.query_text}'...")
     result = manager.search(query)
@@ -70,7 +67,7 @@ def example_advanced_search():
         jurisdiction="federal",
         court="scotus",  # Supreme Court
         date_from=datetime(2020, 1, 1),
-        max_results=10
+        max_results=10,
     )
 
     print(f"\nSearching for: '{query.query_text}'")
@@ -121,7 +118,7 @@ def example_custom_configuration():
         cache_enabled=True,
         cache_ttl_seconds=7200,  # 2 hour cache
         rate_limit_enabled=True,
-        requests_per_minute=30  # Conservative rate limit
+        requests_per_minute=30,  # Conservative rate limit
     )
 
     manager = LegalAPIManager(config=config)
@@ -153,19 +150,14 @@ def example_direct_client():
 
     # Use CourtListener client directly
     client = CourtListenerClient(
-        api_key=os.getenv("COURT_LISTENER_API_TOKEN"),
-        timeout=30,
-        max_retries=3
+        api_key=os.getenv("COURT_LISTENER_API_TOKEN"), timeout=30, max_retries=3
     )
 
     print(f"\nClient: {client.get_provider_name()}")
     print(f"Available: {client.is_available()}")
 
     # Direct search
-    query = SearchQuery(
-        query_text="employment discrimination",
-        max_results=5
-    )
+    query = SearchQuery(query_text="employment discrimination", max_results=5)
 
     result = client.search(query)
 
@@ -237,4 +229,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n\nError running examples: {e}")
         import traceback
+
         traceback.print_exc()

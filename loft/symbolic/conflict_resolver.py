@@ -187,9 +187,7 @@ class ConflictResolver:
 
         # Conflict exists
         self.stats.conflicts_detected += 1
-        logger.info(
-            f"Conflict detected for entity {entity}: {positive_atoms} vs {negative_atoms}"
-        )
+        logger.info(f"Conflict detected for entity {entity}: {positive_atoms} vs {negative_atoms}")
 
         # Classify fired rules
         positive_rules = self._classify_rules(fired_rules, self.positive_predicates)
@@ -291,13 +289,9 @@ class ConflictResolver:
         negative_spec = 0
 
         if conflict.positive_rules:
-            positive_spec = max(
-                self._count_conditions(rule) for rule, _ in conflict.positive_rules
-            )
+            positive_spec = max(self._count_conditions(rule) for rule, _ in conflict.positive_rules)
         if conflict.negative_rules:
-            negative_spec = max(
-                self._count_conditions(rule) for rule, _ in conflict.negative_rules
-            )
+            negative_spec = max(self._count_conditions(rule) for rule, _ in conflict.negative_rules)
 
         details = {
             "positive_specificity": positive_spec,
@@ -326,9 +320,7 @@ class ConflictResolver:
             )
         else:
             # Tie - use legal default
-            return self._resolve_by_legal_default(
-                conflict, tie_reason="specificity_tie"
-            )
+            return self._resolve_by_legal_default(conflict, tie_reason="specificity_tie")
 
     def _resolve_by_confidence(self, conflict: ConflictInfo) -> ResolutionResult:
         """Resolve conflict by preferring rules with higher confidence."""
@@ -367,21 +359,15 @@ class ConflictResolver:
             # Tie - use legal default
             return self._resolve_by_legal_default(conflict, tie_reason="confidence_tie")
 
-    def _resolve_specificity_then_confidence(
-        self, conflict: ConflictInfo
-    ) -> ResolutionResult:
+    def _resolve_specificity_then_confidence(self, conflict: ConflictInfo) -> ResolutionResult:
         """Resolve by specificity first, then confidence if tied."""
         positive_spec = 0
         negative_spec = 0
 
         if conflict.positive_rules:
-            positive_spec = max(
-                self._count_conditions(rule) for rule, _ in conflict.positive_rules
-            )
+            positive_spec = max(self._count_conditions(rule) for rule, _ in conflict.positive_rules)
         if conflict.negative_rules:
-            negative_spec = max(
-                self._count_conditions(rule) for rule, _ in conflict.negative_rules
-            )
+            negative_spec = max(self._count_conditions(rule) for rule, _ in conflict.negative_rules)
 
         if positive_spec > negative_spec:
             self.stats.resolved_by_specificity += 1
