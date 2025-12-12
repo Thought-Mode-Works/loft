@@ -85,7 +85,9 @@ class LLMCaseProcessorAdapter:
         return {
             "case_id": result.case_id,
             "correct": (
-                result.prediction_correct if result.prediction_correct is not None else True
+                result.prediction_correct
+                if result.prediction_correct is not None
+                else True
             ),
             "domain": case.get("domain", "unknown"),
             "status": result.status.value if result.status else "unknown",
@@ -217,7 +219,9 @@ class EnsembleDiagnostics:
         )
         self.total_tasks_processed += 1
         if was_unanimous:
-            unanimous_count = sum(1 for v in self.voting_results if v.vote_count == 1) + 1
+            unanimous_count = (
+                sum(1 for v in self.voting_results if v.vote_count == 1) + 1
+            )
             self.consensus_rate = unanimous_count / len(self.voting_results)
 
     def record_disagreement(
@@ -283,7 +287,9 @@ class EnsembleDiagnostics:
         """Get distribution of disagreement resolution types."""
         distribution: Dict[str, int] = {}
         for record in self.disagreement_records:
-            distribution[record.resolution_type] = distribution.get(record.resolution_type, 0) + 1
+            distribution[record.resolution_type] = (
+                distribution.get(record.resolution_type, 0) + 1
+            )
         return distribution
 
     def _get_model_accuracy(self) -> Dict[str, Dict[str, float]]:
@@ -397,7 +403,9 @@ class EnsembleCaseProcessorAdapter:
                 "status": "success",
                 "rules_generated": 1 if generated_rule else 0,
                 "rules_accepted": 1 if confidence >= 0.6 else 0,
-                "rules_rejected": (0 if confidence >= 0.6 else (1 if generated_rule else 0)),
+                "rules_rejected": (
+                    0 if confidence >= 0.6 else (1 if generated_rule else 0)
+                ),
                 "processing_time_ms": processing_time_ms,
                 "error_message": None,
                 "confidence": confidence,
@@ -889,7 +897,9 @@ def start(
         ensemble_adapter = None
         if enable_ensemble:
             # Use EnsembleCaseProcessorAdapter for multi-LLM processing
-            logger.info(f"Enabling ensemble orchestrator with model: {model} (issue #207)")
+            logger.info(
+                f"Enabling ensemble orchestrator with model: {model} (issue #207)"
+            )
             ensemble_adapter = EnsembleCaseProcessorAdapter(model=model)
             runner.set_batch_harness(ensemble_adapter)
             logger.info("EnsembleCaseProcessorAdapter configured as batch harness")
@@ -964,7 +974,9 @@ def start(
             click.echo(f"Run ID: {result.run_id}")
             click.echo(f"Duration: {result.duration_hours:.2f} hours")
             click.echo(f"Final accuracy: {result.final_metrics.overall_accuracy:.2%}")
-            click.echo(f"Report: {Path(output) / result.run_id / 'reports' / 'final_report.md'}")
+            click.echo(
+                f"Report: {Path(output) / result.run_id / 'reports' / 'final_report.md'}"
+            )
         else:
             click.echo(f"\nRun ended with status: {result.status.value}")
             if result.error_message:
@@ -1114,7 +1126,9 @@ def status(run_id: str, output: str) -> None:
 
         progress = state.progress
         click.echo("\nProgress:")
-        click.echo(f"  Cases processed: {progress.cases_processed}/{progress.total_cases}")
+        click.echo(
+            f"  Cases processed: {progress.cases_processed}/{progress.total_cases}"
+        )
         click.echo(f"  Accuracy: {progress.current_accuracy:.2%}")
         click.echo(f"  Elapsed: {progress.elapsed_seconds / 3600:.2f} hours")
         click.echo(f"  Improvement cycles: {progress.total_cycles}")

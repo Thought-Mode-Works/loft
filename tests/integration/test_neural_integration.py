@@ -142,7 +142,9 @@ class TestLocalProviderIntegration:
         # Mock Ollama response with JSON
         mock_response = Mock()
         mock_response.json.return_value = {
-            "message": {"content": '```json\n{"answer": "Yes", "confidence": 0.7}\n```'},
+            "message": {
+                "content": '```json\n{"answer": "Yes", "confidence": 0.7}\n```'
+            },
             "done": True,
         }
         mock_response.raise_for_status = Mock()

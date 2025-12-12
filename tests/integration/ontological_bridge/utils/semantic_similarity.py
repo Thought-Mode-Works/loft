@@ -65,7 +65,9 @@ class EmbeddingSemanticSimilarity:
         """
         self.model_name = model_name
         self.enable_embeddings = (
-            _use_embeddings_default() if enable_embeddings is None else enable_embeddings
+            _use_embeddings_default()
+            if enable_embeddings is None
+            else enable_embeddings
         )
         self.model = None
         self._cache: Dict[str, "np.ndarray"] = {}
@@ -105,7 +107,9 @@ class EmbeddingSemanticSimilarity:
         if self.enable_embeddings and self.model is not None and np is not None:
             unique_texts = {text for pair in pairs for text in pair}
             self._preload_embeddings(list(unique_texts))
-            return [cosine_similarity(self._cache[t1], self._cache[t2]) for t1, t2 in pairs]
+            return [
+                cosine_similarity(self._cache[t1], self._cache[t2]) for t1, t2 in pairs
+            ]
 
         return [self._token_similarity.calculate(t1, t2) for t1, t2 in pairs]
 
@@ -153,7 +157,9 @@ class SemanticSimilarityCalculator:
         """
         return self.embedding_calculator.calculate_similarity(text1, text2)
 
-    def calculate_batch_similarity(self, text_pairs: List[Tuple[str, str]]) -> List[float]:
+    def calculate_batch_similarity(
+        self, text_pairs: List[Tuple[str, str]]
+    ) -> List[float]:
         """
         Calculate similarity for multiple text pairs.
 

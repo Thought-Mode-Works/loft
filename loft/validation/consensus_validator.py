@@ -147,7 +147,9 @@ class ConsensusValidator:
                 suggested_revisions.append(vote.suggested_revision)
 
         # Check if valid (accept with sufficient consensus)
-        is_valid = decision == "accept" and consensus_strength >= self.consensus_threshold
+        is_valid = (
+            decision == "accept" and consensus_strength >= self.consensus_threshold
+        )
 
         return ConsensusValidationResult(
             decision=decision,
@@ -184,7 +186,9 @@ class ConsensusValidator:
 
         results = []
         for rule, reasoning in zip(rules, reasonings):
-            result = self.validate_rule(rule, reasoning, source_type, existing_predicates)
+            result = self.validate_rule(
+                rule, reasoning, source_type, existing_predicates
+            )
             results.append(result)
 
         return results

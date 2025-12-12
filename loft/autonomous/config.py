@@ -36,12 +36,16 @@ class NotificationConfig(BaseModel):
         default=None, description="Slack webhook URL for notifications"
     )
     notify_on_start: bool = Field(default=True, description="Notify when run starts")
-    notify_on_milestone: bool = Field(default=True, description="Notify on processing milestones")
+    notify_on_milestone: bool = Field(
+        default=True, description="Notify on processing milestones"
+    )
     notify_on_cycle_complete: bool = Field(
         default=True, description="Notify after each improvement cycle"
     )
     notify_on_error: bool = Field(default=True, description="Notify on errors")
-    notify_on_completion: bool = Field(default=True, description="Notify when run completes")
+    notify_on_completion: bool = Field(
+        default=True, description="Notify when run completes"
+    )
     milestone_interval_cases: int = Field(
         default=100, description="Cases between milestone notifications"
     )
@@ -74,17 +78,27 @@ class MetaReasoningConfig(BaseModel):
     enable_autonomous_improvement: bool = Field(
         default=True, description="Enable AutonomousImprover"
     )
-    enable_prompt_optimization: bool = Field(default=True, description="Enable PromptOptimizer")
-    enable_failure_analysis: bool = Field(default=True, description="Enable FailureAnalyzer")
-    enable_strategy_selection: bool = Field(default=True, description="Enable StrategySelector")
+    enable_prompt_optimization: bool = Field(
+        default=True, description="Enable PromptOptimizer"
+    )
+    enable_failure_analysis: bool = Field(
+        default=True, description="Enable FailureAnalyzer"
+    )
+    enable_strategy_selection: bool = Field(
+        default=True, description="Enable StrategySelector"
+    )
     improvement_cycle_interval_cases: int = Field(
         default=50, description="Cases between improvement cycles"
     )
-    min_cases_for_analysis: int = Field(default=10, description="Minimum cases before analysis")
+    min_cases_for_analysis: int = Field(
+        default=10, description="Minimum cases before analysis"
+    )
     max_improvement_actions_per_cycle: int = Field(
         default=5, description="Max actions per improvement cycle"
     )
-    confidence_threshold: float = Field(default=0.7, description="Minimum confidence for changes")
+    confidence_threshold: float = Field(
+        default=0.7, description="Minimum confidence for changes"
+    )
 
 
 class SafetyConfig(BaseModel):
@@ -105,14 +119,18 @@ class SafetyConfig(BaseModel):
     auto_rollback_on_degradation: bool = Field(
         default=True, description="Auto-rollback on degradation"
     )
-    min_accuracy_threshold: float = Field(default=0.6, description="Minimum acceptable accuracy")
+    min_accuracy_threshold: float = Field(
+        default=0.6, description="Minimum acceptable accuracy"
+    )
     max_consecutive_failures: int = Field(
         default=10, description="Max consecutive failures before pause"
     )
     require_validation_before_apply: bool = Field(
         default=True, description="Require validation before applying changes"
     )
-    preserve_baseline_rules: bool = Field(default=True, description="Never modify baseline rules")
+    preserve_baseline_rules: bool = Field(
+        default=True, description="Never modify baseline rules"
+    )
 
 
 class HealthConfig(BaseModel):
@@ -157,23 +175,35 @@ class AutonomousRunConfig(BaseModel):
     """
 
     # Duration limits
-    max_duration_hours: float = Field(default=4.0, description="Maximum run duration in hours")
-    max_cases: int = Field(default=0, description="Maximum cases to process (0 = unlimited)")
+    max_duration_hours: float = Field(
+        default=4.0, description="Maximum run duration in hours"
+    )
+    max_cases: int = Field(
+        default=0, description="Maximum cases to process (0 = unlimited)"
+    )
 
     # Checkpointing
-    checkpoint_interval_minutes: int = Field(default=15, description="Minutes between checkpoints")
+    checkpoint_interval_minutes: int = Field(
+        default=15, description="Minutes between checkpoints"
+    )
     checkpoint_on_cycle_complete: bool = Field(
         default=True, description="Checkpoint after each improvement cycle"
     )
 
     # LLM settings
-    llm_model: str = Field(default="claude-3-5-haiku-20241022", description="LLM model to use")
+    llm_model: str = Field(
+        default="claude-3-5-haiku-20241022", description="LLM model to use"
+    )
     llm_temperature: float = Field(default=0.3, description="LLM temperature")
     llm_max_retries: int = Field(default=3, description="Max LLM call retries")
 
     # Paths
-    dataset_paths: List[str] = Field(default_factory=list, description="Dataset directory paths")
-    output_dir: str = Field(default="data/autonomous_runs", description="Output directory")
+    dataset_paths: List[str] = Field(
+        default_factory=list, description="Dataset directory paths"
+    )
+    output_dir: str = Field(
+        default="data/autonomous_runs", description="Output directory"
+    )
     run_id_prefix: str = Field(default="run", description="Run ID prefix")
 
     # Sub-configurations
@@ -244,10 +274,16 @@ class AutonomousRunConfig(BaseModel):
         )
 
         return cls(
-            max_duration_hours=float(os.environ.get("AUTONOMOUS_MAX_DURATION_HOURS", "4.0")),
+            max_duration_hours=float(
+                os.environ.get("AUTONOMOUS_MAX_DURATION_HOURS", "4.0")
+            ),
             max_cases=int(os.environ.get("AUTONOMOUS_MAX_CASES", "0")),
-            checkpoint_interval_minutes=int(os.environ.get("AUTONOMOUS_CHECKPOINT_INTERVAL", "15")),
-            llm_model=os.environ.get("AUTONOMOUS_LLM_MODEL", "claude-3-5-haiku-20241022"),
+            checkpoint_interval_minutes=int(
+                os.environ.get("AUTONOMOUS_CHECKPOINT_INTERVAL", "15")
+            ),
+            llm_model=os.environ.get(
+                "AUTONOMOUS_LLM_MODEL", "claude-3-5-haiku-20241022"
+            ),
             output_dir=os.environ.get("AUTONOMOUS_OUTPUT_DIR", "data/autonomous_runs"),
             log_level=os.environ.get("AUTONOMOUS_LOG_LEVEL", "INFO"),
             notification=notification_config,

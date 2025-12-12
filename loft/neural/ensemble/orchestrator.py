@@ -362,7 +362,9 @@ class ModelResponse:
     def __post_init__(self) -> None:
         """Validate confidence score."""
         if not 0.0 <= self.confidence <= 1.0:
-            logger.warning(f"Invalid confidence {self.confidence}, clamping to [0.0, 1.0]")
+            logger.warning(
+                f"Invalid confidence {self.confidence}, clamping to [0.0, 1.0]"
+            )
             self.confidence = max(0.0, min(1.0, self.confidence))
 
 
@@ -620,10 +622,14 @@ class UnanimousVotingStrategy(VotingStrategy):
             )
         else:
             # No unanimity - return most common with low confidence
-            most_common_key = max(result_groups.keys(), key=lambda k: len(result_groups[k]))
+            most_common_key = max(
+                result_groups.keys(), key=lambda k: len(result_groups[k])
+            )
             most_common_responses = result_groups[most_common_key]
             dissenting = [
-                r.model_type for r in responses if self._result_to_key(r.result) != most_common_key
+                r.model_type
+                for r in responses
+                if self._result_to_key(r.result) != most_common_key
             ]
             return VotingResult(
                 decision=most_common_responses[0].result,
@@ -676,9 +682,13 @@ class MajorityVotingStrategy(VotingStrategy):
         # Find majority
         for result_key, group_responses in result_groups.items():
             if len(group_responses) > majority_threshold:
-                avg_confidence = statistics.mean([r.confidence for r in group_responses])
+                avg_confidence = statistics.mean(
+                    [r.confidence for r in group_responses]
+                )
                 dissenting = [
-                    r.model_type for r in responses if self._result_to_key(r.result) != result_key
+                    r.model_type
+                    for r in responses
+                    if self._result_to_key(r.result) != result_key
                 ]
                 return VotingResult(
                     decision=group_responses[0].result,
@@ -706,7 +716,9 @@ class MajorityVotingStrategy(VotingStrategy):
         most_common_key = min(result_groups.keys(), key=tie_breaking_key)
         most_common = result_groups[most_common_key]
         dissenting = [
-            r.model_type for r in responses if self._result_to_key(r.result) != most_common_key
+            r.model_type
+            for r in responses
+            if self._result_to_key(r.result) != most_common_key
         ]
         return VotingResult(
             decision=most_common[0].result,
@@ -763,10 +775,14 @@ class WeightedVotingStrategy(VotingStrategy):
         total_weight = sum(result_weights.values())
 
         participating = [r.model_type for r in responses]
-        dissenting = [r.model_type for r in responses if self._result_to_key(r.result) != best_key]
+        dissenting = [
+            r.model_type for r in responses if self._result_to_key(r.result) != best_key
+        ]
 
         # Calculate normalized confidence
-        normalized_confidence = result_weights[best_key] / total_weight if total_weight > 0 else 0.0
+        normalized_confidence = (
+            result_weights[best_key] / total_weight if total_weight > 0 else 0.0
+        )
 
         vote_counts = {k: len(v) for k, v in result_responses.items()}
 
@@ -848,7 +864,9 @@ class DialecticalVotingStrategy(VotingStrategy):
             middle_responses = sorted_responses[1:-1]
             # Check if any middle responses can serve as synthesis
             for response in middle_responses:
-                if self._could_be_synthesis(thesis.result, antithesis.result, response.result):
+                if self._could_be_synthesis(
+                    thesis.result, antithesis.result, response.result
+                ):
                     return VotingResult(
                         decision=response.result,
                         strategy_used=self.strategy_type,
@@ -860,7 +878,9 @@ class DialecticalVotingStrategy(VotingStrategy):
                         confidence=response.confidence,
                         participating_models=participating,
                         dissenting_models=[],
-                        reasoning=("Dialectical synthesis found in intermediate response"),
+                        reasoning=(
+                            "Dialectical synthesis found in intermediate response"
+                        ),
                     )
 
         # Default to thesis with reduced confidence
@@ -886,7 +906,11 @@ class DialecticalVotingStrategy(VotingStrategy):
     def _could_be_synthesis(self, thesis: Any, antithesis: Any, candidate: Any) -> bool:
         """Check if candidate could be a synthesis of thesis and antithesis."""
         # Simplified check - in practice this would be domain-specific
-        if isinstance(thesis, str) and isinstance(antithesis, str) and isinstance(candidate, str):
+        if (
+            isinstance(thesis, str)
+            and isinstance(antithesis, str)
+            and isinstance(candidate, str)
+        ):
             # Check if candidate contains elements from both
             thesis_words = set(thesis.lower().split())
             antithesis_words = set(antithesis.lower().split())
@@ -1269,7 +1293,9 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
         self._meta_reasoner = meta_reasoner
 
         # Voting and resolution strategies
-        self._voting_strategy = create_voting_strategy(self.config.default_voting_strategy)
+        self._voting_strategy = create_voting_strategy(
+            self.config.default_voting_strategy
+        )
         self._disagreement_resolver = create_disagreement_resolver(
             self.config.default_disagreement_strategy
         )
@@ -1312,7 +1338,9 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
             # Double-check after acquiring lock
             if self._logic_generator is None:
                 if self._llm_interface is None:
-                    raise OrchestratorError("LLM interface required to initialize LogicGenerator")
+                    raise OrchestratorError(
+                        "LLM interface required to initialize LogicGenerator"
+                    )
                 self._logic_generator = LogicGeneratorLLM(
                     config=LogicGeneratorConfig(),
                     llm_interface=self._llm_interface,
@@ -1335,7 +1363,9 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
             # Double-check after acquiring lock
             if self._critic is None:
                 if self._llm_interface is None:
-                    raise OrchestratorError("LLM interface required to initialize Critic")
+                    raise OrchestratorError(
+                        "LLM interface required to initialize Critic"
+                    )
                 self._critic = CriticLLM(
                     config=CriticConfig(),
                     llm_interface=self._llm_interface,
@@ -1358,7 +1388,9 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
             # Double-check after acquiring lock
             if self._translator is None:
                 if self._llm_interface is None:
-                    raise OrchestratorError("LLM interface required to initialize Translator")
+                    raise OrchestratorError(
+                        "LLM interface required to initialize Translator"
+                    )
                 self._translator = TranslatorLLM(
                     config=TranslatorConfig(),
                     llm_interface=self._llm_interface,
@@ -1381,7 +1413,9 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
             # Double-check after acquiring lock
             if self._meta_reasoner is None:
                 if self._llm_interface is None:
-                    raise OrchestratorError("LLM interface required to initialize MetaReasoner")
+                    raise OrchestratorError(
+                        "LLM interface required to initialize MetaReasoner"
+                    )
                 self._meta_reasoner = MetaReasonerLLM(
                     config=MetaReasonerConfig(),
                     llm_interface=self._llm_interface,
@@ -1453,13 +1487,19 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
                 metrics.last_success = time.time()
                 # Update running averages
                 n = metrics.successful_requests
-                metrics.average_latency_ms = (metrics.average_latency_ms * (n - 1) + latency_ms) / n
-                metrics.average_confidence = (metrics.average_confidence * (n - 1) + confidence) / n
+                metrics.average_latency_ms = (
+                    metrics.average_latency_ms * (n - 1) + latency_ms
+                ) / n
+                metrics.average_confidence = (
+                    metrics.average_confidence * (n - 1) + confidence
+                ) / n
             else:
                 metrics.failed_requests += 1
                 metrics.last_failure = time.time()
                 if error_type:
-                    metrics.error_types[error_type] = metrics.error_types.get(error_type, 0) + 1
+                    metrics.error_types[error_type] = (
+                        metrics.error_types.get(error_type, 0) + 1
+                    )
 
     def route_task(
         self,
@@ -1538,7 +1578,9 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
             primary_model = primary_model_map.get(task_type, "unknown")
 
             if self.config.enable_fallback:
-                return self._handle_fallback(task_type, input_data, context, e, primary_model)
+                return self._handle_fallback(
+                    task_type, input_data, context, e, primary_model
+                )
 
             # Raise aggregated error with detailed context (Issue #201)
             model_error = ModelError(
@@ -1880,10 +1922,14 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
                 logger.info("Rule rejected by critic - attempting refinement")
                 refined_context = context.copy() if context else {}
                 refined_context["criticism"] = criticism
-                refined_context["edge_cases"] = [ec.description for ec in criticism.edge_cases]
+                refined_context["edge_cases"] = [
+                    ec.description for ec in criticism.edge_cases
+                ]
 
                 # Regenerate with feedback
-                refined_result = self._route_rule_generation(input_data, refined_context)
+                refined_result = self._route_rule_generation(
+                    input_data, refined_context
+                )
                 all_responses.extend(refined_result.model_responses)
 
                 # Record disagreement
@@ -2041,10 +2087,14 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
             raise VotingError("No responses to aggregate")
 
         strategy = (
-            create_voting_strategy(voting_strategy) if voting_strategy else self._voting_strategy
+            create_voting_strategy(voting_strategy)
+            if voting_strategy
+            else self._voting_strategy
         )
 
-        logger.debug(f"Aggregating {len(responses)} responses using {strategy.strategy_type.value}")
+        logger.debug(
+            f"Aggregating {len(responses)} responses using {strategy.strategy_type.value}"
+        )
 
         return strategy.vote(responses)
 
@@ -2066,7 +2116,9 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
             raise DisagreementResolutionError("No responses to resolve")
 
         resolver = (
-            create_disagreement_resolver(strategy) if strategy else self._disagreement_resolver
+            create_disagreement_resolver(strategy)
+            if strategy
+            else self._disagreement_resolver
         )
 
         logger.debug(f"Resolving disagreement using {resolver.strategy_type.value}")
@@ -2147,10 +2199,14 @@ class EnsembleOrchestrator(EnsembleOrchestratorBase):
                     success_weight = metrics.success_rate
                     confidence_weight = metrics.average_confidence
                     # Penalize high latency
-                    latency_penalty = min(1.0, 1000 / (metrics.average_latency_ms + 100))
+                    latency_penalty = min(
+                        1.0, 1000 / (metrics.average_latency_ms + 100)
+                    )
 
                     weights[model_type] = (
-                        success_weight * 0.4 + confidence_weight * 0.4 + latency_penalty * 0.2
+                        success_weight * 0.4
+                        + confidence_weight * 0.4
+                        + latency_penalty * 0.2
                     )
 
             # Normalize weights

@@ -123,7 +123,9 @@ class ContradictionReport:
             "resolution_explanation": self.resolution_explanation,
             "resolved": self.resolved,
             "resolution_timestamp": (
-                self.resolution_timestamp.isoformat() if self.resolution_timestamp else None
+                self.resolution_timestamp.isoformat()
+                if self.resolution_timestamp
+                else None
             ),
             "resolution_applied": (
                 self.resolution_applied.value if self.resolution_applied else None
@@ -149,7 +151,9 @@ class ContradictionReport:
             rule_b_text=data["rule_b_text"],
             severity=ContradictionSeverity(data["severity"]),
             detected_in_context=data.get("detected_in_context"),
-            affects_layers=[StratificationLevel(layer) for layer in data.get("affects_layers", [])],
+            affects_layers=[
+                StratificationLevel(layer) for layer in data.get("affects_layers", [])
+            ],
             explanation=data.get("explanation", ""),
             example_conflict_case=data.get("example_conflict_case"),
             confidence=data.get("confidence", 0.8),

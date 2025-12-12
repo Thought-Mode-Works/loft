@@ -165,7 +165,9 @@ class TestExponentialBackoff:
     def test_max_delay_cap(self):
         """Test that delay is capped at max_delay."""
 
-        @exponential_backoff(max_retries=5, base_delay=10.0, max_delay=15.0, exponential_base=2.0)
+        @exponential_backoff(
+            max_retries=5, base_delay=10.0, max_delay=15.0, exponential_base=2.0
+        )
         def fail_func():
             raise LLMTimeoutError("Timeout", provider="test")
 

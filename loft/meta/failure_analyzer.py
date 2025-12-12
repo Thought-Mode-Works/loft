@@ -95,7 +95,9 @@ class PredictionError:
             "domain": self.domain,
             "predicted": self.predicted,
             "actual": self.actual,
-            "reasoning_chain": (self.reasoning_chain.to_dict() if self.reasoning_chain else None),
+            "reasoning_chain": (
+                self.reasoning_chain.to_dict() if self.reasoning_chain else None
+            ),
             "contributing_rules": self.contributing_rules,
             "timestamp": self.timestamp.isoformat(),
             "metadata": self.metadata,
@@ -394,7 +396,9 @@ class FailureAnalyzer:
             return ErrorCategory.VALIDATION_FAILURE
 
         # Check for inference errors
-        inference_failures = [s for s in failed_steps if s.step_type == ReasoningStepType.INFERENCE]
+        inference_failures = [
+            s for s in failed_steps if s.step_type == ReasoningStepType.INFERENCE
+        ]
         if inference_failures:
             return ErrorCategory.INFERENCE_ERROR
 
@@ -453,7 +457,9 @@ class FailureAnalyzer:
         self._root_cause_analyses[error.error_id] = analysis
         return analysis
 
-    def _identify_primary_cause(self, error: PredictionError, category: ErrorCategory) -> RootCause:
+    def _identify_primary_cause(
+        self, error: PredictionError, category: ErrorCategory
+    ) -> RootCause:
         """Identify the primary root cause."""
         # Map categories to likely root causes
         cause_mapping = {
@@ -589,7 +595,9 @@ class FailureAnalyzer:
 
         return secondary
 
-    def _gather_evidence(self, error: PredictionError, category: ErrorCategory) -> List[str]:
+    def _gather_evidence(
+        self, error: PredictionError, category: ErrorCategory
+    ) -> List[str]:
         """Gather evidence supporting the root cause analysis."""
         evidence = []
 
@@ -601,7 +609,9 @@ class FailureAnalyzer:
                 if step.error_message:
                     evidence.append(f"Step {step.step_id} failed: {step.error_message}")
                 else:
-                    evidence.append(f"Step {step.step_id} ({step.step_type.value}) failed")
+                    evidence.append(
+                        f"Step {step.step_id} ({step.step_type.value}) failed"
+                    )
 
             # Add prediction mismatch evidence
             if chain.prediction and chain.ground_truth:
@@ -611,7 +621,9 @@ class FailureAnalyzer:
 
         # Add rule evidence
         if error.contributing_rules:
-            evidence.append(f"Contributing rules: {', '.join(error.contributing_rules)}")
+            evidence.append(
+                f"Contributing rules: {', '.join(error.contributing_rules)}"
+            )
         else:
             evidence.append("No contributing rules identified")
 
@@ -677,7 +689,9 @@ class FailureAnalyzer:
 
         return sorted(patterns, key=lambda p: p.error_count, reverse=True)
 
-    def _find_common_characteristics(self, errors: List[PredictionError]) -> Dict[str, Any]:
+    def _find_common_characteristics(
+        self, errors: List[PredictionError]
+    ) -> Dict[str, Any]:
         """Find common characteristics among errors."""
         chars: Dict[str, Any] = {}
 
@@ -698,7 +712,9 @@ class FailureAnalyzer:
             chars["common_failed_step_types"] = dict(step_type_counts)
 
         # Average chain length
-        chain_lengths = [len(e.reasoning_chain.steps) for e in errors if e.reasoning_chain]
+        chain_lengths = [
+            len(e.reasoning_chain.steps) for e in errors if e.reasoning_chain
+        ]
         if chain_lengths:
             chars["avg_chain_length"] = sum(chain_lengths) / len(chain_lengths)
 
@@ -803,7 +819,9 @@ class FailureAnalyzer:
         """Build a natural language explanation of the failure."""
         parts = []
 
-        parts.append(f"This prediction failed due to {category.value.replace('_', ' ')}.")
+        parts.append(
+            f"This prediction failed due to {category.value.replace('_', ' ')}."
+        )
         parts.append(f"The primary cause was: {rca.primary_cause.description}")
 
         if rca.secondary_causes:
@@ -813,7 +831,9 @@ class FailureAnalyzer:
             )
 
         if rca.primary_cause.remediation_hints:
-            parts.append(f"Suggested remediation: {rca.primary_cause.remediation_hints[0]}")
+            parts.append(
+                f"Suggested remediation: {rca.primary_cause.remediation_hints[0]}"
+            )
 
         return " ".join(parts)
 
@@ -847,7 +867,9 @@ class RecommendationEngine:
         self._recommendations: Dict[str, Recommendation] = {}
         self._recommendation_effectiveness: Dict[str, float] = {}
 
-    def generate_recommendations(self, patterns: List[FailurePattern]) -> List[Recommendation]:
+    def generate_recommendations(
+        self, patterns: List[FailurePattern]
+    ) -> List[Recommendation]:
         """
         Generate recommendations based on failure patterns.
 
@@ -875,7 +897,9 @@ class RecommendationEngine:
 
         return unique_recs
 
-    def _generate_pattern_recommendations(self, pattern: FailurePattern) -> List[Recommendation]:
+    def _generate_pattern_recommendations(
+        self, pattern: FailurePattern
+    ) -> List[Recommendation]:
         """Generate recommendations for a specific pattern."""
         recommendations = []
 
@@ -1319,8 +1343,14 @@ def create_prediction_error_from_chain(
         >>> analyzer.record_error(error)
     """
     # Use chain values as defaults
-    predicted = str(actual_output) if actual_output is not None else (chain.prediction or "")
-    actual = str(expected_output) if expected_output is not None else (chain.ground_truth or "")
+    predicted = (
+        str(actual_output) if actual_output is not None else (chain.prediction or "")
+    )
+    actual = (
+        str(expected_output)
+        if expected_output is not None
+        else (chain.ground_truth or "")
+    )
 
     # Generate error_id if not provided
     if error_id is None:
@@ -1345,7 +1375,9 @@ def create_prediction_error_from_chain(
     error_metadata["chain_success_rate"] = chain.success_rate
     error_metadata["chain_total_duration_ms"] = chain.total_duration_ms
     if chain.failed_steps:
-        error_metadata["failed_step_types"] = [step.step_type.value for step in chain.failed_steps]
+        error_metadata["failed_step_types"] = [
+            step.step_type.value for step in chain.failed_steps
+        ]
 
     return PredictionError(
         error_id=error_id,

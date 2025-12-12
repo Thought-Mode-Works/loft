@@ -97,7 +97,9 @@ class TestWriting:
 
     def test_to_asp_signed(self):
         """Test ASP conversion for signed writing."""
-        writing = Writing(writing_id="w1", is_signed=True, signed_by=["John Doe", "Mary"])
+        writing = Writing(
+            writing_id="w1", is_signed=True, signed_by=["John Doe", "Mary"]
+        )
         asp_facts = writing.to_asp()
 
         assert "writing(w1)." in asp_facts
@@ -214,7 +216,9 @@ class TestContractFact:
 
     def test_to_asp_with_essential_elements(self):
         """Test ASP conversion with essential elements."""
-        contract = ContractFact(contract_id="c1", has_consideration=True, has_mutual_assent=True)
+        contract = ContractFact(
+            contract_id="c1", has_consideration=True, has_mutual_assent=True
+        )
         asp_facts = contract.to_asp()
 
         assert "has_consideration(c1)." in asp_facts
@@ -233,21 +237,27 @@ class TestLegalRelationship:
 
     def test_creation(self):
         """Test creating a legal relationship."""
-        rel = LegalRelationship(subject="contract c1", predicate="signed by", object="john")
+        rel = LegalRelationship(
+            subject="contract c1", predicate="signed by", object="john"
+        )
         assert rel.subject == "contract c1"
         assert rel.predicate == "signed by"
         assert rel.object == "john"
 
     def test_to_asp(self):
         """Test ASP conversion."""
-        rel = LegalRelationship(subject="contract c1", predicate="signed by", object="john")
+        rel = LegalRelationship(
+            subject="contract c1", predicate="signed by", object="john"
+        )
         asp_fact = rel.to_asp()
 
         assert asp_fact == "signed_by(contract_c1, john)."
 
     def test_to_asp_normalization(self):
         """Test that identifiers are normalized."""
-        rel = LegalRelationship(subject="Contract C1", predicate="Signed By", object="John Doe")
+        rel = LegalRelationship(
+            subject="Contract C1", predicate="Signed By", object="John Doe"
+        )
         asp_fact = rel.to_asp()
 
         assert asp_fact == "signed_by(contract_c1, john_doe)."
@@ -436,7 +446,10 @@ class TestLegalRule:
         )
         asp = rule.to_asp()
 
-        assert asp == "satisfies_sof(C) :- contract(C), has_writing(C, W), signed_by(W, P)."
+        assert (
+            asp
+            == "satisfies_sof(C) :- contract(C), has_writing(C, W), signed_by(W, P)."
+        )
 
     def test_to_asp_multiple_head_args(self):
         """Test ASP conversion with multiple head arguments."""

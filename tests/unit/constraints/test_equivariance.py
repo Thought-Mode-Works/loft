@@ -268,7 +268,9 @@ class TestPartyPermutationEquivariance:
         assert len(transformations) == 1
         assert "party_mapping" in transformations[0]
 
-    def test_generate_transformations_multi_party(self, multi_party_case: Dict[str, Any]):
+    def test_generate_transformations_multi_party(
+        self, multi_party_case: Dict[str, Any]
+    ):
         """Test transformation generation for multiple parties."""
         constraint = PartyPermutationEquivariance()
         transformations = constraint.generate_transformations(multi_party_case)
@@ -334,7 +336,9 @@ class TestPartyPermutationEquivariance:
 
     def test_custom_party_fields(self):
         """Test using custom party field names."""
-        constraint = PartyPermutationEquivariance(party_fields={"custom_party_a", "custom_party_b"})
+        constraint = PartyPermutationEquivariance(
+            party_fields={"custom_party_a", "custom_party_b"}
+        )
         case = {
             "custom_party_a": "alice",
             "custom_party_b": "bob",
@@ -421,14 +425,18 @@ class TestAmountScalingEquivariance:
         # Scale by 2 keeps it above threshold
         params = {"scale_factor": 2.0}
 
-        is_equivariant, violation = constraint.verify_equivariance(threshold_rule, case, params)
+        is_equivariant, violation = constraint.verify_equivariance(
+            threshold_rule, case, params
+        )
 
         # Should be equivariant since both original and scaled are above threshold
         assert is_equivariant is True
 
     def test_custom_amount_fields(self):
         """Test using custom amount field names."""
-        constraint = AmountScalingEquivariance(amount_fields={"custom_value", "special_price"})
+        constraint = AmountScalingEquivariance(
+            amount_fields={"custom_value", "special_price"}
+        )
         case = {"custom_value": 100, "amount": 500}
 
         amounts = constraint._detect_amounts(case)
@@ -540,7 +548,9 @@ class TestEquivarianceVerifier:
         assert report.is_equivariant is False
         assert len(report.failed_tests) > 0
 
-    def test_verify_rule_multiple_constraints(self, simple_contract_case: Dict[str, Any]):
+    def test_verify_rule_multiple_constraints(
+        self, simple_contract_case: Dict[str, Any]
+    ):
         """Test verification with multiple constraints."""
         verifier = EquivarianceVerifier(
             [

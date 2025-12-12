@@ -140,7 +140,9 @@ class CriticSystem:
                 issues=issues,
                 edge_cases=edge_cases,
                 contradictions=contradictions,
-                overall_severity=CritiqueSeverity(critique_data.get("overall_severity", "low")),
+                overall_severity=CritiqueSeverity(
+                    critique_data.get("overall_severity", "low")
+                ),
                 recommendation=critique_data.get("recommendation"),
                 suggested_revision=critique_data.get("suggested_revision"),
                 confidence=critique_data.get("confidence", 0.5),
@@ -283,7 +285,8 @@ class CriticSystem:
         # Create structured critique summary
         critique_summary = {
             "issues": [
-                {"category": i.category, "description": i.description} for i in critique.issues
+                {"category": i.category, "description": i.description}
+                for i in critique.issues
             ],
             "edge_cases": [ec.description for ec in critique.edge_cases],
             "contradictions": [c.description for c in critique.contradictions],
@@ -355,7 +358,9 @@ class CriticSystem:
             raise ValueError("No LLM client configured")
 
         logger.debug(
-            f"LLM Request:\n{prompt[:500]}..." if len(prompt) > 500 else f"LLM Request:\n{prompt}"
+            f"LLM Request:\n{prompt[:500]}..."
+            if len(prompt) > 500
+            else f"LLM Request:\n{prompt}"
         )
 
         # Use LLMInterface.query() method
@@ -372,7 +377,9 @@ class CriticSystem:
 
     # Mock implementations for testing without LLM
 
-    def _mock_critique(self, rule: GeneratedRule, existing_rules: List[str]) -> CritiqueReport:
+    def _mock_critique(
+        self, rule: GeneratedRule, existing_rules: List[str]
+    ) -> CritiqueReport:
         """Generate mock critique for testing."""
         # Analyze rule structure for common issues
         issues = []

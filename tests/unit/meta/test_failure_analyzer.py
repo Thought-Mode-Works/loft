@@ -370,7 +370,9 @@ class TestFailureAnalyzer:
 
         # Create chain with all successful steps but wrong prediction
         steps = [
-            create_reasoning_step("step_1", ReasoningStepType.TRANSLATION, success=True),
+            create_reasoning_step(
+                "step_1", ReasoningStepType.TRANSLATION, success=True
+            ),
             create_reasoning_step("step_2", ReasoningStepType.INFERENCE, success=True),
         ]
         chain = create_reasoning_chain(
@@ -381,7 +383,9 @@ class TestFailureAnalyzer:
             prediction="enforceable",
             ground_truth="unenforceable",
         )
-        error = create_prediction_error("err_001", "case_1", "contracts", chain=chain, rules=[])
+        error = create_prediction_error(
+            "err_001", "case_1", "contracts", chain=chain, rules=[]
+        )
 
         category = analyzer.classify_error(error)
 
@@ -411,8 +415,12 @@ class TestFailureAnalyzer:
         analyzer = FailureAnalyzer()
 
         steps = [
-            create_reasoning_step("step_1", ReasoningStepType.TRANSLATION, success=True),
-            create_reasoning_step("step_2", ReasoningStepType.VALIDATION, success=False),
+            create_reasoning_step(
+                "step_1", ReasoningStepType.TRANSLATION, success=True
+            ),
+            create_reasoning_step(
+                "step_2", ReasoningStepType.VALIDATION, success=False
+            ),
         ]
         chain = create_reasoning_chain("chain_1", "case_1", "contracts", steps)
         error = create_prediction_error("err_001", "case_1", "contracts", chain=chain)
@@ -426,7 +434,9 @@ class TestFailureAnalyzer:
         analyzer = FailureAnalyzer()
 
         steps = [
-            create_reasoning_step("step_1", ReasoningStepType.TRANSLATION, success=True),
+            create_reasoning_step(
+                "step_1", ReasoningStepType.TRANSLATION, success=True
+            ),
             create_reasoning_step("step_2", ReasoningStepType.INFERENCE, success=False),
         ]
         chain = create_reasoning_chain("chain_1", "case_1", "contracts", steps)
@@ -480,7 +490,11 @@ class TestFailureAnalyzer:
         """Test identifying root cause."""
         analyzer = FailureAnalyzer()
 
-        steps = [create_reasoning_step("step_1", ReasoningStepType.TRANSLATION, success=False)]
+        steps = [
+            create_reasoning_step(
+                "step_1", ReasoningStepType.TRANSLATION, success=False
+            )
+        ]
         chain = create_reasoning_chain("chain_1", "case_1", "contracts", steps)
         error = create_prediction_error("err_001", "case_1", "contracts", chain=chain)
 
@@ -523,10 +537,16 @@ class TestFailureAnalyzer:
         # Add multiple similar errors
         for i in range(5):
             steps = [
-                create_reasoning_step(f"step_{i}", ReasoningStepType.TRANSLATION, success=False)
+                create_reasoning_step(
+                    f"step_{i}", ReasoningStepType.TRANSLATION, success=False
+                )
             ]
-            chain = create_reasoning_chain(f"chain_{i}", f"case_{i}", "contracts", steps)
-            error = create_prediction_error(f"err_{i}", f"case_{i}", "contracts", chain=chain)
+            chain = create_reasoning_chain(
+                f"chain_{i}", f"case_{i}", "contracts", steps
+            )
+            error = create_prediction_error(
+                f"err_{i}", f"case_{i}", "contracts", chain=chain
+            )
             analyzer.record_error(error)
 
         patterns = analyzer.find_failure_patterns(min_occurrences=3)
@@ -552,7 +572,11 @@ class TestFailureAnalyzer:
         """Test creating complete diagnosis."""
         analyzer = FailureAnalyzer()
 
-        steps = [create_reasoning_step("step_1", ReasoningStepType.TRANSLATION, success=False)]
+        steps = [
+            create_reasoning_step(
+                "step_1", ReasoningStepType.TRANSLATION, success=False
+            )
+        ]
         chain = create_reasoning_chain(
             "chain_1",
             "case_1",
@@ -626,7 +650,9 @@ class TestRecommendationEngine:
         recommendations = engine.generate_recommendations([pattern])
 
         assert len(recommendations) >= 1
-        assert any(r.category == RecommendationCategory.RULE_ADDITION for r in recommendations)
+        assert any(
+            r.category == RecommendationCategory.RULE_ADDITION for r in recommendations
+        )
 
     def test_generate_recommendations_translation_error(self):
         """Test recommendations for translation errors."""
@@ -645,7 +671,10 @@ class TestRecommendationEngine:
 
         recommendations = engine.generate_recommendations([pattern])
 
-        assert any(r.category == RecommendationCategory.PROMPT_IMPROVEMENT for r in recommendations)
+        assert any(
+            r.category == RecommendationCategory.PROMPT_IMPROVEMENT
+            for r in recommendations
+        )
 
     def test_prioritize_recommendations(self):
         """Test prioritizing recommendations."""
@@ -706,10 +735,16 @@ class TestRecommendationEngine:
         # Add some errors
         for i in range(5):
             steps = [
-                create_reasoning_step(f"step_{i}", ReasoningStepType.TRANSLATION, success=False)
+                create_reasoning_step(
+                    f"step_{i}", ReasoningStepType.TRANSLATION, success=False
+                )
             ]
-            chain = create_reasoning_chain(f"chain_{i}", f"case_{i}", "contracts", steps)
-            error = create_prediction_error(f"err_{i}", f"case_{i}", "contracts", chain=chain)
+            chain = create_reasoning_chain(
+                f"chain_{i}", f"case_{i}", "contracts", steps
+            )
+            error = create_prediction_error(
+                f"err_{i}", f"case_{i}", "contracts", chain=chain
+            )
             analyzer.record_error(error)
 
         report = engine.generate_report()
@@ -761,16 +796,24 @@ class TestIntegration:
         # Translation errors
         for i in range(5):
             steps = [
-                create_reasoning_step(f"trans_{i}", ReasoningStepType.TRANSLATION, success=False)
+                create_reasoning_step(
+                    f"trans_{i}", ReasoningStepType.TRANSLATION, success=False
+                )
             ]
-            chain = create_reasoning_chain(f"chain_t{i}", f"case_t{i}", "contracts", steps)
-            error = create_prediction_error(f"err_t{i}", f"case_t{i}", "contracts", chain=chain)
+            chain = create_reasoning_chain(
+                f"chain_t{i}", f"case_t{i}", "contracts", steps
+            )
+            error = create_prediction_error(
+                f"err_t{i}", f"case_t{i}", "contracts", chain=chain
+            )
             analyzer.record_error(error)
 
         # Rule coverage gaps
         for i in range(4):
             steps = [
-                create_reasoning_step(f"rule_{i}", ReasoningStepType.RULE_APPLICATION, success=True)
+                create_reasoning_step(
+                    f"rule_{i}", ReasoningStepType.RULE_APPLICATION, success=True
+                )
             ]
             chain = create_reasoning_chain(
                 f"chain_r{i}",
@@ -822,10 +865,16 @@ class TestIntegration:
         # Create multiple similar errors
         for i in range(3):
             steps = [
-                create_reasoning_step(f"step_{i}", ReasoningStepType.TRANSLATION, success=False)
+                create_reasoning_step(
+                    f"step_{i}", ReasoningStepType.TRANSLATION, success=False
+                )
             ]
-            chain = create_reasoning_chain(f"chain_{i}", f"case_{i}", "contracts", steps)
-            error = create_prediction_error(f"err_{i}", f"case_{i}", "contracts", chain=chain)
+            chain = create_reasoning_chain(
+                f"chain_{i}", f"case_{i}", "contracts", steps
+            )
+            error = create_prediction_error(
+                f"err_{i}", f"case_{i}", "contracts", chain=chain
+            )
             analyzer.record_error(error)
             analyzer.classify_error(error)
 
@@ -842,9 +891,17 @@ class TestIntegration:
 
         # Add many errors of same type
         for i in range(25):
-            steps = [create_reasoning_step(f"step_{i}", ReasoningStepType.INFERENCE, success=False)]
-            chain = create_reasoning_chain(f"chain_{i}", f"case_{i}", "contracts", steps)
-            error = create_prediction_error(f"err_{i}", f"case_{i}", "contracts", chain=chain)
+            steps = [
+                create_reasoning_step(
+                    f"step_{i}", ReasoningStepType.INFERENCE, success=False
+                )
+            ]
+            chain = create_reasoning_chain(
+                f"chain_{i}", f"case_{i}", "contracts", steps
+            )
+            error = create_prediction_error(
+                f"err_{i}", f"case_{i}", "contracts", chain=chain
+            )
             analyzer.record_error(error)
 
         patterns = analyzer.find_failure_patterns(min_occurrences=3)
@@ -858,7 +915,11 @@ class TestCreatePredictionErrorFromChain:
 
     def test_basic_creation_from_chain(self):
         """Test creating PredictionError from a ReasoningChain."""
-        steps = [create_reasoning_step("step_1", ReasoningStepType.TRANSLATION, success=False)]
+        steps = [
+            create_reasoning_step(
+                "step_1", ReasoningStepType.TRANSLATION, success=False
+            )
+        ]
         chain = create_reasoning_chain(
             "chain_001",
             "case_001",
@@ -995,7 +1056,11 @@ class TestRecordChainError:
     def test_record_chain_error_basic(self):
         """Test basic recording of chain error."""
         analyzer = FailureAnalyzer()
-        steps = [create_reasoning_step("step_1", ReasoningStepType.TRANSLATION, success=False)]
+        steps = [
+            create_reasoning_step(
+                "step_1", ReasoningStepType.TRANSLATION, success=False
+            )
+        ]
         chain = create_reasoning_chain(
             "chain_001",
             "case_001",
@@ -1077,7 +1142,11 @@ class TestRecordChainError:
     def test_can_diagnose_recorded_chain_error(self):
         """Test that recorded chain errors can be diagnosed."""
         analyzer = FailureAnalyzer()
-        steps = [create_reasoning_step("step_1", ReasoningStepType.TRANSLATION, success=False)]
+        steps = [
+            create_reasoning_step(
+                "step_1", ReasoningStepType.TRANSLATION, success=False
+            )
+        ]
         chain = create_reasoning_chain(
             "chain_001",
             "case_001",
@@ -1104,9 +1173,13 @@ class TestExtractFailurePatterns:
         errors = []
         for i in range(5):
             steps = [
-                create_reasoning_step(f"step_{i}", ReasoningStepType.TRANSLATION, success=False)
+                create_reasoning_step(
+                    f"step_{i}", ReasoningStepType.TRANSLATION, success=False
+                )
             ]
-            chain = create_reasoning_chain(f"chain_{i}", f"case_{i}", "contracts", steps)
+            chain = create_reasoning_chain(
+                f"chain_{i}", f"case_{i}", "contracts", steps
+            )
             error = create_prediction_error_from_chain(chain)
             errors.append(error)
 
@@ -1121,7 +1194,9 @@ class TestExtractFailurePatterns:
         errors = []
         for i in range(2):
             steps = [create_reasoning_step(f"step_{i}", ReasoningStepType.INFERENCE)]
-            chain = create_reasoning_chain(f"chain_{i}", f"case_{i}", "contracts", steps)
+            chain = create_reasoning_chain(
+                f"chain_{i}", f"case_{i}", "contracts", steps
+            )
             error = create_prediction_error_from_chain(chain)
             errors.append(error)
 
@@ -1136,9 +1211,13 @@ class TestExtractFailurePatterns:
         # Pre-populate analyzer with some errors
         for i in range(3):
             steps = [
-                create_reasoning_step(f"pre_step_{i}", ReasoningStepType.VALIDATION, success=False)
+                create_reasoning_step(
+                    f"pre_step_{i}", ReasoningStepType.VALIDATION, success=False
+                )
             ]
-            chain = create_reasoning_chain(f"pre_chain_{i}", f"pre_case_{i}", "torts", steps)
+            chain = create_reasoning_chain(
+                f"pre_chain_{i}", f"pre_case_{i}", "torts", steps
+            )
             error = create_prediction_error_from_chain(chain)
             analyzer.record_error(error)
 
@@ -1146,9 +1225,13 @@ class TestExtractFailurePatterns:
         new_errors = []
         for i in range(3):
             steps = [
-                create_reasoning_step(f"new_step_{i}", ReasoningStepType.TRANSLATION, success=False)
+                create_reasoning_step(
+                    f"new_step_{i}", ReasoningStepType.TRANSLATION, success=False
+                )
             ]
-            chain = create_reasoning_chain(f"new_chain_{i}", f"new_case_{i}", "contracts", steps)
+            chain = create_reasoning_chain(
+                f"new_chain_{i}", f"new_case_{i}", "contracts", steps
+            )
             error = create_prediction_error_from_chain(chain)
             new_errors.append(error)
 
@@ -1165,16 +1248,26 @@ class TestExtractFailurePatterns:
         # Add translation errors
         for i in range(4):
             steps = [
-                create_reasoning_step(f"trans_{i}", ReasoningStepType.TRANSLATION, success=False)
+                create_reasoning_step(
+                    f"trans_{i}", ReasoningStepType.TRANSLATION, success=False
+                )
             ]
-            chain = create_reasoning_chain(f"chain_t{i}", f"case_t{i}", "contracts", steps)
+            chain = create_reasoning_chain(
+                f"chain_t{i}", f"case_t{i}", "contracts", steps
+            )
             error = create_prediction_error_from_chain(chain)
             errors.append(error)
 
         # Add inference errors
         for i in range(4):
-            steps = [create_reasoning_step(f"inf_{i}", ReasoningStepType.INFERENCE, success=False)]
-            chain = create_reasoning_chain(f"chain_i{i}", f"case_i{i}", "contracts", steps)
+            steps = [
+                create_reasoning_step(
+                    f"inf_{i}", ReasoningStepType.INFERENCE, success=False
+                )
+            ]
+            chain = create_reasoning_chain(
+                f"chain_i{i}", f"case_i{i}", "contracts", steps
+            )
             error = create_prediction_error_from_chain(chain)
             errors.append(error)
 
@@ -1226,7 +1319,10 @@ class TestIntegrationHelpers:
         assert len(recommendations) >= 1
 
         # Should have prompt improvement recommendation for translation errors
-        assert any(r.category == RecommendationCategory.PROMPT_IMPROVEMENT for r in recommendations)
+        assert any(
+            r.category == RecommendationCategory.PROMPT_IMPROVEMENT
+            for r in recommendations
+        )
 
     def test_record_chain_error_to_diagnosis_workflow(self):
         """Test workflow from record_chain_error to diagnosis."""
@@ -1260,7 +1356,9 @@ class TestIntegrationHelpers:
         diagnosis = analyzer.create_diagnosis(first_error)
 
         assert diagnosis is not None
-        assert diagnosis.failure_type == "rule_coverage_gap"  # No failing steps, no rules
+        assert (
+            diagnosis.failure_type == "rule_coverage_gap"
+        )  # No failing steps, no rules
 
     def test_observer_to_analyzer_integration(self):
         """Test integration between observer patterns and analyzer."""

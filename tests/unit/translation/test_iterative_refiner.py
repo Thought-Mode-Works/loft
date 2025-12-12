@@ -194,7 +194,9 @@ class TestDiminishingReturns:
         """Test that refinement stops when improvement is below threshold."""
         mock_llm = Mock()
         # Return same response repeatedly (no improvement)
-        mock_llm.query.return_value = create_mock_response("The contract is enforceable.")
+        mock_llm.query.return_value = create_mock_response(
+            "The contract is enforceable."
+        )
 
         refiner = IterativeTranslationRefiner(
             mock_llm,
@@ -245,8 +247,12 @@ class TestCostTracking:
         """Test that per-iteration metrics are recorded."""
         mock_llm = Mock()
         mock_llm.query.side_effect = [
-            create_mock_response("Better translation", tokens_total=80, cost_usd=0.0008),
-            create_mock_response("Even better translation", tokens_total=90, cost_usd=0.0009),
+            create_mock_response(
+                "Better translation", tokens_total=80, cost_usd=0.0008
+            ),
+            create_mock_response(
+                "Even better translation", tokens_total=90, cost_usd=0.0009
+            ),
         ]
 
         refiner = IterativeTranslationRefiner(

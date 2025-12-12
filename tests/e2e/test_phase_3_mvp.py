@@ -66,7 +66,9 @@ class TestPhase3MVP:
 
         # Verify no major regression (allow small fluctuations)
         # In a real system with actual test data, we'd expect improvement
-        assert result.overall_improvement >= -0.05, "Performance should not degrade significantly"
+        assert (
+            result.overall_improvement >= -0.05
+        ), "Performance should not degrade significantly"
 
     def test_mvp_criterion_3_regression_detection_and_rollback(self):
         """
@@ -111,7 +113,9 @@ class TestPhase3MVP:
         initial_count = len(initial_constitutional)
 
         # Run improvement cycle targeting tactical layer
-        system.run_improvement_cycle(max_gaps=5, target_layer=StratificationLevel.TACTICAL)
+        system.run_improvement_cycle(
+            max_gaps=5, target_layer=StratificationLevel.TACTICAL
+        )
 
         # Get final constitutional rules
         final_constitutional = system.asp_core.get_rules_by_layer(
@@ -120,9 +124,9 @@ class TestPhase3MVP:
         final_count = len(final_constitutional)
 
         # Verify constitutional layer unchanged
-        assert final_count == initial_count, (
-            "Constitutional layer should remain unchanged during autonomous modifications"
-        )
+        assert (
+            final_count == initial_count
+        ), "Constitutional layer should remain unchanged during autonomous modifications"
 
     def test_mvp_criterion_5_traceability_and_explainability(self):
         """
@@ -395,7 +399,9 @@ class TestIntegrationOfPhase3Components:
         system = SelfModifyingSystem()
 
         # Verify stratification levels are enforced
-        result = system.run_improvement_cycle(max_gaps=2, target_layer=StratificationLevel.TACTICAL)
+        result = system.run_improvement_cycle(
+            max_gaps=2, target_layer=StratificationLevel.TACTICAL
+        )
 
         # System should respect stratification
         assert result is not None

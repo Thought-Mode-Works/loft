@@ -150,7 +150,9 @@ def core_state_strategy(  # type: ignore[no-untyped-def, misc]
 
     # Generate metrics
     metric_keys = draw(st.lists(st.text(min_size=1, max_size=10), max_size=5))
-    metrics = {key: draw(st.floats(min_value=0.0, max_value=1.0)) for key in metric_keys}
+    metrics = {
+        key: draw(st.floats(min_value=0.0, max_value=1.0)) for key in metric_keys
+    }
 
     return CoreState(
         state_id=create_state_id(),

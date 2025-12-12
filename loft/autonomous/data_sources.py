@@ -140,7 +140,9 @@ class CourtListenerAdapter(DataSourceAdapter):
             date_to: Filter cases filed before this date
         """
         self._api_key = api_key or os.environ.get("COURT_LISTENER_API_TOKEN")
-        self._search_queries = search_queries or list(self.DEFAULT_DOMAIN_MAPPINGS.keys())
+        self._search_queries = search_queries or list(
+            self.DEFAULT_DOMAIN_MAPPINGS.keys()
+        )
         self._domain_mappings = {
             **self.DEFAULT_DOMAIN_MAPPINGS,
             **(domain_mappings or {}),
@@ -222,7 +224,9 @@ class CourtListenerAdapter(DataSourceAdapter):
             "court": doc.court,
             "court_level": doc.court_level.value if doc.court_level else None,
             "docket_number": doc.docket_number,
-            "decision_date": (doc.decision_date.isoformat() if doc.decision_date else None),
+            "decision_date": (
+                doc.decision_date.isoformat() if doc.decision_date else None
+            ),
             "citations": doc.citations,
             "judges": doc.judges,
             "source_api": doc.source_api,
@@ -367,7 +371,9 @@ class LocalFileAdapter(DataSourceAdapter):
 
             # All other fields go to metadata
             metadata = {
-                k: v for k, v in data.items() if k not in ["id", "case_id", "domain", "facts"]
+                k: v
+                for k, v in data.items()
+                if k not in ["id", "case_id", "domain", "facts"]
             }
 
             return CaseData(

@@ -202,7 +202,9 @@ def create_statute_of_frauds_rules() -> ASPProgram:
     # Rule 11: Unenforceable if within statute and doesn't satisfy
     rule11 = ASPRule(
         rule_id=create_rule_id(),
-        asp_text=("unenforceable(C) :- within_statute(C), not satisfies_statute_of_frauds(C)."),
+        asp_text=(
+            "unenforceable(C) :- within_statute(C), not satisfies_statute_of_frauds(C)."
+        ),
         stratification_level=StratificationLevel.STRATEGIC,
         confidence=0.96,
         metadata=RuleMetadata(

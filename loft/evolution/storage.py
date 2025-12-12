@@ -142,7 +142,11 @@ class RuleEvolutionStorage:
     def _version_path(self, rule_id: str, version: str) -> Path:
         """Get path for rule version file."""
         safe_version = version.replace(".", "_")
-        return self.config.base_path / self.config.versions_dir / f"{rule_id}_{safe_version}.asp"
+        return (
+            self.config.base_path
+            / self.config.versions_dir
+            / f"{rule_id}_{safe_version}.asp"
+        )
 
     def _ab_test_path(self, test_id: str) -> Path:
         """Get path for A/B test file."""
@@ -362,7 +366,9 @@ class RuleEvolutionStorage:
         layer_counts = {}
 
         for rule in rules:
-            status_counts[rule.status.value] = status_counts.get(rule.status.value, 0) + 1
+            status_counts[rule.status.value] = (
+                status_counts.get(rule.status.value, 0) + 1
+            )
             layer_counts[rule.current_layer.value] = (
                 layer_counts.get(rule.current_layer.value, 0) + 1
             )
@@ -465,7 +471,9 @@ class RuleEvolutionStorage:
         )
         return snapshot
 
-    def restore_snapshot(self, name: str, clear_existing: bool = True) -> CorpusSnapshot:
+    def restore_snapshot(
+        self, name: str, clear_existing: bool = True
+    ) -> CorpusSnapshot:
         """
         Restore the rule corpus from a snapshot.
 
@@ -630,13 +638,19 @@ class RuleEvolutionStorage:
         snapshot2_dir = self._snapshot_path(name2)
 
         rules1 = (
-            set(p.stem for p in (snapshot1_dir / self.config.metadata_dir).glob("*.json"))
+            set(
+                p.stem
+                for p in (snapshot1_dir / self.config.metadata_dir).glob("*.json")
+            )
             if (snapshot1_dir / self.config.metadata_dir).exists()
             else set()
         )
 
         rules2 = (
-            set(p.stem for p in (snapshot2_dir / self.config.metadata_dir).glob("*.json"))
+            set(
+                p.stem
+                for p in (snapshot2_dir / self.config.metadata_dir).glob("*.json")
+            )
             if (snapshot2_dir / self.config.metadata_dir).exists()
             else set()
         )

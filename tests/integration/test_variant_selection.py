@@ -31,7 +31,9 @@ class TestVariantSelectionIntegration:
         predicates = [f"pred_{i}" for i in range(complexity)]
 
         rule = GeneratedRule(
-            asp_rule=f"{variant_id}(X) :- " + ", ".join(f"{p}(X)" for p in predicates) + ".",
+            asp_rule=f"{variant_id}(X) :- "
+            + ", ".join(f"{p}(X)" for p in predicates)
+            + ".",
             confidence=confidence,
             reasoning=f"{strategy} strategy with {complexity} predicates",
             source_type="gap_fill",
@@ -119,7 +121,11 @@ class TestVariantSelectionIntegration:
         assert stats["permissive"].total_tests == 10
 
         # Wins should sum to 10 (one winner per test)
-        total_wins = stats["conservative"].wins + stats["balanced"].wins + stats["permissive"].wins
+        total_wins = (
+            stats["conservative"].wins
+            + stats["balanced"].wins
+            + stats["permissive"].wins
+        )
         assert total_wins == 10
 
         # Win rates should sum to ~1.0 (accounting for rounding)
@@ -177,9 +183,15 @@ class TestVariantSelectionIntegration:
         )
 
         # Create variants with same confidence and complexity
-        v1 = self.create_realistic_variant("v1", "balanced", confidence=0.88, complexity=3)
-        v2 = self.create_realistic_variant("v2", "balanced", confidence=0.88, complexity=3)
-        v3 = self.create_realistic_variant("v3", "balanced", confidence=0.88, complexity=3)
+        v1 = self.create_realistic_variant(
+            "v1", "balanced", confidence=0.88, complexity=3
+        )
+        v2 = self.create_realistic_variant(
+            "v2", "balanced", confidence=0.88, complexity=3
+        )
+        v3 = self.create_realistic_variant(
+            "v3", "balanced", confidence=0.88, complexity=3
+        )
 
         result = framework.test_variants([v1, v2, v3])
 

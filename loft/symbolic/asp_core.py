@@ -247,7 +247,9 @@ class ASPCore:
             results.extend(symbols)
             model_strings.append(str(model))
 
-        solve_result = self.control.solve(assumptions=clingo_assumptions, on_model=on_model)
+        solve_result = self.control.solve(
+            assumptions=clingo_assumptions, on_model=on_model
+        )
 
         return QueryResult(
             symbols=results,

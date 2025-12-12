@@ -267,10 +267,14 @@ class CorpusLoader:
             cases_by_domain[case.domain] = cases_by_domain.get(case.domain, 0) + 1
 
             # Count by outcome
-            cases_by_outcome[case.ground_truth] = cases_by_outcome.get(case.ground_truth, 0) + 1
+            cases_by_outcome[case.ground_truth] = (
+                cases_by_outcome.get(case.ground_truth, 0) + 1
+            )
 
             # Count by difficulty
-            cases_by_difficulty[case.difficulty] = cases_by_difficulty.get(case.difficulty, 0) + 1
+            cases_by_difficulty[case.difficulty] = (
+                cases_by_difficulty.get(case.difficulty, 0) + 1
+            )
 
             # Extract predicates from asp_facts
             import re
@@ -303,7 +307,9 @@ class CorpusLoader:
 # Module-level convenience functions
 
 
-def load_domain(domain: LegalDomain, base_path: Optional[Path] = None) -> List[LegalCase]:
+def load_domain(
+    domain: LegalDomain, base_path: Optional[Path] = None
+) -> List[LegalCase]:
     """Load cases from a single domain."""
     loader = CorpusLoader(base_path)
     return loader.load_domain(domain)

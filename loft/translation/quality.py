@@ -185,7 +185,9 @@ def compute_quality_metrics(
             completeness_scores.append(0.0)
 
     completeness = (
-        sum(completeness_scores) / len(completeness_scores) if completeness_scores else 0.0
+        sum(completeness_scores) / len(completeness_scores)
+        if completeness_scores
+        else 0.0
     )
 
     # Readability: basic checks

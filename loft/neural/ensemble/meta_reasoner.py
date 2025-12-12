@@ -48,7 +48,9 @@ from loft.neural.llm_interface import LLMInterface
 class MetaReasoningError(Exception):
     """Custom exception for meta-reasoning failures after all retries."""
 
-    def __init__(self, message: str, attempts: int = 0, last_error: Optional[str] = None):
+    def __init__(
+        self, message: str, attempts: int = 0, last_error: Optional[str] = None
+    ):
         super().__init__(message)
         self.attempts = attempts
         self.last_error = last_error
@@ -318,7 +320,9 @@ class MetaReasonerConfig:
     def __post_init__(self) -> None:
         """Validate configuration values after initialization."""
         if not 0.0 <= self.temperature <= 2.0:
-            raise ValueError(f"temperature must be between 0.0 and 2.0, got {self.temperature}")
+            raise ValueError(
+                f"temperature must be between 0.0 and 2.0, got {self.temperature}"
+            )
         if self.max_retries < 0:
             raise ValueError(f"max_retries must be >= 0, got {self.max_retries}")
         if self.retry_base_delay_seconds < 0:
@@ -330,11 +334,15 @@ class MetaReasonerConfig:
                 f"retry_jitter_max_seconds must be >= 0, got {self.retry_jitter_max_seconds}"
             )
         if self.timeout_seconds is not None and self.timeout_seconds <= 0:
-            raise ValueError(f"timeout_seconds must be > 0 or None, got {self.timeout_seconds}")
+            raise ValueError(
+                f"timeout_seconds must be > 0 or None, got {self.timeout_seconds}"
+            )
         if self.cache_max_size < 0:
             raise ValueError(f"cache_max_size must be >= 0, got {self.cache_max_size}")
         if self.max_input_length <= 0:
-            raise ValueError(f"max_input_length must be > 0, got {self.max_input_length}")
+            raise ValueError(
+                f"max_input_length must be > 0, got {self.max_input_length}"
+            )
         if not 0.0 <= self.min_confidence_threshold <= 1.0:
             raise ValueError(
                 f"min_confidence_threshold must be between 0.0 and 1.0, got {self.min_confidence_threshold}"
@@ -697,7 +705,9 @@ class ReflectiveStrategy(MetaReasoningStrategy):
     ) -> str:
         failure_summaries = []
         for f in failures[:15]:
-            failure_summaries.append(f"- [{f.category.value}] {f.error_message or 'No message'}")
+            failure_summaries.append(
+                f"- [{f.category.value}] {f.error_message or 'No message'}"
+            )
         failures_text = "\n".join(failure_summaries) if failure_summaries else "None"
 
         return f"""You are a reflective meta-reasoning system. Your task is to reason
@@ -1415,7 +1425,9 @@ class MetaReasoner(ABC):
     """
 
     @abstractmethod
-    def analyze_failure_patterns(self, failures: List[FailureRecord]) -> MetaReasoningResult:
+    def analyze_failure_patterns(
+        self, failures: List[FailureRecord]
+    ) -> MetaReasoningResult:
         """Identify patterns in reasoning failures.
 
         Args:
@@ -1427,7 +1439,9 @@ class MetaReasoner(ABC):
         pass
 
     @abstractmethod
-    def suggest_strategy_changes(self, performance_data: Dict[str, Any]) -> List[StrategyChange]:
+    def suggest_strategy_changes(
+        self, performance_data: Dict[str, Any]
+    ) -> List[StrategyChange]:
         """Recommend reasoning strategy modifications.
 
         Args:
@@ -1752,9 +1766,13 @@ class MetaReasonerLLM(MetaReasoner):
 
     def _generate_result_id(self) -> str:
         """Generate a unique result ID."""
-        return f"MR-{datetime.now().strftime('%Y%m%d%H%M%S')}-{random.randint(1000, 9999)}"
+        return (
+            f"MR-{datetime.now().strftime('%Y%m%d%H%M%S')}-{random.randint(1000, 9999)}"
+        )
 
-    def analyze_failure_patterns(self, failures: List[FailureRecord]) -> MetaReasoningResult:
+    def analyze_failure_patterns(
+        self, failures: List[FailureRecord]
+    ) -> MetaReasoningResult:
         """Identify patterns in reasoning failures.
 
         Analyzes a list of failure records to identify recurring patterns,
@@ -1874,7 +1892,9 @@ class MetaReasonerLLM(MetaReasoner):
             logger.error(f"Failure analysis failed: {e}")
             raise
 
-    def suggest_strategy_changes(self, performance_data: Dict[str, Any]) -> List[StrategyChange]:
+    def suggest_strategy_changes(
+        self, performance_data: Dict[str, Any]
+    ) -> List[StrategyChange]:
         """Recommend reasoning strategy modifications.
 
         Analyzes performance data across strategies and contexts to
@@ -1956,7 +1976,9 @@ class MetaReasonerLLM(MetaReasoner):
         prompt = self._sanitize_input(prompt)
 
         # Prepare prompt
-        analysis_prompt = self._strategy.prepare_prompt_optimization_prompt(prompt, failures)
+        analysis_prompt = self._strategy.prepare_prompt_optimization_prompt(
+            prompt, failures
+        )
 
         try:
             response = self._call_llm_with_retry(analysis_prompt)
@@ -1979,7 +2001,9 @@ class MetaReasonerLLM(MetaReasoner):
                     )
 
             self._successful_analyses += 1
-            logger.info(f"Prompt optimization complete: {len(improvements)} suggestions")
+            logger.info(
+                f"Prompt optimization complete: {len(improvements)} suggestions"
+            )
 
             return improvements
 
@@ -2060,7 +2084,9 @@ class MetaReasonerLLM(MetaReasoner):
             # Determine trajectory
             trajectory = parsed.get("overall_trajectory", "stable")
             if isinstance(parsed.get("calibrated_assessment"), dict):
-                trajectory = parsed["calibrated_assessment"].get("trajectory", trajectory)
+                trajectory = parsed["calibrated_assessment"].get(
+                    "trajectory", trajectory
+                )
             if isinstance(parsed.get("trend_analysis"), dict):
                 trajectory = parsed["trend_analysis"].get("direction", trajectory)
 
@@ -2133,10 +2159,14 @@ class MetaReasonerLLM(MetaReasoner):
             "cache_max_size": self.config.cache_max_size,
             "cache_hits": self._cache_hits,
             "cache_hit_rate": (
-                self._cache_hits / self._total_analyses if self._total_analyses > 0 else 0.0
+                self._cache_hits / self._total_analyses
+                if self._total_analyses > 0
+                else 0.0
             ),
             "cache_utilization": (
-                cache_size / self.config.cache_max_size if self.config.cache_max_size > 0 else 0.0
+                cache_size / self.config.cache_max_size
+                if self.config.cache_max_size > 0
+                else 0.0
             ),
             "cache_enabled": self.config.enable_cache,
         }

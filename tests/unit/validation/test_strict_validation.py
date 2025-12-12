@@ -217,7 +217,9 @@ class TestValidRuleAcceptance:
 
     def test_accept_complex_rule(self):
         """Complex rules with multiple predicates should be accepted."""
-        rule = "complex_rule(X, Y) :- pred1(X), pred2(Y), pred3(X, Y), not exception(X)."
+        rule = (
+            "complex_rule(X, Y) :- pred1(X), pred2(Y), pred3(X, Y), not exception(X)."
+        )
         is_valid, error = validate_asp_rule_completeness(rule)
         assert is_valid
 

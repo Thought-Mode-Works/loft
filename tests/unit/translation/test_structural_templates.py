@@ -43,15 +43,15 @@ class TestStructuralTemplatesDict:
             "default",
         ]
         for rule_type in required_types:
-            assert any(key.startswith(rule_type) for key in STRUCTURAL_TEMPLATES.keys()), (
-                f"Missing template type: {rule_type}"
-            )
+            assert any(
+                key.startswith(rule_type) for key in STRUCTURAL_TEMPLATES.keys()
+            ), f"Missing template type: {rule_type}"
 
     def test_structural_templates_count(self):
         """Issue #219 requires 10+ structural templates."""
-        assert len(STRUCTURAL_TEMPLATES) >= 10, (
-            f"Expected at least 10 templates, got {len(STRUCTURAL_TEMPLATES)}"
-        )
+        assert (
+            len(STRUCTURAL_TEMPLATES) >= 10
+        ), f"Expected at least 10 templates, got {len(STRUCTURAL_TEMPLATES)}"
 
     def test_structural_templates_are_format_strings(self):
         """All templates should be valid format strings."""
@@ -77,14 +77,18 @@ class TestRuleTypeIndicators:
             "default",
         ]
         for rule_type in expected_types:
-            assert rule_type in RULE_TYPE_INDICATORS, f"Missing indicators for: {rule_type}"
+            assert (
+                rule_type in RULE_TYPE_INDICATORS
+            ), f"Missing indicators for: {rule_type}"
 
     def test_indicators_are_lists(self):
         """Each indicator set should be a list of strings."""
         for rule_type, indicators in RULE_TYPE_INDICATORS.items():
             assert isinstance(indicators, list), f"{rule_type} indicators not a list"
             for indicator in indicators:
-                assert isinstance(indicator, str), f"Non-string indicator in {rule_type}"
+                assert isinstance(
+                    indicator, str
+                ), f"Non-string indicator in {rule_type}"
 
 
 class TestDetectRuleType:
@@ -124,7 +128,9 @@ class TestDetectRuleType:
     def test_detect_rule_type(self, rule, expected_type):
         """Test rule type detection for various patterns."""
         result = detect_rule_type(rule)
-        assert result == expected_type, f"Expected {expected_type} for '{rule}', got {result}"
+        assert (
+            result == expected_type
+        ), f"Expected {expected_type} for '{rule}', got {result}"
 
     def test_detect_rule_type_handles_whitespace(self):
         """Rule detection should handle various whitespace patterns."""
@@ -344,7 +350,9 @@ class TestAspToNlStatementWithStructuralTemplates:
         result = asp_to_nl_statement(asp_code, use_structural_templates=True)
         result_lower = result.lower()
         for fragment in expected_fragments:
-            assert fragment.lower() in result_lower, f"Missing '{fragment}' in: {result}"
+            assert (
+                fragment.lower() in result_lower
+            ), f"Missing '{fragment}' in: {result}"
 
     def test_can_disable_structural_templates(self):
         """Test that structural templates can be disabled."""

@@ -54,9 +54,9 @@ class TestAmbiguityHandling:
         assert ":-" in result.asp_code, "Should produce rule structure"
 
         # Confidence should reflect uncertainty
-        assert result.confidence <= 0.85, (
-            f"Confidence should reflect ambiguity, got {result.confidence}"
-        )
+        assert (
+            result.confidence <= 0.85
+        ), f"Confidence should reflect ambiguity, got {result.confidence}"
 
     def test_quantifier_ambiguity(self, translation_components):
         """Test handling of quantifier ambiguity."""
@@ -85,9 +85,9 @@ class TestNegationHandling:
         print(result.asp_code)
 
         # Should contain negation operator
-        assert "not" in result.asp_code.lower() or "~" in result.asp_code, (
-            "Should contain negation in ASP code"
-        )
+        assert (
+            "not" in result.asp_code.lower() or "~" in result.asp_code
+        ), "Should contain negation in ASP code"
 
     def test_double_negation(self, translation_components):
         """Test double negation handling."""
@@ -166,7 +166,9 @@ class TestContradictionHandling:
         """Test handling of direct contradictions."""
         nl_to_asp, _ = translation_components
 
-        contradictory_text = "A contract is enforceable. The same contract is not enforceable."
+        contradictory_text = (
+            "A contract is enforceable. The same contract is not enforceable."
+        )
 
         result = nl_to_asp.translate(contradictory_text)
 
@@ -174,9 +176,9 @@ class TestContradictionHandling:
         assert result.asp_code, "Should produce code even with contradiction"
 
         # Confidence should be low
-        assert result.confidence <= 0.7, (
-            f"Confidence should reflect contradiction, got {result.confidence}"
-        )
+        assert (
+            result.confidence <= 0.7
+        ), f"Confidence should reflect contradiction, got {result.confidence}"
 
     def test_implicit_contradiction(self, translation_components):
         """Test handling of implicit contradictions."""
@@ -221,9 +223,9 @@ class TestDomainSpecificEdgeCases:
         # Should handle numeric values
         assert result.asp_code, "Should handle monetary amounts"
         # Check if numeric value is preserved in some form
-        assert "500" in result.asp_code or "value" in result.asp_code.lower(), (
-            "Should preserve numeric constraint"
-        )
+        assert (
+            "500" in result.asp_code or "value" in result.asp_code.lower()
+        ), "Should preserve numeric constraint"
 
     def test_temporal_references(self, translation_components):
         """Test handling of temporal references."""
@@ -265,7 +267,10 @@ class TestEmptyAndMinimalInputs:
 
         # Create long text
         long_text = " ".join(
-            ["A contract is enforceable if it meets various requirements" for _ in range(20)]
+            [
+                "A contract is enforceable if it meets various requirements"
+                for _ in range(20)
+            ]
         )
 
         result = nl_to_asp.translate(long_text)
@@ -293,7 +298,9 @@ class TestRobustnessStress:
             try:
                 result = nl_to_asp.translate(text)
                 # Should not crash
-                assert isinstance(result.asp_code, str), f"Should handle malformed input: {text}"
+                assert isinstance(
+                    result.asp_code, str
+                ), f"Should handle malformed input: {text}"
             except Exception as e:
                 # If it raises an exception, it should be handled gracefully
                 pytest.skip(f"Translation failed on malformed input (acceptable): {e}")

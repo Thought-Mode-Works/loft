@@ -27,9 +27,9 @@ class TestCanonicalPredicates:
 
     def test_vocabulary_has_minimum_predicates(self):
         """Issue #220 requires 30+ canonical predicates."""
-        assert len(CANONICAL_PREDICATES) >= 30, (
-            f"Expected at least 30 predicates, got {len(CANONICAL_PREDICATES)}"
-        )
+        assert (
+            len(CANONICAL_PREDICATES) >= 30
+        ), f"Expected at least 30 predicates, got {len(CANONICAL_PREDICATES)}"
 
     def test_vocabulary_is_frozenset(self):
         """Vocabulary should be immutable."""
@@ -100,9 +100,9 @@ class TestPredicateAliases:
     def test_aliases_map_to_canonical_predicates(self):
         """All alias targets should be canonical predicates."""
         for alias, canonical in PREDICATE_ALIASES.items():
-            assert canonical in CANONICAL_PREDICATES, (
-                f"Alias {alias} → {canonical} not in vocabulary"
-            )
+            assert (
+                canonical in CANONICAL_PREDICATES
+            ), f"Alias {alias} → {canonical} not in vocabulary"
 
 
 class TestLegalConceptMapping:
@@ -124,9 +124,9 @@ class TestLegalConceptMapping:
     def test_concept_mapping_targets_are_canonical(self):
         """All concept targets should be canonical predicates."""
         for concept, predicate in LEGAL_CONCEPT_TO_PREDICATE.items():
-            assert predicate in CANONICAL_PREDICATES, (
-                f"Concept '{concept}' → '{predicate}' not in vocabulary"
-            )
+            assert (
+                predicate in CANONICAL_PREDICATES
+            ), f"Concept '{concept}' → '{predicate}' not in vocabulary"
 
 
 class TestNormalizePredicate:
@@ -440,7 +440,9 @@ class TestIntegration:
         translator = ConstrainedNLToASPTranslator()
 
         # Translate a legal statement
-        result = translator.translate("A contract requires offer, acceptance, and consideration.")
+        result = translator.translate(
+            "A contract requires offer, acceptance, and consideration."
+        )
 
         # Check result structure
         assert result.asp_code is not None
@@ -460,4 +462,6 @@ class TestIntegration:
         overlap = CANONICAL_PREDICATES & template_predicates
 
         # Should have significant overlap for bidirectional translation
-        assert len(overlap) >= 10, f"Insufficient overlap between vocabularies: {overlap}"
+        assert (
+            len(overlap) >= 10
+        ), f"Insufficient overlap between vocabularies: {overlap}"

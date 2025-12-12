@@ -180,7 +180,9 @@ def extract_essential_elements(nl_text: str) -> Dict[str, bool]:
             or "meeting of the minds" in nl_lower
             or "agreement" in nl_lower
         ),
-        "has_writing": ("writing" in nl_lower or "written" in nl_lower or "document" in nl_lower),
+        "has_writing": (
+            "writing" in nl_lower or "written" in nl_lower or "document" in nl_lower
+        ),
         "is_signed": ("signed" in nl_lower or "signature" in nl_lower),
     }
 

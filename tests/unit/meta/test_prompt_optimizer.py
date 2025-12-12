@@ -174,7 +174,9 @@ class TestPromptMetrics:
         metrics.record(success=False, domain="contracts")
         metrics.record(success=True, domain="torts")
 
-        assert metrics.get_domain_success_rate("contracts") == pytest.approx(2 / 3, rel=0.01)
+        assert metrics.get_domain_success_rate("contracts") == pytest.approx(
+            2 / 3, rel=0.01
+        )
         assert metrics.get_domain_success_rate("torts") == 1.0
         assert metrics.get_domain_success_rate("unknown") == 0.0
 
@@ -433,10 +435,14 @@ class TestPromptOptimizer:
     def test_generate_improvement_candidates(self):
         """Test improvement candidate generation."""
         optimizer = PromptOptimizer()
-        prompt = PromptVersion(prompt_id="test", version=1, template="Process this: {input}")
+        prompt = PromptVersion(
+            prompt_id="test", version=1, template="Process this: {input}"
+        )
         optimizer.register_prompt(prompt)
 
-        candidates = optimizer.generate_improvement_candidates("test_v1", num_candidates=3)
+        candidates = optimizer.generate_improvement_candidates(
+            "test_v1", num_candidates=3
+        )
 
         assert len(candidates) == 3
         assert all(isinstance(c, ImprovementCandidate) for c in candidates)
@@ -609,11 +615,15 @@ class TestPromptABTester:
 
         # Variant A: 60% success
         for i in range(10):
-            tester.record_outcome(config.test_id, "test_v1", success=(i < 6), confidence=0.7)
+            tester.record_outcome(
+                config.test_id, "test_v1", success=(i < 6), confidence=0.7
+            )
 
         # Variant B: 90% success
         for i in range(10):
-            tester.record_outcome(config.test_id, "test_v2", success=(i < 9), confidence=0.9)
+            tester.record_outcome(
+                config.test_id, "test_v2", success=(i < 9), confidence=0.9
+            )
 
         result = tester.analyze_test(config.test_id)
 
@@ -633,11 +643,15 @@ class TestPromptABTester:
 
         # Variant A: 50% success
         for i in range(30):
-            tester.record_outcome(config.test_id, "test_v1", success=(i < 15), confidence=0.5)
+            tester.record_outcome(
+                config.test_id, "test_v1", success=(i < 15), confidence=0.5
+            )
 
         # Variant B: 90% success
         for i in range(30):
-            tester.record_outcome(config.test_id, "test_v2", success=(i < 27), confidence=0.9)
+            tester.record_outcome(
+                config.test_id, "test_v2", success=(i < 27), confidence=0.9
+            )
 
         winner = tester.select_winner(config.test_id)
 
@@ -743,7 +757,9 @@ class TestIntegration:
         tester = create_ab_tester(optimizer, min_samples=10)
 
         # Create prompts
-        prompt_a = PromptVersion(prompt_id="test", version=1, template="Simple: {input}")
+        prompt_a = PromptVersion(
+            prompt_id="test", version=1, template="Simple: {input}"
+        )
         prompt_b = PromptVersion(
             prompt_id="test", version=2, template="Detailed: {input}. Be precise."
         )
@@ -753,15 +769,21 @@ class TestIntegration:
 
         # Simulate usage with B performing better
         for i in range(15):
-            tester.record_outcome(config.test_id, "test_v1", success=(i < 8), confidence=0.6)
-            tester.record_outcome(config.test_id, "test_v2", success=(i < 12), confidence=0.8)
+            tester.record_outcome(
+                config.test_id, "test_v1", success=(i < 8), confidence=0.6
+            )
+            tester.record_outcome(
+                config.test_id, "test_v2", success=(i < 12), confidence=0.8
+            )
 
         # Check completion
         assert tester.check_test_completion(config.test_id) is True
 
         # Analyze
         result = tester.analyze_test(config.test_id)
-        assert result.prompt_b_metrics.success_rate > result.prompt_a_metrics.success_rate
+        assert (
+            result.prompt_b_metrics.success_rate > result.prompt_a_metrics.success_rate
+        )
 
         # Get active tests
         active = tester.get_active_tests()
@@ -1104,7 +1126,9 @@ class TestSuggestImprovements:
         suggestions = optimizer.suggest_improvements(prompt.full_id)
 
         # Should have constraints suggestion for syntax issues
-        constraint_suggestions = [s for s in suggestions if s.suggestion_type == "constraints"]
+        constraint_suggestions = [
+            s for s in suggestions if s.suggestion_type == "constraints"
+        ]
         assert len(constraint_suggestions) > 0
 
     def test_suggest_improvements_domain_weakness(self, optimizer):
@@ -1118,7 +1142,9 @@ class TestSuggestImprovements:
 
         # Add samples - good overall but bad for one domain
         for i in range(20):
-            optimizer.track_prompt_performance(prompt.full_id, success=True, domain="contracts")
+            optimizer.track_prompt_performance(
+                prompt.full_id, success=True, domain="contracts"
+            )
 
         for i in range(10):
             optimizer.track_prompt_performance(
@@ -1145,12 +1171,16 @@ class TestSuggestImprovements:
 
         # Add samples with low confidence
         for i in range(15):
-            optimizer.track_prompt_performance(prompt.full_id, success=True, confidence=0.4)
+            optimizer.track_prompt_performance(
+                prompt.full_id, success=True, confidence=0.4
+            )
 
         suggestions = optimizer.suggest_improvements(prompt.full_id)
 
         # Should have examples suggestion for low confidence
-        examples_suggestions = [s for s in suggestions if s.suggestion_type == "examples"]
+        examples_suggestions = [
+            s for s in suggestions if s.suggestion_type == "examples"
+        ]
         assert len(examples_suggestions) > 0
 
     def test_suggest_improvements_high_latency(self, optimizer):
@@ -1171,7 +1201,9 @@ class TestSuggestImprovements:
         suggestions = optimizer.suggest_improvements(prompt.full_id)
 
         # Should have structure suggestion for high latency
-        structure_suggestions = [s for s in suggestions if s.suggestion_type == "structure"]
+        structure_suggestions = [
+            s for s in suggestions if s.suggestion_type == "structure"
+        ]
         assert len(structure_suggestions) > 0
 
     def test_suggest_improvements_well_performing(self, optimizer):

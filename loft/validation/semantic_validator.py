@@ -95,7 +95,9 @@ class SemanticValidator:
 
         # 1. Check consistency with existing rules
         if existing_rules:
-            consistency_check = self._check_consistency_with_base(rule_text, existing_rules)
+            consistency_check = self._check_consistency_with_base(
+                rule_text, existing_rules
+            )
             if not consistency_check["is_consistent"]:
                 errors.append(
                     f"Rule creates inconsistency with existing knowledge base: "
@@ -120,7 +122,9 @@ class SemanticValidator:
         # 4. Check for circular dependencies
         circularity_check = self._check_circularity(rule_text, existing_rules)
         if circularity_check["has_cycle"]:
-            errors.append(f"Rule creates circular dependency: {circularity_check['description']}")
+            errors.append(
+                f"Rule creates circular dependency: {circularity_check['description']}"
+            )
         details["circularity"] = circularity_check
 
         # 5. Check predicate coherence (predicates make sense together)
@@ -147,7 +151,9 @@ class SemanticValidator:
             stage_name="semantic",
         )
 
-    def _check_consistency_with_base(self, rule_text: str, existing_rules: str) -> Dict[str, Any]:
+    def _check_consistency_with_base(
+        self, rule_text: str, existing_rules: str
+    ) -> Dict[str, Any]:
         """
         Check if rule is consistent with existing knowledge base.
 
@@ -160,7 +166,9 @@ class SemanticValidator:
         """
         combined_program = f"{existing_rules}\n{rule_text}"
 
-        is_consistent, msg = self.asp_semantic_validator.check_consistency(combined_program)
+        is_consistent, msg = self.asp_semantic_validator.check_consistency(
+            combined_program
+        )
 
         return {
             "is_consistent": is_consistent,
@@ -184,7 +192,9 @@ class SemanticValidator:
             "message": msg,
         }
 
-    def _check_stratification_layer(self, rule_text: str, target_layer: str) -> Dict[str, Any]:
+    def _check_stratification_layer(
+        self, rule_text: str, target_layer: str
+    ) -> Dict[str, Any]:
         """
         Check if rule is compatible with target stratification layer.
 
@@ -203,7 +213,9 @@ class SemanticValidator:
         # Heuristics for layer classification
         has_variables = any(c.isupper() for c in rule_text if c.isalpha())
         has_negation = "not " in rule_text
-        has_aggregation = any(agg in rule_text for agg in ["#count", "#sum", "#min", "#max"])
+        has_aggregation = any(
+            agg in rule_text for agg in ["#count", "#sum", "#min", "#max"]
+        )
         is_constraint = rule_text.strip().startswith(":-")
 
         # Operational layer: mostly ground facts
@@ -232,7 +244,9 @@ class SemanticValidator:
 
         return {"is_compatible": True, "reason": "Rule fits target layer"}
 
-    def _check_circularity(self, rule_text: str, existing_rules: Optional[str]) -> Dict[str, Any]:
+    def _check_circularity(
+        self, rule_text: str, existing_rules: Optional[str]
+    ) -> Dict[str, Any]:
         """
         Check for circular dependencies through negation.
 
@@ -276,7 +290,9 @@ class SemanticValidator:
                     "description": f"Grounding issue (not circularity): {error_msg}",
                 }
 
-    def _check_predicate_coherence(self, rule_text: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    def _check_predicate_coherence(
+        self, rule_text: str, context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         Check if predicates used together make semantic sense.
 
@@ -315,7 +331,10 @@ class SemanticValidator:
         tech_predicates = {
             p
             for p in predicates
-            if any(keyword in p for keyword in ["server", "client", "network", "database", "api"])
+            if any(
+                keyword in p
+                for keyword in ["server", "client", "network", "database", "api"]
+            )
         }
 
         if legal_predicates and tech_predicates:
@@ -328,7 +347,10 @@ class SemanticValidator:
         temporal_predicates = {
             p
             for p in predicates
-            if any(keyword in p for keyword in ["before", "after", "during", "when", "time"])
+            if any(
+                keyword in p
+                for keyword in ["before", "after", "during", "when", "time"]
+            )
         }
         if temporal_predicates and len(predicates) > len(temporal_predicates):
             # Mixed temporal and non-temporal - might be intentional
@@ -348,10 +370,14 @@ class SemanticValidator:
             Dict with redundancy result
         """
         # Test if rule changes answer sets
-        answer_sets_before = self.asp_semantic_validator.get_answer_sets(existing_rules, max_sets=5)
+        answer_sets_before = self.asp_semantic_validator.get_answer_sets(
+            existing_rules, max_sets=5
+        )
 
         combined = f"{existing_rules}\n{rule_text}"
-        answer_sets_after = self.asp_semantic_validator.get_answer_sets(combined, max_sets=5)
+        answer_sets_after = self.asp_semantic_validator.get_answer_sets(
+            combined, max_sets=5
+        )
 
         # Compare both count and contents of answer sets
         if len(answer_sets_before) != len(answer_sets_after):

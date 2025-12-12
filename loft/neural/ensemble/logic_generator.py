@@ -39,7 +39,9 @@ from loft.validation.asp_validators import (
 class ASPGenerationError(Exception):
     """Custom exception for ASP generation failures after all retries."""
 
-    def __init__(self, message: str, attempts: int = 0, last_error: Optional[str] = None):
+    def __init__(
+        self, message: str, attempts: int = 0, last_error: Optional[str] = None
+    ):
         super().__init__(message)
         self.attempts = attempts
         self.last_error = last_error
@@ -271,7 +273,9 @@ class LogicGeneratorConfig:
     model: str = "claude-3-5-haiku-20241022"
     temperature: float = 0.3
     max_tokens: int = 4096
-    optimization_strategy: OptimizationStrategyType = OptimizationStrategyType.PROMPT_OPTIMIZATION
+    optimization_strategy: OptimizationStrategyType = (
+        OptimizationStrategyType.PROMPT_OPTIMIZATION
+    )
     few_shot_examples: List[str] = field(default_factory=list)
     enable_syntax_validation: bool = True
     enable_variable_safety_check: bool = True
@@ -474,7 +478,9 @@ class LogicGeneratorLLM(LogicGenerator):
             logger.info(f"Using custom strategy: {strategy.strategy_type.value}")
         else:
             self._strategy = create_strategy(self.config.optimization_strategy)
-            logger.info(f"Using config strategy: {self.config.optimization_strategy.value}")
+            logger.info(
+                f"Using config strategy: {self.config.optimization_strategy.value}"
+            )
 
         # Statistics tracking
         self._total_generations = 0
@@ -506,7 +512,9 @@ class LogicGeneratorLLM(LogicGenerator):
         """
         old_strategy = self._strategy.strategy_type.value
         self._strategy = strategy
-        logger.info(f"Strategy changed: {old_strategy} -> {strategy.strategy_type.value}")
+        logger.info(
+            f"Strategy changed: {old_strategy} -> {strategy.strategy_type.value}"
+        )
 
     def generate_rule(
         self,
@@ -545,7 +553,9 @@ class LogicGeneratorLLM(LogicGenerator):
         if self.config.enable_cache and cache_key in self._cache:
             cached_result = self._cache[cache_key]
             self._cache_hits += 1
-            logger.debug(f"Cache hit for key {cache_key[:16]}... (hits: {self._cache_hits})")
+            logger.debug(
+                f"Cache hit for key {cache_key[:16]}... (hits: {self._cache_hits})"
+            )
             return ASPGenerationResult(
                 rule=cached_result.rule,
                 is_valid=cached_result.is_valid,
@@ -558,7 +568,9 @@ class LogicGeneratorLLM(LogicGenerator):
             )
 
         # Build the base generation prompt
-        base_prompt = self._build_generation_prompt(principle, predicates, domain, context)
+        base_prompt = self._build_generation_prompt(
+            principle, predicates, domain, context
+        )
 
         # Apply strategy to prepare final prompt
         prompt = self._strategy.prepare_prompt(
@@ -595,7 +607,9 @@ class LogicGeneratorLLM(LogicGenerator):
                 reasoning = response.content.reasoning
 
                 # Process response through strategy
-                generated_rule = self._strategy.process_response(generated_rule, reasoning)
+                generated_rule = self._strategy.process_response(
+                    generated_rule, reasoning
+                )
 
                 # Validate the generated rule
                 is_valid, validation_errors = self.validate_rule(generated_rule)
@@ -609,17 +623,23 @@ class LogicGeneratorLLM(LogicGenerator):
                     break
 
                 # Log validation failures for retry
-                logger.warning(f"Validation failed on attempt {attempt + 1}: {validation_errors}")
+                logger.warning(
+                    f"Validation failed on attempt {attempt + 1}: {validation_errors}"
+                )
 
                 # Enhance prompt with error feedback for retry
-                prompt = self._build_retry_prompt(prompt, generated_rule, validation_errors)
+                prompt = self._build_retry_prompt(
+                    prompt, generated_rule, validation_errors
+                )
                 retries = attempt + 1
                 self._total_retries += 1
 
                 # Exponential backoff before retry
                 if attempt < self.config.max_generation_retries - 1:
                     delay = self.config.retry_base_delay_seconds * (2**attempt)
-                    logger.debug(f"Waiting {delay:.1f}s before retry (exponential backoff)")
+                    logger.debug(
+                        f"Waiting {delay:.1f}s before retry (exponential backoff)"
+                    )
                     time.sleep(delay)
 
             except Exception as e:
@@ -698,7 +718,9 @@ class LogicGeneratorLLM(LogicGenerator):
         Returns:
             List of ASPGenerationResult with candidate rules
         """
-        logger.info(f"Generating {num_candidates} gap-filling candidates for: {missing_predicate}")
+        logger.info(
+            f"Generating {num_candidates} gap-filling candidates for: {missing_predicate}"
+        )
         candidates = []
 
         # Generate candidates with varying temperatures for diversity
@@ -706,7 +728,9 @@ class LogicGeneratorLLM(LogicGenerator):
 
         for i, temp in enumerate(temperatures):
             approach = ["conservative", "balanced", "permissive"][i]
-            logger.debug(f"Generating candidate {i + 1} with approach={approach}, temp={temp}")
+            logger.debug(
+                f"Generating candidate {i + 1} with approach={approach}, temp={temp}"
+            )
 
             prompt = self._build_gap_filling_prompt(
                 gap_description,
@@ -754,7 +778,9 @@ class LogicGeneratorLLM(LogicGenerator):
                 )
 
         valid_count = sum(1 for c in candidates if c.is_valid)
-        logger.info(f"Gap-filling complete: {valid_count}/{num_candidates} valid candidates")
+        logger.info(
+            f"Gap-filling complete: {valid_count}/{num_candidates} valid candidates"
+        )
 
         return candidates
 
@@ -776,7 +802,9 @@ class LogicGeneratorLLM(LogicGenerator):
         Returns:
             BenchmarkResult with comparative metrics
         """
-        logger.info(f"Starting benchmark against general LLM: {len(test_cases)} test cases")
+        logger.info(
+            f"Starting benchmark against general LLM: {len(test_cases)} test cases"
+        )
 
         logic_gen_results: List[ASPGenerationResult] = []
         general_llm_results: List[Dict[str, Any]] = []
@@ -796,7 +824,9 @@ class LogicGeneratorLLM(LogicGenerator):
             start_time = time.time()
             try:
                 gen_response = general_llm.query(
-                    question=self._build_simple_prompt(case["principle"], case.get("predicates")),
+                    question=self._build_simple_prompt(
+                        case["principle"], case.get("predicates")
+                    ),
                     output_schema=GeneratedRule,
                     temperature=0.3,
                 )
@@ -833,7 +863,9 @@ class LogicGeneratorLLM(LogicGenerator):
             else 0.0
         )
         gen_avg_time = (
-            sum(r["time_ms"] for r in general_llm_results) / len(test_cases) if test_cases else 0.0
+            sum(r["time_ms"] for r in general_llm_results) / len(test_cases)
+            if test_cases
+            else 0.0
         )
 
         improvement = (
@@ -874,7 +906,9 @@ class LogicGeneratorLLM(LogicGenerator):
         )
 
         cache_hit_rate = (
-            self._cache_hits / self._total_generations if self._total_generations > 0 else 0.0
+            self._cache_hits / self._total_generations
+            if self._total_generations > 0
+            else 0.0
         )
 
         return {
@@ -1029,7 +1063,9 @@ Generate the ASP rule:"""
         predicates: Optional[List[str]],
     ) -> str:
         """Build a simple prompt for general LLM comparison."""
-        predicates_str = ", ".join(predicates) if predicates else "appropriate predicates"
+        predicates_str = (
+            ", ".join(predicates) if predicates else "appropriate predicates"
+        )
 
         return f"""Generate an ASP rule for: {principle}
 Use predicates: {predicates_str}

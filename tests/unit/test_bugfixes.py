@@ -133,6 +133,6 @@ class TestBugfix2RoundtripFidelity:
         for question, expected_statement in test_cases:
             statement = _question_to_statement(question)
             # Check that key elements are present (exact match not required)
-            assert "is" in statement.lower() or "was" in statement.lower(), (
-                f"Failed to convert: {question} → {statement}"
-            )
+            assert (
+                "is" in statement.lower() or "was" in statement.lower()
+            ), f"Failed to convert: {question} → {statement}"

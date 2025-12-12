@@ -281,7 +281,9 @@ class TestModificationSessionInitialization:
         assert isinstance(session.validation_pipeline, MockValidationPipeline)
         assert session.session_id.startswith("session_")
 
-    def test_session_initialization_with_custom_components(self, mock_incorporation_engine):
+    def test_session_initialization_with_custom_components(
+        self, mock_incorporation_engine
+    ):
         """Test session initializes with custom components."""
         custom_gap = MockGapIdentifier()
         custom_gen = MockRuleGenerator()
@@ -373,7 +375,9 @@ class TestModificationSessionCycle:
 
             mock_identify.assert_called_once_with(limit=1)
 
-    def test_run_improvement_cycle_generates_candidates(self, mock_incorporation_engine):
+    def test_run_improvement_cycle_generates_candidates(
+        self, mock_incorporation_engine
+    ):
         """Test cycle generates candidate rules."""
         session = ModificationSession(incorporation_engine=mock_incorporation_engine)
 
@@ -384,7 +388,9 @@ class TestModificationSessionCycle:
 
             mock_gen.assert_called()
 
-    def test_run_improvement_cycle_validates_candidates(self, mock_incorporation_engine):
+    def test_run_improvement_cycle_validates_candidates(
+        self, mock_incorporation_engine
+    ):
         """Test cycle validates all candidates."""
         session = ModificationSession(incorporation_engine=mock_incorporation_engine)
 
@@ -401,7 +407,9 @@ class TestModificationSessionCycle:
             # Should validate all candidates (2 gaps * 3 candidates = 6)
             assert mock_validate.call_count == 6
 
-    def test_run_improvement_cycle_incorporates_accepted_rules(self, mock_incorporation_engine):
+    def test_run_improvement_cycle_incorporates_accepted_rules(
+        self, mock_incorporation_engine
+    ):
         """Test cycle incorporates accepted rules."""
         session = ModificationSession(incorporation_engine=mock_incorporation_engine)
 
@@ -410,7 +418,9 @@ class TestModificationSessionCycle:
         # Should incorporate rules that passed validation
         assert mock_incorporation_engine.incorporate.called
 
-    def test_run_improvement_cycle_tracks_rejected_rules(self, mock_incorporation_engine):
+    def test_run_improvement_cycle_tracks_rejected_rules(
+        self, mock_incorporation_engine
+    ):
         """Test cycle tracks rejected rules."""
         # Setup to reject some rules
         mock_incorporation_engine.incorporate = Mock(
@@ -434,7 +444,9 @@ class TestModificationSessionCycle:
 
             assert report.rules_rejected > 0
 
-    def test_run_improvement_cycle_handles_pending_review(self, mock_incorporation_engine):
+    def test_run_improvement_cycle_handles_pending_review(
+        self, mock_incorporation_engine
+    ):
         """Test cycle tracks rules pending human review."""
         mock_incorporation_engine.incorporate = Mock(
             return_value=IncorporationResult(
@@ -459,7 +471,9 @@ class TestModificationSessionCycle:
         assert len(session.session_log) > 0
 
     @pytest.mark.skip(reason="Implementation mismatch - needs investigation")
-    def test_run_improvement_cycle_with_different_layers(self, mock_incorporation_engine):
+    def test_run_improvement_cycle_with_different_layers(
+        self, mock_incorporation_engine
+    ):
         """Test cycle with different stratification layers."""
         session = ModificationSession(incorporation_engine=mock_incorporation_engine)
 
@@ -603,8 +617,12 @@ class TestModificationSessionIntegration:
         # Simulate successful incorporation
         engine.incorporate = Mock(
             side_effect=[
-                IncorporationResult(status="success", accuracy_before=0.75, accuracy_after=0.78),
-                IncorporationResult(status="success", accuracy_before=0.78, accuracy_after=0.80),
+                IncorporationResult(
+                    status="success", accuracy_before=0.75, accuracy_after=0.78
+                ),
+                IncorporationResult(
+                    status="success", accuracy_before=0.78, accuracy_after=0.80
+                ),
                 IncorporationResult(status="rejected", reason="Failed tests"),
             ]
         )

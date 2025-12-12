@@ -88,8 +88,12 @@ class ReasoningStats:
                 self.incorrect_predictions += 1
 
         # Update coverage
-        definitive = self.total_scenarios - self.unknown_predictions - self.reasoning_errors
-        self.coverage = definitive / self.total_scenarios if self.total_scenarios > 0 else 0.0
+        definitive = (
+            self.total_scenarios - self.unknown_predictions - self.reasoning_errors
+        )
+        self.coverage = (
+            definitive / self.total_scenarios if self.total_scenarios > 0 else 0.0
+        )
 
     def get_accuracy(self) -> float:
         """Get accuracy over scenarios with definitive predictions."""
@@ -336,7 +340,9 @@ class ASPReasoner:
                         # Use fired rules with default confidence
                         rules_conf = [(r, 0.8) for r in fired_rules]
 
-                    resolution = self.conflict_resolver.resolve(derived_atoms, rules_conf, entity)
+                    resolution = self.conflict_resolver.resolve(
+                        derived_atoms, rules_conf, entity
+                    )
 
                     logger.info(
                         f"Conflict resolved for {entity}: "

@@ -170,7 +170,9 @@ class TestContradictionStore:
     def test_query_by_severity(self, temp_store):
         """Test querying contradictions by severity."""
         # Create contradictions with different severities
-        for i, severity in enumerate([ContradictionSeverity.LOW, ContradictionSeverity.HIGH]):
+        for i, severity in enumerate(
+            [ContradictionSeverity.LOW, ContradictionSeverity.HIGH]
+        ):
             report = ContradictionReport(
                 contradiction_id=f"contra-sev-{i}",
                 contradiction_type=ContradictionType.LOGICAL,
@@ -241,14 +243,18 @@ class TestContradictionStore:
             )
             temp_store.save_interpretation(interp)
 
-        interpretations = temp_store.get_interpretations_by_principle("shared_principle")
+        interpretations = temp_store.get_interpretations_by_principle(
+            "shared_principle"
+        )
         assert len(interpretations) == 3
 
     def test_get_statistics(self, temp_store):
         """Test getting contradiction statistics."""
         # Create contradictions
         for i in range(5):
-            severity = ContradictionSeverity.HIGH if i < 2 else ContradictionSeverity.LOW
+            severity = (
+                ContradictionSeverity.HIGH if i < 2 else ContradictionSeverity.LOW
+            )
             report = ContradictionReport(
                 contradiction_id=f"contra-stats-{i}",
                 contradiction_type=ContradictionType.LOGICAL,
@@ -409,7 +415,9 @@ class TestContradictionManager:
 
         # Should detect hierarchical contradiction
         if contradictions:
-            assert contradictions[0].contradiction_type == ContradictionType.HIERARCHICAL
+            assert (
+                contradictions[0].contradiction_type == ContradictionType.HIERARCHICAL
+            )
 
     def test_resolve_by_stratification(self, manager):
         """Test resolving contradiction by stratification."""
@@ -455,7 +463,9 @@ class TestContradictionManager:
             "text": "Contract formation scenario",
         }
 
-        selected_rule, confidence = manager.select_rule_for_context(rules, context_facts)
+        selected_rule, confidence = manager.select_rule_for_context(
+            rules, context_facts
+        )
 
         assert selected_rule is not None
         assert confidence > 0.0

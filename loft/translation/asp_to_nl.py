@@ -94,12 +94,18 @@ RULE_STATEMENT_TEMPLATES = {
         "A contract is enforceable if it satisfies the statute of frauds"
     ),
     "requires_writing(X) :- land_sale(X)": ("Land sale contracts must be in writing"),
-    "requires_writing(X) :- land_sale_contract(X)": ("Land sale contracts must be in writing"),
+    "requires_writing(X) :- land_sale_contract(X)": (
+        "Land sale contracts must be in writing"
+    ),
     "requires_writing(X) :- goods_over_500(X)": (
         "Contracts for goods over $500 require a written memorandum"
     ),
-    "requires_writing(X) :- suretyship(X)": ("Suretyship agreements must be in writing"),
-    "requires_writing(X) :- suretyship_agreement(X)": ("Suretyship agreements must be in writing"),
+    "requires_writing(X) :- suretyship(X)": (
+        "Suretyship agreements must be in writing"
+    ),
+    "requires_writing(X) :- suretyship_agreement(X)": (
+        "Suretyship agreements must be in writing"
+    ),
     "requires_writing(X) :- goods_contract(X)": (
         "Contracts for sale of goods require a written memorandum"
     ),
@@ -293,7 +299,11 @@ def detect_rule_type(asp_rule: str) -> str:
         # Check if it's a default rule (single negation condition)
         if condition_count == 1:
             # "default" or "assumed" patterns are default rules
-            if "default" in head_pred or "assumed" in head_pred or "presumed" in head_pred:
+            if (
+                "default" in head_pred
+                or "assumed" in head_pred
+                or "presumed" in head_pred
+            ):
                 return "default"
             # Also default if the negation is the primary pattern
             return "default"
@@ -382,11 +392,15 @@ def apply_structural_template(
 
     elif rule_type == "conjunction":
         if len(body_predicates) >= 2:
-            elements = [_humanize_predicate_for_structure(p[0]) for p in body_predicates]
+            elements = [
+                _humanize_predicate_for_structure(p[0]) for p in body_predicates
+            ]
             if len(elements) == 2:
                 return f"{subject} requires {elements[0]} and {elements[1]}"
             else:
-                return f"{subject} requires {', '.join(elements[:-1])}, and {elements[-1]}"
+                return (
+                    f"{subject} requires {', '.join(elements[:-1])}, and {elements[-1]}"
+                )
         return f"{subject} is {head_human} if {conditions}"
 
     elif rule_type == "disjunction":
@@ -485,7 +499,9 @@ def _build_conditions_string(body_predicates: List[tuple]) -> str:
         # Handle negation
         if pred.startswith("not_"):
             pred = pred[4:]
-            condition_parts.append(f"it does not have {_humanize_predicate_for_structure(pred)}")
+            condition_parts.append(
+                f"it does not have {_humanize_predicate_for_structure(pred)}"
+            )
         else:
             humanized = _humanize_predicate_for_structure(pred)
             if args and len(args[0]) == 1 and args[0].isupper():
@@ -835,7 +851,10 @@ def asp_rule_to_nl(rule: str) -> str:
                 return template.format(arg=args_human[0], arg1=args_human[0]) + "."
             elif len(args) == 2:
                 return (
-                    template.format(arg=args_human[0], arg1=args_human[0], arg2=args_human[1]) + "."
+                    template.format(
+                        arg=args_human[0], arg1=args_human[0], arg2=args_human[1]
+                    )
+                    + "."
                 )
         else:
             predicate_human = humanize_predicate_name(predicate)
@@ -1002,7 +1021,9 @@ class ASPToNLTranslator:
             logger.warning(f"Unknown domain: {domain}, using empty templates")
             return {}
 
-    def translate_query(self, query: str, context: Optional[ASPCore] = None) -> TranslationResult:
+    def translate_query(
+        self, query: str, context: Optional[ASPCore] = None
+    ) -> TranslationResult:
         """
         Translate ASP query with full metadata.
 
@@ -1611,6 +1632,8 @@ class SemanticPreservingTranslator:
             return 1.0
 
         covered = sum(
-            1 for p in predicates if p in self.statement_templates or p in LEGAL_PREDICATE_TEMPLATES
+            1
+            for p in predicates
+            if p in self.statement_templates or p in LEGAL_PREDICATE_TEMPLATES
         )
         return covered / len(predicates)

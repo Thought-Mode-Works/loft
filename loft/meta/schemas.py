@@ -155,7 +155,9 @@ class ReasoningChain:
             "ground_truth": self.ground_truth,
             "overall_success": self.overall_success,
             "started_at": self.started_at.isoformat() if self.started_at else None,
-            "completed_at": (self.completed_at.isoformat() if self.completed_at else None),
+            "completed_at": (
+                self.completed_at.isoformat() if self.completed_at else None
+            ),
             "total_duration_ms": self.total_duration_ms,
             "success_rate": self.success_rate,
             "metadata": self.metadata,
@@ -279,7 +281,9 @@ class FailureDiagnosis:
             "ground_truth": self.ground_truth,
             "primary_failure_step": self.primary_failure_step,
             "primary_failure_step_type": (
-                self.primary_failure_step_type.value if self.primary_failure_step_type else None
+                self.primary_failure_step_type.value
+                if self.primary_failure_step_type
+                else None
             ),
             "failure_type": self.failure_type,
             "root_causes": self.root_causes,

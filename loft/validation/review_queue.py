@@ -233,7 +233,9 @@ class ReviewQueue:
         item.review_decision = review_decision
 
         self.storage.store(item_id, item.model_dump(mode="json"))
-        logger.info(f"Review completed for {item_id}: {decision} (time: {review_time:.1f}s)")
+        logger.info(
+            f"Review completed for {item_id}: {decision} (time: {review_time:.1f}s)"
+        )
 
         return review_decision
 

@@ -322,7 +322,11 @@ def _parse_rule_from_nl_basic(nl_rule: str) -> str:
                 if word.isalpha() and len(word) > 2:
                     body_conditions.append(f"{word}({entity_var})")
 
-        body = ", ".join(body_conditions) if body_conditions else f"{entity_var}={entity_var}"
+        body = (
+            ", ".join(body_conditions)
+            if body_conditions
+            else f"{entity_var}={entity_var}"
+        )
 
         return f"{head_predicate}({entity_var}) :- {body}."
 
@@ -424,7 +428,9 @@ class NLToASPTranslator:
         if is_rule:
             return self.translate_to_rule(nl_text)
         else:
-            return self.translate_to_rule(nl_text)  # Default to rule for most statements
+            return self.translate_to_rule(
+                nl_text
+            )  # Default to rule for most statements
 
     def extract_entities(self, nl_text: str) -> ExtractedEntities:
         """
@@ -570,7 +576,9 @@ ASP OUTPUT (use only allowed predicates):"""
 
         try:
             response = self.llm_interface.query(prompt)
-            asp_code = response.content if hasattr(response, "content") else str(response)
+            asp_code = (
+                response.content if hasattr(response, "content") else str(response)
+            )
         except Exception as e:
             logger.warning(f"LLM translation failed: {e}, falling back to patterns")
             base_result = self._base_translator.translate(nl_text)
@@ -651,7 +659,9 @@ ASP OUTPUT (use only allowed predicates):"""
 
         # Recalculate valid/invalid after corrections
         corrected_predicates = extract_predicates_from_asp(corrected_asp)
-        final_valid, final_invalid = validate_predicates(corrected_predicates, self.vocabulary)
+        final_valid, final_invalid = validate_predicates(
+            corrected_predicates, self.vocabulary
+        )
 
         total = len(final_valid) + len(final_invalid)
         compliance = len(final_valid) / total if total > 0 else 1.0
@@ -700,7 +710,9 @@ CORRECTED ASP:"""
 
         try:
             response = self.llm_interface.query(correction_prompt)
-            corrected_code = response.content if hasattr(response, "content") else str(response)
+            corrected_code = (
+                response.content if hasattr(response, "content") else str(response)
+            )
 
             # Re-validate the corrected code
             return self._validate_and_correct(corrected_code)
@@ -719,16 +731,32 @@ CORRECTED ASP:"""
             "total_predicates": len(self.vocabulary),
             "categories": {
                 "contract_formation": len(
-                    [p for p in self.vocabulary if "offer" in p or "accept" in p or "consider" in p]
+                    [
+                        p
+                        for p in self.vocabulary
+                        if "offer" in p or "accept" in p or "consider" in p
+                    ]
                 ),
                 "statute_of_frauds": len(
-                    [p for p in self.vocabulary if "sof" in p or "writing" in p or "land" in p]
+                    [
+                        p
+                        for p in self.vocabulary
+                        if "sof" in p or "writing" in p or "land" in p
+                    ]
                 ),
                 "exceptions": len(
-                    [p for p in self.vocabulary if "exception" in p or "performance" in p]
+                    [
+                        p
+                        for p in self.vocabulary
+                        if "exception" in p or "performance" in p
+                    ]
                 ),
                 "enforceability": len(
-                    [p for p in self.vocabulary if "enforce" in p or "valid" in p or "void" in p]
+                    [
+                        p
+                        for p in self.vocabulary
+                        if "enforce" in p or "valid" in p or "void" in p
+                    ]
                 ),
             },
             "aliases_count": len(PREDICATE_ALIASES),

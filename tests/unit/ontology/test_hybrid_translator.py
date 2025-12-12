@@ -32,12 +32,16 @@ class TestTranslationStats:
 
     def test_canonical_rate(self):
         """Canonical rate should be calculated correctly."""
-        stats = TranslationStats(canonical_translations=8, llm_translations=2, total_predicates=10)
+        stats = TranslationStats(
+            canonical_translations=8, llm_translations=2, total_predicates=10
+        )
         assert stats.canonical_rate == 0.8
 
     def test_llm_rate(self):
         """LLM rate should be calculated correctly."""
-        stats = TranslationStats(canonical_translations=8, llm_translations=2, total_predicates=10)
+        stats = TranslationStats(
+            canonical_translations=8, llm_translations=2, total_predicates=10
+        )
         assert stats.llm_rate == 0.2
 
     def test_success_rate(self):
@@ -269,7 +273,9 @@ class TestRuleTranslation:
         """Rule without predicates should pass through."""
         translator = HybridTranslator(enable_llm=False)
 
-        result = translator.translate_rule("% comment only", "adverse_possession", "property_law")
+        result = translator.translate_rule(
+            "% comment only", "adverse_possession", "property_law"
+        )
 
         assert result.translated == "% comment only"
         assert result.confidence == 1.0
@@ -320,7 +326,9 @@ class TestStatisticsTracking:
         """Failed translations should be tracked."""
         translator = HybridTranslator(enable_llm=False)
 
-        translator.translate_predicate("unknown_pred", "adverse_possession", "property_law")
+        translator.translate_predicate(
+            "unknown_pred", "adverse_possession", "property_law"
+        )
 
         assert translator.stats.failed_translations == 1
         assert translator.stats.total_predicates == 1
@@ -469,7 +477,9 @@ class TestRepr:
 
     def test_repr(self):
         """Repr should show useful configuration info."""
-        translator = HybridTranslator(model="test-model", min_llm_confidence=0.7, enable_llm=False)
+        translator = HybridTranslator(
+            model="test-model", min_llm_confidence=0.7, enable_llm=False
+        )
 
         repr_str = repr(translator)
 

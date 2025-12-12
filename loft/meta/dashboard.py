@@ -254,7 +254,9 @@ class TrendReport:
             "end_date": self.end_date.isoformat(),
             "accuracy_trend": self.accuracy_trend.to_dict(),
             "error_rate_trend": self.error_rate_trend.to_dict(),
-            "improvement_effectiveness_trend": (self.improvement_effectiveness_trend.to_dict()),
+            "improvement_effectiveness_trend": (
+                self.improvement_effectiveness_trend.to_dict()
+            ),
             "prompt_effectiveness_trend": self.prompt_effectiveness_trend.to_dict(),
             "overall_health_trend": self.overall_health_trend.value,
             "generated_at": self.generated_at.isoformat(),
@@ -324,7 +326,9 @@ class MetaReasoningDashboard:
             bottleneck_count=data["bottleneck_count"],
             active_improvements=data["active_improvements"],
             recent_failures=data["recent_failures"],
-            prompt_effectiveness_trend=TrendDirection(data["prompt_effectiveness_trend"]),
+            prompt_effectiveness_trend=TrendDirection(
+                data["prompt_effectiveness_trend"]
+            ),
             alerts=[MetaReasoningAlert.from_dict(a) for a in data.get("alerts", [])],
             generated_at=datetime.fromisoformat(data["generated_at"]),
         )
@@ -414,7 +418,9 @@ class DashboardGenerator:
         )
 
         # Calculate overall health and confidence
-        system_health = self._calculate_system_health(observer_summary, failure_summary, alerts)
+        system_health = self._calculate_system_health(
+            observer_summary, failure_summary, alerts
+        )
         overall_confidence = self._calculate_overall_confidence(
             observer_summary, strategy_summary, failure_summary
         )
@@ -531,14 +537,18 @@ class DashboardGenerator:
 
             # Check for evaluated strategies
             results = self._strategy_evaluator._results
-            strategies_evaluated = len(set(r.strategy_name for r in results.values() if results))
+            strategies_evaluated = len(
+                set(r.strategy_name for r in results.values() if results)
+            )
 
             # Find best strategy by accuracy
             strategy_accuracies: Dict[str, List[float]] = {}
             for result in results.values():
                 if result.strategy_name not in strategy_accuracies:
                     strategy_accuracies[result.strategy_name] = []
-                strategy_accuracies[result.strategy_name].append(1.0 if result.correct else 0.0)
+                strategy_accuracies[result.strategy_name].append(
+                    1.0 if result.correct else 0.0
+                )
 
             for name, accuracies in strategy_accuracies.items():
                 avg_acc = sum(accuracies) / len(accuracies) if accuracies else 0.0
@@ -592,7 +602,9 @@ class DashboardGenerator:
                 category_effectiveness[cat].append(effectiveness)
 
         avg_effectiveness = (
-            sum(effectiveness_scores) / len(effectiveness_scores) if effectiveness_scores else 0.0
+            sum(effectiveness_scores) / len(effectiveness_scores)
+            if effectiveness_scores
+            else 0.0
         )
 
         # Find best category
@@ -685,8 +697,12 @@ class DashboardGenerator:
         goals = self._improvement_tracker._goals
         # PENDING goals are considered "active" (not yet started)
         active_goals = sum(1 for g in goals.values() if g.status == GoalStatus.PENDING)
-        completed_goals = sum(1 for g in goals.values() if g.status == GoalStatus.ACHIEVED)
-        in_progress_goals = sum(1 for g in goals.values() if g.status == GoalStatus.IN_PROGRESS)
+        completed_goals = sum(
+            1 for g in goals.values() if g.status == GoalStatus.ACHIEVED
+        )
+        in_progress_goals = sum(
+            1 for g in goals.values() if g.status == GoalStatus.IN_PROGRESS
+        )
 
         # Count cycles
         cycles = getattr(self._improvement_tracker, "_cycles", {})
@@ -699,7 +715,9 @@ class DashboardGenerator:
                 effectiveness_scores.append(cycle.results.overall_improvement)
 
         avg_effectiveness = (
-            sum(effectiveness_scores) / len(effectiveness_scores) if effectiveness_scores else 0.0
+            sum(effectiveness_scores) / len(effectiveness_scores)
+            if effectiveness_scores
+            else 0.0
         )
 
         # Count actions
@@ -770,7 +788,9 @@ class DashboardGenerator:
                     alert_id=f"alert_{uuid.uuid4().hex[:8]}",
                     severity=AlertSeverity.CRITICAL,
                     component="observer",
-                    message=(f"Critical accuracy drop: {observer_summary.success_rate:.1%}"),
+                    message=(
+                        f"Critical accuracy drop: {observer_summary.success_rate:.1%}"
+                    ),
                     details={"success_rate": observer_summary.success_rate},
                 )
             )
@@ -792,8 +812,12 @@ class DashboardGenerator:
                     alert_id=f"alert_{uuid.uuid4().hex[:8]}",
                     severity=AlertSeverity.WARNING,
                     component="observer",
-                    message=(f"{observer_summary.bottlenecks_identified} bottlenecks identified"),
-                    details={"bottleneck_count": observer_summary.bottlenecks_identified},
+                    message=(
+                        f"{observer_summary.bottlenecks_identified} bottlenecks identified"
+                    ),
+                    details={
+                        "bottleneck_count": observer_summary.bottlenecks_identified
+                    },
                 )
             )
 
@@ -804,7 +828,9 @@ class DashboardGenerator:
                     alert_id=f"alert_{uuid.uuid4().hex[:8]}",
                     severity=AlertSeverity.INFO,
                     component="self_improvement",
-                    message=(f"{improvement_summary.actions_pending} improvement actions pending"),
+                    message=(
+                        f"{improvement_summary.actions_pending} improvement actions pending"
+                    ),
                     details={"pending_actions": improvement_summary.actions_pending},
                 )
             )
@@ -865,7 +891,9 @@ class DashboardGenerator:
 
         return sum(factors) / len(factors)
 
-    def _calculate_accuracy_trend(self, start_date: datetime, end_date: datetime) -> TrendData:
+    def _calculate_accuracy_trend(
+        self, start_date: datetime, end_date: datetime
+    ) -> TrendData:
         """Calculate accuracy trend over time period."""
         # Placeholder implementation - would query historical data
         return TrendData(
@@ -881,7 +909,9 @@ class DashboardGenerator:
             change_percentage=3.75,
         )
 
-    def _calculate_error_rate_trend(self, start_date: datetime, end_date: datetime) -> TrendData:
+    def _calculate_error_rate_trend(
+        self, start_date: datetime, end_date: datetime
+    ) -> TrendData:
         """Calculate error rate trend over time period."""
         return TrendData(
             metric_name="error_rate",
@@ -896,7 +926,9 @@ class DashboardGenerator:
             change_percentage=-20.0,
         )
 
-    def _calculate_improvement_trend(self, start_date: datetime, end_date: datetime) -> TrendData:
+    def _calculate_improvement_trend(
+        self, start_date: datetime, end_date: datetime
+    ) -> TrendData:
         """Calculate improvement effectiveness trend."""
         return TrendData(
             metric_name="improvement_effectiveness",
@@ -911,7 +943,9 @@ class DashboardGenerator:
             change_percentage=25.0,
         )
 
-    def _calculate_prompt_trend_data(self, start_date: datetime, end_date: datetime) -> TrendData:
+    def _calculate_prompt_trend_data(
+        self, start_date: datetime, end_date: datetime
+    ) -> TrendData:
         """Calculate prompt effectiveness trend data."""
         return TrendData(
             metric_name="prompt_effectiveness",
@@ -1028,7 +1062,9 @@ class DashboardExporter:
         lines.append(f"- Total Errors: {fail.total_errors_recorded}")
         lines.append(f"- Patterns Identified: {fail.patterns_identified}")
         lines.append(f"- Error Rate: {fail.error_rate:.1%}")
-        lines.append(f"- Most Common Category: {fail.most_common_error_category or 'N/A'}")
+        lines.append(
+            f"- Most Common Category: {fail.most_common_error_category or 'N/A'}"
+        )
         lines.append("")
 
         # Improvement Summary
@@ -1105,7 +1141,9 @@ class DashboardExporter:
         html_parts.append("</div>")
         html_parts.append('<div class="metric">')
         html_parts.append('<div class="metric-label">Confidence</div>')
-        html_parts.append(f'<div class="metric-value">{dashboard.overall_confidence:.1%}</div>')
+        html_parts.append(
+            f'<div class="metric-value">{dashboard.overall_confidence:.1%}</div>'
+        )
         html_parts.append("</div>")
         html_parts.append("</div>")
         html_parts.append("</div>")
@@ -1164,7 +1202,9 @@ class DashboardExporter:
                     display_value = ", ".join(str(v) for v in value) or "None"
                 else:
                     display_value = str(value) if value is not None else "N/A"
-                html_parts.append(f"<tr><td>{display_key}</td><td>{display_value}</td></tr>")
+                html_parts.append(
+                    f"<tr><td>{display_key}</td><td>{display_value}</td></tr>"
+                )
             html_parts.append("</table>")
             html_parts.append("</div>")
 

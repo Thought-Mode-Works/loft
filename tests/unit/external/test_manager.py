@@ -118,7 +118,9 @@ class TestLegalAPIManagerSearch:
     def test_search_returns_first_successful_result(self, manager, mock_clients):
         """Test search returns first successful result without aggregation."""
         query = SearchQuery(query_text="test")
-        result1 = SearchResult(query=query, documents=[], total_results=1, page=1, has_more=False)
+        result1 = SearchResult(
+            query=query, documents=[], total_results=1, page=1, has_more=False
+        )
 
         mock_clients["courtlistener"].search.return_value = result1
         mock_clients["provider2"].search.return_value = Mock()
@@ -132,7 +134,9 @@ class TestLegalAPIManagerSearch:
     def test_search_fallback_on_provider_failure(self, manager, mock_clients):
         """Test fallback to second provider when first fails."""
         query = SearchQuery(query_text="test")
-        result2 = SearchResult(query=query, documents=[], total_results=0, page=1, has_more=False)
+        result2 = SearchResult(
+            query=query, documents=[], total_results=0, page=1, has_more=False
+        )
 
         mock_clients["courtlistener"].search.side_effect = APIError("Failed")
         mock_clients["provider2"].search.return_value = result2
@@ -156,7 +160,9 @@ class TestLegalAPIManagerSearch:
     def test_search_with_specific_providers(self, manager, mock_clients):
         """Test search with specific provider list."""
         query = SearchQuery(query_text="test")
-        result = SearchResult(query=query, documents=[], total_results=0, page=1, has_more=False)
+        result = SearchResult(
+            query=query, documents=[], total_results=0, page=1, has_more=False
+        )
 
         mock_clients["provider2"].search.return_value = result
 
@@ -177,16 +183,22 @@ class TestLegalAPIManagerSearch:
     def test_search_handles_rate_limit_error(self, manager, mock_clients):
         """Test search handles rate limit errors and continues."""
         query = SearchQuery(query_text="test")
-        result2 = SearchResult(query=query, documents=[], total_results=0, page=1, has_more=False)
+        result2 = SearchResult(
+            query=query, documents=[], total_results=0, page=1, has_more=False
+        )
 
-        mock_clients["courtlistener"].search.side_effect = RateLimitError("Rate limited")
+        mock_clients["courtlistener"].search.side_effect = RateLimitError(
+            "Rate limited"
+        )
         mock_clients["provider2"].search.return_value = result2
 
         result = manager.search(query)
 
         assert result == result2
 
-    def test_search_aggregates_results_from_multiple_providers(self, manager, mock_clients):
+    def test_search_aggregates_results_from_multiple_providers(
+        self, manager, mock_clients
+    ):
         """Test result aggregation from multiple providers."""
         query = SearchQuery(query_text="test", max_results=10)
 
@@ -332,7 +344,9 @@ class TestLegalAPIManagerCaching:
     @pytest.fixture
     def manager_with_cache(self):
         """Create manager with caching enabled."""
-        config = APIConfig(cache_enabled=True, cache_ttl_seconds=3600, rate_limit_enabled=False)
+        config = APIConfig(
+            cache_enabled=True, cache_ttl_seconds=3600, rate_limit_enabled=False
+        )
         mock_client = Mock(spec=LegalAPIProvider)
         clients = {"courtlistener": mock_client}
         return LegalAPIManager(config=config, clients=clients), mock_client
@@ -341,7 +355,9 @@ class TestLegalAPIManagerCaching:
         """Test search results are cached."""
         manager, mock_client = manager_with_cache
         query = SearchQuery(query_text="test")
-        result = SearchResult(query=query, documents=[], total_results=0, page=1, has_more=False)
+        result = SearchResult(
+            query=query, documents=[], total_results=0, page=1, has_more=False
+        )
         mock_client.search.return_value = result
 
         manager.search(query)
@@ -352,7 +368,9 @@ class TestLegalAPIManagerCaching:
         """Test subsequent searches use cached results."""
         manager, mock_client = manager_with_cache
         query = SearchQuery(query_text="test")
-        result = SearchResult(query=query, documents=[], total_results=0, page=1, has_more=False)
+        result = SearchResult(
+            query=query, documents=[], total_results=0, page=1, has_more=False
+        )
         mock_client.search.return_value = result
 
         # First call
@@ -370,7 +388,9 @@ class TestLegalAPIManagerCaching:
         manager = LegalAPIManager(config=config, clients={"p1": mock_client})
 
         query = SearchQuery(query_text="test")
-        result = SearchResult(query=query, documents=[], total_results=0, page=1, has_more=False)
+        result = SearchResult(
+            query=query, documents=[], total_results=0, page=1, has_more=False
+        )
         mock_client.search.return_value = result
 
         # Search with use_cache=False
@@ -381,12 +401,16 @@ class TestLegalAPIManagerCaching:
 
     def test_cache_expiration(self):
         """Test cache entries expire after TTL."""
-        config = APIConfig(cache_enabled=True, cache_ttl_seconds=1, rate_limit_enabled=False)
+        config = APIConfig(
+            cache_enabled=True, cache_ttl_seconds=1, rate_limit_enabled=False
+        )
         mock_client = Mock(spec=LegalAPIProvider)
         manager = LegalAPIManager(config=config, clients={"p1": mock_client})
 
         query = SearchQuery(query_text="test")
-        result = SearchResult(query=query, documents=[], total_results=0, page=1, has_more=False)
+        result = SearchResult(
+            query=query, documents=[], total_results=0, page=1, has_more=False
+        )
         mock_client.search.return_value = result
 
         # First call
@@ -404,7 +428,9 @@ class TestLegalAPIManagerCaching:
         """Test cache clearing."""
         manager, mock_client = manager_with_cache
         query = SearchQuery(query_text="test")
-        result = SearchResult(query=query, documents=[], total_results=0, page=1, has_more=False)
+        result = SearchResult(
+            query=query, documents=[], total_results=0, page=1, has_more=False
+        )
         mock_client.search.return_value = result
 
         manager.search(query)
@@ -470,7 +496,9 @@ class TestLegalAPIManagerRateLimiting:
         """Test requests are tracked for rate limiting."""
         manager, mock_client = manager_with_rate_limit
         query = SearchQuery(query_text="test")
-        result = SearchResult(query=query, documents=[], total_results=0, page=1, has_more=False)
+        result = SearchResult(
+            query=query, documents=[], total_results=0, page=1, has_more=False
+        )
         mock_client.search.return_value = result
 
         initial_count = len(manager.request_history["courtlistener"])
@@ -489,7 +517,9 @@ class TestLegalAPIManagerRateLimiting:
         manager = LegalAPIManager(config=config, clients={"p1": mock_client})
 
         query = SearchQuery(query_text="test")
-        result = SearchResult(query=query, documents=[], total_results=0, page=1, has_more=False)
+        result = SearchResult(
+            query=query, documents=[], total_results=0, page=1, has_more=False
+        )
         mock_client.search.return_value = result
 
         # Make requests up to limit

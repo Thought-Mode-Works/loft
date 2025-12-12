@@ -158,11 +158,15 @@ Respond in JSON format:
             return "unsafe_variable"
 
         # Check for embedded period errors (issue #168)
-        if "embedded period" in error_lower or ("period" in error_lower and "fact" in error_lower):
+        if "embedded period" in error_lower or (
+            "period" in error_lower and "fact" in error_lower
+        ):
             return "embedded_period"
 
         # Check for arithmetic errors
-        if any(term in error_lower for term in ["abs(", "arithmetic", "division", "*", "/"]):
+        if any(
+            term in error_lower for term in ["abs(", "arithmetic", "division", "*", "/"]
+        ):
             return "invalid_arithmetic"
 
         # Check for syntax errors
@@ -174,7 +178,10 @@ Respond in JSON format:
             return "grounding_error"
 
         # Check for LLM/API errors
-        if any(term in error_lower for term in ["api", "timeout", "rate limit", "connection"]):
+        if any(
+            term in error_lower
+            for term in ["api", "timeout", "rate limit", "connection"]
+        ):
             return "llm_api_error"
 
         # Check for validation errors
@@ -262,15 +269,21 @@ Respond in JSON format:
                 "LLMCaseProcessor not properly initialized: _extract_predicates is None"
             )
         if self._rule_generator is None:
-            raise RuntimeError("LLMCaseProcessor not properly initialized: _rule_generator is None")
+            raise RuntimeError(
+                "LLMCaseProcessor not properly initialized: _rule_generator is None"
+            )
         if self._validation_pipeline is None:
             raise RuntimeError(
                 "LLMCaseProcessor not properly initialized: _validation_pipeline is None"
             )
         if self._llm is None:
-            raise RuntimeError("LLMCaseProcessor not properly initialized: _llm is None")
+            raise RuntimeError(
+                "LLMCaseProcessor not properly initialized: _llm is None"
+            )
 
-    def _extract_dataset_predicates(self, extraction: Dict[str, Any], case_id: str) -> List[str]:
+    def _extract_dataset_predicates(
+        self, extraction: Dict[str, Any], case_id: str
+    ) -> List[str]:
         """
         Extract predicates from case facts with error handling.
 
@@ -287,7 +300,9 @@ Respond in JSON format:
         try:
             facts = extraction.get("facts", [])
             if not facts:
-                logger.warning(f"Case {case_id}: asp_predicates flag set but no facts provided")
+                logger.warning(
+                    f"Case {case_id}: asp_predicates flag set but no facts provided"
+                )
                 return []
 
             facts_text = "\n".join(facts)
@@ -299,7 +314,9 @@ Respond in JSON format:
             dataset_predicates = self._extract_predicates(facts_text)
 
             if not dataset_predicates:
-                logger.info(f"Case {case_id}: No predicates extracted from {len(facts)} facts")
+                logger.info(
+                    f"Case {case_id}: No predicates extracted from {len(facts)} facts"
+                )
             else:
                 logger.debug(
                     f"Case {case_id}: Extracted {len(dataset_predicates)} predicates: "
@@ -383,7 +400,9 @@ Respond in JSON format:
                             context={
                                 "facts": facts_text,
                                 "domain": extraction.get("domain", "general"),
-                                "legal_issues": ", ".join(extraction.get("legal_issues", [])),
+                                "legal_issues": ", ".join(
+                                    extraction.get("legal_issues", [])
+                                ),
                             },
                             dataset_predicates=dataset_predicates,
                         )
@@ -392,7 +411,9 @@ Respond in JSON format:
 
                         # Get the recommended candidate
                         if gap_response.candidates:
-                            candidate = gap_response.candidates[gap_response.recommended_index]
+                            candidate = gap_response.candidates[
+                                gap_response.recommended_index
+                            ]
 
                             # Validate the candidate rule
                             report = self._validation_pipeline.validate_rule(
@@ -404,7 +425,9 @@ Respond in JSON format:
 
                             if report.final_decision == "accept":
                                 rules_accepted += 1
-                                generated_rule_ids.append(f"rule_{case_id}_{rules_generated}")
+                                generated_rule_ids.append(
+                                    f"rule_{case_id}_{rules_generated}"
+                                )
                                 logger.info(
                                     f"Accepted rule from case {case_id}: "
                                     f"{candidate.rule.asp_rule[:50]}..."
@@ -427,7 +450,9 @@ Respond in JSON format:
                                     },
                                 )
                         else:
-                            logger.warning(f"No candidates generated for {case_id}/{predicate}")
+                            logger.warning(
+                                f"No candidates generated for {case_id}/{predicate}"
+                            )
                             rules_rejected += 1
 
                     except Exception as e:
@@ -521,7 +546,9 @@ Respond in JSON format:
                 extraction["confidence"] = response.confidence
                 return extraction
             else:
-                logger.warning(f"Could not parse JSON from LLM response for case {case_id}")
+                logger.warning(
+                    f"Could not parse JSON from LLM response for case {case_id}"
+                )
                 return {
                     "facts": [],
                     "legal_issues": [],
@@ -563,7 +590,9 @@ Respond in JSON format:
             "failure_patterns": dict(self._failure_patterns),
             "total_failures": total_failures,
             "failure_rate": (
-                total_failures / len(self._processing_times) if self._processing_times else 0.0
+                total_failures / len(self._processing_times)
+                if self._processing_times
+                else 0.0
             ),
         }
 

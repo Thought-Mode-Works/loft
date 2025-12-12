@@ -109,13 +109,21 @@ class TestEnsemblePipeline:
         mock_interface = MagicMock()
 
         # Test weighted strategy
-        config_weighted = OrchestratorConfig(default_voting_strategy=VotingStrategyType.WEIGHTED)
-        orch = EnsembleOrchestrator(config=config_weighted, llm_interface=mock_interface)
+        config_weighted = OrchestratorConfig(
+            default_voting_strategy=VotingStrategyType.WEIGHTED
+        )
+        orch = EnsembleOrchestrator(
+            config=config_weighted, llm_interface=mock_interface
+        )
         assert orch.config.default_voting_strategy == VotingStrategyType.WEIGHTED
 
         # Test majority strategy
-        config_majority = OrchestratorConfig(default_voting_strategy=VotingStrategyType.MAJORITY)
-        orch = EnsembleOrchestrator(config=config_majority, llm_interface=mock_interface)
+        config_majority = OrchestratorConfig(
+            default_voting_strategy=VotingStrategyType.MAJORITY
+        )
+        orch = EnsembleOrchestrator(
+            config=config_majority, llm_interface=mock_interface
+        )
         assert orch.config.default_voting_strategy == VotingStrategyType.MAJORITY
 
     def test_disagreement_strategy_selection(self):
@@ -345,7 +353,9 @@ class TestCrossComponentErrorHandling:
         with pytest.raises(TaskRoutingError, match="input_data cannot be empty"):
             mock_orchestrator.route_task(TaskType.RULE_GENERATION, "")
 
-        with pytest.raises(TaskRoutingError, match="input_data cannot be an empty dictionary"):
+        with pytest.raises(
+            TaskRoutingError, match="input_data cannot be an empty dictionary"
+        ):
             mock_orchestrator.route_task(TaskType.RULE_GENERATION, {})
 
     def test_config_validation(self):
@@ -356,7 +366,9 @@ class TestCrossComponentErrorHandling:
         with pytest.raises(ValueError, match="max_retries must be non-negative"):
             OrchestratorConfig(max_retries=-1)
 
-        with pytest.raises(ValueError, match="min_confidence_threshold must be between"):
+        with pytest.raises(
+            ValueError, match="min_confidence_threshold must be between"
+        ):
             OrchestratorConfig(min_confidence_threshold=1.5)
 
 
@@ -546,7 +558,9 @@ class TestEndToEndScenarios:
         )
 
         strategy = WeightedVotingStrategy()
-        result = strategy.vote([generator_response, critic_response, translator_response])
+        result = strategy.vote(
+            [generator_response, critic_response, translator_response]
+        )
 
         # Verify complete workflow produces consensus
         assert len(result.dissenting_models) == 0  # Consensus reached

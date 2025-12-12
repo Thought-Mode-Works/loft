@@ -216,7 +216,9 @@ class CourtListenerClient(LegalAPIProvider):
 
         return params
 
-    def _parse_search_results(self, results: List[Dict[str, Any]]) -> List[CaseLawDocument]:
+    def _parse_search_results(
+        self, results: List[Dict[str, Any]]
+    ) -> List[CaseLawDocument]:
         """Parse search results into CaseLawDocuments."""
         documents = []
 
@@ -236,12 +238,18 @@ class CourtListenerClient(LegalAPIProvider):
         decision_date = None
         if data.get("date_filed"):
             try:
-                decision_date = datetime.fromisoformat(data["date_filed"].replace("Z", "+00:00"))
+                decision_date = datetime.fromisoformat(
+                    data["date_filed"].replace("Z", "+00:00")
+                )
             except (ValueError, TypeError, AttributeError):
                 pass
 
         # Extract text
-        text = data.get("html", "") or data.get("plain_text", "") or data.get("html_lawbox", "")
+        text = (
+            data.get("html", "")
+            or data.get("plain_text", "")
+            or data.get("html_lawbox", "")
+        )
 
         # Extract citations
         citations = []
@@ -268,7 +276,9 @@ class CourtListenerClient(LegalAPIProvider):
             cited_cases=[],
             judges=self._extract_judges(data),
             attorneys=(
-                data.get("attorneys", []) if isinstance(data.get("attorneys"), list) else []
+                data.get("attorneys", [])
+                if isinstance(data.get("attorneys"), list)
+                else []
             ),
             jurisdiction=data.get("jurisdiction", ""),
             document_type=DocumentType.OPINION,
@@ -284,7 +294,11 @@ class CourtListenerClient(LegalAPIProvider):
 
         if "scotus" in court_lower or "supreme" in court_lower:
             return CourtLevel.SUPREME
-        elif "appellate" in court_lower or "circuit" in court_lower or court_lower.startswith("ca"):
+        elif (
+            "appellate" in court_lower
+            or "circuit" in court_lower
+            or court_lower.startswith("ca")
+        ):
             return CourtLevel.APPELLATE
         elif "district" in court_lower:
             return CourtLevel.DISTRICT

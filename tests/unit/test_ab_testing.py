@@ -51,7 +51,9 @@ class TestABTestingSchemas:
             new_predicates=["test"],
         )
 
-        variant = RuleVariant(variant_id="v1", rule=rule, strategy="balanced", description="Test")
+        variant = RuleVariant(
+            variant_id="v1", rule=rule, strategy="balanced", description="Test"
+        )
 
         performance = VariantPerformance(
             variant=variant,
@@ -259,7 +261,9 @@ class TestABTestingFramework:
             new_predicates=["complex"],
         )
 
-        v1 = RuleVariant(variant_id="simple", rule=rule1, strategy="balanced", description="Simple")
+        v1 = RuleVariant(
+            variant_id="simple", rule=rule1, strategy="balanced", description="Simple"
+        )
         v2 = RuleVariant(
             variant_id="complex", rule=rule2, strategy="balanced", description="Complex"
         )

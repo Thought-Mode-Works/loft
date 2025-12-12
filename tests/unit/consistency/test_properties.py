@@ -125,7 +125,9 @@ class TestConsistencyProperties:
         # Get initial contradiction count
         initial_report = checker.check(state)
         initial_contradictions = sum(
-            1 for inc in initial_report.inconsistencies if inc.type.value == "contradiction"
+            1
+            for inc in initial_report.inconsistencies
+            if inc.type.value == "contradiction"
         )
 
         # Remove a rule
@@ -134,7 +136,9 @@ class TestConsistencyProperties:
         # Check new consistency
         final_report = checker.check(state)
         final_contradictions = sum(
-            1 for inc in final_report.inconsistencies if inc.type.value == "contradiction"
+            1
+            for inc in final_report.inconsistencies
+            if inc.type.value == "contradiction"
         )
 
         # Contradictions should not increase
@@ -161,8 +165,12 @@ class TestConsistencyProperties:
         ]:
             report = checker.check(state)
 
-            actual_errors = sum(1 for i in report.inconsistencies if i.severity == "error")
-            actual_warnings = sum(1 for i in report.inconsistencies if i.severity == "warning")
+            actual_errors = sum(
+                1 for i in report.inconsistencies if i.severity == "error"
+            )
+            actual_warnings = sum(
+                1 for i in report.inconsistencies if i.severity == "warning"
+            )
             actual_info = sum(1 for i in report.inconsistencies if i.severity == "info")
 
             assert report.errors == actual_errors
@@ -279,8 +287,12 @@ class TestConsistencyProperties:
             report = checker.check(state)
 
             # Verify counts match
-            actual_errors = sum(1 for i in report.inconsistencies if i.severity == "error")
-            actual_warnings = sum(1 for i in report.inconsistencies if i.severity == "warning")
+            actual_errors = sum(
+                1 for i in report.inconsistencies if i.severity == "error"
+            )
+            actual_warnings = sum(
+                1 for i in report.inconsistencies if i.severity == "warning"
+            )
 
             assert report.errors == actual_errors
             assert report.warnings == actual_warnings
@@ -516,7 +528,9 @@ class TestPropertyTestsIntegration:
             assert report1.passed == report2.passed, f"Determinism failed for {name}"
 
             # Test counts match
-            actual_errors = sum(1 for i in report1.inconsistencies if i.severity == "error")
+            actual_errors = sum(
+                1 for i in report1.inconsistencies if i.severity == "error"
+            )
             assert report1.errors == actual_errors, f"Count mismatch for {name}"
 
             # Test valid severities

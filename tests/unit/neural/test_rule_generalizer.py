@@ -93,16 +93,22 @@ class TestRuleGeneralizerBasics:
         """Variables should not be generalized."""
         generalizer = RuleGeneralizer(known_entities={"alice"})
 
-        result = generalizer.generalize("enforceable(X) :- claimant(X, Y), years(X, N).")
+        result = generalizer.generalize(
+            "enforceable(X) :- claimant(X, Y), years(X, N)."
+        )
 
-        assert result.generalized_rule == "enforceable(X) :- claimant(X, Y), years(X, N)."
+        assert (
+            result.generalized_rule == "enforceable(X) :- claimant(X, Y), years(X, N)."
+        )
         assert not result.was_modified
 
     def test_preserve_anonymous_variable(self):
         """Anonymous variables should not be changed."""
         generalizer = RuleGeneralizer()
 
-        result = generalizer.generalize("enforceable(X) :- claimant(X, _), years(X, N).")
+        result = generalizer.generalize(
+            "enforceable(X) :- claimant(X, _), years(X, N)."
+        )
 
         assert "claimant(X, _)" in result.generalized_rule
         assert not result.was_modified
@@ -127,7 +133,9 @@ class TestPreserveConstants:
         """Property type constants should be preserved."""
         generalizer = RuleGeneralizer(known_entities={"alice"})
 
-        result = generalizer.generalize("applies(X) :- property_type(X, land), category(X, goods).")
+        result = generalizer.generalize(
+            "applies(X) :- property_type(X, land), category(X, goods)."
+        )
 
         assert "property_type(X, land)" in result.generalized_rule
         assert "category(X, goods)" in result.generalized_rule
@@ -137,7 +145,9 @@ class TestPreserveConstants:
         """Numeric thresholds should be preserved."""
         generalizer = RuleGeneralizer(known_entities={"alice"})
 
-        result = generalizer.generalize("enforceable(X) :- years(X, N), N >= 20, amount(X, 500).")
+        result = generalizer.generalize(
+            "enforceable(X) :- years(X, N), N >= 20, amount(X, 500)."
+        )
 
         # Numbers in comparison and as arguments should be preserved
         assert "20" in result.generalized_rule
@@ -161,7 +171,9 @@ class TestPreserveConstants:
             additional_preserve={"special_value", "custom_const"},
         )
 
-        result = generalizer.generalize("rule(X) :- type(X, special_value), mode(X, custom_const).")
+        result = generalizer.generalize(
+            "rule(X) :- type(X, special_value), mode(X, custom_const)."
+        )
 
         assert "special_value" in result.generalized_rule
         assert "custom_const" in result.generalized_rule
