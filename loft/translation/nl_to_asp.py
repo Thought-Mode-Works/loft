@@ -96,7 +96,7 @@ def nl_to_structured(
         is_rule_schema = False
         try:
             # Check if schema is LegalRule or List[LegalRule]
-            if schema == LegalRule or (hasattr(schema, "__origin__") and schema.__origin__ == list and schema.__args__[0] == LegalRule):
+            if schema == LegalRule or (hasattr(schema, "__origin__") and schema.__origin__ is list and schema.__args__[0] == LegalRule):
                 is_rule_schema = True
         except (AttributeError, IndexError):
             pass

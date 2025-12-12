@@ -1338,7 +1338,7 @@ def _find_best_rule_match(asp_code: str) -> Optional[str]:
     if not predicates:
         return None
 
-    best_score = 0
+    best_score = 0.0
     best_template = None
 
     for rule_pattern, statement in RULE_STATEMENT_TEMPLATES.items():
