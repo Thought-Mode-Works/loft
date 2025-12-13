@@ -8,7 +8,7 @@ Components:
 - equivariance: O(d)-equivariance for content-neutrality
 - symmetry: Party symmetry invariance
 - temporal: Temporal consistency
-- measure_theory: Measure-theoretic representation (future)
+- measure_theory: Measure-theoretic representation
 - ring_structure: Ring algebraic structure for rule composition (future)
 - constitutional: Constitutional layer verification (future)
 """
@@ -37,12 +37,23 @@ from loft.constraints.temporal import (
     TemporalConsistencyReport,
     TemporalConsistencyTester,
 )
+from loft.constraints.measure_theory import (
+    MeasurableOutcome,
+    CaseSpace,
+    CaseDimension,
+    MonomialPotential,
+    CaseDistribution,
+    MeasurableSet,
+    MeasurableLegalRule,
+    RuleConfidenceCalculator,
+)
 
 __all__ = [
     # Enums
     "TransformationType",
     "SymmetryType",
-    "TemporalTransformType",  # Added temporal enum
+    "TemporalTransformType",
+    "MeasurableOutcome",
     # Base classes
     "EquivarianceConstraint",
     # Constraint implementations
@@ -62,4 +73,12 @@ __all__ = [
     "TemporalViolation",
     "TemporalConsistencyReport",
     "TemporalConsistencyTester",
+    # Measure Theory
+    "CaseSpace",
+    "CaseDimension",
+    "MonomialPotential",
+    "CaseDistribution",
+    "MeasurableSet",
+    "MeasurableLegalRule",
+    "RuleConfidenceCalculator",
 ]
