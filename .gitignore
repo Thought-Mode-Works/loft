@@ -1,1 +1,48 @@
+# Environments
+.env
+.flaskenv
+
+# Byte-code files
+*.pyc
+__pycache__/
+
+# IDE-specific files
+.idea/
+.vscode/
+
+# OS-specific files
+.DS_Store
+
+# Dependencies
+venv/
+.venv/
+env/
+
+# Test/build artifacts
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+test_output.log
+test_output.txt
+coverage.json
+dashboard.html
+
+# Logs and reports
+*.log
+reports/
+
+# Data files (often large or sensitive, not always version controlled)
+data/
+my-session.json
+
+# Tooling
+.loft/
+loft.autonomous.cli/
+loft.egg-info/
+
+# Specific generated files
 asp_rules/

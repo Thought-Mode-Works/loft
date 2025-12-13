@@ -69,12 +69,20 @@ class ASPRule:
     confidence: float  # Confidence score (0.0-1.0)
     metadata: RuleMetadata  # Provenance and validation info
 
+    # Added for Issue #235: Party Symmetry Invariance Testing
+    name: str = field(init=False)  # Name property for easier identification
+    parties_in_rule: List[str] = field(
+        default_factory=list, init=False
+    )  # Parties directly referenced in the rule
+
     # Fields for stratification validation (auto-populated from asp_text)
     predicates_used: List[str] = field(default_factory=list)
     new_predicates: List[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         """Validate rule after initialization."""
+        self.name = self.rule_id  # Default name to rule_id
+
         if not 0.0 <= self.confidence <= 1.0:
             raise ValueError(
                 f"Confidence must be between 0.0 and 1.0, got {self.confidence}"
@@ -91,6 +99,29 @@ class ASPRule:
         # Extract predicates from asp_text if not provided
         if not self.predicates_used or not self.new_predicates:
             self._extract_predicates()
+
+        # Extract parties from rule content
+        self.parties_in_rule = self._extract_parties_from_rule_text(self.asp_text)
+
+    def add_annotation(self, annotation: str) -> None:
+        """Add an annotation to the rule's metadata tags."""
+        if annotation not in self.metadata.tags:
+            self.metadata.tags.append(annotation)
+
+    def evaluate(self, case: Dict[str, Any]) -> Any:
+        """
+        Evaluate the rule against a given case (placeholder for actual ASP evaluation).
+        This method would typically interface with an ASP solver.
+        For symmetry testing, it needs to return a consistent outcome.
+        """
+        # This is a placeholder. A real implementation would involve:
+        # 1. Combining case facts with the rule's asp_text.
+        # 2. Running an ASP solver (e.g., Clingo) on the combined program.
+        # 3. Parsing the answer set to determine the outcome.
+        # For the purpose of symmetry testing, we need a mockable/predictable outcome.
+        # For now, we'll return a deterministic value based on the case, or True by default.
+        # A more complex mock in tests would provide specific side_effects.
+        return True  # Default to True for now, assume basic rule is 'satisfied'
 
     @staticmethod
     def get_min_confidence_for_level(level: StratificationLevel) -> float:
@@ -205,22 +236,21 @@ class ASPRule:
 
         return list(set(predicates))  # Return unique predicates
 
-    def extract_predicates(self) -> list[str]:
+    def _extract_parties_from_rule_text(self, text: str) -> List[str]:
         """
-        Extract predicate names from the rule.
+        Extract potential party variables (uppercase letters) from ASP text.
+        This is a heuristic for symmetry testing.
+
+        Args:
+            text: ASP rule text.
 
         Returns:
-            List of predicate names found in the rule
+            List of unique uppercase single-letter variables found.
         """
-        import re
-
-        # Simple predicate extraction - matches predicate_name( or predicate_name.
-        pattern = r"(\w+)(?:\(|\.)"
-        matches = re.findall(pattern, self.asp_text)
-
-        # Filter out keywords
-        keywords = {"not", "if", "then", "else"}
-        return [p for p in matches if p not in keywords]
+        # A simple heuristic: assume single uppercase letters are party variables
+        # This can be refined later if a more robust party identification is needed.
+        parties = set(re.findall(r"\b[A-Z]\b", text))
+        return sorted(list(parties))
 
 
 def create_rule_id() -> str:
