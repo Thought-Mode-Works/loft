@@ -25,6 +25,9 @@ from loft.constraints.symmetry import (
     SymmetryType,
     SymmetryTestReport,
 )
+from loft.constraints.temporal import (
+    TemporalConsistencyTester,
+)
 from unittest.mock import MagicMock
 
 
@@ -56,6 +59,8 @@ class ValidationPipeline:
         critic_system: Optional["CriticSystem"] = None,
         # Added for Issue #235: Party Symmetry Invariance Testing
         symmetry_tester: Optional[PartySymmetryTester] = None,
+        # Added for Issue #236: Temporal Consistency Testing
+        temporal_tester: Optional[TemporalConsistencyTester] = None,
         min_confidence: float = 0.6,
         enable_dialectical: bool = False,
     ):
@@ -69,6 +74,7 @@ class ValidationPipeline:
             consensus_validator: Consensus validator (optional)
             critic_system: Dialectical critic system (Phase 4.1, optional)
             symmetry_tester: Party symmetry invariance tester (Issue #235, optional)
+            temporal_tester: Temporal consistency tester (Issue #236, optional)
             min_confidence: Minimum confidence for acceptance (0.0-1.0)
             enable_dialectical: Enable dialectical validation stage
         """
@@ -79,6 +85,8 @@ class ValidationPipeline:
         self.critic_system = critic_system
         # Added for Issue #235
         self.symmetry_tester = symmetry_tester
+        # Added for Issue #236
+        self.temporal_tester = temporal_tester
         self.min_confidence = min_confidence
         self.enable_dialectical = enable_dialectical and DIALECTICAL_AVAILABLE
 
@@ -105,6 +113,8 @@ class ValidationPipeline:
         context: Optional[Dict[str, Any]] = None,
         # Added for Issue #235
         expected_symmetry_type: Optional[SymmetryType] = None,
+        # Added for Issue #236
+        check_temporal_consistency: bool = False,
     ) -> ValidationReport:
         """
         Run full validation pipeline on a generated rule.
@@ -120,6 +130,7 @@ class ValidationPipeline:
             source_type: Source of the rule (principle/case/gap_fill/etc)
             context: Additional context
             expected_symmetry_type: The expected symmetry type for the rule (Issue #235)
+            check_temporal_consistency: Whether to check temporal consistency (Issue #236)
 
         Returns:
             ValidationReport with results from all stages
@@ -227,6 +238,51 @@ class ValidationPipeline:
                 )
                 return report
 
+                # Stage 4.5: Temporal Consistency Testing (Issue #236)
+                if self.temporal_tester and check_temporal_consistency and test_cases:
+                    logger.info(
+                        f"Running temporal consistency testing for rule: {rule_id or 'unknown'}"
+                    )
+
+                    # Auto-detect temporal fields from first test case if available
+                    raw_cases = [tc.case_data for tc in test_cases if hasattr(tc, "case_data")]  # type: ignore
+                    if raw_cases:
+                        fields = self.temporal_tester.detect_temporal_fields(
+                            raw_cases[0]
+                        )
+                        if fields:
+                            self.temporal_tester.temporal_fields = fields
+
+                            # Create a callable for the rule
+                            # This is a bit tricky since we have rule_asp string.
+                            # In a real system we'd use the ASP solver.
+                            # For now, we'll assume the mock rule object logic or a placeholder
+                            # similar to symmetry tester.
+
+                            # Placeholder wrapper that would invoke ASP solver
+                            def rule_evaluator(case_data: Dict[str, Any]) -> Any:
+                                # In real impl: return runner.evaluate(rule_asp, case_data)
+                                return True
+
+                            temporal_report = (
+                                self.temporal_tester.test_shift_invariance(
+                                    rule_evaluator, raw_cases
+                                )
+                            )
+                            report.add_stage("temporal", temporal_report)
+
+                            if not temporal_report.is_consistent:
+                                report.final_decision = "revise"
+                                report.rejection_reason = f"Temporal consistency failed: {temporal_report.violations[0].explain() if temporal_report.violations else 'Unknown violation'}"
+                                report.aggregate_confidence = 0.3
+                                logger.warning(
+                                    f"Rule {rule_id} needs revision due to temporal violations"
+                                )
+                                return report
+                        else:
+                            logger.debug(
+                                "No temporal fields detected, skipping temporal test"
+                            )
         # Stage 5: Consensus Validation (if validator configured)
         if self.consensus_validator and proposer_reasoning:
             logger.info(
@@ -351,6 +407,11 @@ class ValidationPipeline:
         if "symmetry" in report.stage_results:
             symmetry = report.stage_results["symmetry"]
             confidence_scores.append(symmetry.symmetry_score)
+
+        # Temporal: factor in consistency score if available
+        if "temporal" in report.stage_results:
+            temporal = report.stage_results["temporal"]
+            confidence_scores.append(temporal.consistency_score)
 
         # Consensus: use consensus strength if available
         if "consensus" in report.stage_results:

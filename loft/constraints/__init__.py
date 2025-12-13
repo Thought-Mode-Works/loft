@@ -6,8 +6,8 @@ principles are preserved through the neuro-symbolic system.
 
 Components:
 - equivariance: O(d)-equivariance for content-neutrality
-- symmetry: Party symmetry invariance (future)
-- temporal: Temporal consistency (future)
+- symmetry: Party symmetry invariance
+- temporal: Temporal consistency
 - measure_theory: Measure-theoretic representation (future)
 - ring_structure: Ring algebraic structure for rule composition (future)
 - constitutional: Constitutional layer verification (future)
@@ -30,23 +30,36 @@ from loft.constraints.symmetry import (
     PartySymmetryTester,
     SymmetryTestReport,
 )
+from loft.constraints.temporal import (
+    TemporalTransformType,
+    TemporalField,
+    TemporalViolation,
+    TemporalConsistencyReport,
+    TemporalConsistencyTester,
+)
 
 __all__ = [
     # Enums
     "TransformationType",
     "SymmetryType",
+    "TemporalTransformType",  # Added temporal enum
     # Base classes
     "EquivarianceConstraint",
     # Constraint implementations
     "PartyPermutationEquivariance",
     "AmountScalingEquivariance",
     "ContentSubstitutionEquivariance",
-    "PartySymmetryConstraint",  # Added symmetry constraint
+    "PartySymmetryConstraint",
     # Verification
     "EquivarianceVerifier",
     "EquivarianceReport",
     "EquivarianceViolation",
-    "SymmetryViolation",  # Added symmetry violation
-    "PartySymmetryTester",  # Added symmetry tester
-    "SymmetryTestReport",  # Added symmetry report
+    "SymmetryViolation",
+    "PartySymmetryTester",
+    "SymmetryTestReport",
+    # Temporal
+    "TemporalField",
+    "TemporalViolation",
+    "TemporalConsistencyReport",
+    "TemporalConsistencyTester",
 ]
