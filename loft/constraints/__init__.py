@@ -9,7 +9,7 @@ Components:
 - symmetry: Party symmetry invariance
 - temporal: Temporal consistency
 - measure_theory: Measure-theoretic representation
-- ring_structure: Ring algebraic structure for rule composition (future)
+- ring_structure: Ring algebraic structure for rule composition
 - constitutional: Constitutional layer verification (future)
 """
 
@@ -47,6 +47,18 @@ from loft.constraints.measure_theory import (
     MeasurableLegalRule,
     RuleConfidenceCalculator,
 )
+from loft.constraints.ring_structure import (
+    RingElement,
+    BooleanRule,
+    ConfidenceRule,
+    RuleComposition,
+    HomomorphismViolation,
+    HomomorphismVerificationReport,
+    RingHomomorphism,
+    RingVerificationReport,
+    RingPropertyVerifier,
+    ComposedRule,
+)
 
 __all__ = [
     # Enums
@@ -81,4 +93,15 @@ __all__ = [
     "MeasurableSet",
     "MeasurableLegalRule",
     "RuleConfidenceCalculator",
+    # Ring Structure
+    "RingElement",
+    "BooleanRule",
+    "ConfidenceRule",
+    "RuleComposition",
+    "HomomorphismViolation",
+    "HomomorphismVerificationReport",
+    "RingHomomorphism",
+    "RingVerificationReport",
+    "RingPropertyVerifier",
+    "ComposedRule",
 ]
