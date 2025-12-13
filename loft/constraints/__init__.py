@@ -10,7 +10,7 @@ Components:
 - temporal: Temporal consistency
 - measure_theory: Measure-theoretic representation
 - ring_structure: Ring algebraic structure for rule composition
-- constitutional: Constitutional layer verification (future)
+- constitutional: Constitutional layer formal verification
 """
 
 from loft.constraints.equivariance import (
@@ -59,6 +59,23 @@ from loft.constraints.ring_structure import (
     RingPropertyVerifier,
     ComposedRule,
 )
+from loft.constraints.constitutional import (
+    PropertyType,
+    VerificationResult,
+    Fact,
+    Rule,
+    SystemState,
+    ConstitutionalProperty,
+    PropertyVerificationResult,
+    ConstitutionalVerificationReport,
+    TransitionViolation,
+    TransitionVerificationReport,
+    ConstitutionalVerifier,
+    ConstitutionalGuard,
+    create_standard_properties,
+    create_verifier,
+    create_guard,
+)
 
 __all__ = [
     # Enums
@@ -104,4 +121,20 @@ __all__ = [
     "RingVerificationReport",
     "RingPropertyVerifier",
     "ComposedRule",
+    # Constitutional
+    "PropertyType",
+    "VerificationResult",
+    "Fact",
+    "Rule",
+    "SystemState",
+    "ConstitutionalProperty",
+    "PropertyVerificationResult",
+    "ConstitutionalVerificationReport",
+    "TransitionViolation",
+    "TransitionVerificationReport",
+    "ConstitutionalVerifier",
+    "ConstitutionalGuard",
+    "create_standard_properties",
+    "create_verifier",
+    "create_guard",
 ]
