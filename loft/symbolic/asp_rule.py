@@ -188,6 +188,15 @@ class ASPRule:
         """Check if this rule is a choice rule (contains {})."""
         return "{" in self.asp_text and "}" in self.asp_text
 
+    def extract_predicates(self) -> List[str]:
+        """
+        Get all predicates used in this rule.
+
+        Returns:
+            List of unique predicate names from both head and body
+        """
+        return list(set(self.new_predicates + self.predicates_used))
+
     def _extract_predicates(self) -> None:
         """
         Extract predicates from ASP text and populate predicate fields.
