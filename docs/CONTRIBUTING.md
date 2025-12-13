@@ -191,7 +191,9 @@ loft/                        # Repository root
 ├── scripts/                 # Utility scripts
 ├── docs/                    # Documentation
 │   ├── CONTRIBUTING.md      # This guide
-│   └── TESTING.md           # Testing documentation
+│   ├── TESTING.md           # Testing documentation
+│   ├── constraints/         # Constraint documentation
+│   │   └── symmetry_constraints.md # Party Symmetry Invariance Testing
 │
 ├── examples/                # Example usage scripts
 ├── ROADMAP.md              # Phased development plan
