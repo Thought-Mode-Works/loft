@@ -121,7 +121,8 @@ def test_order_preservation_passes() -> None:
         d2 = datetime.fromisoformat(case["filing2"])
         return {"winner": "party1" if d1 < d2 else "party2"}
 
-    test_cases = [{"filing1": "2020-01-01", "filing2": "2020-01-02"}]
+    # Use dates 30 days apart so 0.5 scale (15 days) still preserves order
+    test_cases = [{"filing1": "2020-01-01", "filing2": "2020-01-31"}]
 
     tester = TemporalConsistencyTester(
         [
@@ -130,8 +131,9 @@ def test_order_preservation_passes() -> None:
         ]
     )
 
-    # Scale x2: 2020-01-01 -> 2020-01-01, 2020-01-02 -> 2020-01-03
-    # Order preserved.
+    # Scale 0.5: 2020-01-01 -> 2020-01-01, 2020-01-31 -> 2020-01-16
+    # Scale 2.0: 2020-01-01 -> 2020-01-01, 2020-01-31 -> 2020-03-01
+    # Order preserved in all cases.
     report = tester.test_order_preservation(priority_rule, test_cases)
     assert report.order_invariant
 
