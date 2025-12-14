@@ -47,10 +47,22 @@ from .harness import (
     create_simple_case_processor,
 )
 
+from .full_pipeline import (
+    FullPipelineProcessor,
+    KnowledgeGap,
+    ProcessingMetrics,
+    create_full_pipeline_processor,
+)
+
 __all__ = [
     # Core harness
     "BatchLearningHarness",
     "create_simple_case_processor",
+    # Full pipeline (Issue #253)
+    "FullPipelineProcessor",
+    "KnowledgeGap",
+    "ProcessingMetrics",
+    "create_full_pipeline_processor",
     # Schemas
     "BatchCheckpoint",
     "BatchConfig",
