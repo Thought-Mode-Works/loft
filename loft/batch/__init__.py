@@ -54,6 +54,30 @@ from .full_pipeline import (
     create_full_pipeline_processor,
 )
 
+from .meta_aware_processor import (
+    Adaptation,
+    FailurePattern,
+    MetaAwareBatchConfig,
+    MetaAwareBatchProcessor,
+    MetaProcessingResult,
+    create_meta_aware_processor,
+)
+
+from .meta_state import (
+    MetaState,
+    MetaStateManager,
+    create_meta_state_manager,
+)
+
+from .improvement_cycle import (
+    BatchImprovementCycle,
+    CycleGoal,
+    CycleMetrics,
+    GoalResults,
+    ImprovementCycleResult,
+    create_improvement_cycle,
+)
+
 __all__ = [
     # Core harness
     "BatchLearningHarness",
@@ -63,6 +87,24 @@ __all__ = [
     "KnowledgeGap",
     "ProcessingMetrics",
     "create_full_pipeline_processor",
+    # Meta-aware processor (Issue #255)
+    "Adaptation",
+    "FailurePattern",
+    "MetaAwareBatchConfig",
+    "MetaAwareBatchProcessor",
+    "MetaProcessingResult",
+    "create_meta_aware_processor",
+    # Meta-state persistence (Issue #255)
+    "MetaState",
+    "MetaStateManager",
+    "create_meta_state_manager",
+    # Improvement cycle (Issue #255)
+    "BatchImprovementCycle",
+    "CycleGoal",
+    "CycleMetrics",
+    "GoalResults",
+    "ImprovementCycleResult",
+    "create_improvement_cycle",
     # Schemas
     "BatchCheckpoint",
     "BatchConfig",
