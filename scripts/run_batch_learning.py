@@ -6,8 +6,21 @@ Processes test cases through the learning pipeline with checkpointing,
 progress tracking, and metrics collection.
 
 Usage:
-    # Run batch on a single dataset
+    # Run batch on a single dataset (demo mode)
     python scripts/run_batch_learning.py --dataset datasets/contracts/
+
+    # Run with full LLM pipeline (Issue #253)
+    python scripts/run_batch_learning.py \
+        --dataset datasets/contracts/ \
+        --enable-llm \
+        --model claude-3-5-haiku-20241022
+
+    # Run with custom model and persistence directory
+    python scripts/run_batch_learning.py \
+        --dataset datasets/contracts/ \
+        --enable-llm \
+        --model claude-3-5-sonnet-20241022 \
+        --rules-dir ./my_rules
 
     # Run with multiple datasets
     python scripts/run_batch_learning.py \
@@ -194,12 +207,30 @@ def run_batch(args) -> None:
         harness.set_callbacks(on_progress=progress_callback)
 
     # Create processor
-    if args.demo:
+    if args.enable_llm:
+        print(f"Using full pipeline processor with model: {args.model}")
+        try:
+            from loft.batch.full_pipeline import create_full_pipeline_processor
+
+            full_processor = create_full_pipeline_processor(
+                model=args.model,
+                persistence_dir=args.rules_dir,
+                enable_persistence=not args.no_persistence,
+                validation_threshold=args.validation_threshold,
+            )
+            processor = full_processor.process_case
+            print(
+                f"Persistence: {args.rules_dir if not args.no_persistence else 'disabled'}"
+            )
+        except Exception as e:
+            print(f"Error creating full pipeline processor: {e}")
+            print("Falling back to demo processor")
+            processor = create_demo_processor()
+    elif args.demo:
         print("Using demo processor (no LLM calls)")
         processor = create_demo_processor()
     else:
-        # TODO: Integrate with actual LLM pipeline
-        print("Note: Using demo processor (full LLM integration pending)")
+        print("Note: Using demo processor (use --enable-llm for full pipeline)")
         processor = create_demo_processor()
 
     # Run or resume
@@ -236,7 +267,11 @@ def run_batch(args) -> None:
     print(f"  Accepted: {result.total_rules_accepted}")
     print()
     print("Accuracy:")
-    print(f"  Final: {result.metrics.accuracy_after * 100:.1f}%" if result.metrics else "  N/A")
+    print(
+        f"  Final: {result.metrics.accuracy_after * 100:.1f}%"
+        if result.metrics
+        else "  N/A"
+    )
     print()
     print(f"Results saved to: {args.output_dir}/{result.batch_id}/")
 
@@ -276,7 +311,9 @@ def show_batch(args) -> None:
     print(f"Batch: {result.batch_id}")
     print(f"Status: {result.status.value}")
     print(f"Started: {result.started_at.isoformat()}")
-    print(f"Completed: {result.completed_at.isoformat() if result.completed_at else 'N/A'}")
+    print(
+        f"Completed: {result.completed_at.isoformat() if result.completed_at else 'N/A'}"
+    )
     print()
     print("Configuration:")
     for key, value in result.config.items():
@@ -386,6 +423,26 @@ def main():
         action="store_true",
         help="Use demo processor (no LLM calls)",
     )
+    parser.add_argument(
+        "--enable-llm",
+        action="store_true",
+        help="Use full pipeline processor with LLM integration (Issue #253)",
+    )
+    parser.add_argument(
+        "--model",
+        default="claude-3-5-haiku-20241022",
+        help="LLM model to use with --enable-llm (default: claude-3-5-haiku-20241022)",
+    )
+    parser.add_argument(
+        "--rules-dir",
+        default="./asp_rules",
+        help="Directory for ASP rule persistence (default: ./asp_rules)",
+    )
+    parser.add_argument(
+        "--no-persistence",
+        action="store_true",
+        help="Disable rule persistence to disk",
+    )
 
     # List/show options
     parser.add_argument(
@@ -415,7 +472,9 @@ def main():
     if args.datasets:
         all_datasets.extend(args.datasets)
     if hasattr(args, "dataset") and args.dataset:
-        all_datasets.extend(args.dataset if isinstance(args.dataset, list) else [args.dataset])
+        all_datasets.extend(
+            args.dataset if isinstance(args.dataset, list) else [args.dataset]
+        )
 
     # For resume, dataset is optional but recommended
     if not all_datasets and not args.resume:
