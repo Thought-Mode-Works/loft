@@ -17,9 +17,21 @@ from loft.persistence.asp_persistence import (
     CorruptedFileError,
 )
 
+from loft.persistence.metrics import (
+    BaselineReport,
+    PersistenceMetrics,
+    PersistenceMetricsCollector,
+    create_metrics_collector,
+)
+
 __all__ = [
     "ASPPersistenceManager",
     "SnapshotMetadata",
     "PersistenceError",
     "CorruptedFileError",
+    # Metrics (Issue #254)
+    "BaselineReport",
+    "PersistenceMetrics",
+    "PersistenceMetricsCollector",
+    "create_metrics_collector",
 ]

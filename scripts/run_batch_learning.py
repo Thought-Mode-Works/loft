@@ -15,6 +15,12 @@ Usage:
         --enable-llm \
         --model claude-3-5-haiku-20241022
 
+    # Run with meta-reasoning integration (Issue #255)
+    python scripts/run_batch_learning.py \
+        --dataset datasets/contracts/ \
+        --enable-llm \
+        --enable-meta
+
     # Run with custom model and persistence directory
     python scripts/run_batch_learning.py \
         --dataset datasets/contracts/ \
@@ -218,7 +224,36 @@ def run_batch(args) -> None:
                 enable_persistence=not args.no_persistence,
                 validation_threshold=args.validation_threshold,
             )
-            processor = full_processor.process_case
+
+            # Wrap with meta-aware processor if enabled
+            if args.enable_meta:
+                print("Meta-reasoning integration: ENABLED")
+                try:
+                    from loft.batch.meta_aware_processor import (
+                        MetaAwareBatchConfig,
+                        create_meta_aware_processor,
+                    )
+
+                    meta_config = MetaAwareBatchConfig(
+                        enable_strategy_selection=True,
+                        enable_failure_analysis=True,
+                        enable_prompt_optimization=True,
+                        checkpoint_interval=args.checkpoint_interval,
+                        validation_threshold=args.validation_threshold,
+                    )
+                    meta_processor = create_meta_aware_processor(
+                        pipeline_processor=full_processor,
+                        config=meta_config,
+                    )
+                    processor = meta_processor.get_processor_function()
+                    print(f"Meta-state directory: {args.meta_state_dir}")
+                except Exception as e:
+                    print(f"Warning: Meta-reasoning setup failed: {e}")
+                    print("Falling back to standard pipeline")
+                    processor = full_processor.process_case
+            else:
+                processor = full_processor.process_case
+
             print(
                 f"Persistence: {args.rules_dir if not args.no_persistence else 'disabled'}"
             )
@@ -442,6 +477,16 @@ def main():
         "--no-persistence",
         action="store_true",
         help="Disable rule persistence to disk",
+    )
+    parser.add_argument(
+        "--enable-meta",
+        action="store_true",
+        help="Enable meta-reasoning integration (Issue #255)",
+    )
+    parser.add_argument(
+        "--meta-state-dir",
+        default="./data/meta_state",
+        help="Directory for meta-state persistence (default: ./data/meta_state)",
     )
 
     # List/show options
