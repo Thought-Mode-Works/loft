@@ -15,6 +15,7 @@ from loft.persistence.asp_persistence import (
     SnapshotMetadata,
     PersistenceError,
     CorruptedFileError,
+    LoadResult,  # Added LoadResult
 )
 
 from loft.persistence.metrics import (
@@ -29,6 +30,7 @@ __all__ = [
     "SnapshotMetadata",
     "PersistenceError",
     "CorruptedFileError",
+    "LoadResult",  # Added LoadResult
     # Metrics (Issue #254)
     "BaselineReport",
     "PersistenceMetrics",

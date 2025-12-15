@@ -100,8 +100,19 @@ class ASPRule:
         if not self.predicates_used or not self.new_predicates:
             self._extract_predicates()
 
+        # Validate that predicates were extracted (basic syntax check)
+        if not self.is_fact():  # Only check rules, facts can just be "p."
+            if not (self.new_predicates or self.predicates_used):
+                raise ValueError(
+                    f"Invalid ASP rule text: no predicates found in '{self.asp_text}'"
+                )
+
         # Extract parties from rule content
         self.parties_in_rule = self._extract_parties_from_rule_text(self.asp_text)
+
+        # Basic ASP syntax validation
+        if not self._is_valid_asp_syntax():
+            raise ValueError(f"Invalid ASP rule syntax: '{self.asp_text}'")
 
     def add_annotation(self, annotation: str) -> None:
         """Add an annotation to the rule's metadata tags."""
@@ -188,6 +199,49 @@ class ASPRule:
         """Check if this rule is a choice rule (contains {})."""
         return "{" in self.asp_text and "}" in self.asp_text
 
+    def _is_valid_asp_syntax(self) -> bool:
+        """Perform basic validation of ASP syntax."""
+        text = self.asp_text.strip()
+        if not text:
+            return False
+
+        # Must end with a period
+        if not text.endswith("."):
+            return False
+
+        # If it's a constraint (no head), check its format
+        if self.is_constraint():
+            # A basic constraint is ':- body.'
+            # It must have a body (even if just a variable or complex term)
+            # The regex ensures there's something after ':- ' and it's not just whitespace
+            if not re.fullmatch(r":-\s*.+\.$", text):
+                return False
+        elif self.is_fact():
+            # Check for simple predicate format: 'name.' or 'name(args).'
+            # This regex allows basic predicates and facts, but prevents random strings
+            # e.g., "p." or "p(a,b)." but not "CORRUPTED DATA @#$%" or just "p"
+            if not re.fullmatch(r"^[a-z][a-z0-9_]*(\([a-zA-Z0-9_,\s]*\))?\.$", text):
+                return False
+        else:  # Regular rule with head and body
+            # For rules, there must be a head and a body (simplified check)
+            if ":-" not in text:
+                # This case shouldn't be reached if is_fact and is_constraint are robust,
+                # but as a fallback, it's an invalid rule if no ":-"
+                return False
+
+            parts = text.split(":-", 1)
+            head = parts[0].strip()
+            body = parts[1].strip() if len(parts) > 1 else ""
+
+            # Both head and body should not be empty for a non-constraint rule
+            if not head or not body:
+                return False
+            # Ensure predicates are found in either head or body for a meaningful rule
+            if not self.new_predicates and not self.predicates_used:
+                return False
+
+        return True
+
     def extract_predicates(self) -> List[str]:
         """
         Get all predicates used in this rule.
@@ -234,13 +288,18 @@ class ASPRule:
         Returns:
             List of unique predicate names
         """
-        # Match predicate_name( or predicate_name.
-        # Excludes operators like not, or keywords
-        pattern = r"\b([a-z][a-z0-9_]*)\s*\("
+        # Match predicate_name( or predicate_name (p(X), p(a)), or just predicate_name (p.)
+        # The (?:...) makes the group non-capturing for the optional part.
+        # It now matches words followed by an optional parenthesis group or followed by nothing.
+        pattern = r"\b([a-z][a-z0-9_]*)(?:\(.*\))?\b"
         matches = re.findall(pattern, text)
 
         # Filter out ASP keywords
-        keywords = {"not", "and", "or"}
+        keywords = {
+            "not",
+            "and",
+            "or",
+        }  # Removed 'then', 'else' as they are not ASP keywords
         predicates = [m for m in matches if m not in keywords]
 
         return list(set(predicates))  # Return unique predicates

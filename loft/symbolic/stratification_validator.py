@@ -9,7 +9,7 @@ Validates:
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Any # Import Any
 
 from loguru import logger
 
@@ -34,7 +34,7 @@ class StratificationReport:
 
     valid: bool
     violations: List[StratificationViolation]
-    stats: Dict[str, any]
+    stats: Dict[str, Any] # Changed from 'any' to 'Any'
     cycles_detected: List[List[str]] = field(default_factory=list)
 
 
@@ -67,7 +67,7 @@ class StratificationValidator:
         Returns:
             Comprehensive validation report
         """
-        violations = []
+        violations: List[StratificationViolation] = []
 
         logger.info("Running stratification integrity validation...")
 
@@ -220,9 +220,9 @@ class StratificationValidator:
 
         # Detect cycles using DFS
         cycles = []
-        visited = set()
-        rec_stack = set()
-        path = []
+        visited: Set[str] = set()
+        rec_stack: Set[str] = set()
+        path: List[str] = []
 
         def dfs(node: str) -> bool:
             """

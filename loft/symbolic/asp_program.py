@@ -6,7 +6,7 @@ with support for composition and stratification.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import json
 from .asp_rule import ASPRule, StratificationLevel
 
@@ -69,6 +69,13 @@ class ASPProgram:
     def get_rules_by_level(self, level: StratificationLevel) -> List[ASPRule]:
         """Get all rules at a specific stratification level."""
         return [r for r in self.rules if r.stratification_level == level]
+
+    def get_rule(self, rule_id: str) -> Optional[ASPRule]:
+        """Get a specific rule by its ID."""
+        for rule in self.rules:
+            if rule.rule_id == rule_id:
+                return rule
+        return None
 
     def count_rules_by_level(self) -> Dict[str, int]:
         """Count rules at each stratification level."""
@@ -141,6 +148,13 @@ class StratifiedASPCore:
         """Add a rule to the appropriate stratification level."""
         program = self.get_program(rule.stratification_level)
         program.add_rule(rule)
+
+    def get_rule(self, rule_id: str) -> Optional[ASPRule]:
+        """Get a specific rule by its ID across all layers."""
+        for rule in self.get_all_rules():
+            if rule.rule_id == rule_id:
+                return rule
+        return None
 
     def get_full_program(self) -> str:
         """
