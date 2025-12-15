@@ -21,9 +21,6 @@ from loguru import logger
 from loft.symbolic.stratification import (
     StratificationLevel,
 )  # Added StratificationLevel import
-from loft.persistence.asp_persistence import (
-    LoadResult,
-)  # Moved LoadResult import to top
 
 
 @dataclass
