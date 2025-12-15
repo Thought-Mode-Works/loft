@@ -71,7 +71,10 @@ class RuleGenerationExperiment:
                 "confidence": 0.89,
                 "reasoning": "UCC §2-201(2) merchant confirmation exception",
                 "source_type": "principle",
-                "predicates": ["merchant_confirmation_satisfies", "goods_sale_contract"],
+                "predicates": [
+                    "merchant_confirmation_satisfies",
+                    "goods_sale_contract",
+                ],
             },
             {
                 "asp_rule": "specially_manufactured_satisfies(C) :- goods_sale_contract(C), specially_manufactured_goods(C), substantial_beginning_made(C).",
@@ -115,7 +118,9 @@ class RuleGenerationExperiment:
 
             random.seed(i)
             confidence_variation = random.uniform(-0.05, 0.05)
-            confidence = max(0.65, min(0.95, template["confidence"] + confidence_variation))
+            confidence = max(
+                0.65, min(0.95, template["confidence"] + confidence_variation)
+            )
 
             rule = GeneratedRule(
                 asp_rule=template["asp_rule"],
@@ -143,7 +148,9 @@ class RuleGenerationExperiment:
 
         # Confidence distribution
         high_conf = sum(1 for r in self.generated_rules if r.confidence >= 0.85)
-        medium_conf = sum(1 for r in self.generated_rules if 0.75 <= r.confidence < 0.85)
+        medium_conf = sum(
+            1 for r in self.generated_rules if 0.75 <= r.confidence < 0.85
+        )
         low_conf = sum(1 for r in self.generated_rules if r.confidence < 0.75)
 
         # By source type
@@ -161,9 +168,11 @@ class RuleGenerationExperiment:
                 "low (<0.75)": low_conf,
             },
             "by_source_type": by_source,
-            "average_confidence": sum(r.confidence for r in self.generated_rules) / total
-            if total > 0
-            else 0,
+            "average_confidence": (
+                sum(r.confidence for r in self.generated_rules) / total
+                if total > 0
+                else 0
+            ),
             "timestamp": datetime.now().isoformat(),
         }
 
@@ -172,7 +181,9 @@ class RuleGenerationExperiment:
         print("Results:")
         print(f"  Total rules generated: {results['total_generated']}")
         print(f"  Syntactically valid: {results['syntactically_valid']}")
-        print(f"  Syntax validity rate: {results['syntax_validity_rate']:.1%} (target: >80%)")
+        print(
+            f"  Syntax validity rate: {results['syntax_validity_rate']:.1%} (target: >80%)"
+        )
         print()
 
         print("Confidence Distribution:")
@@ -221,7 +232,9 @@ def main():
     """Run the experiment."""
     import argparse
 
-    parser = argparse.ArgumentParser(description="Experiment 1: Generate 50 Candidate Rules")
+    parser = argparse.ArgumentParser(
+        description="Experiment 1: Generate 50 Candidate Rules"
+    )
     parser.add_argument(
         "--output",
         type=str,

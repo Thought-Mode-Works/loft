@@ -50,7 +50,9 @@ class EnhancedGapIdentifier:
     def __init__(self, system: StatuteOfFraudsSystem):
         self.system = system
 
-    def identify_gaps(self, test_cases: List[Any], max_gaps: int = 10) -> List[Dict[str, Any]]:
+    def identify_gaps(
+        self, test_cases: List[Any], max_gaps: int = 10
+    ) -> List[Dict[str, Any]]:
         """
         Identify knowledge gaps from failing test cases.
 
@@ -120,7 +122,9 @@ class EnhancedGapIdentifier:
         match = re.search(r"contract_fact\((\w+)\)", facts)
         return match.group(1) if match else "c1"
 
-    def _create_nl_gap_description(self, test_case: Any, query: str, expected: bool) -> str:
+    def _create_nl_gap_description(
+        self, test_case: Any, query: str, expected: bool
+    ) -> str:
         """Create natural language description of the gap."""
         parts = [
             f"The system incorrectly predicts that a contract is {'unenforceable' if expected else 'enforceable'}.",
@@ -128,7 +132,9 @@ class EnhancedGapIdentifier:
         ]
 
         if test_case.reasoning_chain:
-            parts.append(f"\nExpected reasoning: {'; '.join(test_case.reasoning_chain)}")
+            parts.append(
+                f"\nExpected reasoning: {'; '.join(test_case.reasoning_chain)}"
+            )
 
         if test_case.legal_citations:
             parts.append(f"\nRelevant law: {'; '.join(test_case.legal_citations)}")
@@ -315,8 +321,12 @@ class EnhancedExperimentRunner:
         ]
 
         logger.info(f"  Validated {len(validated)} rules in {val_time:.2f}s")
-        logger.info(f"    Accepted: {len(accepted)} ({len(accepted) / len(validated) * 100:.1f}%)")
-        logger.info(f"    Rejected: {len(rejected)} ({len(rejected) / len(validated) * 100:.1f}%)")
+        logger.info(
+            f"    Accepted: {len(accepted)} ({len(accepted) / len(validated) * 100:.1f}%)"
+        )
+        logger.info(
+            f"    Rejected: {len(rejected)} ({len(rejected) / len(validated) * 100:.1f}%)"
+        )
 
         # Step 5: Incorporate accepted rules (simplified)
         logger.info("\nStep 5: Incorporating accepted rules...")
@@ -517,7 +527,9 @@ class EnhancedExperimentRunner:
 
 def main():
     """Run the enhanced integration test."""
-    parser = argparse.ArgumentParser(description="Enhanced LLM Rule Integration Test - Phase 4.5")
+    parser = argparse.ArgumentParser(
+        description="Enhanced LLM Rule Integration Test - Phase 4.5"
+    )
     parser.add_argument(
         "--model",
         type=str,
@@ -564,7 +576,9 @@ def main():
     runner.print_summary(results)
 
     # Export results
-    output_path = Path(args.output.format(date=datetime.now().strftime("%Y%m%d_%H%M%S")))
+    output_path = Path(
+        args.output.format(date=datetime.now().strftime("%Y%m%d_%H%M%S"))
+    )
     runner.export_results(results, output_path)
 
 

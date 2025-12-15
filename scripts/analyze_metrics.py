@@ -64,7 +64,9 @@ def format_report_text(report: ScaleReport) -> str:
     lines.append(f"  Initial Accuracy: {report.initial_accuracy * 100:.1f}%")
     lines.append(f"  Final Accuracy: {report.final_accuracy * 100:.1f}%")
     change_symbol = "+" if report.accuracy_change >= 0 else ""
-    lines.append(f"  Accuracy Change: {change_symbol}{report.accuracy_change * 100:.1f}%")
+    lines.append(
+        f"  Accuracy Change: {change_symbol}{report.accuracy_change * 100:.1f}%"
+    )
     lines.append(f"  Consistency Score: {report.consistency_score:.2f}")
     lines.append("")
 
@@ -74,7 +76,9 @@ def format_report_text(report: ScaleReport) -> str:
     lines.append(f"  Overall Trend: {report.trends.trend_direction.upper()}")
     lines.append(f"  Accuracy Trend: {report.trends.accuracy_trend}")
     lines.append(f"  Latency Trend: {report.trends.latency_trend}")
-    lines.append(f"  Rules Growth Rate: {report.trends.rules_growth_rate:.2f} rules/min")
+    lines.append(
+        f"  Rules Growth Rate: {report.trends.rules_growth_rate:.2f} rules/min"
+    )
     lines.append(
         f"  Accuracy vs Rules Correlation: {report.trends.accuracy_vs_rules_correlation:.3f}"
     )

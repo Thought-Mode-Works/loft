@@ -9,7 +9,7 @@ Validates:
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Any # Import Any
+from typing import Dict, List, Optional, Set, Any  # Import Any
 
 from loguru import logger
 
@@ -34,7 +34,7 @@ class StratificationReport:
 
     valid: bool
     violations: List[StratificationViolation]
-    stats: Dict[str, Any] # Changed from 'any' to 'Any'
+    stats: Dict[str, Any]  # Changed from 'any' to 'Any'
     cycles_detected: List[List[str]] = field(default_factory=list)
 
 

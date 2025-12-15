@@ -2,9 +2,11 @@ import pytest
 import shutil
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
-from typing import Dict, List, Any, Optional # Add Optional
 
-from loft.persistence.asp_persistence import ASPPersistenceManager, CorruptedFileError, LoadResult # Import LoadResult
+from loft.persistence.asp_persistence import (
+    ASPPersistenceManager,
+    CorruptedFileError,
+)  # Import LoadResult
 from loft.symbolic.stratification import StratificationLevel
 from loft.symbolic.asp_program import StratifiedASPCore
 from loft.symbolic.asp_rule import ASPRule, RuleMetadata
@@ -115,7 +117,7 @@ class TestASPPersistenceValidation:
         return Path(tmpdir_factory.mktemp("asp_persistence_test"))
 
     @pytest.fixture(autouse=True)
-    def setup_method(self, tmp_path: Path) -> None: # Added type hint
+    def setup_method(self, tmp_path: Path) -> None:  # Added type hint
         """Cleanup tmp_path before each test to ensure isolation."""
         # Ensure tmp_path is empty before test runs
         if tmp_path.exists():
@@ -124,7 +126,9 @@ class TestASPPersistenceValidation:
 
     def test_save_load_cycle_integrity(self, tmp_path: Path) -> None:
         """Verify rules survive save/load cycle with no data loss."""
-        manager = ASPPersistenceManager(str(tmp_path), enable_git=False) # Convert Path to str
+        manager = ASPPersistenceManager(
+            str(tmp_path), enable_git=False
+        )  # Convert Path to str
         core = create_test_asp_core_with_rules(50)
         core.add_rule(
             ASPRule(
@@ -188,7 +192,9 @@ class TestASPPersistenceValidation:
 
     def test_snapshot_restore_cycle(self, tmp_path: Path) -> None:
         """Test snapshot creation and restoration."""
-        manager = ASPPersistenceManager(str(tmp_path), enable_git=False) # Convert Path to str
+        manager = ASPPersistenceManager(
+            str(tmp_path), enable_git=False
+        )  # Convert Path to str
         core = create_test_asp_core_with_rules(20)
 
         # Save initial state
@@ -196,7 +202,7 @@ class TestASPPersistenceValidation:
             level: core.get_program(level).rules for level in StratificationLevel
         }
         manager.save_all_rules(rules_by_layer_initial, overwrite=True)
-        _snapshot_path = manager.create_snapshot(1, "cycle_001") # Marked unused with _
+        _snapshot_path = manager.create_snapshot(1, "cycle_001")  # Marked unused with _
 
         # Modify rules
         add_rules_to_core(core, 10, start_idx=20)
@@ -232,7 +238,9 @@ class TestASPPersistenceValidation:
 
     def test_linked_asp_metadata_roundtrip(self, tmp_path: Path) -> None:
         """Verify LinkedASP metadata survives roundtrip."""
-        manager = ASPPersistenceManager(str(tmp_path), enable_git=False) # Convert Path to str
+        manager = ASPPersistenceManager(
+            str(tmp_path), enable_git=False
+        )  # Convert Path to str
 
         rule = ASPRule(
             rule_id="test_001",
@@ -283,7 +291,9 @@ class TestASPPersistenceValidation:
 
     def test_concurrent_save_operations(self, tmp_path: Path) -> None:
         """Test thread-safe concurrent saves."""
-        manager = ASPPersistenceManager(str(tmp_path), enable_git=False) # Convert Path to str
+        manager = ASPPersistenceManager(
+            str(tmp_path), enable_git=False
+        )  # Convert Path to str
 
         # Create multiple cores with some initial rules
         cores = []
@@ -305,7 +315,9 @@ class TestASPPersistenceValidation:
             cores.append(core)
 
         # Function to save a core
-        def save_core_task(core_to_save: StratifiedASPCore, manager: ASPPersistenceManager) -> bool: # Added type hints
+        def save_core_task(
+            core_to_save: StratifiedASPCore, manager: ASPPersistenceManager
+        ) -> bool:  # Added type hints
             rules_by_layer = {
                 level: core_to_save.get_program(level).rules
                 for level in StratificationLevel
@@ -339,7 +351,9 @@ class TestASPPersistenceValidation:
 
     def test_corruption_recovery(self, tmp_path: Path) -> None:
         """Test recovery from corrupted files."""
-        manager = ASPPersistenceManager(str(tmp_path), enable_git=False) # Convert Path to str
+        manager = ASPPersistenceManager(
+            str(tmp_path), enable_git=False
+        )  # Convert Path to str
         core = create_test_asp_core_with_rules(20)
         core.add_rule(
             ASPRule(

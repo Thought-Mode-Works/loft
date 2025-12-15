@@ -121,7 +121,9 @@ def test_structured_output(interface: LLMInterface) -> None:
     console.print(f"\n[bold]Question:[/bold] {question.strip()}")
     console.print(f"\n[bold]Output Schema:[/bold] {LegalAnalysis.__name__}")
 
-    response = interface.query(question=question, output_schema=LegalAnalysis, temperature=0.3)
+    response = interface.query(
+        question=question, output_schema=LegalAnalysis, temperature=0.3
+    )
 
     print_response(response)
 
@@ -206,8 +208,12 @@ def test_cost_tracking(interface: LLMInterface) -> None:
         console.print(f"  Tokens: {response.metadata.tokens_total}")
 
     # Show totals
-    console.print(f"\n[bold green]Total Cost:[/bold green] ${interface.get_total_cost():.6f}")
-    console.print(f"[bold green]Total Tokens:[/bold green] {interface.get_total_tokens()}")
+    console.print(
+        f"\n[bold green]Total Cost:[/bold green] ${interface.get_total_cost():.6f}"
+    )
+    console.print(
+        f"[bold green]Total Tokens:[/bold green] {interface.get_total_tokens()}"
+    )
 
 
 def test_element_extraction(interface: LLMInterface) -> None:
@@ -261,7 +267,10 @@ def test_chain_of_thought(interface: LLMInterface) -> None:
     console.print(f"\n[bold]Template:[/bold] {template.name}")
 
     response = interface.query(
-        question=prompt, system_prompt=template.system_prompt, temperature=0.5, cot_enabled=True
+        question=prompt,
+        system_prompt=template.system_prompt,
+        temperature=0.5,
+        cot_enabled=True,
     )
 
     print_response(response)
@@ -280,14 +289,19 @@ def test_multiple_providers() -> None:
     if anthropic_key:
         anthropic_model = os.getenv("LLM_MODEL", "claude-3-5-haiku-20241022")
         providers_to_test.append(
-            ("Anthropic", AnthropicProvider(api_key=anthropic_key, model=anthropic_model))
+            (
+                "Anthropic",
+                AnthropicProvider(api_key=anthropic_key, model=anthropic_model),
+            )
         )
 
     # OpenAI
     openai_key = os.getenv("OPENAI_API_KEY")
     if openai_key:
         openai_model = os.getenv("LLM_MODEL", "gpt-3.5-turbo")
-        providers_to_test.append(("OpenAI", OpenAIProvider(api_key=openai_key, model=openai_model)))
+        providers_to_test.append(
+            ("OpenAI", OpenAIProvider(api_key=openai_key, model=openai_model))
+        )
 
     # Local (if available)
     try:
@@ -296,12 +310,16 @@ def test_multiple_providers() -> None:
         # Check if Ollama is running
         response = requests.get("http://localhost:11434/api/tags", timeout=2)
         if response.status_code == 200:
-            providers_to_test.append(("Local (Ollama)", LocalProvider(api_key="", model="llama2")))
+            providers_to_test.append(
+                ("Local (Ollama)", LocalProvider(api_key="", model="llama2"))
+            )
     except Exception:
         pass
 
     if not providers_to_test:
-        console.print("[red]No providers available. Set ANTHROPIC_API_KEY or OPENAI_API_KEY.[/red]")
+        console.print(
+            "[red]No providers available. Set ANTHROPIC_API_KEY or OPENAI_API_KEY.[/red]"
+        )
         return
 
     # Query each provider
@@ -315,9 +333,11 @@ def test_multiple_providers() -> None:
                 {
                     "provider": name,
                     "model": response.metadata.model,
-                    "response": response.raw_text[:100] + "..."
-                    if len(response.raw_text) > 100
-                    else response.raw_text,
+                    "response": (
+                        response.raw_text[:100] + "..."
+                        if len(response.raw_text) > 100
+                        else response.raw_text
+                    ),
                     "cost": response.metadata.cost_usd,
                     "tokens": response.metadata.tokens_total,
                     "latency": response.metadata.latency_ms,
@@ -417,9 +437,15 @@ def run_all_tests(provider_name: str = "anthropic") -> None:
 
     # Final summary
     print_header("Test Summary")
-    console.print(f"\n[bold green]Total Cost:[/bold green] ${interface.get_total_cost():.6f}")
-    console.print(f"[bold green]Total Tokens:[/bold green] {interface.get_total_tokens()}")
-    console.print(f"[bold green]Queries Made:[/bold green] {len(interface._cache)} unique")
+    console.print(
+        f"\n[bold green]Total Cost:[/bold green] ${interface.get_total_cost():.6f}"
+    )
+    console.print(
+        f"[bold green]Total Tokens:[/bold green] {interface.get_total_tokens()}"
+    )
+    console.print(
+        f"[bold green]Queries Made:[/bold green] {len(interface._cache)} unique"
+    )
 
     console.print("\n[bold cyan]Tests completed successfully![/bold cyan]")
 
@@ -480,7 +506,8 @@ def main():
             sys.exit(1)
 
         model = os.getenv(
-            "LLM_MODEL", "claude-3-5-sonnet-20241022" if args.provider == "anthropic" else "gpt-4"
+            "LLM_MODEL",
+            "claude-3-5-sonnet-20241022" if args.provider == "anthropic" else "gpt-4",
         )
         if args.provider == "anthropic":
             provider = AnthropicProvider(api_key=api_key, model=model)

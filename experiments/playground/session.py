@@ -241,7 +241,9 @@ class PlaygroundSession:
         self.validation_results[rule_id] = validation
         rule.validation_status = report.final_decision
 
-        self._log_command("validate_rule", {"rule_id": rule_id, "decision": validation.decision})
+        self._log_command(
+            "validate_rule", {"rule_id": rule_id, "decision": validation.decision}
+        )
 
         return validation
 
@@ -251,7 +253,9 @@ class PlaygroundSession:
             raise ValueError(f"Rule {rule_id} not found")
 
         if rule_id not in self.validation_results:
-            raise ValueError(f"Rule {rule_id} not validated. Run 'validate-rule {rule_id}' first.")
+            raise ValueError(
+                f"Rule {rule_id} not validated. Run 'validate-rule {rule_id}' first."
+            )
 
         validation = self.validation_results[rule_id]
         if validation.decision != "accept":
@@ -295,7 +299,9 @@ class PlaygroundSession:
         return {
             "session_duration": str(datetime.now() - self.session_start),
             "model": self.model,
-            "loaded_scenario": self.loaded_scenario.scenario_id if self.loaded_scenario else None,
+            "loaded_scenario": (
+                self.loaded_scenario.scenario_id if self.loaded_scenario else None
+            ),
             "identified_gaps": len(self.identified_gaps),
             "generated_rules": len(self.generated_rules),
             "validated_rules": len(self.validation_results),
@@ -332,7 +338,9 @@ class PlaygroundSession:
             else 0.0
         )
 
-        incorporation_rate = total_incorporated / total_generated if total_generated > 0 else 0.0
+        incorporation_rate = (
+            total_incorporated / total_generated if total_generated > 0 else 0.0
+        )
 
         # Calculate average confidences
         avg_generation_confidence = (
@@ -342,7 +350,8 @@ class PlaygroundSession:
         )
 
         avg_validation_confidence = (
-            sum(v.confidence for v in self.validation_results.values()) / total_validated
+            sum(v.confidence for v in self.validation_results.values())
+            / total_validated
             if total_validated > 0
             else 0.0
         )

@@ -62,10 +62,16 @@ def demonstrate_persistence_and_llm():
 
     for cycle_num in range(1, 4):
         print(f"   --- Cycle {cycle_num} ---")
-        result = system.run_improvement_cycle(max_gaps=2, target_layer=StratificationLevel.TACTICAL)
+        result = system.run_improvement_cycle(
+            max_gaps=2, target_layer=StratificationLevel.TACTICAL
+        )
         print(f"   Status: {result.status}")
-        print(f"   Gaps: {result.gaps_identified}, Incorporated: {result.rules_incorporated}")
-        print(f"   Performance: {result.baseline_accuracy:.1%} → {result.final_accuracy:.1%}")
+        print(
+            f"   Gaps: {result.gaps_identified}, Incorporated: {result.rules_incorporated}"
+        )
+        print(
+            f"   Performance: {result.baseline_accuracy:.1%} → {result.final_accuracy:.1%}"
+        )
         print()
 
     # Show final rule counts

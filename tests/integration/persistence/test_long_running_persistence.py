@@ -1,7 +1,6 @@
 import pytest
 import shutil
 from pathlib import Path
-from typing import Dict, List, Any # Import necessary types
 
 from loft.persistence.asp_persistence import ASPPersistenceManager
 from loft.persistence.metrics import PersistenceMetricsCollector  # Import the collector
@@ -157,14 +156,18 @@ class TestLongRunningPersistence:
                 level: current_core.get_program(level).rules
                 for level in StratificationLevel
             }
-            _save_metrics = metrics_collector.measure_save_cycle( # Marked unused with _
-                manager, rules_by_layer_current
+            _save_metrics = (
+                metrics_collector.measure_save_cycle(  # Marked unused with _
+                    manager, rules_by_layer_current
+                )
             )
 
             # Periodic snapshot
             if i % snapshot_interval == 0:
-                _snapshot_metrics = metrics_collector.measure_snapshot_cycle( # Marked unused with _
-                    manager, i, f"cycle_{i}"
+                _snapshot_metrics = (
+                    metrics_collector.measure_snapshot_cycle(  # Marked unused with _
+                        manager, i, f"cycle_{i}"
+                    )
                 )
 
             # Verify integrity by loading and asserting equality
@@ -180,9 +183,9 @@ class TestLongRunningPersistence:
             assert_cores_equal(current_core, loaded_core)
 
             # Measure load metrics
-            _load_metrics = metrics_collector.measure_load_cycle( # Marked unused with _
+            _load_metrics = metrics_collector.measure_load_cycle(
                 manager
-            )  # This will create a new metric entry
+            )  # Marked unused with _  # This will create a new metric entry
 
         # Generate report (placeholder, actual report generation in script)
         # For now, just assert that metrics were collected and seem reasonable

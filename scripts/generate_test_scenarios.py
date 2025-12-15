@@ -322,6 +322,10 @@ def generate_test_files(output_dir: Path):
 
 if __name__ == "__main__":
     output_dir = (
-        Path(__file__).parent.parent / "experiments" / "data" / "contracts" / "statute_of_frauds"
+        Path(__file__).parent.parent
+        / "experiments"
+        / "data"
+        / "contracts"
+        / "statute_of_frauds"
     )
     generate_test_files(output_dir)

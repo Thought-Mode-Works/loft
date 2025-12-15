@@ -32,21 +32,27 @@ def demonstrate_comprehensive_system():
     system = SelfModifyingSystem(persistence_dir=persistence_dir)
 
     print("Running Cycle 1 (expect some rules to be incorporated)...")
-    result1 = system.run_improvement_cycle(max_gaps=5, target_layer=StratificationLevel.TACTICAL)
+    result1 = system.run_improvement_cycle(
+        max_gaps=5, target_layer=StratificationLevel.TACTICAL
+    )
 
     print("\nResults:")
     print(f"  Gaps identified: {result1.gaps_identified}")
     print(f"  Variants generated: {result1.variants_generated}")
     print(f"  Rules incorporated: {result1.rules_incorporated}")
     print(f"  Status: {result1.status}")
-    print(f"  Performance: {result1.baseline_accuracy:.1%} → {result1.final_accuracy:.1%}")
+    print(
+        f"  Performance: {result1.baseline_accuracy:.1%} → {result1.final_accuracy:.1%}"
+    )
     print()
 
     # === SCENARIO 2: Duplicate Detection ===
     print("\nSCENARIO 2: Duplicate Detection (Same Session)")
     print("-" * 80)
     print("Running Cycle 2 (should skip duplicates from Cycle 1)...")
-    result2 = system.run_improvement_cycle(max_gaps=5, target_layer=StratificationLevel.TACTICAL)
+    result2 = system.run_improvement_cycle(
+        max_gaps=5, target_layer=StratificationLevel.TACTICAL
+    )
 
     print("\nResults:")
     print(f"  Gaps identified: {result2.gaps_identified}")
@@ -82,7 +88,9 @@ def demonstrate_comprehensive_system():
     system2 = SelfModifyingSystem(persistence_dir=persistence_dir)
 
     print("Running Cycle 3 (should skip all rules loaded from disk)...")
-    result3 = system2.run_improvement_cycle(max_gaps=5, target_layer=StratificationLevel.TACTICAL)
+    result3 = system2.run_improvement_cycle(
+        max_gaps=5, target_layer=StratificationLevel.TACTICAL
+    )
 
     print("\nResults:")
     print(f"  Gaps identified: {result3.gaps_identified}")
@@ -136,7 +144,9 @@ def demonstrate_comprehensive_system():
     print("  ✓ Rules persisted with metadata (timestamp, cycle, confidence)")
     print(f"  ✓ Successfully loaded {rule_count} rules from disk on restart")
     print(f"  ✓ Living document auto-generated ({len(doc):,} chars)")
-    print(f"  ✓ Self-analysis shows {report.incorporation_success_rate:.0%} success rate")
+    print(
+        f"  ✓ Self-analysis shows {report.incorporation_success_rate:.0%} success rate"
+    )
     print()
     print("Files Created:")
     print(f"  • {tactical_file} ({tactical_file.stat().st_size} bytes)")

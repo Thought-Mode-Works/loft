@@ -83,7 +83,9 @@ def example_5_structured_extraction():
     print("Example 5: Structured Extraction with Pydantic")
     print("=" * 70)
 
-    nl_text = "John and Mary have a land sale contract for $750,000 with a signed writing"
+    nl_text = (
+        "John and Mary have a land sale contract for $750,000 with a signed writing"
+    )
     print(f"Input: {nl_text}")
 
     # Extract using ContractFact schema

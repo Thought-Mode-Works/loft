@@ -120,7 +120,9 @@ detrimental_reliance(c3).
     print(explanation)
     print()
     print("Legal Note: Part performance exception allows enforcement despite")
-    print("           lack of writing when substantial actions demonstrate the contract.")
+    print(
+        "           lack of writing when substantial actions demonstrate the contract."
+    )
 
 
 def demo_goods_threshold():
@@ -141,7 +143,9 @@ party_to_contract(c4a, buyer1).
     system.add_facts(facts_under)
 
     is_enf = system.is_enforceable("c4a")
-    print(f"Oral contract for $300 in goods: {'ENFORCEABLE' if is_enf else 'UNENFORCEABLE'}")
+    print(
+        f"Oral contract for $300 in goods: {'ENFORCEABLE' if is_enf else 'UNENFORCEABLE'}"
+    )
     print("Reason: Under $500 threshold, not within statute\n")
 
     print("--- Case B: Goods Over $500 ---")
@@ -158,7 +162,9 @@ party_to_contract(c4b, buyer2).
     system.add_facts(facts_over)
 
     is_enf = system.is_enforceable("c4b")
-    print(f"Oral contract for $750 in goods: {'ENFORCEABLE' if is_enf else 'UNENFORCEABLE'}")
+    print(
+        f"Oral contract for $750 in goods: {'ENFORCEABLE' if is_enf else 'UNENFORCEABLE'}"
+    )
     print("Reason: Over $500, within statute, no writing = unenforceable")
 
 
@@ -242,7 +248,8 @@ def demo_all_test_cases():
 
 def main():
     """Run all demonstrations."""
-    print("""
+    print(
+        """
 ╔════════════════════════════════════════════════════════════════════════════╗
 ║                                                                            ║
 ║              STATUTE OF FRAUDS REASONING SYSTEM DEMONSTRATION              ║
@@ -250,7 +257,8 @@ def main():
 ║    ASP-based Contract Law Reasoning with Gap Detection and Explanation    ║
 ║                                                                            ║
 ╚════════════════════════════════════════════════════════════════════════════╝
-""")
+"""
+    )
 
     # Run demonstrations
     demo_clear_case()

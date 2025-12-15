@@ -19,7 +19,15 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple, Generator, IO # Added Generator, IO
+from typing import (
+    Dict,
+    List,
+    Optional,
+    Any,
+    Tuple,
+    Generator,
+    IO,
+)  # Added Generator, IO
 from loguru import logger
 import hashlib  # Added for rule ID generation
 
@@ -464,7 +472,9 @@ class ASPPersistenceManager:
         """
         rules: List[ASPRule] = []
         parsing_errors: List[str] = []
-        current_metadata_dict: Dict[str, str] = {}  # Use a dict to store all parsed metadata
+        current_metadata_dict: Dict[str, str] = (
+            {}
+        )  # Use a dict to store all parsed metadata
         in_metadata_block = False
         rule_text_buffer: List[str] = []
 
@@ -492,7 +502,7 @@ class ASPPersistenceManager:
                 # After metadata block, collect ASP rule lines
                 # If we encounter a comment or empty line *after* a metadata block
                 # and rule text has been buffered, it means the rule just ended.
-                is_comment_or_empty = line.startswith("%" ) or not line
+                is_comment_or_empty = line.startswith("%") or not line
 
                 if rule_text_buffer and is_comment_or_empty and not in_metadata_block:
                     rule_asp_text = "\n".join(rule_text_buffer).strip()
@@ -811,11 +821,11 @@ class ASPPersistenceManager:
         Returns:
             Dictionary with statistics
         """
-        stats: Dict[str, Any] = { # Explicitly type stats
+        stats: Dict[str, Any] = {  # Explicitly type stats
             "base_dir": str(self.base_dir),
             "git_enabled": self.enable_git,
             "snapshot_retention": self.snapshot_retention,
-            "layers": {}, # Changed from list to dict
+            "layers": {},  # Changed from list to dict
             "total_rules": 0,
             "snapshots_count": len(list(self.snapshot_dir.glob("cycle_*"))),
             "backups_count": len(list(self.backup_dir.iterdir())),
@@ -829,19 +839,23 @@ class ASPPersistenceManager:
                     layer_file, layer
                 )  # Get rules, ignore errors for stats
                 count = len(rules)
-                stats["layers"][layer.value] = { # Changed from append to key assignment
-                    "count": count,
-                    "file_size": layer_file.stat().st_size,
-                    "last_modified": datetime.fromtimestamp(
-                        layer_file.stat().st_mtime
-                    ).isoformat(),
-                }
+                stats["layers"][layer.value] = (
+                    {  # Changed from append to key assignment
+                        "count": count,
+                        "file_size": layer_file.stat().st_size,
+                        "last_modified": datetime.fromtimestamp(
+                            layer_file.stat().st_mtime
+                        ).isoformat(),
+                    }
+                )
                 stats["total_rules"] += count
             else:
-                stats["layers"][layer.value] = { # Changed from append to key assignment
-                    "count": 0,
-                    "file_size": 0,
-                    "last_modified": None,
-                }
+                stats["layers"][layer.value] = (
+                    {  # Changed from append to key assignment
+                        "count": 0,
+                        "file_size": 0,
+                        "last_modified": None,
+                    }
+                )
 
         return stats

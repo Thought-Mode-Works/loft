@@ -162,7 +162,9 @@ caused_harm(alice).
     )
 
     validator = TestCaseValidator()
-    result, detailed_explanation = validator.validate_with_explanation(asp_program, test_case)
+    result, detailed_explanation = validator.validate_with_explanation(
+        asp_program, test_case
+    )
 
     print(f"\n{detailed_explanation}")
 

@@ -13,8 +13,7 @@ from pathlib import Path
 from loft.persistence.asp_persistence import (
     ASPPersistenceManager,
     SnapshotMetadata,
-    CorruptedFileError,
-    LoadResult, # Added LoadResult
+    CorruptedFileError,  # Added LoadResult
 )
 from loft.symbolic.asp_rule import ASPRule, RuleMetadata
 from loft.symbolic.stratification import StratificationLevel
@@ -32,7 +31,9 @@ class TestASPPersistenceManager:
     @pytest.fixture
     def persistence_manager(self, temp_dir):
         """Create persistence manager with temp directory."""
-        return ASPPersistenceManager(base_dir=str(temp_dir), enable_git=False) # Convert Path to str
+        return ASPPersistenceManager(
+            base_dir=str(temp_dir), enable_git=False
+        )  # Convert Path to str
 
     @pytest.fixture
     def sample_rule(self):
@@ -53,7 +54,9 @@ class TestASPPersistenceManager:
 
     def test_initialization(self, temp_dir):
         """Test persistence manager initialization."""
-        manager = ASPPersistenceManager(base_dir=str(temp_dir), enable_git=False) # Convert Path to str
+        manager = ASPPersistenceManager(
+            base_dir=str(temp_dir), enable_git=False
+        )  # Convert Path to str
 
         assert manager.base_dir == Path(temp_dir)
         assert manager.snapshot_dir == Path(temp_dir) / "snapshots"
@@ -123,7 +126,7 @@ class TestASPPersistenceManager:
 
         # Load rules
         loaded_rules = persistence_manager.load_all_rules()
-        loaded_rules_by_layer = loaded_rules.rules_by_layer # Fix: assign here
+        loaded_rules_by_layer = loaded_rules.rules_by_layer  # Fix: assign here
 
         # Check loaded correctly
         assert StratificationLevel.STRATEGIC in loaded_rules_by_layer
@@ -254,7 +257,9 @@ class TestASPPersistenceManager:
         """Test snapshot retention policy."""
         # Create manager with retention limit
         manager = ASPPersistenceManager(
-            base_dir=str(temp_dir), enable_git=False, snapshot_retention=3 # Convert Path to str
+            base_dir=str(temp_dir),
+            enable_git=False,
+            snapshot_retention=3,  # Convert Path to str
         )
 
         # Save rule
@@ -313,19 +318,24 @@ class TestASPPersistenceManager:
         assert "strategic" in load_result.recovered_layers
 
         # Test with recover_on_error=False (should raise)
-        strategic_file.write_text("@@@ CORRUPTED @@@\n!!! INVALID ASP !!!") # Corrupt again
+        strategic_file.write_text(
+            "@@@ CORRUPTED @@@\n!!! INVALID ASP !!!"
+        )  # Corrupt again
         with pytest.raises(CorruptedFileError):
             persistence_manager.load_all_rules(recover_on_error=False)
-
 
     def test_empty_layer_handling(self, persistence_manager):
         """Test handling of empty layers."""
         # Load when no files exist
         load_result = persistence_manager.load_all_rules()
-        loaded_rules_by_layer = load_result.rules_by_layer # Fixed: Access rules_by_layer
+        loaded_rules_by_layer = (
+            load_result.rules_by_layer
+        )  # Fixed: Access rules_by_layer
 
         # All layers should be present with empty lists
-        assert len(loaded_rules_by_layer) == len(StratificationLevel) # Fixed: check len of rules_by_layer
+        assert len(loaded_rules_by_layer) == len(
+            StratificationLevel
+        )  # Fixed: check len of rules_by_layer
         for layer in StratificationLevel:
             assert layer in loaded_rules_by_layer
             assert loaded_rules_by_layer[layer] == []
@@ -349,7 +359,9 @@ class TestASPPersistenceManager:
 
         # Load and verify all rules present
         load_result = persistence_manager.load_all_rules()
-        tactical_rules = load_result.rules_by_layer[StratificationLevel.TACTICAL] # Fixed access
+        tactical_rules = load_result.rules_by_layer[
+            StratificationLevel.TACTICAL
+        ]  # Fixed access
 
         assert len(tactical_rules) >= 3
         for i in range(3):
@@ -405,7 +417,9 @@ class TestIntegration:
 
     def test_full_workflow(self, temp_dir):
         """Test complete persistence workflow."""
-        manager = ASPPersistenceManager(base_dir=str(temp_dir), enable_git=False) # Convert Path to str
+        manager = ASPPersistenceManager(
+            base_dir=str(temp_dir), enable_git=False
+        )  # Convert Path to str
 
         # Step 1: Save initial rules
         metadata = RuleMetadata(

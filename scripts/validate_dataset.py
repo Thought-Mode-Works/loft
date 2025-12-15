@@ -70,7 +70,9 @@ class ValidationResult:
         if self.outcome_distribution:
             print("\nOutcome distribution:")
             for outcome, count in sorted(self.outcome_distribution.items()):
-                pct = count / self.scenario_count * 100 if self.scenario_count > 0 else 0
+                pct = (
+                    count / self.scenario_count * 100 if self.scenario_count > 0 else 0
+                )
                 print(f"  {outcome}: {count} ({pct:.1f}%)")
 
         if self.common_predicates:
@@ -99,7 +101,9 @@ class ValidationResult:
                 file_str = f" [{issue.file}]" if issue.file else ""
                 print(f"  INFO [{issue.code}]{file_str}: {issue.message}")
 
-            print(f"\nTotal: {len(errors)} errors, {len(warnings)} warnings, {len(infos)} info")
+            print(
+                f"\nTotal: {len(errors)} errors, {len(warnings)} warnings, {len(infos)} info"
+            )
         else:
             print("\nNo issues found.")
 
@@ -192,8 +196,8 @@ class DatasetValidator:
         scenario_ids: List[str] = []
 
         for scenario_file in sorted(scenario_files):
-            file_issues, predicates, outcome, fact_hash, scenario_id = self._validate_scenario_file(
-                scenario_file
+            file_issues, predicates, outcome, fact_hash, scenario_id = (
+                self._validate_scenario_file(scenario_file)
             )
             result.issues.extend(file_issues)
 
@@ -277,10 +281,12 @@ class DatasetValidator:
 
         return result
 
-    def _validate_scenario_file(
-        self, file_path: Path
-    ) -> Tuple[
-        List[ValidationIssue], Optional[Set[str]], Optional[str], Optional[int], Optional[str]
+    def _validate_scenario_file(self, file_path: Path) -> Tuple[
+        List[ValidationIssue],
+        Optional[Set[str]],
+        Optional[str],
+        Optional[int],
+        Optional[str],
     ]:
         """
         Validate a single scenario file.
@@ -391,7 +397,9 @@ class DatasetValidator:
         open_count = asp_facts.count("(")
         close_count = asp_facts.count(")")
         if open_count != close_count:
-            issues.append(f"Unbalanced parentheses: {open_count} '(' vs {close_count} ')'")
+            issues.append(
+                f"Unbalanced parentheses: {open_count} '(' vs {close_count} ')'"
+            )
 
         # Check facts end with periods
         facts = [f.strip() for f in asp_facts.split(".") if f.strip()]
@@ -510,7 +518,9 @@ Examples:
         results = validate_recursive(args.path, strict=args.strict)
     else:
         if args.path is None:
-            print("Error: path argument required (or use --all-domains)", file=sys.stderr)
+            print(
+                "Error: path argument required (or use --all-domains)", file=sys.stderr
+            )
             sys.exit(2)
         validator = DatasetValidator(strict=args.strict)
         results = [validator.validate_directory(args.path)]

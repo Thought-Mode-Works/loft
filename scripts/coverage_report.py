@@ -115,8 +115,12 @@ def analyze_gaps(coverage_data: Dict, threshold: float = 80.0) -> List[Dict]:
                     "file": file_path,
                     "coverage": coverage_pct,
                     "gap": threshold - coverage_pct,
-                    "missing_lines": file_data.get("summary", {}).get("missing_lines", 0),
-                    "total_statements": file_data.get("summary", {}).get("num_statements", 0),
+                    "missing_lines": file_data.get("summary", {}).get(
+                        "missing_lines", 0
+                    ),
+                    "total_statements": file_data.get("summary", {}).get(
+                        "num_statements", 0
+                    ),
                 }
             )
 
@@ -153,7 +157,9 @@ def print_gaps(gaps: List[Dict], threshold: float):
         print(f"\n📁 {gap['file']}")
         print(f"   Coverage: {gap['coverage']:.2f}%")
         print(f"   Gap: {gap['gap']:.2f}%")
-        print(f"   Missing: {gap['missing_lines']} / {gap['total_statements']} statements")
+        print(
+            f"   Missing: {gap['missing_lines']} / {gap['total_statements']} statements"
+        )
 
     print("\n" + "=" * 60)
     print(f"Total modules below threshold: {len(gaps)}")
@@ -219,11 +225,16 @@ def main():
         default="term",
         help="Output format",
     )
-    parser.add_argument("--output", default="coverage", help="Output directory for HTML reports")
+    parser.add_argument(
+        "--output", default="coverage", help="Output directory for HTML reports"
+    )
     parser.add_argument("--summary", action="store_true", help="Show coverage summary")
     parser.add_argument("--gaps", action="store_true", help="Identify coverage gaps")
     parser.add_argument(
-        "--threshold", type=float, default=80.0, help="Coverage threshold for gap analysis"
+        "--threshold",
+        type=float,
+        default=80.0,
+        help="Coverage threshold for gap analysis",
     )
     parser.add_argument("--markdown", help="Generate markdown report to specified file")
     parser.add_argument("--all", action="store_true", help="Generate all reports")
