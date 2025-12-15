@@ -21,6 +21,7 @@ from loguru import logger
 from loft.symbolic.stratification import (
     StratificationLevel,
 )  # Added StratificationLevel import
+from loft.persistence.asp_persistence import LoadResult # Moved LoadResult import to top
 
 
 @dataclass
@@ -276,6 +277,7 @@ class PersistenceMetricsCollector:
 
         # Measure load time
         start_time = time.perf_counter()
+        load_result = None
         try:
             load_result = manager.load_all_rules()
             metrics.load_errors += len(load_result.parsing_errors)
@@ -298,7 +300,9 @@ class PersistenceMetricsCollector:
                         metrics.rules_with_metadata += 1
 
         except Exception as e:
+            from loft.persistence.asp_persistence import LoadResult # Import here to avoid circular dependency
             metrics.load_errors += 1
+            load_result = LoadResult(rules_by_layer={}, parsing_errors=[str(e)], had_errors=True, recovered_layers=[])
             self.error_log.append(
                 {
                     "type": "load_error",

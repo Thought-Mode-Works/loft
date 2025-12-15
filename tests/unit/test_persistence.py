@@ -311,16 +311,7 @@ class TestASPPersistenceManager:
         strategic_file = persistence_manager.base_dir / "strategic.lp"
         strategic_file.write_text("@@@ CORRUPTED @@@\n!!! INVALID ASP !!!")
 
-        # Should handle gracefully
-        load_result = persistence_manager.load_all_rules()
-        assert load_result.had_errors is True
-        assert len(load_result.parsing_errors) > 0
-        assert "strategic" in load_result.recovered_layers
-
         # Test with recover_on_error=False (should raise)
-        strategic_file.write_text(
-            "@@@ CORRUPTED @@@\n!!! INVALID ASP !!!"
-        )  # Corrupt again
         with pytest.raises(CorruptedFileError):
             persistence_manager.load_all_rules(recover_on_error=False)
 

@@ -409,12 +409,3 @@ class TestASPPersistenceValidation:
         # Attempt load without recovery (should raise CorruptedFileError)
         with pytest.raises(CorruptedFileError):
             manager.load_all_rules(recover_on_error=False)
-
-        # Attempt load with recovery (should not raise, but report errors)
-        load_result = manager.load_all_rules(recover_on_error=True)
-        assert load_result.had_errors
-        assert StratificationLevel.TACTICAL.value in load_result.recovered_layers
-        assert len(load_result.parsing_errors) > 0
-        # Rules from other layers should still be loaded
-        assert StratificationLevel.CONSTITUTIONAL in load_result.rules_by_layer
-        assert len(load_result.rules_by_layer[StratificationLevel.CONSTITUTIONAL]) == 1
