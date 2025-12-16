@@ -178,7 +178,9 @@ class TranslationPatternDocumenter:
 
         return {rtype: mean(fidelities) for rtype, fidelities in by_type.items()}
 
-    def _identify_failure_patterns(self, threshold: float = 0.7) -> List[Dict[str, Any]]:
+    def _identify_failure_patterns(
+        self, threshold: float = 0.7
+    ) -> List[Dict[str, Any]]:
         """
         Identify common failure patterns.
 
@@ -228,7 +230,9 @@ class TranslationPatternDocumenter:
 
         return failure_patterns
 
-    def _identify_success_patterns(self, threshold: float = 0.95) -> List[Dict[str, Any]]:
+    def _identify_success_patterns(
+        self, threshold: float = 0.95
+    ) -> List[Dict[str, Any]]:
         """
         Identify successful translation patterns.
 
@@ -400,8 +404,12 @@ class TranslationPatternDocumenter:
         if needs_work:
             recommendations += "### Priority Improvements\n\n"
             for rtype, fidelity in sorted(needs_work, key=lambda x: x[1]):
-                recommendations += f"1. **{rtype.title()} rules** (current: {fidelity:.2%})\n"
-                recommendations += f"   - Review translation templates for {rtype} patterns\n"
+                recommendations += (
+                    f"1. **{rtype.title()} rules** (current: {fidelity:.2%})\n"
+                )
+                recommendations += (
+                    f"   - Review translation templates for {rtype} patterns\n"
+                )
                 recommendations += "   - Add more test cases for this rule type\n"
                 recommendations += "   - Consider specialized handling\n\n"
 

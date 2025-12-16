@@ -109,8 +109,12 @@ def main():
 
     # Filter by fidelity if specified
     if args.min_fidelity > 0.0:
-        filtered = [t for t in translation_logs if t.get("fidelity", 0.0) >= args.min_fidelity]
-        print(f"Filtered to {len(filtered)} translations with fidelity >= {args.min_fidelity}")
+        filtered = [
+            t for t in translation_logs if t.get("fidelity", 0.0) >= args.min_fidelity
+        ]
+        print(
+            f"Filtered to {len(filtered)} translations with fidelity >= {args.min_fidelity}"
+        )
         translation_logs = filtered
 
     # Limit if specified
@@ -162,7 +166,9 @@ def main():
 
     # Print summary statistics
     if analysis.common_failure_patterns:
-        print(f"\n⚠ Found {len(analysis.common_failure_patterns)} common failure patterns")
+        print(
+            f"\n⚠ Found {len(analysis.common_failure_patterns)} common failure patterns"
+        )
         for idx, failure in enumerate(analysis.common_failure_patterns[:3], 1):
             print(
                 f"  {idx}. {failure['rule_type']} ({failure['count']} occurrences, "

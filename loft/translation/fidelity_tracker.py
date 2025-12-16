@@ -36,7 +36,9 @@ class FidelitySnapshot:
     perfect_rate: float  # Percentage with fidelity == 1.0
     min_fidelity: float
     max_fidelity: float
-    fidelity_distribution: Dict[str, int]  # Buckets: <0.5, 0.5-0.7, 0.7-0.9, 0.9-1.0, 1.0
+    fidelity_distribution: Dict[
+        str, int
+    ]  # Buckets: <0.5, 0.5-0.7, 0.7-0.9, 0.9-1.0, 1.0
     fidelity_by_type: Dict[str, float] = field(default_factory=dict)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
@@ -147,7 +149,9 @@ class FidelityTracker:
 
         return buckets
 
-    def _compute_by_type(self, translations: List[TranslationResult]) -> Dict[str, float]:
+    def _compute_by_type(
+        self, translations: List[TranslationResult]
+    ) -> Dict[str, float]:
         """Compute average fidelity by rule type."""
         by_type: Dict[str, List[float]] = {}
 
@@ -173,7 +177,9 @@ class FidelityTracker:
             return 0.0
         return self.history[-1].avg_fidelity
 
-    def detect_regression(self, threshold: float = 0.05, window: int = 5) -> Optional[Regression]:
+    def detect_regression(
+        self, threshold: float = 0.05, window: int = 5
+    ) -> Optional[Regression]:
         """
         Detect fidelity regression compared to baseline.
 
@@ -205,7 +211,10 @@ class FidelityTracker:
                             if rtype in s.fidelity_by_type
                         ]
                     )
-                    if current.fidelity_by_type[rtype] < baseline_type_fidelity - threshold:
+                    if (
+                        current.fidelity_by_type[rtype]
+                        < baseline_type_fidelity - threshold
+                    ):
                         affected_types.append(rtype)
 
             return Regression(
@@ -364,6 +373,8 @@ class FidelityTracker:
             data = json.load(f)
 
         tracker = cls()
-        tracker.history = [FidelitySnapshot.from_dict(s) for s in data.get("snapshots", [])]
+        tracker.history = [
+            FidelitySnapshot.from_dict(s) for s in data.get("snapshots", [])
+        ]
 
         return tracker

@@ -73,7 +73,9 @@ def generate_html_report(tracker: FidelityTracker, output_path: Path) -> None:
         return
 
     # Extract data for charts
-    timestamps = [s.timestamp[:19] for s in tracker.history]  # Truncate to YYYY-MM-DDTHH:MM:SS
+    timestamps = [
+        s.timestamp[:19] for s in tracker.history
+    ]  # Truncate to YYYY-MM-DDTHH:MM:SS
     avg_fidelities = [s.avg_fidelity for s in tracker.history]
     perfect_rates = [s.perfect_rate for s in tracker.history]
     min_fidelities = [s.min_fidelity for s in tracker.history]
@@ -309,7 +311,9 @@ def generate_html_report(tracker: FidelityTracker, output_path: Path) -> None:
 
 def main():
     """Main entry point."""
-    parser = argparse.ArgumentParser(description="Analyze fidelity trends and generate reports")
+    parser = argparse.ArgumentParser(
+        description="Analyze fidelity trends and generate reports"
+    )
     parser.add_argument(
         "data_dir",
         type=str,

@@ -75,7 +75,9 @@ def generate_test_rules() -> List[str]:
 
     # Add more complex patterns
     for i in range(10):
-        rules.append(f"complex_{i}(X) :- cond1_{i}(X), cond2_{i}(X), not exception_{i}(X).")
+        rules.append(
+            f"complex_{i}(X) :- cond1_{i}(X), cond2_{i}(X), not exception_{i}(X)."
+        )
 
     # Add facts
     for i in range(20):
@@ -144,7 +146,9 @@ def measure_asp_equivalence(original: str, back_translated: str) -> float:
 
     # Boost score if key elements match
     key_elements = [":-", "(", ")", ",", "not", "#count"]
-    matches = sum(1 for elem in key_elements if elem in original and elem in back_translated)
+    matches = sum(
+        1 for elem in key_elements if elem in original and elem in back_translated
+    )
     element_bonus = matches / len(key_elements) * 0.2
 
     return min(char_similarity + element_bonus, 1.0)
@@ -154,7 +158,9 @@ class TestLongRunningTranslationFidelity:
     """Extended validation of translation fidelity."""
 
     @pytest.mark.slow
-    def test_100_roundtrip_translations(self, translation_setup, similarity_calculator, tmp_path):
+    def test_100_roundtrip_translations(
+        self, translation_setup, similarity_calculator, tmp_path
+    ):
         """
         Test fidelity across 100 roundtrip translations.
 
@@ -216,12 +222,12 @@ class TestLongRunningTranslationFidelity:
         print(f"Min Fidelity: {snapshot.min_fidelity:.2%}")
         print(f"Max Fidelity: {snapshot.max_fidelity:.2%}")
 
-        assert snapshot.avg_fidelity >= 0.70, (
-            f"Average fidelity {snapshot.avg_fidelity:.2%} below threshold 70%"
-        )
-        assert snapshot.perfect_rate >= 0.30, (
-            f"Perfect roundtrip rate {snapshot.perfect_rate:.2%} below threshold 30%"
-        )
+        assert (
+            snapshot.avg_fidelity >= 0.70
+        ), f"Average fidelity {snapshot.avg_fidelity:.2%} below threshold 70%"
+        assert (
+            snapshot.perfect_rate >= 0.30
+        ), f"Perfect roundtrip rate {snapshot.perfect_rate:.2%} below threshold 30%"
 
         # Save reports
         fidelity_tracker.save_history(str(tmp_path / "fidelity_history.json"))
@@ -305,10 +311,14 @@ class TestLongRunningTranslationFidelity:
             print(f"{rtype}: {fidelity:.2%}")
 
             # Each rule type should have some success
-            assert fidelity >= 0.50, f"Rule type '{rtype}' fidelity {fidelity:.2%} too low"
+            assert (
+                fidelity >= 0.50
+            ), f"Rule type '{rtype}' fidelity {fidelity:.2%} too low"
 
         # Save pattern guide
-        guide_path = pattern_documenter.save_guide(str(tmp_path / "rule_type_patterns.md"))
+        guide_path = pattern_documenter.save_guide(
+            str(tmp_path / "rule_type_patterns.md")
+        )
         print(f"\nPattern guide saved: {guide_path}")
 
     def test_fidelity_regression_detection(self, translation_setup, tmp_path):
