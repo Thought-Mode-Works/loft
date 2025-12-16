@@ -9,6 +9,7 @@ Issue #254: ASP Rule Persistence Validation & Baseline Metrics.
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
+from loft.persistence import LoadResult
 from loft.persistence.metrics import (
     BaselineReport,
     PersistenceMetrics,
@@ -195,7 +196,14 @@ class TestPersistenceMetricsCollector:
         mock_rule = MagicMock()
         mock_rule.metadata = None
 
-        mock_manager.load_all_rules.return_value = {MockLayer(): [mock_rule]}
+        # Return a proper LoadResult object
+        load_result = LoadResult(
+            rules_by_layer={MockLayer(): [mock_rule]},
+            had_errors=False,
+            recovered_layers=[],
+            parsing_errors=[],
+        )
+        mock_manager.load_all_rules.return_value = load_result
 
         metrics = collector.measure_load_cycle(mock_manager)
 
