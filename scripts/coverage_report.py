@@ -1,294 +1,195 @@
 #!/usr/bin/env python3
 """
-Generate comprehensive test coverage report and identify testing gaps.
+Generate comprehensive coverage report for an experiment.
 
-Usage:
-    # Generate HTML coverage report
-    python scripts/coverage_report.py --format html --output coverage/
-
-    # Show summary in terminal
-    python scripts/coverage_report.py --summary
-
-    # Identify coverage gaps
-    python scripts/coverage_report.py --gaps --threshold 80
-
-    # Generate all reports
-    python scripts/coverage_report.py --all
+Creates detailed markdown report with coverage metrics,
+trends, and uncovered predicates.
 """
 
-import argparse
 import json
-import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
+from datetime import datetime
+
+import click
 
 
-def run_coverage(output_format: str = "term") -> int:
+@click.command()
+@click.argument("experiment_dir", type=click.Path(exists=True, path_type=Path))
+@click.option("--output", "-o", type=click.Path(path_type=Path), help="Output file")
+@click.option(
+    "--format",
+    "output_format",
+    type=click.Choice(["markdown", "text"]),
+    default="markdown",
+)
+def coverage_report(experiment_dir: Path, output: Path, output_format: str):
     """
-    Run pytest with coverage.
+    Generate coverage report for an experiment.
 
-    Args:
-        output_format: Output format (term, html, xml, json)
-
-    Returns:
-        Exit code from pytest
+    EXPERIMENT_DIR: Path to experiment directory
     """
-    cmd = [
-        "pytest",
-        "--cov=loft",
-        "--cov-report=" + output_format,
-        "tests/",
-    ]
+    # Look for coverage history file
+    coverage_file = experiment_dir / "coverage_history.json"
 
-    print(f"Running: {' '.join(cmd)}")
-    result = subprocess.run(cmd)
-    return result.returncode
+    if not coverage_file.exists():
+        click.echo(f"Error: No coverage history found at {coverage_file}", err=True)
+        sys.exit(1)
 
+    # Load coverage data
+    with open(coverage_file, "r") as f:
+        data = json.load(f)
 
-def run_coverage_html(output_dir: str = "coverage") -> int:
-    """Generate HTML coverage report."""
-    Path(output_dir).mkdir(exist_ok=True)
-    cmd = [
-        "pytest",
-        "--cov=loft",
-        f"--cov-report=html:{output_dir}",
-        "tests/",
-    ]
-    print(f"Running: {' '.join(cmd)}")
-    result = subprocess.run(cmd)
+    # Generate report
+    report = _generate_markdown_report(data, experiment_dir)
 
-    if result.returncode == 0:
-        index_path = Path(output_dir) / "index.html"
-        print(f"\n✓ Coverage report generated: {index_path.absolute()}")
-        print(f"  Open in browser: file://{index_path.absolute()}")
-
-    return result.returncode
+    # Output
+    if output:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(report)
+        click.echo(f"Report written to: {output}")
+    else:
+        click.echo(report)
 
 
-def run_coverage_json() -> Tuple[int, Dict]:
-    """
-    Run coverage and return JSON data.
-
-    Returns:
-        Tuple of (exit_code, coverage_data)
-    """
-    cmd = [
-        "pytest",
-        "--cov=loft",
-        "--cov-report=json:coverage.json",
-        "--cov-report=term",
-        "tests/",
-    ]
-
-    print(f"Running: {' '.join(cmd)}")
-    result = subprocess.run(cmd)
-
-    coverage_data = {}
-    if Path("coverage.json").exists():
-        with open("coverage.json") as f:
-            coverage_data = json.load(f)
-
-    return result.returncode, coverage_data
-
-
-def analyze_gaps(coverage_data: Dict, threshold: float = 80.0) -> List[Dict]:
-    """
-    Identify modules with coverage below threshold.
-
-    Args:
-        coverage_data: Coverage JSON data
-        threshold: Minimum acceptable coverage percentage
-
-    Returns:
-        List of modules with gaps
-    """
-    gaps = []
-    files = coverage_data.get("files", {})
-
-    for file_path, file_data in files.items():
-        coverage_pct = file_data.get("summary", {}).get("percent_covered", 0)
-
-        if coverage_pct < threshold:
-            gaps.append(
-                {
-                    "file": file_path,
-                    "coverage": coverage_pct,
-                    "gap": threshold - coverage_pct,
-                    "missing_lines": file_data.get("summary", {}).get(
-                        "missing_lines", 0
-                    ),
-                    "total_statements": file_data.get("summary", {}).get(
-                        "num_statements", 0
-                    ),
-                }
-            )
-
-    # Sort by gap size (largest gaps first)
-    gaps.sort(key=lambda x: x["gap"], reverse=True)
-    return gaps
-
-
-def print_summary(coverage_data: Dict):
-    """Print coverage summary."""
-    totals = coverage_data.get("totals", {})
-
-    print("\n" + "=" * 60)
-    print("Coverage Summary")
-    print("=" * 60)
-    print(f"Total Coverage: {totals.get('percent_covered', 0):.2f}%")
-    print(f"Total Statements: {totals.get('num_statements', 0)}")
-    print(f"Covered: {totals.get('covered_lines', 0)}")
-    print(f"Missing: {totals.get('missing_lines', 0)}")
-    print("=" * 60)
-
-
-def print_gaps(gaps: List[Dict], threshold: float):
-    """Print coverage gaps."""
-    if not gaps:
-        print(f"\n✓ All modules meet {threshold}% coverage threshold!")
-        return
-
-    print("\n" + "=" * 60)
-    print(f"Coverage Gaps (below {threshold}%)")
-    print("=" * 60)
-
-    for gap in gaps:
-        print(f"\n📁 {gap['file']}")
-        print(f"   Coverage: {gap['coverage']:.2f}%")
-        print(f"   Gap: {gap['gap']:.2f}%")
-        print(
-            f"   Missing: {gap['missing_lines']} / {gap['total_statements']} statements"
-        )
-
-    print("\n" + "=" * 60)
-    print(f"Total modules below threshold: {len(gaps)}")
-    print("=" * 60)
-
-
-def generate_markdown_report(coverage_data: Dict, gaps: List[Dict], output_path: str):
+def _generate_markdown_report(data: dict, experiment_dir: Path) -> str:
     """Generate markdown coverage report."""
-    totals = coverage_data.get("totals", {})
-    total_coverage = totals.get("percent_covered", 0)
+    history = data.get("history", [])
 
-    content = f"""# Test Coverage Report
+    if not history:
+        return "# Coverage Report\n\nNo coverage data available.\n"
 
-**Generated**: {coverage_data.get("meta", {}).get("timestamp", "N/A")}
+    current = history[-1]
+    domain_predicates = data.get("domain_predicates", [])
 
-## Overall Coverage
+    # Calculate current metrics
+    pred_total = current.get("predicates_total", 0)
+    pred_covered = current.get("predicates_covered", 0)
+    pred_pct = (pred_covered / pred_total * 100) if pred_total > 0 else 0
 
-- **Total Coverage**: {total_coverage:.2f}%
-- **Total Statements**: {totals.get("num_statements", 0)}
-- **Covered Lines**: {totals.get("covered_lines", 0)}
-- **Missing Lines**: {totals.get("missing_lines", 0)}
+    case_total = current.get("cases_total", 0)
+    case_covered = current.get("cases_with_predictions", 0)
+    case_pct = (case_covered / case_total * 100) if case_total > 0 else 0
 
-## Coverage by Module
+    scenario_total = current.get("scenarios_total", 0)
+    scenario_covered = current.get("scenarios_covered", 0)
+    scenario_pct = (
+        (scenario_covered / scenario_total * 100) if scenario_total > 0 else 0
+    )
+
+    # Build report
+    report = f"""# Coverage Report
+
+**Experiment**: {experiment_dir.name}
+**Generated**: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}
+**Snapshots**: {len(history)}
+
+---
+
+## Current Coverage
+
+| Metric | Coverage | Count |
+|--------|----------|-------|
+| **Predicates** | {pred_pct:.1f}% | {pred_covered}/{pred_total} |
+| **Cases** | {case_pct:.1f}% | {case_covered}/{case_total} |
+| **Scenarios** | {scenario_pct:.1f}% | {scenario_covered}/{scenario_total} |
+| **Total Rules** | - | {current.get('total_rules', 0)} |
+
+### Rules by Layer
 
 """
 
-    # Sort files by coverage (lowest first)
-    files = coverage_data.get("files", {})
-    sorted_files = sorted(
-        files.items(),
-        key=lambda x: x[1].get("summary", {}).get("percent_covered", 0),
-    )
+    rules_by_layer = current.get("rules_by_layer", {})
+    for layer, count in sorted(rules_by_layer.items()):
+        report += f"- **{layer}**: {count} rules\n"
 
-    for file_path, file_data in sorted_files:
-        summary = file_data.get("summary", {})
-        coverage_pct = summary.get("percent_covered", 0)
-        status = "✓" if coverage_pct >= 80 else "⚠️" if coverage_pct >= 60 else "❌"
+    # Coverage trend
+    report += "\n## Coverage Trend\n\n"
 
-        content += f"\n### {status} {file_path}\n"
-        content += f"- **Coverage**: {coverage_pct:.2f}%\n"
-        content += f"- **Statements**: {summary.get('num_statements', 0)}\n"
-        content += f"- **Missing**: {summary.get('missing_lines', 0)}\n"
+    if len(history) >= 5:
+        # Calculate trend over last 5 snapshots
+        recent = history[-5:]
+        first_cov = recent[0].get("predicates_covered", 0) / max(
+            recent[0].get("predicates_total", 1), 1
+        )
+        last_cov = recent[-1].get("predicates_covered", 0) / max(
+            recent[-1].get("predicates_total", 1), 1
+        )
 
-    if gaps:
-        content += "\n## Coverage Gaps (< 80%)\n\n"
-        content += f"**Total modules below threshold**: {len(gaps)}\n\n"
+        change = last_cov - first_cov
 
-        for gap in gaps:
-            content += f"\n### {gap['file']}\n"
-            content += f"- Coverage: {gap['coverage']:.2f}%\n"
-            content += f"- Gap: {gap['gap']:.2f}%\n"
-            content += f"- Missing: {gap['missing_lines']} / {gap['total_statements']} statements\n"
+        if change > 0.01:
+            trend = "📈 **Increasing**"
+        elif change < -0.01:
+            trend = "📉 **Decreasing**"
+        else:
+            trend = "📊 **Stable**"
 
-    Path(output_path).write_text(content)
-    print(f"\n✓ Markdown report generated: {output_path}")
-
-
-def main():
-    parser = argparse.ArgumentParser(description="Generate test coverage reports")
-    parser.add_argument(
-        "--format",
-        choices=["term", "html", "xml", "json"],
-        default="term",
-        help="Output format",
-    )
-    parser.add_argument(
-        "--output", default="coverage", help="Output directory for HTML reports"
-    )
-    parser.add_argument("--summary", action="store_true", help="Show coverage summary")
-    parser.add_argument("--gaps", action="store_true", help="Identify coverage gaps")
-    parser.add_argument(
-        "--threshold",
-        type=float,
-        default=80.0,
-        help="Coverage threshold for gap analysis",
-    )
-    parser.add_argument("--markdown", help="Generate markdown report to specified file")
-    parser.add_argument("--all", action="store_true", help="Generate all reports")
-
-    args = parser.parse_args()
-
-    if args.all:
-        # Generate all reports
-        print("Generating comprehensive coverage reports...")
-
-        # 1. HTML report
-        print("\n1. Generating HTML report...")
-        run_coverage_html(args.output)
-
-        # 2. JSON + analysis
-        print("\n2. Running coverage analysis...")
-        exit_code, coverage_data = run_coverage_json()
-
-        if coverage_data:
-            print_summary(coverage_data)
-
-            gaps = analyze_gaps(coverage_data, args.threshold)
-            print_gaps(gaps, args.threshold)
-
-            # 3. Markdown report
-            markdown_path = args.markdown or "docs/TEST_COVERAGE.md"
-            generate_markdown_report(coverage_data, gaps, markdown_path)
-
-        return exit_code
-
-    # Individual operations
-    if args.format == "html":
-        return run_coverage_html(args.output)
-
-    elif args.summary or args.gaps:
-        exit_code, coverage_data = run_coverage_json()
-
-        if args.summary and coverage_data:
-            print_summary(coverage_data)
-
-        if args.gaps and coverage_data:
-            gaps = analyze_gaps(coverage_data, args.threshold)
-            print_gaps(gaps, args.threshold)
-
-        if args.markdown and coverage_data:
-            gaps = analyze_gaps(coverage_data, args.threshold)
-            generate_markdown_report(coverage_data, gaps, args.markdown)
-
-        return exit_code
-
+        report += f"Recent trend (last 5 snapshots): {trend}\n\n"
     else:
-        # Default: just run coverage with specified format
-        return run_coverage(args.format)
+        report += "Insufficient data for trend analysis.\n\n"
+
+    # Monotonicity check
+    is_monotonic = True
+    for i in range(1, len(history)):
+        prev_cov = history[i - 1].get("predicates_covered", 0) / max(
+            history[i - 1].get("predicates_total", 1), 1
+        )
+        curr_cov = history[i].get("predicates_covered", 0) / max(
+            history[i].get("predicates_total", 1), 1
+        )
+        if curr_cov < prev_cov:
+            is_monotonic = False
+            break
+
+    mono_status = "✓ Maintained" if is_monotonic else "✗ Violated"
+    report += f"**Monotonicity**: {mono_status}\n\n"
+
+    # Uncovered predicates
+    covered_predicates = set(current.get("covered_predicates", []))
+    all_predicates = set(domain_predicates)
+    uncovered = sorted(list(all_predicates - covered_predicates))
+
+    report += f"## Uncovered Predicates ({len(uncovered)})\n\n"
+
+    if uncovered:
+        for pred in uncovered[:30]:  # Show first 30
+            report += f"- `{pred}`\n"
+
+        if len(uncovered) > 30:
+            report += f"\n... and {len(uncovered) - 30} more\n"
+    else:
+        report += "🎉 All domain predicates are covered!\n"
+
+    # Coverage history table
+    if len(history) > 1:
+        report += "\n## Coverage History\n\n"
+        report += "| Snapshot | Timestamp | Predicates | Cases | Rules |\n"
+        report += "|----------|-----------|------------|-------|-------|\n"
+
+        # Show last 15 snapshots
+        for i, snapshot in enumerate(history[-15:], start=max(1, len(history) - 14)):
+            timestamp = snapshot.get("timestamp", "")[:16]
+            pred_cov = snapshot.get("predicates_covered", 0)
+            pred_tot = snapshot.get("predicates_total", 1)
+            pred_pct = (pred_cov / pred_tot * 100) if pred_tot > 0 else 0
+
+            case_cov = snapshot.get("cases_with_predictions", 0)
+            case_tot = snapshot.get("cases_total", 1)
+            case_pct = (case_cov / case_tot * 100) if case_tot > 0 else 0
+
+            total_rules = snapshot.get("total_rules", 0)
+
+            report += (
+                f"| {i:8d} | {timestamp} | {pred_pct:5.1f}% | "
+                f"{case_pct:5.1f}% | {total_rules:5d} |\n"
+            )
+
+    report += "\n---\n\n"
+    report += "*Generated by LOFT Coverage Report Tool*\n"
+
+    return report
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    coverage_report()
