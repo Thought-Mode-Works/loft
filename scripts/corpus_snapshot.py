@@ -94,7 +94,9 @@ def show_snapshot(storage: RuleEvolutionStorage, name: str) -> None:
         print(f"  Metadata: {json.dumps(snapshot.metadata, indent=4)}")
 
 
-def restore_snapshot(storage: RuleEvolutionStorage, name: str, no_clear: bool = False) -> None:
+def restore_snapshot(
+    storage: RuleEvolutionStorage, name: str, no_clear: bool = False
+) -> None:
     """Restore corpus from a snapshot."""
     try:
         snapshot = storage.restore_snapshot(name=name, clear_existing=not no_clear)

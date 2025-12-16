@@ -36,12 +36,16 @@ def demonstrate_observable_asp_core():
 
     # Run improvement cycle
     print("3. Running Self-Improvement Cycle...")
-    result = system.run_improvement_cycle(max_gaps=3, target_layer=StratificationLevel.TACTICAL)
+    result = system.run_improvement_cycle(
+        max_gaps=3, target_layer=StratificationLevel.TACTICAL
+    )
     print(f"   ✓ Cycle #{result.cycle_number} complete")
     print(f"   - Gaps identified: {result.gaps_identified}")
     print(f"   - Variants generated: {result.variants_generated}")
     print(f"   - Rules incorporated: {result.rules_incorporated}")
-    print(f"   - Performance: {result.baseline_accuracy:.1%} → {result.final_accuracy:.1%}")
+    print(
+        f"   - Performance: {result.baseline_accuracy:.1%} → {result.final_accuracy:.1%}"
+    )
     print()
 
     # Show self-analysis

@@ -13,7 +13,7 @@ From CLAUDE.md:
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, Set
+from typing import Dict, Set, Any  # Added Any for type ignore
 
 
 class StratificationLevel(str, Enum):
@@ -30,7 +30,7 @@ class StratificationLevel(str, Enum):
     TACTICAL = "tactical"  # Frequent updates, medium threshold
     OPERATIONAL = "operational"  # Rapid adaptation, low threshold
 
-    def __lt__(self, other):
+    def __lt__(self, other: Any) -> bool:  # type: ignore
         """Enable comparison for stratification levels."""
         if not isinstance(other, StratificationLevel):
             return NotImplemented
@@ -223,7 +223,7 @@ def infer_stratification_level(rule_text: str) -> StratificationLevel:
     return StratificationLevel.TACTICAL
 
 
-def print_all_policies():
+def print_all_policies() -> None:
     """Print all modification policies."""
     print("Modification Policies by Stratification Level:")
     print("=" * 80)

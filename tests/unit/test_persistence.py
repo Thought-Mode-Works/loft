@@ -13,7 +13,7 @@ from pathlib import Path
 from loft.persistence.asp_persistence import (
     ASPPersistenceManager,
     SnapshotMetadata,
-    CorruptedFileError,
+    CorruptedFileError,  # Added LoadResult
 )
 from loft.symbolic.asp_rule import ASPRule, RuleMetadata
 from loft.symbolic.stratification import StratificationLevel
@@ -31,7 +31,9 @@ class TestASPPersistenceManager:
     @pytest.fixture
     def persistence_manager(self, temp_dir):
         """Create persistence manager with temp directory."""
-        return ASPPersistenceManager(base_dir=temp_dir, enable_git=False)
+        return ASPPersistenceManager(
+            base_dir=str(temp_dir), enable_git=False
+        )  # Convert Path to str
 
     @pytest.fixture
     def sample_rule(self):
@@ -52,7 +54,9 @@ class TestASPPersistenceManager:
 
     def test_initialization(self, temp_dir):
         """Test persistence manager initialization."""
-        manager = ASPPersistenceManager(base_dir=temp_dir, enable_git=False)
+        manager = ASPPersistenceManager(
+            base_dir=str(temp_dir), enable_git=False
+        )  # Convert Path to str
 
         assert manager.base_dir == Path(temp_dir)
         assert manager.snapshot_dir == Path(temp_dir) / "snapshots"
@@ -122,10 +126,11 @@ class TestASPPersistenceManager:
 
         # Load rules
         loaded_rules = persistence_manager.load_all_rules()
+        loaded_rules_by_layer = loaded_rules.rules_by_layer  # Fix: assign here
 
         # Check loaded correctly
-        assert StratificationLevel.STRATEGIC in loaded_rules
-        strategic_rules = loaded_rules[StratificationLevel.STRATEGIC]
+        assert StratificationLevel.STRATEGIC in loaded_rules_by_layer
+        strategic_rules = loaded_rules_by_layer[StratificationLevel.STRATEGIC]
         assert len(strategic_rules) >= 1
 
         # Find our rule
@@ -252,7 +257,9 @@ class TestASPPersistenceManager:
         """Test snapshot retention policy."""
         # Create manager with retention limit
         manager = ASPPersistenceManager(
-            base_dir=temp_dir, enable_git=False, snapshot_retention=3
+            base_dir=str(temp_dir),
+            enable_git=False,
+            snapshot_retention=3,  # Convert Path to str
         )
 
         # Save rule
@@ -304,25 +311,25 @@ class TestASPPersistenceManager:
         strategic_file = persistence_manager.base_dir / "strategic.lp"
         strategic_file.write_text("@@@ CORRUPTED @@@\n!!! INVALID ASP !!!")
 
-        # Should handle gracefully
-        try:
-            loaded_rules = persistence_manager.load_all_rules()
-            # Should load with warnings, not crash
-            assert StratificationLevel.STRATEGIC in loaded_rules
-        except CorruptedFileError:
-            # Also acceptable to raise specific error
-            pass
+        # Test with recover_on_error=False (should raise)
+        with pytest.raises(CorruptedFileError):
+            persistence_manager.load_all_rules(recover_on_error=False)
 
     def test_empty_layer_handling(self, persistence_manager):
         """Test handling of empty layers."""
         # Load when no files exist
-        loaded_rules = persistence_manager.load_all_rules()
+        load_result = persistence_manager.load_all_rules()
+        loaded_rules_by_layer = (
+            load_result.rules_by_layer
+        )  # Fixed: Access rules_by_layer
 
         # All layers should be present with empty lists
-        assert len(loaded_rules) == len(StratificationLevel)
+        assert len(loaded_rules_by_layer) == len(
+            StratificationLevel
+        )  # Fixed: check len of rules_by_layer
         for layer in StratificationLevel:
-            assert layer in loaded_rules
-            assert loaded_rules[layer] == []
+            assert layer in loaded_rules_by_layer
+            assert loaded_rules_by_layer[layer] == []
 
     def test_multiple_rules_same_layer(self, persistence_manager):
         """Test saving multiple rules to same layer."""
@@ -342,8 +349,10 @@ class TestASPPersistenceManager:
             persistence_manager.save_rule(rule, StratificationLevel.TACTICAL)
 
         # Load and verify all rules present
-        loaded_rules = persistence_manager.load_all_rules()
-        tactical_rules = loaded_rules[StratificationLevel.TACTICAL]
+        load_result = persistence_manager.load_all_rules()
+        tactical_rules = load_result.rules_by_layer[
+            StratificationLevel.TACTICAL
+        ]  # Fixed access
 
         assert len(tactical_rules) >= 3
         for i in range(3):
@@ -399,7 +408,9 @@ class TestIntegration:
 
     def test_full_workflow(self, temp_dir):
         """Test complete persistence workflow."""
-        manager = ASPPersistenceManager(base_dir=temp_dir, enable_git=False)
+        manager = ASPPersistenceManager(
+            base_dir=str(temp_dir), enable_git=False
+        )  # Convert Path to str
 
         # Step 1: Save initial rules
         metadata = RuleMetadata(
@@ -436,8 +447,8 @@ class TestIntegration:
         manager.restore_snapshot(cycle_number=1)
 
         # Step 6: Load rules and verify only rule1 present
-        loaded = manager.load_all_rules()
-        tactical_rules = loaded[StratificationLevel.TACTICAL]
+        load_result = manager.load_all_rules()
+        tactical_rules = load_result.rules_by_layer[StratificationLevel.TACTICAL]
         assert any("test1(X)" in r.asp_text for r in tactical_rules)
         assert not any("test2(X)" in r.asp_text for r in tactical_rules)
 

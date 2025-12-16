@@ -108,7 +108,11 @@ class DatasetLoader:
                 "hard": len([s for s in scenarios if s.difficulty == "hard"]),
             },
             "by_ground_truth": {
-                "enforceable": len([s for s in scenarios if s.ground_truth == "enforceable"]),
-                "unenforceable": len([s for s in scenarios if s.ground_truth == "unenforceable"]),
+                "enforceable": len(
+                    [s for s in scenarios if s.ground_truth == "enforceable"]
+                ),
+                "unenforceable": len(
+                    [s for s in scenarios if s.ground_truth == "unenforceable"]
+                ),
             },
         }

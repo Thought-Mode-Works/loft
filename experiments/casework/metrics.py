@@ -75,7 +75,9 @@ class LearningMetrics:
 
     def get_summary(self) -> Dict[str, Any]:
         """Get summary statistics."""
-        total_time = ((self.end_time or datetime.now()) - self.start_time).total_seconds()
+        total_time = (
+            (self.end_time or datetime.now()) - self.start_time
+        ).total_seconds()
 
         return {
             "total_cases": self.total_cases,
@@ -91,7 +93,9 @@ class LearningMetrics:
                 else 0.0
             ),
             "total_time_seconds": total_time,
-            "avg_time_per_case": total_time / self.total_cases if self.total_cases > 0 else 0.0,
+            "avg_time_per_case": (
+                total_time / self.total_cases if self.total_cases > 0 else 0.0
+            ),
         }
 
     def to_dict(self) -> Dict[str, Any]:

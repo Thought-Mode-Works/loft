@@ -18,6 +18,10 @@ from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
+from loft.symbolic.stratification import (
+    StratificationLevel,
+)  # Added StratificationLevel import
+
 
 @dataclass
 class PersistenceMetrics:
@@ -187,14 +191,14 @@ class PersistenceMetricsCollector:
     def __init__(self):
         """Initialize metrics collector."""
         self.collected_metrics: List[PersistenceMetrics] = []
-        self.error_log: List[Dict[str, Any]] = []
+        self.error_log: List[Dict[str, Any]] = []  # Explicitly type error_log
 
     def measure_save_cycle(
         self,
         manager: Any,  # ASPPersistenceManager
         rules_by_layer: Dict[
-            str, List[Any]
-        ],  # Dict[StratificationLevel, List[ASPRule]]
+            StratificationLevel, List[Any]
+        ],  # Changed to StratificationLevel
     ) -> PersistenceMetrics:
         """
         Measure a complete save cycle.
@@ -272,8 +276,16 @@ class PersistenceMetricsCollector:
 
         # Measure load time
         start_time = time.perf_counter()
+        load_result = None
         try:
-            rules_by_layer = manager.load_all_rules()
+            load_result = manager.load_all_rules()
+            metrics.load_errors += len(load_result.parsing_errors)
+            if load_result.had_errors:
+                metrics.recovery_attempts += 1
+                if load_result.recovered_layers:
+                    metrics.recovery_successes += len(load_result.recovered_layers)
+
+            rules_by_layer = load_result.rules_by_layer
 
             # Count loaded rules
             for layer, rules in rules_by_layer.items():
@@ -287,7 +299,17 @@ class PersistenceMetricsCollector:
                         metrics.rules_with_metadata += 1
 
         except Exception as e:
+            from loft.persistence.asp_persistence import (
+                LoadResult,
+            )  # Import here to avoid circular dependency
+
             metrics.load_errors += 1
+            load_result = LoadResult(
+                rules_by_layer={},
+                parsing_errors=[str(e)],
+                had_errors=True,
+                recovered_layers=[],
+            )
             self.error_log.append(
                 {
                     "type": "load_error",
@@ -368,7 +390,7 @@ class PersistenceMetricsCollector:
         Returns:
             Dictionary with integrity check results
         """
-        results = {
+        results: Dict[str, Any] = {
             "rules_match": True,
             "metadata_preserved": True,
             "missing_rules": [],
@@ -488,7 +510,7 @@ class PersistenceMetricsCollector:
             report.metadata_preservation_rate = metadata_preserved_sum / metadata_count
 
         # Build scalability data
-        scalability_points = {}
+        scalability_points: Dict[int, Dict[str, List[float]]] = {}
         for m in metrics_list:
             rule_count = m.total_rules
             if rule_count > 0:

@@ -201,7 +201,9 @@ def run_experiment_4() -> dict:
     print(f"Held-Out Set ({results['setup']['held_out_cases']} cases):")
     print(f"  Baseline: {results['baseline']['held_out_accuracy']:.1%}")
     print(f"  With Rules: {results['with_rules']['held_out_accuracy']:.1%}")
-    print(f"  Improvement: +{results['improvements']['held_out_improvement']:.1%} (target: >5%)")
+    print(
+        f"  Improvement: +{results['improvements']['held_out_improvement']:.1%} (target: >5%)"
+    )
     print()
 
     status = "✅ PASS" if results["meets_criteria"] else "❌ FAIL"
@@ -250,9 +252,11 @@ def main():
         "experiment_4": exp4_results,
         "mvp_validation": {
             "syntax_validity": exp1_results["syntax_validity_rate"] >= 0.80,
-            "false_positive_rate": exp2_results["metrics"]["false_positive_rate"] < 0.10,
+            "false_positive_rate": exp2_results["metrics"]["false_positive_rate"]
+            < 0.10,
             "precision": exp2_results["metrics"]["precision"] >= 0.85,
-            "generalization": exp4_results["improvements"]["held_out_improvement"] > 0.05,
+            "generalization": exp4_results["improvements"]["held_out_improvement"]
+            > 0.05,
             "all_criteria_met": True,
         },
     }
@@ -271,9 +275,13 @@ def main():
     print()
     print("MVP Criteria Status:")
     print(f"  ✅ Syntax validity >80%: {exp1_results['syntax_validity_rate']:.1%}")
-    print(f"  ✅ False positive rate <10%: {exp2_results['metrics']['false_positive_rate']:.1%}")
+    print(
+        f"  ✅ False positive rate <10%: {exp2_results['metrics']['false_positive_rate']:.1%}"
+    )
     print(f"  ✅ Precision >85%: {exp2_results['metrics']['precision']:.1%}")
-    print(f"  ✅ Generalization >5%: {exp4_results['improvements']['held_out_improvement']:.1%}")
+    print(
+        f"  ✅ Generalization >5%: {exp4_results['improvements']['held_out_improvement']:.1%}"
+    )
     print()
     print("Phase 2 is VALIDATED ✅")
     print()

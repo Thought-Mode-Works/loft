@@ -100,7 +100,9 @@ class PlaygroundCLI:
 
     def cmd_help(self) -> None:
         """Display help information."""
-        table = Table(title="Available Commands", show_header=True, header_style="bold magenta")
+        table = Table(
+            title="Available Commands", show_header=True, header_style="bold magenta"
+        )
         table.add_column("Command", style="cyan")
         table.add_column("Description", style="white")
 
@@ -154,7 +156,9 @@ class PlaygroundCLI:
             )
 
             if scenario.facts:
-                syntax = Syntax(scenario.facts, "prolog", theme="monokai", line_numbers=True)
+                syntax = Syntax(
+                    scenario.facts, "prolog", theme="monokai", line_numbers=True
+                )
                 console.print(Panel(syntax, title="Facts", border_style="blue"))
 
         except Exception as e:
@@ -171,7 +175,9 @@ class PlaygroundCLI:
             console.print("[cyan]Translating NL -> ASP...[/cyan]")
             result = self.session.translate_nl_to_asp(args)
 
-            asp_syntax = Syntax(result["asp_code"], "prolog", theme="monokai", line_numbers=True)
+            asp_syntax = Syntax(
+                result["asp_code"], "prolog", theme="monokai", line_numbers=True
+            )
             console.print(
                 Panel(
                     asp_syntax,
@@ -200,7 +206,9 @@ class PlaygroundCLI:
         try:
             gaps = self.session.identify_gaps()
 
-            table = Table(title="Identified Gaps", show_header=True, header_style="bold magenta")
+            table = Table(
+                title="Identified Gaps", show_header=True, header_style="bold magenta"
+            )
             table.add_column("Gap ID", style="cyan")
             table.add_column("Description", style="white")
 
@@ -222,7 +230,9 @@ class PlaygroundCLI:
             console.print(f"[cyan]Generating rule for gap: {args}...[/cyan]")
             rule = self.session.generate_rule(args)
 
-            asp_syntax = Syntax(rule.asp_rule, "prolog", theme="monokai", line_numbers=True)
+            asp_syntax = Syntax(
+                rule.asp_rule, "prolog", theme="monokai", line_numbers=True
+            )
 
             console.print(
                 Panel(
@@ -266,7 +276,9 @@ class PlaygroundCLI:
                 console.print("\n[green]Rule accepted![/green]")
                 console.print(f"Next step: incorporate-rule {args}")
             else:
-                console.print("\n[red]Rule rejected.[/red] Try generating a different rule.")
+                console.print(
+                    "\n[red]Rule rejected.[/red] Try generating a different rule."
+                )
 
         except Exception as e:
             console.print(f"[red]Error validating rule:[/red] {e}")
@@ -323,7 +335,9 @@ class PlaygroundCLI:
         """Show session status."""
         status = self.session.get_status()
 
-        table = Table(title="Session Status", show_header=True, header_style="bold magenta")
+        table = Table(
+            title="Session Status", show_header=True, header_style="bold magenta"
+        )
         table.add_column("Metric", style="cyan")
         table.add_column("Value", style="white")
 
@@ -336,11 +350,15 @@ class PlaygroundCLI:
         """Show all generated and incorporated rules."""
         if not self.session.generated_rules:
             console.print("[yellow]No rules generated yet.[/yellow]")
-            console.print("Use 'identify-gaps' and 'generate-rule <gap-id>' to create rules.")
+            console.print(
+                "Use 'identify-gaps' and 'generate-rule <gap-id>' to create rules."
+            )
             return
 
         # Create table of all rules
-        table = Table(title="Generated Rules", show_header=True, header_style="bold magenta")
+        table = Table(
+            title="Generated Rules", show_header=True, header_style="bold magenta"
+        )
         table.add_column("Rule ID", style="cyan")
         table.add_column("Status", style="white")
         table.add_column("Confidence", style="white")
@@ -417,7 +435,9 @@ class PlaygroundCLI:
                     console.print(f"  [{rule_info['rule_id']}]")
                     console.print(syntax)
             else:
-                console.print("\n[yellow]No incorporated rules apply to this scenario.[/yellow]")
+                console.print(
+                    "\n[yellow]No incorporated rules apply to this scenario.[/yellow]"
+                )
 
             console.print(f"\n[bold]Prediction:[/bold] {explanation['prediction']}")
             console.print(f"[bold]Confidence:[/bold] {explanation['confidence']:.2f}")
@@ -449,7 +469,9 @@ class PlaygroundCLI:
         """Display detailed performance metrics."""
         metrics = self.session.get_metrics()
 
-        table = Table(title="Performance Metrics", show_header=True, header_style="bold magenta")
+        table = Table(
+            title="Performance Metrics", show_header=True, header_style="bold magenta"
+        )
         table.add_column("Metric", style="cyan")
         table.add_column("Value", style="white")
 
@@ -470,8 +492,12 @@ class PlaygroundCLI:
         table.add_row("", "")  # Separator
 
         table.add_row("[bold]Confidence Scores", "")
-        table.add_row("  Avg Generation Confidence", f"{metrics['avg_generation_confidence']:.2f}")
-        table.add_row("  Avg Validation Confidence", f"{metrics['avg_validation_confidence']:.2f}")
+        table.add_row(
+            "  Avg Generation Confidence", f"{metrics['avg_generation_confidence']:.2f}"
+        )
+        table.add_row(
+            "  Avg Validation Confidence", f"{metrics['avg_validation_confidence']:.2f}"
+        )
 
         console.print(table)
 
@@ -483,7 +509,9 @@ class PlaygroundCLI:
             console.print("[yellow]No commands executed yet.[/yellow]")
             return
 
-        table = Table(title="Command History", show_header=True, header_style="bold magenta")
+        table = Table(
+            title="Command History", show_header=True, header_style="bold magenta"
+        )
         table.add_column("Time", style="cyan")
         table.add_column("Command", style="white")
         table.add_column("Details", style="dim")

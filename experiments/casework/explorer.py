@@ -105,7 +105,9 @@ class CaseworkExplorer:
                     predicates = extract_predicates_from_asp_facts(scenario.asp_facts)
                     all_predicates.update(predicates)
 
-            logger.info(f"Collected {len(all_predicates)} unique predicates from dataset")
+            logger.info(
+                f"Collected {len(all_predicates)} unique predicates from dataset"
+            )
             return sorted(all_predicates)
 
         except Exception as e:
@@ -226,7 +228,9 @@ class CaseworkExplorer:
         rules_accepted = 0
 
         if not correct and self.enable_learning:
-            logger.info("Prediction incorrect - identifying gaps and generating rules...")
+            logger.info(
+                "Prediction incorrect - identifying gaps and generating rules..."
+            )
 
             # Identify gap
             _gap = self._identify_gap(scenario, prediction)  # noqa: F841
@@ -237,9 +241,13 @@ class CaseworkExplorer:
                 # Combine dataset predicates with scenario-specific predicates
                 scenario_predicates = []
                 if scenario.asp_facts:
-                    scenario_predicates = extract_predicates_from_asp_facts(scenario.asp_facts)
+                    scenario_predicates = extract_predicates_from_asp_facts(
+                        scenario.asp_facts
+                    )
 
-                all_predicates = list(set(self.dataset_predicates + scenario_predicates))
+                all_predicates = list(
+                    set(self.dataset_predicates + scenario_predicates)
+                )
 
                 # Use aligned generation for better predicate matching
                 if all_predicates:
@@ -268,7 +276,9 @@ class CaseworkExplorer:
                     logger.info(f"Learned new rule from {scenario.scenario_id}")
 
             except RuleGenerationError as e:
-                logger.warning(f"Rule generation failed for {scenario.scenario_id}: {e}")
+                logger.warning(
+                    f"Rule generation failed for {scenario.scenario_id}: {e}"
+                )
             except Exception as e:
                 logger.warning(f"Error learning from scenario: {e}")
 

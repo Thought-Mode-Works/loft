@@ -82,7 +82,9 @@ class TransferResult:
         # Transfer rate: how much of the learning transferred
         source_improvement = self.source_final_accuracy - self.source_baseline_accuracy
         if source_improvement > 0:
-            zero_shot_improvement = self.zero_shot_accuracy - self.source_baseline_accuracy
+            zero_shot_improvement = (
+                self.zero_shot_accuracy - self.source_baseline_accuracy
+            )
             self.transfer_rate = zero_shot_improvement / source_improvement
         else:
             self.transfer_rate = 0.0
@@ -148,7 +150,9 @@ class TransferStudy:
         """
         self.model = model
         self.asp_reasoner = ASPReasoner()
-        self._unknown_predictions: List[str] = []  # Track scenarios with unknown predictions
+        self._unknown_predictions: List[str] = (
+            []
+        )  # Track scenarios with unknown predictions
         self.use_canonical_translation = use_canonical_translation
         self.use_hybrid_translation = use_hybrid_translation
         self._translator: Optional["CanonicalTranslator"] = None
@@ -178,7 +182,9 @@ class TransferStudy:
                     "Canonical translation requires rdflib. Install with: pip install rdflib"
                 )
             self._translator = CanonicalTranslator()
-            logger.info(f"Canonical translation enabled. Domains: {self._translator.get_domains()}")
+            logger.info(
+                f"Canonical translation enabled. Domains: {self._translator.get_domains()}"
+            )
 
     def run_same_domain_experiment(
         self,
@@ -225,7 +231,9 @@ class TransferStudy:
         train_accuracy = train_metrics.get_current_accuracy()
         rules_learned = len(explorer.knowledge_base_rules)
 
-        logger.info(f"Training complete: {train_accuracy:.1%} accuracy, {rules_learned} rules")
+        logger.info(
+            f"Training complete: {train_accuracy:.1%} accuracy, {rules_learned} rules"
+        )
 
         # Log the learned rules for inspection
         logger.info("Learned rules:")
@@ -300,7 +308,9 @@ class TransferStudy:
 
         # Check canonical translation availability
         if self.use_canonical_translation and self._translator:
-            coverage = self._translator.get_translation_coverage(source_domain, target_domain)
+            coverage = self._translator.get_translation_coverage(
+                source_domain, target_domain
+            )
             logger.info(
                 f"Canonical translation coverage: {coverage['coverage_ratio']:.1%} "
                 f"({coverage['translatable_count']}/{coverage['source_predicates']} predicates)"
@@ -313,7 +323,9 @@ class TransferStudy:
         )
 
         source_scenarios = source_loader.load_all()
-        source_baseline_acc = self._measure_baseline(source_explorer, source_scenarios[:10])
+        source_baseline_acc = self._measure_baseline(
+            source_explorer, source_scenarios[:10]
+        )
 
         source_metrics = source_explorer.explore_dataset()
         source_final_acc = source_metrics.get_current_accuracy()
@@ -366,13 +378,17 @@ class TransferStudy:
         )
 
         # Pre-load source knowledge
-        few_shot_explorer.knowledge_base_rules = source_explorer.knowledge_base_rules.copy()
+        few_shot_explorer.knowledge_base_rules = (
+            source_explorer.knowledge_base_rules.copy()
+        )
 
         few_shot_metrics = few_shot_explorer.explore_dataset(max_cases=few_shot_count)
         few_shot_acc = few_shot_metrics.get_current_accuracy()
         few_shot_rules = len(few_shot_explorer.knowledge_base_rules) - source_rules
 
-        logger.info(f"Few-shot accuracy: {few_shot_acc:.1%} ({few_shot_rules} new rules)")
+        logger.info(
+            f"Few-shot accuracy: {few_shot_acc:.1%} ({few_shot_rules} new rules)"
+        )
 
         # Step 4: From-scratch baseline on target
         logger.info(f"Step 4: Training from scratch on {target_domain}...")
@@ -486,7 +502,9 @@ class TransferStudy:
         total_confidence = 0.0
 
         for rule in rules:
-            result = self._hybrid_translator.translate_rule(rule, source_domain, target_domain)
+            result = self._hybrid_translator.translate_rule(
+                rule, source_domain, target_domain
+            )
 
             if result.translated is not None:
                 translated_rules.append(result.translated)
@@ -494,7 +512,9 @@ class TransferStudy:
                 total_confidence += result.confidence
 
                 if result.translations:
-                    logger.debug(f"Hybrid translated ({result.method}): {result.reasoning}")
+                    logger.debug(
+                        f"Hybrid translated ({result.method}): {result.reasoning}"
+                    )
             else:
                 # Keep original rule if translation fails
                 translated_rules.append(rule)
@@ -509,7 +529,9 @@ class TransferStudy:
             "total_untranslatable": failed_translations,
             "rules_processed": len(rules),
             "average_confidence": (
-                total_confidence / successful_translations if successful_translations > 0 else 0.0
+                total_confidence / successful_translations
+                if successful_translations > 0
+                else 0.0
             ),
             "canonical_translations": hybrid_stats.canonical_translations,
             "llm_translations": hybrid_stats.llm_translations,
@@ -519,7 +541,9 @@ class TransferStudy:
 
         return translated_rules, stats
 
-    def _measure_baseline(self, explorer: CaseworkExplorer, scenarios: List[Any]) -> float:
+    def _measure_baseline(
+        self, explorer: CaseworkExplorer, scenarios: List[Any]
+    ) -> float:
         """Measure baseline accuracy before learning."""
         # Use simple heuristic prediction for baseline
         correct = 0
@@ -554,7 +578,9 @@ class TransferStudy:
 
             if not asp_facts:
                 # No ASP facts available - log and skip
-                logger.debug(f"No ASP facts for scenario {scenario.scenario_id}, skipping")
+                logger.debug(
+                    f"No ASP facts for scenario {scenario.scenario_id}, skipping"
+                )
                 self._unknown_predictions.append(scenario.scenario_id)
                 continue
 
@@ -629,7 +655,8 @@ class TransferStudy:
                 "cases": result.source_cases,
                 "baseline_accuracy": result.source_baseline_accuracy,
                 "final_accuracy": result.source_final_accuracy,
-                "improvement": result.source_final_accuracy - result.source_baseline_accuracy,
+                "improvement": result.source_final_accuracy
+                - result.source_baseline_accuracy,
                 "rules_learned": result.source_rules_learned,
             },
             "transfer_results": {
@@ -657,7 +684,9 @@ class TransferStudy:
 
         logger.info(f"Transfer study report saved to: {output_path}")
 
-    def generate_same_domain_report(self, result: SameDomainResult, output_path: Path) -> None:
+    def generate_same_domain_report(
+        self, result: SameDomainResult, output_path: Path
+    ) -> None:
         """Generate same-domain study report."""
         report = {
             "experiment": {
@@ -790,7 +819,9 @@ def main():
     if not args.output:
         if mode == "same_domain":
             domain_name = Path(args.same_domain).name
-            args.output = str(output_dir / f"same_domain_{domain_name}_{timestamp}.json")
+            args.output = str(
+                output_dir / f"same_domain_{domain_name}_{timestamp}.json"
+            )
         else:
             args.output = str(output_dir / f"transfer_{timestamp}.json")
 
@@ -842,9 +873,15 @@ def main():
         print()
         if result.reasoning_stats:
             print("ASP Reasoning Statistics:")
-            print(f"  Total Scenarios: {result.reasoning_stats.get('total_scenarios', 0)}")
-            print(f"  Correct Predictions: {result.reasoning_stats.get('correct_predictions', 0)}")
-            print(f"  Unknown Predictions: {result.reasoning_stats.get('unknown_predictions', 0)}")
+            print(
+                f"  Total Scenarios: {result.reasoning_stats.get('total_scenarios', 0)}"
+            )
+            print(
+                f"  Correct Predictions: {result.reasoning_stats.get('correct_predictions', 0)}"
+            )
+            print(
+                f"  Unknown Predictions: {result.reasoning_stats.get('unknown_predictions', 0)}"
+            )
             print()
         print(f"Full report: {args.output}")
         print("=" * 80)
@@ -884,16 +921,26 @@ def main():
         print(f"  Transfer Rate: {result.transfer_rate:.1%}")
         print()
         print("Few-shot Learning:")
-        print(f"  Few-shot Accuracy: {result.few_shot_accuracy:.1%} ({args.few_shot} cases)")
+        print(
+            f"  Few-shot Accuracy: {result.few_shot_accuracy:.1%} ({args.few_shot} cases)"
+        )
         print(f"  From-scratch Accuracy: {result.scratch_accuracy:.1%}")
         print(f"  Advantage: {result.few_shot_advantage:+.1%}")
         print()
         if result.reasoning_stats:
             print("ASP Reasoning Statistics:")
-            print(f"  Total Scenarios: {result.reasoning_stats.get('total_scenarios', 0)}")
-            print(f"  Correct Predictions: {result.reasoning_stats.get('correct_predictions', 0)}")
-            print(f"  Unknown Predictions: {result.reasoning_stats.get('unknown_predictions', 0)}")
-            print(f"  Reasoning Errors: {result.reasoning_stats.get('reasoning_errors', 0)}")
+            print(
+                f"  Total Scenarios: {result.reasoning_stats.get('total_scenarios', 0)}"
+            )
+            print(
+                f"  Correct Predictions: {result.reasoning_stats.get('correct_predictions', 0)}"
+            )
+            print(
+                f"  Unknown Predictions: {result.reasoning_stats.get('unknown_predictions', 0)}"
+            )
+            print(
+                f"  Reasoning Errors: {result.reasoning_stats.get('reasoning_errors', 0)}"
+            )
             print()
         print(f"Full report: {args.output}")
         print("=" * 80)

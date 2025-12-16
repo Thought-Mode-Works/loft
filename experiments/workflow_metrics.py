@@ -35,7 +35,9 @@ class WorkflowMetrics:
 
     # Validation Metrics
     validation_time: float = 0.0
-    validation_precision: float = 0.0  # TP / (TP + FP) - % of accepted rules that are good
+    validation_precision: float = (
+        0.0  # TP / (TP + FP) - % of accepted rules that are good
+    )
     validation_recall: float = 0.0  # TP / (TP + FN) - % of good rules that are accepted
     rules_validated: int = 0
     rules_accepted: int = 0
@@ -43,7 +45,9 @@ class WorkflowMetrics:
 
     # Incorporation Metrics
     incorporation_time: float = 0.0
-    incorporation_success_rate: float = 0.0  # % of attempted incorporations that succeed
+    incorporation_success_rate: float = (
+        0.0  # % of attempted incorporations that succeed
+    )
     rules_incorporated: int = 0
     incorporation_failures: int = 0
 
@@ -71,9 +75,13 @@ class WorkflowMetrics:
         else:
             self.acceptance_rate = 0.0
 
-        total_incorporation_attempts = self.rules_incorporated + self.incorporation_failures
+        total_incorporation_attempts = (
+            self.rules_incorporated + self.incorporation_failures
+        )
         if total_incorporation_attempts > 0:
-            self.incorporation_success_rate = self.rules_incorporated / total_incorporation_attempts
+            self.incorporation_success_rate = (
+                self.rules_incorporated / total_incorporation_attempts
+            )
 
     def to_dict(self) -> Dict:
         """Convert metrics to dictionary for JSON serialization."""
@@ -150,7 +158,9 @@ class WorkflowMetrics:
             final_accuracy=overall.get("final_accuracy", 0.0),
             overall_accuracy_improvement=overall.get("improvement", 0.0),
             test_cases_evaluated=overall.get("test_cases_evaluated", 0),
-            timestamp=datetime.fromisoformat(meta.get("timestamp", datetime.now().isoformat())),
+            timestamp=datetime.fromisoformat(
+                meta.get("timestamp", datetime.now().isoformat())
+            ),
             test_suite_name=meta.get("test_suite", ""),
             per_gap_metrics=detailed.get("per_gap", []),
             per_rule_metrics=detailed.get("per_rule", []),

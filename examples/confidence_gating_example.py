@@ -58,7 +58,9 @@ decision1 = gate.should_accept(
 
 print(f"Decision: {decision1.action.upper()}")
 print(f"Reasoning: {decision1.reasoning}")
-print(f"Confidence: {decision1.calibrated_confidence:.2f} vs threshold {decision1.threshold:.2f}")
+print(
+    f"Confidence: {decision1.calibrated_confidence:.2f} vs threshold {decision1.threshold:.2f}"
+)
 
 print("\n" + "=" * 70)
 print("Example 2: Medium confidence (borderline) for tactical layer")
@@ -70,7 +72,9 @@ decision2 = gate.should_accept(
 
 print(f"Decision: {decision2.action.upper()}")
 print(f"Reasoning: {decision2.reasoning}")
-print(f"Confidence: {decision2.calibrated_confidence:.2f} vs threshold {decision2.threshold:.2f}")
+print(
+    f"Confidence: {decision2.calibrated_confidence:.2f} vs threshold {decision2.threshold:.2f}"
+)
 
 print("\n" + "=" * 70)
 print("Example 3: Low confidence for tactical layer")
@@ -82,7 +86,9 @@ decision3 = gate.should_accept(
 
 print(f"Decision: {decision3.action.upper()}")
 print(f"Reasoning: {decision3.reasoning}")
-print(f"Confidence: {decision3.calibrated_confidence:.2f} vs threshold {decision3.threshold:.2f}")
+print(
+    f"Confidence: {decision3.calibrated_confidence:.2f} vs threshold {decision3.threshold:.2f}"
+)
 
 print("\n" + "=" * 70)
 print("Example 4: Impact-based threshold adjustment")
@@ -138,7 +144,9 @@ confidences = [high_confidence, medium_confidence, low_confidence]
 decisions = gate.batch_evaluate(confidences, target_layer="tactical")
 
 for i, decision in enumerate(decisions, 1):
-    print(f"{i}. {decision.action:20} (confidence: {decision.calibrated_confidence:.2f})")
+    print(
+        f"{i}. {decision.action:20} (confidence: {decision.calibrated_confidence:.2f})"
+    )
 
 # Get statistics
 stats = gate.get_statistics(decisions)

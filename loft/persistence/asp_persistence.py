@@ -16,14 +16,23 @@ import os
 import shutil
 import tempfile
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import (
+    Dict,
+    List,
+    Optional,
+    Any,
+    Tuple,
+    Generator,
+    IO,
+)  # Added Generator, IO
 from loguru import logger
+import hashlib  # Added for rule ID generation
 
 from loft.symbolic.stratification import StratificationLevel
-from loft.symbolic.asp_rule import ASPRule
+from loft.symbolic.asp_rule import ASPRule, RuleMetadata  # Added RuleMetadata import
 
 
 class PersistenceError(Exception):
@@ -36,6 +45,16 @@ class CorruptedFileError(PersistenceError):
     """Raised when a persisted file is corrupted or invalid."""
 
     pass
+
+
+@dataclass
+class LoadResult:
+    rules_by_layer: Dict[StratificationLevel, List[ASPRule]] = field(
+        default_factory=dict
+    )
+    had_errors: bool = False
+    recovered_layers: List[str] = field(default_factory=list)
+    parsing_errors: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -75,8 +94,8 @@ class ASPPersistenceManager:
     - File-based storage organized by stratification layer
     - Atomic writes to prevent corruption during crashes
     - Snapshot system for version history
-    - Backup/restore functionality
-    - LinkedASP metadata embedding for future queryability
+    - Backup and recovery mechanisms
+    - LinkedASP RDF metadata embedding for future queryability
     - Git integration for full history tracking
 
     File Structure:
@@ -211,11 +230,18 @@ class ASPPersistenceManager:
             f"%%% Predicate: {head_predicate}",
             f"%%% Layer: {layer.value}",
             f"%%% Confidence: {rule.confidence}",
-            f"%%% Added: {datetime.now().isoformat()}",
+            f"%%% Added: {rule.metadata.timestamp}",  # Use rule's metadata timestamp
             f"%%% Provenance: {rule.metadata.provenance}",
         ]
 
-        if metadata:
+        if rule.metadata.author:
+            lines.append(f"%%% Author: {rule.metadata.author}")
+        if rule.metadata.tags:
+            lines.append(f"%%% Tags: {','.join(rule.metadata.tags)}")
+        if rule.metadata.notes:
+            lines.append(f"%%% Notes: {rule.metadata.notes}")
+
+        if metadata:  # Additional metadata from save_rule call, not from RuleMetadata
             if "source_type" in metadata:
                 lines.append(f"%%% Source Type: {metadata['source_type']}")
             if "source_llm" in metadata:
@@ -230,7 +256,7 @@ class ASPPersistenceManager:
         return "\n".join(lines)
 
     @contextmanager
-    def _atomic_append(self, filepath: Path):
+    def _atomic_append(self, filepath: Path) -> Generator[IO[str], None, None]:
         """
         Context manager for atomic file append operations.
 
@@ -304,7 +330,7 @@ class ASPPersistenceManager:
                                 f.write("\n")
                             f.write(f"{rule.asp_text}\n\n")
                 else:
-                    # Append rules
+                    # Append rules (currently not used by save_all_rules, but by save_rule)
                     for rule in rules:
                         self.save_rule(rule, layer)
 
@@ -319,7 +345,7 @@ class ASPPersistenceManager:
                 ) from e
 
     @contextmanager
-    def _atomic_write(self, filepath: Path):
+    def _atomic_write(self, filepath: Path) -> Generator[IO[str], None, None]:
         """
         Context manager for atomic file write operations (overwrite mode).
 
@@ -347,9 +373,11 @@ class ASPPersistenceManager:
                 pass
             raise
 
-    def _write_layer_header(self, f, layer: StratificationLevel) -> None:
+    def _write_layer_header(self, f: IO[str], layer: StratificationLevel) -> None:
         """Write header comment for a layer file."""
-        header = f"""%%% ========================================
+        header = f"""
+
+%%% ========================================
 %%% {layer.value.upper()} LAYER
 %%% ========================================
 %%%
@@ -365,17 +393,21 @@ class ASPPersistenceManager:
 """
         f.write(header)
 
-    def load_all_rules(self) -> Dict[StratificationLevel, List[ASPRule]]:
+    def load_all_rules(self, recover_on_error: bool = False) -> LoadResult:
         """
         Load all persisted rules from disk.
 
-        Returns:
-            Dictionary mapping layers to lists of ASP rules
+        Args:
+            recover_on_error: If True, log errors and attempt to load other layers/rules.
+                              If False, raise CorruptedFileError on first major issue.
 
-        Raises:
-            CorruptedFileError: If any file is corrupted or invalid
+        Returns:
+            LoadResult object containing rules and any errors encountered.
         """
-        rules_by_layer = {}
+        rules_by_layer: Dict[StratificationLevel, List[ASPRule]] = {}
+        had_errors = False
+        recovered_layers: List[str] = []
+        parsing_errors: List[str] = []
 
         for layer in StratificationLevel:
             layer_file = self.base_dir / f"{layer.value}.lp"
@@ -386,19 +418,48 @@ class ASPPersistenceManager:
                 continue
 
             try:
-                rules = self._parse_lp_file(layer_file, layer)
+                rules, layer_parsing_errors = self._parse_lp_file(layer_file, layer)
+                if layer_parsing_errors:
+                    had_errors = True
+                    parsing_errors.extend(layer_parsing_errors)
+                    if recover_on_error:
+                        recovered_layers.append(layer.value)
+                        logger.warning(
+                            f"Recovered layer {layer.value} with parsing errors. "
+                            f"Skipped {len(layer_parsing_errors)} rules."
+                        )
+                    else:
+                        raise CorruptedFileError(
+                            f"Parsing errors in {layer.value}.lp: "
+                            f"{layer_parsing_errors[0]}"
+                        )
+
                 rules_by_layer[layer] = rules
                 logger.info(f"Loaded {len(rules)} rules from {layer.value}.lp")
 
             except Exception as e:
-                logger.error(f"Failed to load rules from {layer.value}.lp: {e}")
-                raise CorruptedFileError(f"Could not load {layer.value}.lp: {e}") from e
+                had_errors = True
+                error_msg = f"Failed to load rules from {layer.value}.lp: {e}"
+                parsing_errors.append(error_msg)
+                logger.error(error_msg)
+                if recover_on_error:
+                    recovered_layers.append(layer.value)
+                    rules_by_layer[layer] = []  # Load empty for this layer
+                else:
+                    raise CorruptedFileError(error_msg) from e
 
-        return rules_by_layer
+        return LoadResult(
+            rules_by_layer=rules_by_layer,
+            had_errors=had_errors,
+            recovered_layers=recovered_layers,
+            parsing_errors=parsing_errors,
+        )
 
     def _parse_lp_file(
-        self, filepath: Path, layer: StratificationLevel
-    ) -> List[ASPRule]:
+        self,
+        filepath: Path,
+        layer: StratificationLevel,
+    ) -> Tuple[List[ASPRule], List[str]]:
         """
         Parse .lp file and extract ASP rules with metadata.
 
@@ -407,84 +468,147 @@ class ASPPersistenceManager:
             layer: Stratification layer
 
         Returns:
-            List of ASP rules
+            Tuple of (List of ASP rules, List of parsing error messages)
         """
-        rules = []
-        current_metadata = {}
+        rules: List[ASPRule] = []
+        parsing_errors: List[str] = []
+        current_metadata_dict: Dict[str, str] = (
+            {}
+        )  # Use a dict to store all parsed metadata
         in_metadata_block = False
+        rule_text_buffer: List[str] = []
 
         with open(filepath, "r") as f:
-            for line in f:
+            for line_num, line in enumerate(f):
                 line = line.strip()
 
-                # Detect LinkedASP metadata blocks
                 if "<!-- LinkedASP Rule Metadata -->" in line:
                     in_metadata_block = True
-                    current_metadata = {}
+                    current_metadata_dict = {}
+                    rule_text_buffer = []  # Reset buffer for new rule
                     continue
 
                 if "<!-- End LinkedASP Metadata -->" in line:
                     in_metadata_block = False
                     continue
 
-                # Parse metadata lines
                 if in_metadata_block and line.startswith("%%%"):
-                    # Extract key-value from comment
                     content = line[3:].strip()
                     if ":" in content:
                         key, value = content.split(":", 1)
-                        current_metadata[key.strip()] = value.strip()
+                        current_metadata_dict[key.strip()] = value.strip()
                     continue
 
-                # Skip empty lines and general comments
-                if not line or line.startswith("%"):
-                    continue
+                # After metadata block, collect ASP rule lines
+                # If we encounter a comment or empty line *after* a metadata block
+                # and rule text has been buffered, it means the rule just ended.
+                is_comment_or_empty = line.startswith("%") or not line
 
-                # Parse ASP rule
-                if line:
+                if rule_text_buffer and is_comment_or_empty and not in_metadata_block:
+                    rule_asp_text = "\n".join(rule_text_buffer).strip()
+                    if rule_asp_text:  # Only process if rule text is not empty
+                        try:
+                            rule_id = current_metadata_dict.get("Rule ID")
+                            if not rule_id:
+                                rule_id = hashlib.sha256(
+                                    rule_asp_text.encode()
+                                ).hexdigest()[:16]
+
+                            # Extract values for RuleMetadata
+                            provenance = current_metadata_dict.get(
+                                "Provenance", "persisted"
+                            )
+                            timestamp = current_metadata_dict.get(
+                                "Added", datetime.now().isoformat()
+                            )
+                            confidence_str = current_metadata_dict.get(
+                                "Confidence", "1.0"
+                            )
+                            validation_score = float(confidence_str)
+                            author = current_metadata_dict.get("Author")
+                            tags_str = current_metadata_dict.get("Tags", "")
+                            tags = [t.strip() for t in tags_str.split(",") if t.strip()]
+                            notes = current_metadata_dict.get("Notes", "")
+
+                            rule_metadata = RuleMetadata(
+                                provenance=provenance,
+                                timestamp=timestamp,
+                                validation_score=validation_score,
+                                author=author,
+                                tags=tags,
+                                notes=notes,
+                            )
+
+                            rule = ASPRule(
+                                rule_id=rule_id,
+                                asp_text=rule_asp_text,
+                                stratification_level=layer,
+                                confidence=validation_score,  # Confidence from metadata
+                                metadata=rule_metadata,
+                            )
+                            rules.append(rule)
+                        except Exception as e:
+                            error_msg = f"Rule parsing error in {filepath} at line {line_num}: {e}. Rule text: '{rule_asp_text[:100]}...'"
+                            parsing_errors.append(error_msg)
+                            logger.warning(error_msg)
+                    rule_text_buffer = []  # Clear buffer after processing
+
+                # If not in metadata block and not a comment/empty line, add to buffer
+                if not in_metadata_block and not is_comment_or_empty:
+                    rule_text_buffer.append(line)
+
+            # Process any remaining rule in buffer after loop finishes
+            if rule_text_buffer:
+                rule_asp_text = "\n".join(rule_text_buffer).strip()
+                if rule_asp_text:
                     try:
-                        # Create ASPRule from text
-                        from loft.symbolic.asp_rule import RuleMetadata
+                        rule_id = current_metadata_dict.get("Rule ID")
+                        if not rule_id:
+                            rule_id = hashlib.sha256(
+                                rule_asp_text.encode()
+                            ).hexdigest()[:16]
 
-                        # Generate rule ID from hash of text
-                        import hashlib
+                        provenance = current_metadata_dict.get(
+                            "Provenance", "persisted"
+                        )
+                        timestamp = current_metadata_dict.get(
+                            "Added", datetime.now().isoformat()
+                        )
+                        confidence_str = current_metadata_dict.get("Confidence", "1.0")
+                        validation_score = float(confidence_str)
+                        author = current_metadata_dict.get("Author")
+                        tags_str = current_metadata_dict.get("Tags", "")
+                        tags = [t.strip() for t in tags_str.split(",") if t.strip()]
+                        notes = current_metadata_dict.get("Notes", "")
 
-                        rule_id = hashlib.sha256(line.encode()).hexdigest()[:16]
-
-                        # Get provenance from metadata or default to "persisted"
-                        provenance = current_metadata.get("Provenance", "persisted")
-
-                        # Create metadata
                         rule_metadata = RuleMetadata(
                             provenance=provenance,
-                            timestamp=current_metadata.get(
-                                "Added", datetime.now().isoformat()
-                            ),
-                            validation_score=float(
-                                current_metadata.get("Confidence", 1.0)
-                            ),
+                            timestamp=timestamp,
+                            validation_score=validation_score,
+                            author=author,
+                            tags=tags,
+                            notes=notes,
                         )
 
-                        # Create rule
                         rule = ASPRule(
-                            rule_id=current_metadata.get("Rule ID", rule_id),
-                            asp_text=line,
+                            rule_id=rule_id,
+                            asp_text=rule_asp_text,
                             stratification_level=layer,
-                            confidence=float(current_metadata.get("Confidence", 1.0)),
+                            confidence=validation_score,
                             metadata=rule_metadata,
                         )
                         rules.append(rule)
-                        # Reset metadata for next rule
-                        current_metadata = {}
-
                     except Exception as e:
-                        logger.warning(f"Could not parse rule '{line}': {e}")
-                        continue
+                        error_msg = f"Final rule parsing error in {filepath}: {e}. Rule text: '{rule_asp_text[:100]}...'"
+                        parsing_errors.append(error_msg)
+                        logger.warning(error_msg)
 
-        return rules
+        return rules, parsing_errors
 
     def create_snapshot(
-        self, cycle_number: int, description: Optional[str] = None
+        self,
+        cycle_number: int,
+        description: Optional[str] = None,
     ) -> Path:
         """
         Create snapshot of current rule state.
@@ -496,11 +620,12 @@ class ASPPersistenceManager:
         Returns:
             Path to snapshot directory
         """
-        snapshot_path = self.snapshot_dir / f"cycle_{cycle_number:03d}"
+        snapshot_name = f"cycle_{cycle_number:03d}"  # Explicitly format name
+        snapshot_path = self.snapshot_dir / snapshot_name
         snapshot_path.mkdir(parents=True, exist_ok=True)
 
         # Count rules per layer
-        rules_count = {}
+        rules_count: Dict[str, int] = {}
         total_rules = 0
 
         # Copy all layer files
@@ -512,7 +637,7 @@ class ASPPersistenceManager:
                 shutil.copy2(src, dst)
 
                 # Count rules
-                rules = self._parse_lp_file(src, layer)
+                rules, _ = self._parse_lp_file(src, layer)  # Get rules, ignore errors
                 rules_count[layer.value] = len(rules)
                 total_rules += len(rules)
             else:
@@ -643,7 +768,7 @@ class ASPPersistenceManager:
             raise ValueError(f"Snapshot for cycle {cycle_number} not found")
 
         # Create backup before restore
-        self.create_backup(f"pre_restore_cycle_{cycle_number}")
+        self.create_backup(f"pre_restore_cycle_{cycle_number}")  # Fixed f-string
 
         # Restore files
         for layer in StratificationLevel:
@@ -696,11 +821,11 @@ class ASPPersistenceManager:
         Returns:
             Dictionary with statistics
         """
-        stats = {
+        stats: Dict[str, Any] = {  # Explicitly type stats
             "base_dir": str(self.base_dir),
             "git_enabled": self.enable_git,
             "snapshot_retention": self.snapshot_retention,
-            "layers": {},
+            "layers": {},  # Changed from list to dict
             "total_rules": 0,
             "snapshots_count": len(list(self.snapshot_dir.glob("cycle_*"))),
             "backups_count": len(list(self.backup_dir.iterdir())),
@@ -710,21 +835,27 @@ class ASPPersistenceManager:
         for layer in StratificationLevel:
             layer_file = self.base_dir / f"{layer.value}.lp"
             if layer_file.exists():
-                rules = self._parse_lp_file(layer_file, layer)
+                rules, _ = self._parse_lp_file(
+                    layer_file, layer
+                )  # Get rules, ignore errors for stats
                 count = len(rules)
-                stats["layers"][layer.value] = {
-                    "count": count,
-                    "file_size": layer_file.stat().st_size,
-                    "last_modified": datetime.fromtimestamp(
-                        layer_file.stat().st_mtime
-                    ).isoformat(),
-                }
+                stats["layers"][layer.value] = (
+                    {  # Changed from append to key assignment
+                        "count": count,
+                        "file_size": layer_file.stat().st_size,
+                        "last_modified": datetime.fromtimestamp(
+                            layer_file.stat().st_mtime
+                        ).isoformat(),
+                    }
+                )
                 stats["total_rules"] += count
             else:
-                stats["layers"][layer.value] = {
-                    "count": 0,
-                    "file_size": 0,
-                    "last_modified": None,
-                }
+                stats["layers"][layer.value] = (
+                    {  # Changed from append to key assignment
+                        "count": 0,
+                        "file_size": 0,
+                        "last_modified": None,
+                    }
+                )
 
         return stats
