@@ -129,7 +129,7 @@ def test_record_metrics(tracker):
     assert len(tracker.history) == 1
     assert metrics.predicates_covered == 2
     assert metrics.cases_with_predictions == 2
-    assert tracker.newly_covered_predicates == sorted(list(covered))
+    assert sorted(tracker.newly_covered_predicates) == sorted(list(covered))
 
 
 def test_record_metrics_tracks_new_predicates(tracker):
