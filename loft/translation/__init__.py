@@ -62,6 +62,19 @@ from .quality import (
 from .context import TranslationContext
 from .context_preserving_translator import ContextPreservingTranslator
 
+# Fidelity tracking and pattern documentation
+from .fidelity_tracker import (
+    FidelityTracker,
+    FidelitySnapshot,
+    TranslationResult as FidelityTranslationResult,
+    Regression,
+)
+from .pattern_documenter import (
+    TranslationPatternDocumenter,
+    TranslationPattern,
+    PatternAnalysis,
+)
+
 __all__ = [
     # ASP → NL
     "asp_to_nl",
@@ -101,4 +114,12 @@ __all__ = [
     "compute_asp_equivalence",
     "roundtrip_fidelity_test",
     "QualityMetrics",
+    # Fidelity tracking and pattern documentation
+    "FidelityTracker",
+    "FidelitySnapshot",
+    "FidelityTranslationResult",
+    "Regression",
+    "TranslationPatternDocumenter",
+    "TranslationPattern",
+    "PatternAnalysis",
 ]
