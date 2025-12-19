@@ -1,0 +1,19 @@
+{
+  "id": "const_008",
+  "domain": "constitutional_law",
+  "subdomain": "fourteenth_amendment_surveillance",
+  "description": "Fourteenth Amendment due process in surveillance context",
+  "facts": [
+    "State law enforcement conducted surveillance program",
+    "Program targeted individuals without individualized suspicion",
+    "No procedural safeguards or notice provided",
+    "Surveillance data used in criminal proceedings",
+    "Defendants had no opportunity to challenge surveillance before use"
+  ],
+  "asp_facts": "case(due_process_surveillance). amendment(due_process_surveillance, fourteenth). due_process_clause(due_process_surveillance, yes). state_action(due_process_surveillance, yes). individualized_suspicion(due_process_surveillance, no). procedural_safeguards(due_process_surveillance, no). notice_provided(due_process_surveillance, no). opportunity_to_be_heard(due_process_surveillance, no). criminal_proceeding(due_process_surveillance, yes).",
+  "question": "Does surveillance without procedural safeguards violate Fourteenth Amendment due process?",
+  "ground_truth": "unconstitutional",
+  "rationale": "The Fourteenth Amendment Due Process Clause requires that state action depriving persons of liberty or property interests provide adequate procedural protections. Surveillance programs affecting fundamental privacy interests must include procedural safeguards such as individualized suspicion, notice, and opportunity to challenge the surveillance.",
+  "legal_citations": ["Fourteenth Amendment", "Due Process Clause", "Procedural Due Process"],
+  "difficulty": "hard"
+}

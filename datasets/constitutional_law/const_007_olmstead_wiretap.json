@@ -1,0 +1,19 @@
+{
+  "id": "const_007",
+  "domain": "constitutional_law",
+  "subdomain": "fourth_amendment_surveillance",
+  "description": "Olmstead v. United States - telephone wiretapping without physical intrusion",
+  "facts": [
+    "Federal agents tapped telephone lines without warrant",
+    "Taps installed on wires outside defendants' premises",
+    "No physical entry into homes or offices occurred",
+    "Conversations recorded and used as evidence",
+    "Wiretapping conducted for months"
+  ],
+  "asp_facts": "case(olmstead). amendment(olmstead, fourth). surveillance_type(olmstead, wiretap). physical_intrusion(olmstead, no). location(olmstead, outside_premises). warrant_obtained(olmstead, no). conversations_intercepted(olmstead, yes). duration(olmstead, months). physical_trespass(olmstead, no).",
+  "question": "Does wiretapping telephone conversations without physical trespass violate the Fourth Amendment?",
+  "ground_truth": "constitutional",
+  "rationale": "The Fourth Amendment protects material things only - persons, houses, papers, and effects. Since there was no physical trespass into a constitutionally protected area, and conversations are not tangible things that can be seized, the wiretapping did not violate the Fourth Amendment. (Note: This decision was later overruled by Katz v. United States)",
+  "legal_citations": ["Olmstead v. United States, 277 U.S. 438 (1928)", "Fourth Amendment", "Physical Trespass Doctrine (Overruled)"],
+  "difficulty": "easy"
+}

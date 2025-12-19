@@ -1,0 +1,19 @@
+{
+  "id": "const_009",
+  "domain": "constitutional_law",
+  "subdomain": "fourteenth_amendment_surveillance",
+  "description": "Fourteenth Amendment equal protection in surveillance targeting",
+  "facts": [
+    "Police department implemented surveillance program",
+    "Program disproportionately targeted minority neighborhoods",
+    "No evidence of higher crime rates in targeted areas",
+    "Similarly situated non-minority areas not surveilled",
+    "Selection criteria based on demographic composition"
+  ],
+  "asp_facts": "case(equal_protection_surveillance). amendment(equal_protection_surveillance, fourteenth). equal_protection_clause(equal_protection_surveillance, yes). state_action(equal_protection_surveillance, yes). suspect_classification(equal_protection_surveillance, race). disparate_treatment(equal_protection_surveillance, yes). legitimate_purpose(equal_protection_surveillance, no). similarly_situated(equal_protection_surveillance, yes). discriminatory_intent(equal_protection_surveillance, yes).",
+  "question": "Does racially discriminatory surveillance targeting violate the Fourteenth Amendment Equal Protection Clause?",
+  "ground_truth": "unconstitutional",
+  "rationale": "The Equal Protection Clause prohibits states from denying any person equal protection of the laws. Surveillance programs that target individuals based on race constitute a suspect classification requiring strict scrutiny. Without a compelling government interest and narrow tailoring, such discriminatory surveillance violates equal protection.",
+  "legal_citations": ["Fourteenth Amendment", "Equal Protection Clause", "Strict Scrutiny", "Discriminatory Intent"],
+  "difficulty": "hard"
+}

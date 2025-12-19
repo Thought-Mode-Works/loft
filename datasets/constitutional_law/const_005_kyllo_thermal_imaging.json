@@ -1,0 +1,19 @@
+{
+  "id": "const_005",
+  "domain": "constitutional_law",
+  "subdomain": "fourth_amendment_surveillance",
+  "description": "Kyllo v. United States - thermal imaging of home",
+  "facts": [
+    "Agents used thermal imaging device on Kyllo's home from public street",
+    "Device detected heat patterns suggesting marijuana growing operation",
+    "Scan performed without warrant",
+    "Technology not in general public use",
+    "Heat signatures revealed details of home interior"
+  ],
+  "asp_facts": "case(kyllo). amendment(kyllo, fourth). surveillance_type(kyllo, thermal_imaging). target(kyllo, home). warrant_obtained(kyllo, no). technology_in_public_use(kyllo, no). interior_details_revealed(kyllo, yes). physical_intrusion(kyllo, no). observation_from_public_area(kyllo, yes).",
+  "question": "Does use of thermal imaging device to detect heat emanating from home constitute a Fourth Amendment search?",
+  "ground_truth": "unconstitutional",
+  "rationale": "Using sense-enhancing technology not in general public use to explore details of a home that would previously have been unknowable without physical intrusion constitutes a Fourth Amendment search. The home receives maximum Fourth Amendment protection, requiring a warrant for such technological surveillance.",
+  "legal_citations": ["Kyllo v. United States, 533 U.S. 27 (2001)", "Fourth Amendment", "Technology and Privacy"],
+  "difficulty": "hard"
+}

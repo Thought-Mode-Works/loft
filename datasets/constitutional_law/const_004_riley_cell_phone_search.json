@@ -1,0 +1,19 @@
+{
+  "id": "const_004",
+  "domain": "constitutional_law",
+  "subdomain": "fourth_amendment_surveillance",
+  "description": "Riley v. California - warrantless search of cell phone during arrest",
+  "facts": [
+    "Riley was arrested for weapons violations",
+    "Officer searched Riley's cell phone without warrant",
+    "Phone contained digital photos and videos",
+    "Search revealed evidence of gang affiliation",
+    "Search occurred incident to lawful arrest"
+  ],
+  "asp_facts": "case(riley). amendment(riley, fourth). police_action(riley, cell_phone_search). lawful_arrest(riley, yes). warrant_obtained(riley, no). search_incident_to_arrest(riley, claimed). digital_data_accessed(riley, yes). vast_quantity_of_data(riley, yes). sensitive_information(riley, yes).",
+  "question": "Can police search digital contents of a cell phone seized during an arrest without a warrant?",
+  "ground_truth": "unconstitutional",
+  "rationale": "Modern cell phones are not just another technological convenience but hold vast quantities of sensitive personal information. The search-incident-to-arrest exception does not apply to digital data on cell phones. Officers must generally secure a warrant before searching a cell phone.",
+  "legal_citations": ["Riley v. California, 573 U.S. 373 (2014)", "Fourth Amendment", "Search Incident to Arrest Exception"],
+  "difficulty": "medium"
+}
