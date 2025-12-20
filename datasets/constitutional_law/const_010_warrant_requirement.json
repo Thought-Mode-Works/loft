@@ -1,0 +1,19 @@
+{
+  "id": "const_010",
+  "domain": "constitutional_law",
+  "subdomain": "fourth_amendment_surveillance",
+  "description": "General warrant requirement for surveillance",
+  "facts": [
+    "Police sought to conduct electronic surveillance",
+    "Judge issued warrant based on probable cause affidavit",
+    "Warrant particularly described place and things to be searched",
+    "Surveillance limited to scope of warrant",
+    "Evidence obtained used in prosecution"
+  ],
+  "asp_facts": "case(warrant_requirement). amendment(warrant_requirement, fourth). warrant_obtained(warrant_requirement, yes). probable_cause(warrant_requirement, yes). particular_description(warrant_requirement, yes). neutral_magistrate(warrant_requirement, yes). scope_limited(warrant_requirement, yes). search_reasonable(warrant_requirement, yes).",
+  "question": "Is surveillance conducted pursuant to a valid warrant consistent with the Fourth Amendment?",
+  "ground_truth": "constitutional",
+  "rationale": "The Fourth Amendment requires that searches and seizures be reasonable. Warrants issued by neutral magistrates based on probable cause and particularly describing the place to be searched and items to be seized satisfy Fourth Amendment requirements. Properly executed warrants make surveillance constitutionally permissible.",
+  "legal_citations": ["Fourth Amendment", "Warrant Clause", "Probable Cause Requirement", "Particularity Requirement"],
+  "difficulty": "easy"
+}

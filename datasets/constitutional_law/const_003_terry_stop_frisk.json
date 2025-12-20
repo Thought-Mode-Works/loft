@@ -1,0 +1,19 @@
+{
+  "id": "const_003",
+  "domain": "constitutional_law",
+  "subdomain": "fourth_amendment_surveillance",
+  "description": "Terry v. Ohio - stop and frisk based on reasonable suspicion",
+  "facts": [
+    "Officer observed Terry and others acting suspiciously",
+    "Men repeatedly walked by store window peering inside",
+    "Officer approached and identified himself",
+    "Officer conducted pat-down search for weapons",
+    "Gun was discovered during the frisk"
+  ],
+  "asp_facts": "case(terry). amendment(terry, fourth). police_action(terry, stop_and_frisk). reasonable_suspicion(terry, yes). probable_cause(terry, no). suspicious_behavior_observed(terry, yes). weapon_found(terry, yes). officer_safety_concern(terry, yes). warrant_obtained(terry, no).",
+  "question": "Can police conduct a stop and frisk based on reasonable suspicion without probable cause or a warrant?",
+  "ground_truth": "constitutional",
+  "rationale": "When an officer observes unusual conduct leading to a reasonable suspicion that criminal activity may be afoot and that persons may be armed and dangerous, the officer may conduct a limited search for weapons for self-protection. This Terry stop requires only reasonable suspicion, not probable cause.",
+  "legal_citations": ["Terry v. Ohio, 392 U.S. 1 (1968)", "Fourth Amendment", "Reasonable Suspicion Standard"],
+  "difficulty": "medium"
+}

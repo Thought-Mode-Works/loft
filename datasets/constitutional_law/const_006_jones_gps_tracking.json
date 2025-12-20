@@ -1,0 +1,19 @@
+{
+  "id": "const_006",
+  "domain": "constitutional_law",
+  "subdomain": "fourth_amendment_surveillance",
+  "description": "United States v. Jones - GPS tracking device on vehicle",
+  "facts": [
+    "Police attached GPS tracking device to Jones's vehicle",
+    "Device tracked movements for 28 days",
+    "Installation occurred without valid warrant",
+    "Vehicle tracked while on public streets",
+    "Government monitored all movements continuously"
+  ],
+  "asp_facts": "case(jones). amendment(jones, fourth). surveillance_type(jones, gps_tracking). duration_days(jones, 28). warrant_obtained(jones, no). physical_installation(jones, yes). property_interest(jones, vehicle). continuous_monitoring(jones, yes). public_streets(jones, yes).",
+  "question": "Does installation and use of GPS tracking device on vehicle constitute a Fourth Amendment search?",
+  "ground_truth": "unconstitutional",
+  "rationale": "The Government physically intruded on Jones's property (the vehicle) for the purpose of obtaining information. This physical intrusion on a constitutionally protected area (personal property) for investigative purposes constitutes a Fourth Amendment search, requiring a warrant.",
+  "legal_citations": ["United States v. Jones, 565 U.S. 400 (2012)", "Fourth Amendment", "Physical Intrusion Test"],
+  "difficulty": "medium"
+}

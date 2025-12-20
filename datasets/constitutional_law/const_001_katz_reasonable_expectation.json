@@ -1,0 +1,19 @@
+{
+  "id": "const_001",
+  "domain": "constitutional_law",
+  "subdomain": "fourth_amendment_surveillance",
+  "description": "Katz v. United States - reasonable expectation of privacy in phone booth",
+  "facts": [
+    "FBI agents attached electronic listening device to outside of public phone booth",
+    "Katz made phone calls from the booth",
+    "Conversations were recorded without warrant",
+    "Katz had closed the door and expected privacy",
+    "No physical intrusion into the booth occurred"
+  ],
+  "asp_facts": "case(katz). amendment(katz, fourth). surveillance_type(katz, electronic_listening). location(katz, public_phone_booth). warrant_obtained(katz, no). physical_intrusion(katz, no). expectation_of_privacy(katz, yes). privacy_objectively_reasonable(katz, yes). door_closed(katz, yes).",
+  "question": "Did the warrantless electronic surveillance violate the Fourth Amendment?",
+  "ground_truth": "unconstitutional",
+  "rationale": "The Fourth Amendment protects people, not places. What a person knowingly exposes to the public is not protected, but what one seeks to preserve as private, even in public, may be constitutionally protected. Katz had a reasonable expectation of privacy in the phone booth, making the warrantless surveillance unconstitutional.",
+  "legal_citations": ["Katz v. United States, 389 U.S. 347 (1967)", "Fourth Amendment", "Reasonable Expectation of Privacy Test"],
+  "difficulty": "medium"
+}
