@@ -10,6 +10,8 @@ from typing import Optional
 
 import click
 
+from loft.knowledge.coverage_dashboard import CoverageDashboard
+from loft.knowledge.coverage_tracker import CoverageTracker
 from loft.knowledge.database import KnowledgeDatabase
 from loft.knowledge.migration import migrate_asp_files_to_database
 
@@ -226,6 +228,177 @@ def export(output_dir: str, database_url: str):
     click.echo(f"  Files created: {stats['files_created']}")
     click.echo(f"  Rules exported: {stats['rules_exported']}")
     click.echo(f"  Output directory: {output_dir}")
+
+    db.close()
+
+
+# Coverage Metrics Commands (Issue #274)
+
+
+@cli.command(name="metrics-summary")
+@click.option(
+    "--database-url",
+    default="sqlite:///legal_knowledge.db",
+    help="Database connection URL",
+)
+def metrics_summary(database_url: str):
+    """Display coverage metrics summary dashboard."""
+    db = KnowledgeDatabase(database_url)
+    dashboard = CoverageDashboard(db)
+
+    summary = dashboard.display_summary()
+    click.echo(summary)
+
+    db.close()
+
+
+@cli.command(name="metrics-domain")
+@click.argument("domain")
+@click.option(
+    "--database-url",
+    default="sqlite:///legal_knowledge.db",
+    help="Database connection URL",
+)
+def metrics_domain(domain: str, database_url: str):
+    """Display detailed metrics for a specific domain."""
+    db = KnowledgeDatabase(database_url)
+    dashboard = CoverageDashboard(db)
+
+    details = dashboard.display_domain_details(domain)
+    click.echo(details)
+
+    db.close()
+
+
+@cli.command(name="metrics-quality")
+@click.option(
+    "--database-url",
+    default="sqlite:///legal_knowledge.db",
+    help="Database connection URL",
+)
+def metrics_quality(database_url: str):
+    """Display quality metrics report."""
+    db = KnowledgeDatabase(database_url)
+    dashboard = CoverageDashboard(db)
+
+    quality = dashboard.display_quality_report()
+    click.echo(quality)
+
+    db.close()
+
+
+@cli.command(name="metrics-gaps")
+@click.option(
+    "--database-url",
+    default="sqlite:///legal_knowledge.db",
+    help="Database connection URL",
+)
+def metrics_gaps(database_url: str):
+    """Display identified coverage gaps."""
+    db = KnowledgeDatabase(database_url)
+    dashboard = CoverageDashboard(db)
+
+    gaps = dashboard.display_gaps()
+    click.echo(gaps)
+
+    db.close()
+
+
+@cli.command(name="metrics-report")
+@click.option(
+    "--database-url",
+    default="sqlite:///legal_knowledge.db",
+    help="Database connection URL",
+)
+@click.option(
+    "--output",
+    type=click.Path(),
+    help="Output file for report (Markdown)",
+)
+def metrics_report(database_url: str, output: Optional[str]):
+    """Generate comprehensive coverage report."""
+    db = KnowledgeDatabase(database_url)
+    dashboard = CoverageDashboard(db)
+
+    report = dashboard.generate_full_report()
+
+    if output:
+        with open(output, "w") as f:
+            f.write(report)
+        click.echo(f"Report saved to: {output}")
+    else:
+        click.echo(report)
+
+    db.close()
+
+
+@cli.command(name="metrics-trends")
+@click.option("--metric", default="total_rules", help="Metric name to track")
+@click.option("--days", type=int, default=30, help="Number of days to display")
+@click.option(
+    "--database-url",
+    default="sqlite:///legal_knowledge.db",
+    help="Database connection URL",
+)
+def metrics_trends(metric: str, days: int, database_url: str):
+    """Display metric trends over time."""
+    db = KnowledgeDatabase(database_url)
+    dashboard = CoverageDashboard(db)
+
+    trends = dashboard.display_trends(metric_name=metric, days=days)
+    click.echo(trends)
+
+    db.close()
+
+
+@cli.command(name="metrics-snapshot")
+@click.option(
+    "--database-url",
+    default="sqlite:///legal_knowledge.db",
+    help="Database connection URL",
+)
+def metrics_snapshot(database_url: str):
+    """Take a snapshot of current metrics."""
+    db = KnowledgeDatabase(database_url)
+    tracker = CoverageTracker(db)
+
+    metrics = tracker.take_snapshot()
+
+    click.echo("Snapshot taken successfully!")
+    click.echo(f"  Total Rules: {metrics.total_rules}")
+    click.echo(f"  Domains: {metrics.domain_count}")
+    click.echo(f"  Snapshots Stored: {tracker.get_snapshot_count()}")
+
+    db.close()
+
+
+@cli.command(name="metrics-compare")
+@click.option(
+    "--days-ago",
+    type=int,
+    default=7,
+    help="Days ago to compare from",
+)
+@click.option(
+    "--comparison-days",
+    type=int,
+    default=7,
+    help="Duration of comparison period",
+)
+@click.option(
+    "--database-url",
+    default="sqlite:///legal_knowledge.db",
+    help="Database connection URL",
+)
+def metrics_compare(days_ago: int, comparison_days: int, database_url: str):
+    """Compare metrics between two time periods."""
+    db = KnowledgeDatabase(database_url)
+    dashboard = CoverageDashboard(db)
+
+    comparison = dashboard.compare_periods(
+        days_ago=days_ago, comparison_days=comparison_days
+    )
+    click.echo(comparison)
 
     db.close()
 
