@@ -66,8 +66,12 @@ class TestFullPipelineDialogue:
 
         # Configure mocks to show dialogue
         mock_rule = MagicMock()
-        mock_rule.asp_rule = "valid_contract(X) :- offer(X), acceptance(X), consideration(X)."
-        mock_rule.reasoning = "Contract validity requires offer, acceptance, and consideration"
+        mock_rule.asp_rule = (
+            "valid_contract(X) :- offer(X), acceptance(X), consideration(X)."
+        )
+        mock_rule.reasoning = (
+            "Contract validity requires offer, acceptance, and consideration"
+        )
         mock_rule.confidence = 0.85
         mock_rule.source_type = "gap_fill"
 
@@ -135,7 +139,9 @@ class TestFullPipelineDialogue:
 
         print("[System]: Identifying knowledge gaps...")
         result = processor.process_case(test_case, [])
-        print(f"\n[System]: Identified {result.metadata.get('gaps_identified', 1)} gap(s)")
+        print(
+            f"\n[System]: Identified {result.metadata.get('gaps_identified', 1)} gap(s)"
+        )
 
         # Verify dialogue completed successfully
         assert result.status == CaseStatus.SUCCESS

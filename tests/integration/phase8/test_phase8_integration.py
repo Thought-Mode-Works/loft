@@ -425,7 +425,9 @@ class TestCrossComponentIntegration:
         for i in range(10):
             case_file = dataset_path / f"case_{i:03d}.json"
             case_file.write_text(
-                json.dumps({"id": f"case_{i:03d}", "facts": [], "expected_outcome": "yes"})
+                json.dumps(
+                    {"id": f"case_{i:03d}", "facts": [], "expected_outcome": "yes"}
+                )
             )
 
         config = ExperimentConfig(
