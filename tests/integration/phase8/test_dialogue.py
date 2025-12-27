@@ -13,11 +13,8 @@ Issue #260: Phase 8 Integration Tests and Documentation
 """
 
 import json
-import tempfile
-from pathlib import Path
 from unittest.mock import MagicMock
 
-import pytest
 
 from loft.batch.full_pipeline import FullPipelineProcessor
 from loft.batch.meta_aware_processor import (
@@ -191,8 +188,8 @@ class TestMetaAwareDialogue:
 
             # First 2 succeed, then failures
             if call_count["count"] <= 2:
-                print(f"[System]: Rules generated: 2")
-                print(f"[System]: Rules accepted: 1")
+                print("[System]: Rules generated: 2")
+                print("[System]: Rules accepted: 1")
                 result = MagicMock()
                 result.status = CaseStatus.SUCCESS
                 result.rules_generated = 2
@@ -200,7 +197,7 @@ class TestMetaAwareDialogue:
                 result.rules_rejected = 1
                 result.generated_rule_ids = [f"rule_{call_count['count']}"]
             else:
-                print(f"[System]: Processing failed: validation_failure")
+                print("[System]: Processing failed: validation_failure")
                 result = MagicMock()
                 result.status = CaseStatus.FAILED
                 result.error_message = "Validation error: rule rejected"
@@ -236,7 +233,7 @@ class TestMetaAwareDialogue:
             }
 
             print(f"\n[System]: Analyzing case_{i:03d} characteristics...")
-            print(f"[System]: Selecting strategy...")
+            print("[System]: Selecting strategy...")
 
             result = processor.process_case_with_meta(case, [])
 
@@ -245,7 +242,7 @@ class TestMetaAwareDialogue:
             # Check for adaptation on 4th failure
             if i == 3 and len(processor.failure_patterns) >= 3:
                 print("\n[System]: Analyzing failure pattern...")
-                failure_summary = processor.get_failure_summary()
+                processor.get_failure_summary()  # Trigger failure analysis
                 print(
                     f"[System]: Pattern detected: validation_failure "
                     f"(count: {len(processor.failure_patterns)})"
@@ -332,16 +329,13 @@ class TestExperimentRunnerDialogue:
         )
 
         print("\n[User]: Start 2-cycle experiment")
-        print(f"[System]: Loading experiment config...")
+        print("[System]: Loading experiment config...")
         print(f"[System]: Experiment ID: {config.experiment_id}")
         print(f"[System]: Max cycles: {config.max_cycles}")
         print(f"[System]: Cases per cycle: {config.cases_per_cycle}")
 
         # Create mock processor
-        cycle_count = {"current": 0}
-
         def process_with_dialogue(case, accumulated_rules=None):
-            case_id = case.get("id", "unknown")
             result = MagicMock()
             result.processing_time_ms = 100.0
             result.prediction_correct = True
@@ -366,7 +360,7 @@ class TestExperimentRunnerDialogue:
         original_run = runner.run
 
         def run_with_dialogue():
-            print(f"\n[User]: Run experiment")
+            print("\n[User]: Run experiment")
 
             # Track cycle starts
             original_run_cycle = runner._run_cycle
@@ -381,7 +375,7 @@ class TestExperimentRunnerDialogue:
                     f"{result.get('cases_processed', 0)} cases, "
                     f"{result.get('rules_generated', 0)} rules generated"
                 )
-                print(f"[System]: Saving state...")
+                print("[System]: Saving state...")
                 print(f"[System]: Checkpoint created: cycle_{cycle_num:03d}")
                 return result
 
@@ -389,9 +383,9 @@ class TestExperimentRunnerDialogue:
 
             result = original_run()
 
-            print(f"\n[System]: Saving final state...")
-            print(f"\n[User]: Generate experiment report")
-            print(f"[System]: Generating final report...")
+            print("\n[System]: Saving final state...")
+            print("\n[User]: Generate experiment report")
+            print("[System]: Generating final report...")
             print(
                 f"[System]: Report saved to: "
                 f"{config.reports_path}/{config.experiment_id}_final.md"

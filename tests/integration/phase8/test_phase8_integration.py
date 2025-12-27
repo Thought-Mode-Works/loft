@@ -12,9 +12,7 @@ Issue #260: Phase 8 Integration Tests and Documentation
 """
 
 import json
-import tempfile
-from pathlib import Path
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -23,7 +21,7 @@ from loft.batch.meta_aware_processor import (
     MetaAwareBatchConfig,
     MetaAwareBatchProcessor,
 )
-from loft.batch.schemas import BatchConfig, CaseStatus
+from loft.batch.schemas import CaseStatus
 from loft.experiments import ExperimentConfig, ExperimentRunner
 
 
