@@ -43,7 +43,19 @@ class SearchQuery:
             # Simple keyword extraction
             words = self.query_text.lower().split()
             # Filter out common words
-            stopwords = {"is", "the", "a", "an", "and", "or", "not", "in", "of", "to", "for"}
+            stopwords = {
+                "is",
+                "the",
+                "a",
+                "an",
+                "and",
+                "or",
+                "not",
+                "in",
+                "of",
+                "to",
+                "for",
+            }
             self.keywords = [w for w in words if w not in stopwords and len(w) > 2]
 
     def __str__(self) -> str:

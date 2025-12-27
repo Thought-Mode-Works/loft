@@ -217,9 +217,7 @@ class RelevanceScorer:
 
         return min(score / factors, 1.0)
 
-    def _calculate_confidence_score(
-        self, rule: LegalRule, query: SearchQuery
-    ) -> float:
+    def _calculate_confidence_score(self, rule: LegalRule, query: SearchQuery) -> float:
         """
         Calculate confidence-based score.
 
@@ -298,9 +296,7 @@ class RelevanceScorer:
 
         return matched
 
-    def _get_matched_predicates(
-        self, rule: LegalRule, query: SearchQuery
-    ) -> List[str]:
+    def _get_matched_predicates(self, rule: LegalRule, query: SearchQuery) -> List[str]:
         """
         Get list of query predicates that matched in rule.
 

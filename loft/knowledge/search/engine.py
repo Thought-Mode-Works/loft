@@ -130,9 +130,7 @@ class RuleSearchEngine:
 
             # Filter by jurisdiction if specified
             if query.jurisdiction:
-                db_query = db_query.filter(
-                    LegalRule.jurisdiction == query.jurisdiction
-                )
+                db_query = db_query.filter(LegalRule.jurisdiction == query.jurisdiction)
 
             # Filter by doctrine if specified
             if query.doctrine:

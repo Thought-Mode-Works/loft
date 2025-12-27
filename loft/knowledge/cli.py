@@ -351,7 +351,9 @@ def search_predicates(
             max_results=max_results,
         )
 
-        click.echo(f"Found {results.count} rules using predicates: {', '.join(predicate_list)}\n")
+        click.echo(
+            f"Found {results.count} rules using predicates: {', '.join(predicate_list)}\n"
+        )
 
         for i, result in enumerate(results.results, 1):
             click.echo(f"Result {i}: {result.rule_id[:8]}...")
@@ -510,12 +512,16 @@ def search_advanced(
             click.echo("Search Results")
             click.echo("=" * 60)
             click.echo(f"Query: {query_text}")
-            click.echo(f"Found: {results.count} results in {results.search_time_ms:.1f}ms")
+            click.echo(
+                f"Found: {results.count} results in {results.search_time_ms:.1f}ms"
+            )
             click.echo(f"Average relevance: {results.avg_relevance:.2f}")
             click.echo()
 
             for i, result in enumerate(results.results, 1):
-                click.echo(f"{i}. {result.rule_id[:8]}... (relevance: {result.relevance_score:.3f})")
+                click.echo(
+                    f"{i}. {result.rule_id[:8]}... (relevance: {result.relevance_score:.3f})"
+                )
                 click.echo(f"   {result.asp_rule}")
                 click.echo(f"   {result.explanation}")
                 click.echo()

@@ -117,8 +117,7 @@ class TestRuleSearchEngine:
         # Results should contain the predicates
         for result in results.results:
             assert any(
-                pred in result.matched_predicates
-                for pred in ["offer", "acceptance"]
+                pred in result.matched_predicates for pred in ["offer", "acceptance"]
             )
 
     def test_search_with_full_query(self, search_engine):

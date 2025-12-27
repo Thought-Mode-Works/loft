@@ -33,6 +33,7 @@ from loft.knowledge.schemas import (
 try:
     from loft.knowledge.search.engine import RuleSearchEngine
     from loft.knowledge.search.schemas import SearchQuery, SearchResults
+
     SEARCH_AVAILABLE = True
 except ImportError:
     SEARCH_AVAILABLE = False
