@@ -29,6 +29,14 @@ from loft.knowledge.schemas import (
     KnowledgeCoverageStats,
 )
 
+# Import search components (optional, lazy import to avoid circular dependency)
+try:
+    from loft.knowledge.search.engine import RuleSearchEngine
+    from loft.knowledge.search.schemas import SearchQuery, SearchResults
+    SEARCH_AVAILABLE = True
+except ImportError:
+    SEARCH_AVAILABLE = False
+
 
 class KnowledgeDatabase:
     """
@@ -674,6 +682,163 @@ class KnowledgeDatabase:
         coverage.last_updated = datetime.utcnow()
 
         session.commit()
+
+    def intelligent_search(self, query: "SearchQuery") -> "SearchResults":
+        """
+        Perform intelligent search using relevance scoring.
+
+        This uses the RuleSearchEngine for multi-factor relevance scoring
+        combining text matching, domain matching, confidence, and performance.
+
+        Args:
+            query: SearchQuery object with search parameters
+
+        Returns:
+            SearchResults with scored and ranked results
+
+        Raises:
+            ImportError: If search module is not available
+
+        Example:
+            >>> from loft.knowledge.search.schemas import SearchQuery
+            >>> query = SearchQuery(
+            ...     query_text="contract formation",
+            ...     domain="contracts",
+            ...     max_results=10
+            ... )
+            >>> results = db.intelligent_search(query)
+            >>> for result in results.results:
+            ...     print(f"{result.relevance_score:.2f}: {result.asp_rule}")
+        """
+        if not SEARCH_AVAILABLE:
+            raise ImportError(
+                "Search module not available. "
+                "Ensure loft.knowledge.search is properly installed."
+            )
+
+        engine = RuleSearchEngine(knowledge_db=self)
+        return engine.search(query)
+
+    def search_by_text(
+        self,
+        text: str,
+        domain: Optional[str] = None,
+        max_results: int = 10,
+    ) -> "SearchResults":
+        """
+        Search for rules by text query.
+
+        Convenience method for simple text-based search.
+
+        Args:
+            text: Search text (keywords or natural language)
+            domain: Optional domain filter
+            max_results: Maximum number of results
+
+        Returns:
+            SearchResults with scored results
+
+        Raises:
+            ImportError: If search module is not available
+
+        Example:
+            >>> results = db.search_by_text("offer and acceptance", domain="contracts")
+            >>> top_rule = results.top_result
+            >>> print(f"Best match: {top_rule.asp_rule}")
+        """
+        if not SEARCH_AVAILABLE:
+            raise ImportError(
+                "Search module not available. "
+                "Ensure loft.knowledge.search is properly installed."
+            )
+
+        query = SearchQuery(
+            query_text=text,
+            domain=domain,
+            max_results=max_results,
+        )
+
+        engine = RuleSearchEngine(knowledge_db=self)
+        return engine.search(query)
+
+    def find_similar_rules(
+        self,
+        rule_id: str,
+        max_results: int = 5,
+    ) -> "SearchResults":
+        """
+        Find rules similar to a given rule.
+
+        Uses the rule's domain, predicates, and content to find similar rules.
+
+        Args:
+            rule_id: ID of rule to find similar rules for
+            max_results: Maximum number of results
+
+        Returns:
+            SearchResults with similar rules (excluding the original)
+
+        Raises:
+            ImportError: If search module is not available
+            ValueError: If rule not found
+
+        Example:
+            >>> similar = db.find_similar_rules(rule_id)
+            >>> for result in similar.results:
+            ...     print(f"Similarity {result.relevance_score:.2f}: {result.asp_rule}")
+        """
+        if not SEARCH_AVAILABLE:
+            raise ImportError(
+                "Search module not available. "
+                "Ensure loft.knowledge.search is properly installed."
+            )
+
+        # Get the rule
+        rule = self.get_rule(rule_id)
+        if not rule:
+            raise ValueError(f"Rule not found: {rule_id}")
+
+        engine = RuleSearchEngine(knowledge_db=self)
+        return engine.find_similar_rules(rule, max_results=max_results)
+
+    def search_by_predicates(
+        self,
+        predicates: List[str],
+        domain: Optional[str] = None,
+        max_results: int = 10,
+    ) -> "SearchResults":
+        """
+        Search for rules using specific ASP predicates.
+
+        Args:
+            predicates: List of predicate names to search for
+            domain: Optional domain filter
+            max_results: Maximum number of results
+
+        Returns:
+            SearchResults with rules containing these predicates
+
+        Raises:
+            ImportError: If search module is not available
+
+        Example:
+            >>> results = db.search_by_predicates(
+            ...     predicates=["offer", "acceptance"],
+            ...     domain="contracts"
+            ... )
+        """
+        if not SEARCH_AVAILABLE:
+            raise ImportError(
+                "Search module not available. "
+                "Ensure loft.knowledge.search is properly installed."
+            )
+
+        engine = RuleSearchEngine(knowledge_db=self)
+        return engine.search_by_predicates(
+            predicates=predicates,
+            domain=domain,
+            max_results=max_results,
+        )
 
     def close(self):
         """Close database connections."""
