@@ -5,7 +5,6 @@ Issue #276: Case Analysis and Rule Extraction
 """
 
 import json
-from pathlib import Path
 
 import pytest
 

@@ -7,7 +7,7 @@ and creates CaseDocument instances for analysis.
 Issue #276: Case Analysis and Rule Extraction
 """
 
-import json
+import importlib.util
 import logging
 from pathlib import Path
 from typing import Optional
@@ -41,11 +41,9 @@ class CaseDocumentParser:
 
     def _check_pdf_support(self) -> bool:
         """Check if PDF parsing is available."""
-        try:
-            import pypdf
-
+        if importlib.util.find_spec("pypdf") is not None:
             return True
-        except ImportError:
+        else:
             logger.warning(
                 "PyPDF not available. PDF parsing will be disabled. "
                 "Install with: pip install pypdf"
@@ -54,11 +52,9 @@ class CaseDocumentParser:
 
     def _check_html_support(self) -> bool:
         """Check if HTML parsing is available."""
-        try:
-            from bs4 import BeautifulSoup
-
+        if importlib.util.find_spec("bs4") is not None:
             return True
-        except ImportError:
+        else:
             logger.warning(
                 "BeautifulSoup not available. HTML parsing will be disabled. "
                 "Install with: pip install beautifulsoup4"

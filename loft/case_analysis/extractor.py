@@ -18,7 +18,7 @@ from loft.case_analysis.schemas import (
     CaseMetadata,
     LegalPrinciple,
 )
-from loft.neural.llm_interface import LLMInterface, LLMResponse
+from loft.neural.llm_interface import LLMInterface
 
 logger = logging.getLogger(__name__)
 

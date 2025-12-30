@@ -6,8 +6,6 @@ Tests the full pipeline from parsing to rule generation.
 Issue #276: Case Analysis and Rule Extraction
 """
 
-from pathlib import Path
-
 import pytest
 
 from loft.case_analysis.analyzer import CaseAnalyzer
@@ -132,10 +130,10 @@ class TestCaseAnalysisIntegration:
             assert result.processing_time_ms > 0
 
             # Log results for manual inspection
-            print(f"\n=== Case Analysis Results ===")
+            print("\n=== Case Analysis Results ===")
             print(f"Case ID: {result.case_id}")
             print(f"Processing time: {result.processing_time_ms:.0f}ms")
-            print(f"\nMetadata:")
+            print("\nMetadata:")
             print(f"  Title: {result.metadata.title}")
             print(f"  Court: {result.metadata.court}")
             print(f"  Domain: {result.metadata.domain}")
@@ -215,7 +213,7 @@ class TestCaseAnalysisIntegration:
             total_rules = sum(r.rule_count for r in results)
             successful = sum(1 for r in results if r.success)
 
-            print(f"\n=== Batch Analysis Summary ===")
+            print("\n=== Batch Analysis Summary ===")
             print(f"Cases analyzed: {len(results)}")
             print(f"Successful: {successful}")
             print(f"Total principles: {total_principles}")
@@ -234,7 +232,7 @@ class TestCaseAnalysisIntegration:
             metadata = result.metadata
 
             # Should extract key metadata
-            print(f"\n=== Metadata Extraction Quality ===")
+            print("\n=== Metadata Extraction Quality ===")
             print(f"Title: {metadata.title}")
             print(f"Court: {metadata.court}")
             print(f"Jurisdiction: {metadata.jurisdiction}")
@@ -257,7 +255,7 @@ class TestCaseAnalysisIntegration:
 
             result = analyzer.analyze_file(sample_case_file)
 
-            print(f"\n=== Principle Quality Assessment ===")
+            print("\n=== Principle Quality Assessment ===")
 
             for principle in result.principles:
                 print(f"\nPrinciple: {principle.principle_text}")
@@ -287,7 +285,7 @@ class TestCaseAnalysisIntegration:
 
             result = analyzer.analyze_file(sample_case_file)
 
-            print(f"\n=== Rule Validation Results ===")
+            print("\n=== Rule Validation Results ===")
 
             for rule in result.rules:
                 print(f"\nRule: {rule.asp_rule}")
