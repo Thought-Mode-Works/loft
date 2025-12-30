@@ -118,6 +118,49 @@ The system must learn from its own experience and external validation, updating 
 5. **Performance Metrics**: Document impact on accuracy, consistency, latency
 6. **Explainability**: System must explain new capabilities in natural language
 
+### Creating Pull Requests with Location Metadata
+
+**All pull requests must include GPS coordinates and timestamps to track development location.**
+
+Use the provided script to create PRs with automatic location capture:
+
+```bash
+# Create PR with location metadata
+./scripts/create_pr_with_location.sh "PR Title" [optional_pr_body_file]
+
+# The script will:
+# 1. Open browser to request location permission
+# 2. Capture GPS coordinates (latitude, longitude, accuracy, timestamp)
+# 3. Prompt for PR description (via editor or file)
+# 4. Append location metadata to PR body
+# 5. Create PR via gh CLI
+```
+
+**Location Metadata Format:**
+
+The script automatically appends this section to all PR descriptions:
+
+```markdown
+## 📍 Work Location Metadata
+
+- **Coordinates**: [latitude], [longitude]
+- **Accuracy**: ±[accuracy]m
+- **Timestamp**: [timestamp]
+- **Google Maps**: https://www.google.com/maps?q=[lat],[lon]
+```
+
+**Why Location Metadata?**
+- Tracks geographical distribution of development work
+- Provides temporal context for commits and PRs
+- Helps correlate development activity with location/time patterns
+- Documents work provenance for distributed teams
+
+**Manual PR Creation (Not Recommended):**
+
+If you need to create a PR manually without location metadata:
+1. You must explicitly justify why location capture was skipped
+2. Use standard `gh pr create` but note in PR description that location was not captured
+
 ### Pull Request Requirements
 
 ```markdown
