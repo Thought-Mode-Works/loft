@@ -1,0 +1,406 @@
+{
+  "domain": "torts",
+  "description": "Legal questions covering negligence, intentional torts, strict liability, and defenses",
+  "questions": [
+    {
+      "id": "tort_001",
+      "question": "Does negligence require duty, breach, causation, and damages?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["negligence", "elements"],
+      "explanation": "The four elements of negligence are duty, breach, causation, and damages. All must be present."
+    },
+    {
+      "id": "tort_002",
+      "question": "Is intent to harm required for battery?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["intentional_torts", "battery"],
+      "explanation": "Battery requires intent to cause harmful or offensive contact, not necessarily intent to harm."
+    },
+    {
+      "id": "tort_003",
+      "question": "Can a defendant be liable for negligence if they exercised reasonable care?",
+      "expected_answer": "no",
+      "difficulty": "easy",
+      "topics": ["negligence", "breach"],
+      "explanation": "Negligence requires breach of duty. Exercising reasonable care means no breach occurred."
+    },
+    {
+      "id": "tort_004",
+      "question": "Is strict liability applicable to abnormally dangerous activities?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["strict_liability"],
+      "explanation": "Strict liability applies to abnormally dangerous activities regardless of the care exercised."
+    },
+    {
+      "id": "tort_005",
+      "question": "Does assumption of risk bar recovery in negligence?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["defenses", "assumption_of_risk"],
+      "explanation": "Voluntary assumption of a known risk is a complete defense to negligence in some jurisdictions."
+    },
+    {
+      "id": "tort_006",
+      "question": "Is actual malice required for defamation of a public figure?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["defamation", "actual_malice"],
+      "explanation": "Public figures must prove actual malice (knowledge of falsity or reckless disregard) for defamation."
+    },
+    {
+      "id": "tort_007",
+      "question": "Can a landowner be liable to a trespasser for injuries?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["premises_liability", "trespassers"],
+      "explanation": "Landowners owe limited duty to trespassers, but can be liable for willful/wanton conduct or dangerous conditions if children are involved."
+    },
+    {
+      "id": "tort_008",
+      "question": "Does contributory negligence completely bar recovery?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["defenses", "contributory_negligence"],
+      "explanation": "In contributory negligence jurisdictions, any fault by the plaintiff bars recovery completely."
+    },
+    {
+      "id": "tort_009",
+      "question": "Is emotional distress recoverable in negligence without physical injury?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["damages", "emotional_distress"],
+      "explanation": "Generally, emotional distress requires physical injury or impact, or plaintiff must be in zone of danger."
+    },
+    {
+      "id": "tort_010",
+      "question": "Does res ipsa loquitur establish breach of duty?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["negligence", "res_ipsa_loquitur"],
+      "explanation": "Res ipsa loquitur allows inference of negligence when the accident wouldn't ordinarily occur without negligence."
+    },
+    {
+      "id": "tort_011",
+      "question": "Is consent a defense to battery?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["intentional_torts", "defenses"],
+      "explanation": "Consent is a complete defense to intentional torts like battery."
+    },
+    {
+      "id": "tort_012",
+      "question": "Can punitive damages be awarded in negligence cases?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["damages", "punitive_damages"],
+      "explanation": "Punitive damages are available for gross negligence or willful/wanton conduct, though not ordinary negligence."
+    },
+    {
+      "id": "tort_013",
+      "question": "Is publication required for defamation?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["defamation"],
+      "explanation": "Defamation requires communication of the defamatory statement to a third party (publication)."
+    },
+    {
+      "id": "tort_014",
+      "question": "Does the eggshell skull rule make defendants liable for unforeseeable severity of harm?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["causation", "eggshell_skull"],
+      "explanation": "The eggshell skull rule holds defendants liable for the full extent of harm, even if severity was unforeseeable."
+    },
+    {
+      "id": "tort_015",
+      "question": "Is false imprisonment complete if the victim is unaware of the confinement?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["intentional_torts", "false_imprisonment"],
+      "explanation": "False imprisonment can occur even without awareness, though some jurisdictions require awareness or harm."
+    },
+    {
+      "id": "tort_016",
+      "question": "Can a manufacturer be strictly liable for defective products?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["strict_liability", "products_liability"],
+      "explanation": "Manufacturers are strictly liable for defective products that cause harm, regardless of negligence."
+    },
+    {
+      "id": "tort_017",
+      "question": "Does the last clear chance doctrine overcome contributory negligence?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["defenses", "last_clear_chance"],
+      "explanation": "Last clear chance allows recovery despite contributory negligence if defendant had the last opportunity to avoid harm."
+    },
+    {
+      "id": "tort_018",
+      "question": "Is truth an absolute defense to defamation?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["defamation", "defenses"],
+      "explanation": "Truth is a complete defense to defamation claims."
+    },
+    {
+      "id": "tort_019",
+      "question": "Can a plaintiff recover for loss of consortium?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["damages", "loss_of_consortium"],
+      "explanation": "Spouses can recover for loss of consortium (companionship, affection, services) when their spouse is injured."
+    },
+    {
+      "id": "tort_020",
+      "question": "Does negligence per se require violation of a statute?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["negligence", "negligence_per_se"],
+      "explanation": "Negligence per se occurs when a defendant violates a statute designed to protect against the type of harm that occurred."
+    },
+    {
+      "id": "tort_021",
+      "question": "Is proximate cause a requirement for negligence?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["negligence", "causation"],
+      "explanation": "Proximate cause (legal causation) limits liability to foreseeable consequences of negligent conduct."
+    },
+    {
+      "id": "tort_022",
+      "question": "Can a defendant be liable for assault without physical contact?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["intentional_torts", "assault"],
+      "explanation": "Assault is intentional creation of reasonable apprehension of imminent harmful contact, without requiring actual contact."
+    },
+    {
+      "id": "tort_023",
+      "question": "Does comparative negligence reduce damages proportionally?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["defenses", "comparative_negligence"],
+      "explanation": "Comparative negligence reduces damages by the plaintiff's percentage of fault rather than barring recovery completely."
+    },
+    {
+      "id": "tort_024",
+      "question": "Is transferred intent applicable to intentional torts?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["intentional_torts", "transferred_intent"],
+      "explanation": "Intent can transfer between persons or between torts when defendant intends one tort but commits another."
+    },
+    {
+      "id": "tort_025",
+      "question": "Can a defendant be liable for negligent infliction of emotional distress to a bystander?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["emotional_distress", "bystander"],
+      "explanation": "Close family members who witness injury to a loved one can recover for negligent infliction of emotional distress in some jurisdictions."
+    },
+    {
+      "id": "tort_026",
+      "question": "Is self-defense a privilege that justifies battery?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["intentional_torts", "defenses"],
+      "explanation": "Reasonable force in self-defense is a complete defense to battery and other intentional torts."
+    },
+    {
+      "id": "tort_027",
+      "question": "Does trespass to land require intent to enter the property?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["intentional_torts", "trespass"],
+      "explanation": "Trespass requires intent to enter the land, though not necessarily knowledge that entry is unauthorized."
+    },
+    {
+      "id": "tort_028",
+      "question": "Can economic loss be recovered in negligence without physical damage?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["damages", "economic_loss"],
+      "explanation": "The economic loss doctrine generally bars recovery for pure economic loss in negligence absent physical injury or damage."
+    },
+    {
+      "id": "tort_029",
+      "question": "Is actual harm required for trespass to land?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["intentional_torts", "trespass"],
+      "explanation": "Trespass is actionable without proof of actual harm; nominal damages are available."
+    },
+    {
+      "id": "tort_030",
+      "question": "Does the firefighter's rule bar recovery by public safety officers?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["defenses", "firefighters_rule"],
+      "explanation": "The firefighter's rule prevents firefighters and police from recovering for negligently caused dangers inherent in their job."
+    },
+    {
+      "id": "tort_031",
+      "question": "Is shopkeeper's privilege a defense to false imprisonment?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["intentional_torts", "defenses"],
+      "explanation": "Shopkeepers can detain suspected shoplifters briefly and reasonably without committing false imprisonment."
+    },
+    {
+      "id": "tort_032",
+      "question": "Can a private figure recover for defamation without proving actual malice?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["defamation"],
+      "explanation": "Private figures need only prove negligence, not actual malice, for defamation on matters of private concern."
+    },
+    {
+      "id": "tort_033",
+      "question": "Does intentional infliction of emotional distress require extreme and outrageous conduct?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["intentional_torts", "iied"],
+      "explanation": "IIED requires intentional or reckless extreme and outrageous conduct causing severe emotional distress."
+    },
+    {
+      "id": "tort_034",
+      "question": "Is landowner's duty higher to invitees than to licensees?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["premises_liability"],
+      "explanation": "Landowners owe invitees a duty to inspect and make safe, while licensees are only warned of known dangers."
+    },
+    {
+      "id": "tort_035",
+      "question": "Can joint tortfeasors be held jointly and severally liable?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["multiple_defendants", "joint_liability"],
+      "explanation": "Joint tortfeasors can be held jointly and severally liable, making each liable for the entire harm."
+    },
+    {
+      "id": "tort_036",
+      "question": "Does the statute of limitations begin when injury is discovered?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["procedure", "discovery_rule"],
+      "explanation": "The discovery rule delays the statute of limitations until the injury is or should have been discovered."
+    },
+    {
+      "id": "tort_037",
+      "question": "Is qualified privilege a defense to defamation in certain contexts?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["defamation", "defenses"],
+      "explanation": "Qualified privilege protects good-faith statements made in contexts like employment references, unless actual malice is shown."
+    },
+    {
+      "id": "tort_038",
+      "question": "Can a defendant be liable for negligent entrustment?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["negligence", "negligent_entrustment"],
+      "explanation": "Negligent entrustment occurs when one provides a dangerous instrument to someone known to be incompetent or reckless."
+    },
+    {
+      "id": "tort_039",
+      "question": "Does conversion require intent to exercise dominion over property?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["intentional_torts", "conversion"],
+      "explanation": "Conversion requires intentional exercise of dominion or control over another's property inconsistent with their rights."
+    },
+    {
+      "id": "tort_040",
+      "question": "Is vicarious liability applicable to employers for employee torts?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["vicarious_liability", "respondeat_superior"],
+      "explanation": "Employers are vicariously liable for employee torts committed within the scope of employment under respondeat superior."
+    },
+    {
+      "id": "tort_041",
+      "question": "Can a plaintiff recover for wrongful death if the victim would have had a claim?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["wrongful_death"],
+      "explanation": "Wrongful death statutes allow designated beneficiaries to recover when a tort victim dies from the injury."
+    },
+    {
+      "id": "tort_042",
+      "question": "Is nuisance liability based on unreasonable interference with use and enjoyment of land?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["nuisance"],
+      "explanation": "Private nuisance requires substantial and unreasonable interference with another's use and enjoyment of their land."
+    },
+    {
+      "id": "tort_043",
+      "question": "Does the collateral source rule prevent reduction of damages by outside payments?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["damages", "collateral_source"],
+      "explanation": "The collateral source rule prevents defendants from reducing damages by amounts plaintiff received from other sources like insurance."
+    },
+    {
+      "id": "tort_044",
+      "question": "Can government entities be sued in tort under sovereign immunity?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["defenses", "sovereign_immunity"],
+      "explanation": "Sovereign immunity generally protects government entities from tort suits unless immunity is waived by statute."
+    },
+    {
+      "id": "tort_045",
+      "question": "Is malicious prosecution actionable if criminal proceedings are terminated favorably?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["intentional_torts", "malicious_prosecution"],
+      "explanation": "Malicious prosecution requires favorable termination, lack of probable cause, and malice."
+    },
+    {
+      "id": "tort_046",
+      "question": "Does attractive nuisance doctrine impose liability for injuries to trespassing children?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["premises_liability", "attractive_nuisance"],
+      "explanation": "Landowners can be liable for injuries to trespassing children from dangerous conditions that attract children."
+    },
+    {
+      "id": "tort_047",
+      "question": "Can a plaintiff recover for medical monitoring costs without present injury?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["damages", "medical_monitoring"],
+      "explanation": "Some jurisdictions allow recovery for medical monitoring costs when exposed to toxic substances, even without current illness."
+    },
+    {
+      "id": "tort_048",
+      "question": "Is necessity a defense to intentional torts involving property?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["defenses", "necessity"],
+      "explanation": "Private necessity justifies trespass or property damage to prevent greater harm, though damages may be owed."
+    },
+    {
+      "id": "tort_049",
+      "question": "Does slander per se require proof of special damages?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["defamation", "slander_per_se"],
+      "explanation": "Slander per se (statements impugning professional reputation, unchastity, crimes, or disease) is actionable without proving special damages."
+    },
+    {
+      "id": "tort_050",
+      "question": "Can a defendant be liable for negligent misrepresentation in a business transaction?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["negligence", "negligent_misrepresentation"],
+      "explanation": "Negligent misrepresentation can create liability when one provides false information in a business context without reasonable care."
+    }
+  ]
+}

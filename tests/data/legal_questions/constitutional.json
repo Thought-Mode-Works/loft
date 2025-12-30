@@ -1,0 +1,406 @@
+{
+  "domain": "constitutional_law",
+  "description": "Legal questions covering constitutional rights, federalism, and separation of powers",
+  "questions": [
+    {
+      "id": "const_001",
+      "question": "Does the First Amendment protect commercial speech?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["first_amendment", "commercial_speech"],
+      "explanation": "Commercial speech receives intermediate protection under the First Amendment."
+    },
+    {
+      "id": "const_002",
+      "question": "Is strict scrutiny the standard for content-based speech restrictions?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["first_amendment", "strict_scrutiny"],
+      "explanation": "Content-based restrictions on speech are subject to strict scrutiny."
+    },
+    {
+      "id": "const_003",
+      "question": "Does the Fourteenth Amendment incorporate the Bill of Rights against states?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["incorporation", "fourteenth_amendment"],
+      "explanation": "The Due Process Clause of the Fourteenth Amendment incorporates most Bill of Rights protections against states."
+    },
+    {
+      "id": "const_004",
+      "question": "Is rational basis review the lowest level of scrutiny?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["equal_protection", "rational_basis"],
+      "explanation": "Rational basis is the most deferential standard, requiring only a legitimate government interest and rational relation."
+    },
+    {
+      "id": "const_005",
+      "question": "Does the Commerce Clause grant Congress power to regulate interstate commerce?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["federalism", "commerce_clause"],
+      "explanation": "Article I, Section 8 grants Congress broad power to regulate commerce among the states."
+    },
+    {
+      "id": "const_006",
+      "question": "Is prior restraint on speech presumptively unconstitutional?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["first_amendment", "prior_restraint"],
+      "explanation": "Prior restraints on speech face a heavy presumption against constitutional validity."
+    },
+    {
+      "id": "const_007",
+      "question": "Does the Establishment Clause prohibit government endorsement of religion?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["first_amendment", "establishment_clause"],
+      "explanation": "The Establishment Clause forbids government from endorsing or establishing religion."
+    },
+    {
+      "id": "const_008",
+      "question": "Is race a suspect classification triggering strict scrutiny?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["equal_protection", "suspect_classification"],
+      "explanation": "Racial classifications are suspect and subject to strict scrutiny under Equal Protection."
+    },
+    {
+      "id": "const_009",
+      "question": "Does the President have line-item veto power?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["separation_of_powers", "presidential_power"],
+      "explanation": "The Supreme Court held the line-item veto unconstitutional in Clinton v. City of New York."
+    },
+    {
+      "id": "const_010",
+      "question": "Is obscenity protected by the First Amendment?",
+      "expected_answer": "no",
+      "difficulty": "easy",
+      "topics": ["first_amendment", "obscenity"],
+      "explanation": "Obscenity is not protected speech under the First Amendment per Miller v. California."
+    },
+    {
+      "id": "const_011",
+      "question": "Does the Due Process Clause protect substantive rights?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["due_process", "substantive_due_process"],
+      "explanation": "Substantive due process protects fundamental rights from government interference."
+    },
+    {
+      "id": "const_012",
+      "question": "Is intermediate scrutiny applied to gender classifications?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["equal_protection", "intermediate_scrutiny"],
+      "explanation": "Gender-based classifications receive heightened (intermediate) scrutiny."
+    },
+    {
+      "id": "const_013",
+      "question": "Can Congress regulate intrastate activity that substantially affects interstate commerce?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["commerce_clause", "aggregation"],
+      "explanation": "Congress can regulate local activity if, in aggregate, it substantially affects interstate commerce."
+    },
+    {
+      "id": "const_014",
+      "question": "Does the Takings Clause require just compensation for regulatory takings?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["takings", "just_compensation"],
+      "explanation": "Regulatory takings that go too far require just compensation under the Fifth Amendment."
+    },
+    {
+      "id": "const_015",
+      "question": "Is fighting words an unprotected category of speech?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["first_amendment", "fighting_words"],
+      "explanation": "Fighting words that tend to incite immediate violence are not protected speech."
+    },
+    {
+      "id": "const_016",
+      "question": "Does the Free Exercise Clause require religious exemptions from neutral laws?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["first_amendment", "free_exercise"],
+      "explanation": "Employment Division v. Smith held neutral laws of general applicability don't require religious exemptions."
+    },
+    {
+      "id": "const_017",
+      "question": "Is there a constitutional right to privacy?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["due_process", "privacy"],
+      "explanation": "The Supreme Court has recognized a constitutional right to privacy in various contexts."
+    },
+    {
+      "id": "const_018",
+      "question": "Does the Supremacy Clause make federal law supreme over state law?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["federalism", "supremacy_clause"],
+      "explanation": "Article VI establishes federal law as supreme, preempting conflicting state law."
+    },
+    {
+      "id": "const_019",
+      "question": "Is viewpoint discrimination subject to strict scrutiny?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["first_amendment", "viewpoint_discrimination"],
+      "explanation": "Viewpoint-based restrictions are the most egregious form of content discrimination and face strict scrutiny."
+    },
+    {
+      "id": "const_020",
+      "question": "Can states discriminate against interstate commerce?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["dormant_commerce_clause"],
+      "explanation": "The Dormant Commerce Clause prohibits states from discriminating against or unduly burdening interstate commerce."
+    },
+    {
+      "id": "const_021",
+      "question": "Does the Fourth Amendment require a warrant for searches?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["fourth_amendment", "warrant_requirement"],
+      "explanation": "The Fourth Amendment generally requires a warrant supported by probable cause for searches, subject to exceptions."
+    },
+    {
+      "id": "const_022",
+      "question": "Is symbolic speech protected by the First Amendment?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["first_amendment", "symbolic_speech"],
+      "explanation": "Symbolic speech (expressive conduct) is protected if it conveys a particularized message."
+    },
+    {
+      "id": "const_023",
+      "question": "Does the Equal Protection Clause apply only to states?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["equal_protection", "fourteenth_amendment"],
+      "explanation": "The Equal Protection Clause is in the Fourteenth Amendment and applies to states; federal discrimination is analyzed under Fifth Amendment Due Process."
+    },
+    {
+      "id": "const_024",
+      "question": "Can the President unilaterally terminate treaties?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["separation_of_powers", "foreign_affairs"],
+      "explanation": "The President generally has power to terminate treaties, though this remains somewhat unsettled."
+    },
+    {
+      "id": "const_025",
+      "question": "Is there a fundamental right to vote?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["fundamental_rights", "voting"],
+      "explanation": "Voting is a fundamental right, and restrictions are subject to strict scrutiny."
+    },
+    {
+      "id": "const_026",
+      "question": "Does the Sixth Amendment guarantee a right to jury trial in criminal cases?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["sixth_amendment", "jury_trial"],
+      "explanation": "The Sixth Amendment guarantees the right to jury trial in criminal prosecutions."
+    },
+    {
+      "id": "const_027",
+      "question": "Can time, place, and manner restrictions on speech be content-neutral?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["first_amendment", "time_place_manner"],
+      "explanation": "Content-neutral time, place, and manner restrictions are permissible if narrowly tailored to serve significant government interests."
+    },
+    {
+      "id": "const_028",
+      "question": "Is the death penalty per se unconstitutional?",
+      "expected_answer": "no",
+      "difficulty": "easy",
+      "topics": ["eighth_amendment", "death_penalty"],
+      "explanation": "The death penalty itself is not cruel and unusual punishment, though its application can be unconstitutional."
+    },
+    {
+      "id": "const_029",
+      "question": "Does Congress have implied powers under the Necessary and Proper Clause?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["federalism", "necessary_and_proper"],
+      "explanation": "The Necessary and Proper Clause grants Congress implied powers to execute its enumerated powers."
+    },
+    {
+      "id": "const_030",
+      "question": "Is public employee speech on matters of public concern protected?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["first_amendment", "public_employee_speech"],
+      "explanation": "Public employees retain First Amendment rights when speaking as citizens on matters of public concern, subject to balancing."
+    },
+    {
+      "id": "const_031",
+      "question": "Does the Second Amendment protect an individual right to bear arms?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["second_amendment"],
+      "explanation": "District of Columbia v. Heller recognized an individual right to possess firearms."
+    },
+    {
+      "id": "const_032",
+      "question": "Can states tax interstate commerce?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["dormant_commerce_clause", "taxation"],
+      "explanation": "States can tax interstate commerce if the tax is non-discriminatory, fairly apportioned, and substantially related to services provided."
+    },
+    {
+      "id": "const_033",
+      "question": "Is procedural due process required before depriving someone of property?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["due_process", "procedural_due_process"],
+      "explanation": "The Due Process Clause requires notice and an opportunity to be heard before deprivation of life, liberty, or property."
+    },
+    {
+      "id": "const_034",
+      "question": "Does the Tenth Amendment reserve powers to the states?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["federalism", "tenth_amendment"],
+      "explanation": "The Tenth Amendment reserves to states all powers not delegated to the federal government."
+    },
+    {
+      "id": "const_035",
+      "question": "Is incitement to imminent lawless action unprotected speech?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["first_amendment", "incitement"],
+      "explanation": "Brandenburg v. Ohio established that incitement to imminent lawless action is unprotected."
+    },
+    {
+      "id": "const_036",
+      "question": "Can the President exercise executive privilege?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["separation_of_powers", "executive_privilege"],
+      "explanation": "The President has qualified executive privilege, but it can be overcome by demonstrated need."
+    },
+    {
+      "id": "const_037",
+      "question": "Does the Contracts Clause prohibit state impairment of contracts?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["contracts_clause"],
+      "explanation": "Article I, Section 10 prohibits states from passing laws impairing the obligation of contracts."
+    },
+    {
+      "id": "const_038",
+      "question": "Is defamation of a public official subject to actual malice standard?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["first_amendment", "defamation"],
+      "explanation": "New York Times v. Sullivan requires public officials prove actual malice for defamation."
+    },
+    {
+      "id": "const_039",
+      "question": "Can Congress enforce Fourteenth Amendment rights through legislation?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["fourteenth_amendment", "section_5"],
+      "explanation": "Section 5 of the Fourteenth Amendment grants Congress power to enforce its provisions through appropriate legislation."
+    },
+    {
+      "id": "const_040",
+      "question": "Does the Ex Post Facto Clause prohibit retroactive criminal laws?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["ex_post_facto"],
+      "explanation": "The Ex Post Facto Clause prohibits retroactive criminal laws that disadvantage defendants."
+    },
+    {
+      "id": "const_041",
+      "question": "Is legislative veto unconstitutional?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["separation_of_powers", "legislative_veto"],
+      "explanation": "INS v. Chadha held legislative vetoes violate bicameralism and presentment requirements."
+    },
+    {
+      "id": "const_042",
+      "question": "Does the Fifth Amendment privilege against self-incrimination apply to testimonial evidence only?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["fifth_amendment", "self_incrimination"],
+      "explanation": "The Fifth Amendment protects against compelled testimonial self-incrimination, not physical evidence."
+    },
+    {
+      "id": "const_043",
+      "question": "Can public forums be subject to content-neutral regulations?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["first_amendment", "public_forum"],
+      "explanation": "Traditional public forums can have content-neutral time, place, and manner restrictions."
+    },
+    {
+      "id": "const_044",
+      "question": "Is wealth a suspect classification?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["equal_protection"],
+      "explanation": "Wealth is not a suspect classification; discrimination based on wealth receives rational basis review."
+    },
+    {
+      "id": "const_045",
+      "question": "Does the President have power to issue executive orders?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["separation_of_powers", "executive_power"],
+      "explanation": "The President has constitutional authority to issue executive orders within executive power."
+    },
+    {
+      "id": "const_046",
+      "question": "Is there a right to interstate travel?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["fundamental_rights", "travel"],
+      "explanation": "The Constitution protects a fundamental right to interstate travel."
+    },
+    {
+      "id": "const_047",
+      "question": "Can Congress delegate legislative power to agencies?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["separation_of_powers", "non_delegation"],
+      "explanation": "Congress can delegate power to agencies if it provides an intelligible principle to guide the agency."
+    },
+    {
+      "id": "const_048",
+      "question": "Does the Cruel and Unusual Punishment Clause apply to excessive sentences?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["eighth_amendment"],
+      "explanation": "The Eighth Amendment prohibits grossly disproportionate sentences as cruel and unusual."
+    },
+    {
+      "id": "const_049",
+      "question": "Is the exclusionary rule required by the Fourth Amendment?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["fourth_amendment", "exclusionary_rule"],
+      "explanation": "The exclusionary rule excludes evidence obtained in violation of the Fourth Amendment, though it has exceptions."
+    },
+    {
+      "id": "const_050",
+      "question": "Can the federal government commandeer state legislatures?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["federalism", "anti_commandeering"],
+      "explanation": "The anti-commandeering doctrine prohibits federal government from compelling states to enact or enforce federal law."
+    }
+  ]
+}

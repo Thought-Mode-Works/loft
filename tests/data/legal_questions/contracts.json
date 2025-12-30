@@ -1,0 +1,406 @@
+{
+  "domain": "contracts",
+  "description": "Legal questions covering contract law fundamentals, formation, performance, breach, and remedies",
+  "questions": [
+    {
+      "id": "contract_001",
+      "question": "Is a contract valid without consideration?",
+      "expected_answer": "no",
+      "difficulty": "easy",
+      "topics": ["contract_formation", "consideration"],
+      "explanation": "A valid contract requires offer, acceptance, and consideration. Without consideration, the contract is generally not enforceable."
+    },
+    {
+      "id": "contract_002",
+      "question": "Can a minor enter into a binding contract?",
+      "expected_answer": "no",
+      "difficulty": "easy",
+      "topics": ["capacity", "minors"],
+      "explanation": "Minors generally lack legal capacity to enter binding contracts. Contracts with minors are typically voidable at the minor's option."
+    },
+    {
+      "id": "contract_003",
+      "question": "Is a contract enforceable if signed under duress?",
+      "expected_answer": "no",
+      "difficulty": "easy",
+      "topics": ["defenses", "duress"],
+      "explanation": "Duress involves coercion that deprives a party of free will. Contracts signed under duress are voidable."
+    },
+    {
+      "id": "contract_004",
+      "question": "Does an offer need to be in writing to be valid?",
+      "expected_answer": "no",
+      "difficulty": "easy",
+      "topics": ["contract_formation", "offer"],
+      "explanation": "Offers can be oral or written. Only certain contracts (under Statute of Frauds) must be in writing."
+    },
+    {
+      "id": "contract_005",
+      "question": "Is silence considered acceptance of an offer?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["contract_formation", "acceptance"],
+      "explanation": "Generally, silence is not acceptance unless there is a prior relationship or course of dealing establishing otherwise."
+    },
+    {
+      "id": "contract_006",
+      "question": "Can an offer be revoked after acceptance?",
+      "expected_answer": "no",
+      "difficulty": "easy",
+      "topics": ["contract_formation", "revocation"],
+      "explanation": "Once acceptance occurs, a contract is formed and the offer cannot be revoked."
+    },
+    {
+      "id": "contract_007",
+      "question": "Is past consideration valid consideration?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["consideration"],
+      "explanation": "Consideration must be bargained for and given in exchange. Past consideration is not valid."
+    },
+    {
+      "id": "contract_008",
+      "question": "Does a material breach excuse the non-breaching party's performance?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["breach", "performance"],
+      "explanation": "A material breach goes to the heart of the contract and excuses the non-breaching party from further performance."
+    },
+    {
+      "id": "contract_009",
+      "question": "Is specific performance available for breach of contract to sell unique goods?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["remedies", "specific_performance"],
+      "explanation": "Specific performance is available when damages are inadequate, such as for unique goods."
+    },
+    {
+      "id": "contract_010",
+      "question": "Can a contract for the sale of land be enforced if only oral?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["statute_of_frauds"],
+      "explanation": "Under the Statute of Frauds, contracts for the sale of land must be in writing to be enforceable."
+    },
+    {
+      "id": "contract_011",
+      "question": "Is a contract to commit a crime enforceable?",
+      "expected_answer": "no",
+      "difficulty": "easy",
+      "topics": ["illegality", "public_policy"],
+      "explanation": "Contracts for illegal purposes are void and unenforceable as against public policy."
+    },
+    {
+      "id": "contract_012",
+      "question": "Does modification of a contract require new consideration?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["modification", "consideration"],
+      "explanation": "Under common law, contract modifications require new consideration. UCC allows modifications without consideration if in good faith."
+    },
+    {
+      "id": "contract_013",
+      "question": "Can a party assign their duties under a contract without consent?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["assignment", "delegation"],
+      "explanation": "Duties involving personal services or special skills generally cannot be delegated without consent."
+    },
+    {
+      "id": "contract_014",
+      "question": "Is a contract voidable if formed based on mutual mistake of fact?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["defenses", "mistake"],
+      "explanation": "Mutual mistake about a basic assumption of the contract makes it voidable by the adversely affected party."
+    },
+    {
+      "id": "contract_015",
+      "question": "Does impossibility of performance discharge contractual obligations?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["discharge", "impossibility"],
+      "explanation": "Objective impossibility (e.g., destruction of subject matter) can discharge contractual duties."
+    },
+    {
+      "id": "contract_016",
+      "question": "Is an agreement to agree in the future a binding contract?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["contract_formation", "definiteness"],
+      "explanation": "Agreements to agree are generally too indefinite to be enforceable contracts."
+    },
+    {
+      "id": "contract_017",
+      "question": "Can a party claim damages for emotional distress in a contract breach?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["remedies", "damages"],
+      "explanation": "Emotional distress damages are generally not recoverable in contract cases unless the contract involves personal services or emotional well-being."
+    },
+    {
+      "id": "contract_018",
+      "question": "Is promissory estoppel a substitute for consideration?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["promissory_estoppel", "consideration"],
+      "explanation": "Promissory estoppel can enforce a promise without consideration when the promisee reasonably relies to their detriment."
+    },
+    {
+      "id": "contract_019",
+      "question": "Does the parol evidence rule bar all prior written agreements?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["parol_evidence"],
+      "explanation": "The parol evidence rule bars prior or contemporaneous oral agreements that contradict a complete integrated written contract, but not all prior writings."
+    },
+    {
+      "id": "contract_020",
+      "question": "Can a third-party beneficiary enforce a contract?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["third_party_beneficiary"],
+      "explanation": "An intended third-party beneficiary can enforce a contract made for their benefit."
+    },
+    {
+      "id": "contract_021",
+      "question": "Is advertisement generally considered an offer?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["contract_formation", "offer"],
+      "explanation": "Advertisements are generally invitations to deal, not offers, unless they are specific and definite."
+    },
+    {
+      "id": "contract_022",
+      "question": "Does substantial performance satisfy a contractual obligation?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["performance", "substantial_performance"],
+      "explanation": "Substantial performance that meets the essential purpose of the contract satisfies the obligation, though damages for defects may be owed."
+    },
+    {
+      "id": "contract_023",
+      "question": "Is a contract with an insane person void or voidable?",
+      "expected_answer": "voidable",
+      "difficulty": "hard",
+      "topics": ["capacity", "mental_incapacity"],
+      "explanation": "Contracts with insane persons are typically voidable, not void, allowing the incompetent party or guardian to void the contract."
+    },
+    {
+      "id": "contract_024",
+      "question": "Can liquidated damages clauses be enforced if they are penalties?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["remedies", "liquidated_damages"],
+      "explanation": "Liquidated damages must be a reasonable estimate of actual damages. Penalty clauses are unenforceable."
+    },
+    {
+      "id": "contract_025",
+      "question": "Does frustration of purpose discharge contractual obligations?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["discharge", "frustration"],
+      "explanation": "Frustration of purpose occurs when an unexpected event undermines the reason for the contract, potentially discharging duties."
+    },
+    {
+      "id": "contract_026",
+      "question": "Is consideration required for a firm offer under the UCC?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["ucc", "firm_offer"],
+      "explanation": "Under UCC §2-205, a merchant's firm offer in a signed writing is binding without consideration for up to 3 months."
+    },
+    {
+      "id": "contract_027",
+      "question": "Can unilateral mistake be grounds to void a contract?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["defenses", "mistake"],
+      "explanation": "Unilateral mistake generally does not void a contract unless the other party knew or should have known of the mistake."
+    },
+    {
+      "id": "contract_028",
+      "question": "Is an executory accord binding before satisfaction?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["discharge", "accord_and_satisfaction"],
+      "explanation": "An executory accord is a contract to accept different performance, binding once agreed but not discharging original duty until satisfaction."
+    },
+    {
+      "id": "contract_029",
+      "question": "Does the mirror image rule apply to acceptance?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["contract_formation", "acceptance"],
+      "explanation": "Under common law, acceptance must mirror the offer exactly. Any variation is a counteroffer."
+    },
+    {
+      "id": "contract_030",
+      "question": "Can anticipatory repudiation discharge the non-repudiating party's duties?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["breach", "anticipatory_repudiation"],
+      "explanation": "Anticipatory repudiation occurs when a party clearly indicates they won't perform, allowing the other party to treat it as a breach."
+    },
+    {
+      "id": "contract_031",
+      "question": "Is nominal consideration sufficient to support a contract?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["consideration"],
+      "explanation": "Courts generally don't inquire into adequacy of consideration. Nominal consideration (like $1) can suffice."
+    },
+    {
+      "id": "contract_032",
+      "question": "Does the Statute of Frauds require contracts for services lasting over one year to be in writing?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["statute_of_frauds"],
+      "explanation": "Contracts that cannot be performed within one year must be in writing under the Statute of Frauds."
+    },
+    {
+      "id": "contract_033",
+      "question": "Can a contract be rescinded for fraudulent inducement?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["defenses", "fraud"],
+      "explanation": "Fraudulent inducement makes a contract voidable by the defrauded party."
+    },
+    {
+      "id": "contract_034",
+      "question": "Is reliance damages an alternative to expectation damages?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["remedies", "damages"],
+      "explanation": "Reliance damages compensate for losses from relying on the contract, an alternative when expectation damages are uncertain."
+    },
+    {
+      "id": "contract_035",
+      "question": "Does the mailbox rule apply to revocation of offers?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["contract_formation", "mailbox_rule"],
+      "explanation": "The mailbox rule (acceptance effective when sent) does not apply to revocations, which are effective when received."
+    },
+    {
+      "id": "contract_036",
+      "question": "Can a contract be formed by performance of a unilateral contract?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["contract_formation", "unilateral_contract"],
+      "explanation": "In unilateral contracts, acceptance occurs through complete performance, not a promise to perform."
+    },
+    {
+      "id": "contract_037",
+      "question": "Is an option contract revocable before the option period expires?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["contract_formation", "option_contract"],
+      "explanation": "Option contracts (offers supported by consideration) are irrevocable for the specified period."
+    },
+    {
+      "id": "contract_038",
+      "question": "Does commercial impracticability excuse performance?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["discharge", "impracticability"],
+      "explanation": "Under UCC and Restatement, extreme and unreasonable difficulty or expense can excuse performance."
+    },
+    {
+      "id": "contract_039",
+      "question": "Can a contract be enforced against a party who signed without reading it?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["defenses", "duty_to_read"],
+      "explanation": "Generally, parties have a duty to read contracts before signing, and failure to read is not a defense."
+    },
+    {
+      "id": "contract_040",
+      "question": "Is unconscionability a defense to contract enforcement?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["defenses", "unconscionability"],
+      "explanation": "Contracts that are extremely one-sided or procedurally and substantively unfair may be unenforceable as unconscionable."
+    },
+    {
+      "id": "contract_041",
+      "question": "Does part performance of an oral contract for land satisfy the Statute of Frauds?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["statute_of_frauds", "part_performance"],
+      "explanation": "Part performance can take an oral land contract out of the Statute of Frauds if actions unequivocally reference the contract."
+    },
+    {
+      "id": "contract_042",
+      "question": "Can a contract be modified orally if it has a written modification clause?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["modification", "no_oral_modification"],
+      "explanation": "No-oral-modification clauses (NOM clauses) are generally enforceable and require written modifications."
+    },
+    {
+      "id": "contract_043",
+      "question": "Is detrimental reliance required for promissory estoppel?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["promissory_estoppel"],
+      "explanation": "Promissory estoppel requires the promisee to have reasonably and detrimentally relied on the promise."
+    },
+    {
+      "id": "contract_044",
+      "question": "Does tender of performance excuse a party from breach?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["performance", "tender"],
+      "explanation": "Proper tender of performance satisfies contractual obligations even if the other party refuses to accept."
+    },
+    {
+      "id": "contract_045",
+      "question": "Can conditions precedent be waived?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["conditions", "waiver"],
+      "explanation": "A party whose benefit a condition precedent serves can waive the condition."
+    },
+    {
+      "id": "contract_046",
+      "question": "Is a contract to sell all output enforceable without definite quantity?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["ucc", "output_contract"],
+      "explanation": "Output and requirements contracts are enforceable under UCC despite indefinite quantity, limited by good faith."
+    },
+    {
+      "id": "contract_047",
+      "question": "Does misrepresentation of opinion void a contract?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["defenses", "misrepresentation"],
+      "explanation": "Statements of opinion generally do not constitute actionable misrepresentation unless from an expert or in a fiduciary relationship."
+    },
+    {
+      "id": "contract_048",
+      "question": "Can incidental beneficiaries enforce a contract?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["third_party_beneficiary"],
+      "explanation": "Only intended beneficiaries can enforce contracts. Incidental beneficiaries have no enforcement rights."
+    },
+    {
+      "id": "contract_049",
+      "question": "Is a contract divisible if it contains multiple distinct performances?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["divisibility"],
+      "explanation": "Contracts with separate consideration for distinct performances may be divisible, allowing partial enforcement."
+    },
+    {
+      "id": "contract_050",
+      "question": "Does accord and satisfaction discharge the original obligation?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["discharge", "accord_and_satisfaction"],
+      "explanation": "An accord (agreement to accept different performance) followed by satisfaction (performance) discharges the original duty."
+    }
+  ]
+}

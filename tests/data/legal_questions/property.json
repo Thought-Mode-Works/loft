@@ -1,0 +1,406 @@
+{
+  "domain": "property",
+  "description": "Legal questions covering real property, estates, future interests, and land use",
+  "questions": [
+    {
+      "id": "property_001",
+      "question": "Does a fee simple absolute have any limitations on duration?",
+      "expected_answer": "no",
+      "difficulty": "easy",
+      "topics": ["estates", "fee_simple"],
+      "explanation": "Fee simple absolute is the most complete ownership interest with no durational limitations."
+    },
+    {
+      "id": "property_002",
+      "question": "Can adverse possession ripen into title?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["adverse_possession"],
+      "explanation": "Adverse possession for the statutory period under proper conditions transfers title to the adverse possessor."
+    },
+    {
+      "id": "property_003",
+      "question": "Does a life estate terminate upon the death of the life tenant?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["estates", "life_estate"],
+      "explanation": "A life estate ends automatically when the measuring life (usually the life tenant) dies."
+    },
+    {
+      "id": "property_004",
+      "question": "Is possession required for adverse possession?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["adverse_possession"],
+      "explanation": "Adverse possession requires actual, open and notorious, exclusive, hostile, and continuous possession for the statutory period."
+    },
+    {
+      "id": "property_005",
+      "question": "Can a covenant run with the land?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["covenants", "real_covenants"],
+      "explanation": "A covenant runs with the land if it touches and concerns the land, parties intend it to run, and there is privity."
+    },
+    {
+      "id": "property_006",
+      "question": "Does the Rule Against Perpetuities void certain future interests?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["future_interests", "rule_against_perpetuities"],
+      "explanation": "The Rule Against Perpetuities voids interests that might not vest within 21 years after a life in being."
+    },
+    {
+      "id": "property_007",
+      "question": "Is a tenant entitled to habitable premises under the implied warranty of habitability?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["landlord_tenant", "warranty_of_habitability"],
+      "explanation": "The implied warranty of habitability requires landlords to maintain residential premises in habitable condition."
+    },
+    {
+      "id": "property_008",
+      "question": "Can joint tenants sever the joint tenancy unilaterally?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["concurrent_ownership", "joint_tenancy"],
+      "explanation": "A joint tenant can sever the joint tenancy by conveying their interest, destroying unity of title."
+    },
+    {
+      "id": "property_009",
+      "question": "Does a fee simple determinable automatically terminate upon occurrence of a condition?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["estates", "defeasible_fees"],
+      "explanation": "Fee simple determinable automatically ends when the stated condition occurs, with title reverting to grantor."
+    },
+    {
+      "id": "property_010",
+      "question": "Is notice required for a race-notice recording statute to protect a bona fide purchaser?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["recording_acts", "race_notice"],
+      "explanation": "Race-notice statutes protect a subsequent purchaser who takes without notice and records first."
+    },
+    {
+      "id": "property_011",
+      "question": "Can an easement be created by prescription?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["easements", "prescription"],
+      "explanation": "Easements can be created by adverse use for the prescriptive period, similar to adverse possession."
+    },
+    {
+      "id": "property_012",
+      "question": "Does a remainder follow a life estate?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["future_interests", "remainder"],
+      "explanation": "A remainder is a future interest that follows the natural termination of a prior estate, typically a life estate."
+    },
+    {
+      "id": "property_013",
+      "question": "Is a tenant liable for waste?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["landlord_tenant", "waste"],
+      "explanation": "Tenants are liable for voluntary (affirmative) waste and sometimes permissive waste."
+    },
+    {
+      "id": "property_014",
+      "question": "Can a tenancy by the entirety be severed by one spouse alone?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["concurrent_ownership", "tenancy_by_entirety"],
+      "explanation": "Tenancy by the entirety requires action by both spouses to sever, unlike joint tenancy."
+    },
+    {
+      "id": "property_015",
+      "question": "Does an executory interest cut short a prior estate?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["future_interests", "executory_interest"],
+      "explanation": "Executory interests divest a prior estate before its natural termination, shifting or springing to a third party."
+    },
+    {
+      "id": "property_016",
+      "question": "Is a quitclaim deed sufficient to transfer title?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["deeds", "quitclaim"],
+      "explanation": "A quitclaim deed transfers whatever interest the grantor has, though it makes no warranties."
+    },
+    {
+      "id": "property_017",
+      "question": "Can equitable servitudes be enforced without privity?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["servitudes", "equitable_servitudes"],
+      "explanation": "Equitable servitudes do not require privity, only that the covenant touches and concerns the land and notice."
+    },
+    {
+      "id": "property_018",
+      "question": "Does adverse possession require hostile intent?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["adverse_possession", "hostility"],
+      "explanation": "Adverse possession requires hostile possession, meaning without permission from the true owner."
+    },
+    {
+      "id": "property_019",
+      "question": "Is a landlord liable for injuries from latent defects?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["landlord_tenant", "liability"],
+      "explanation": "Landlords are liable for injuries from latent defects they knew or should have known about but failed to disclose."
+    },
+    {
+      "id": "property_020",
+      "question": "Can a future interest become possessory?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["future_interests"],
+      "explanation": "Future interests become possessory when the preceding estate terminates or is divested."
+    },
+    {
+      "id": "property_021",
+      "question": "Does a vested remainder become possessory immediately upon grant?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["future_interests", "vested_remainder"],
+      "explanation": "A vested remainder is certain to become possessory but only after the prior estate ends."
+    },
+    {
+      "id": "property_022",
+      "question": "Is constructive eviction a defense to rent payment?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["landlord_tenant", "constructive_eviction"],
+      "explanation": "Constructive eviction (substantial interference making premises uninhabitable) excuses rent if tenant vacates."
+    },
+    {
+      "id": "property_023",
+      "question": "Can an easement appurtenant be separated from the dominant estate?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["easements", "appurtenant"],
+      "explanation": "An easement appurtenant benefits land and runs with the dominant estate, inseparable from it."
+    },
+    {
+      "id": "property_024",
+      "question": "Does the doctrine of merger extinguish future interests?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["future_interests", "merger"],
+      "explanation": "When a life estate and the next vested interest merge in one owner, intervening contingent interests are destroyed."
+    },
+    {
+      "id": "property_025",
+      "question": "Is a tenant at sufferance liable for rent?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["landlord_tenant", "tenancy_at_sufferance"],
+      "explanation": "A tenant at sufferance (one who holds over after lease expires) is liable for reasonable rental value."
+    },
+    {
+      "id": "property_026",
+      "question": "Can marketable title be conveyed if there is a defect in the chain of title?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["deeds", "marketable_title"],
+      "explanation": "Marketable title is free from reasonable doubt about defects; chain of title defects make title unmarketable."
+    },
+    {
+      "id": "property_027",
+      "question": "Does a contingent remainder require a condition precedent?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["future_interests", "contingent_remainder"],
+      "explanation": "A contingent remainder either has an unascertained grantee or is subject to a condition precedent."
+    },
+    {
+      "id": "property_028",
+      "question": "Is tacking permitted for adverse possession?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["adverse_possession", "tacking"],
+      "explanation": "Successive adverse possessors in privity can tack their periods together to meet the statutory requirement."
+    },
+    {
+      "id": "property_029",
+      "question": "Can a landlord be liable for criminal acts of third parties?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["landlord_tenant", "liability"],
+      "explanation": "Landlords can be liable for foreseeable criminal acts if they fail to provide reasonable security measures."
+    },
+    {
+      "id": "property_030",
+      "question": "Does delivery require physical transfer of the deed?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["deeds", "delivery"],
+      "explanation": "Delivery requires intent to transfer title, which can be shown without physical transfer of the deed."
+    },
+    {
+      "id": "property_031",
+      "question": "Is a covenant not to compete enforceable as a restrictive covenant?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["covenants", "restrictive_covenants"],
+      "explanation": "Non-compete covenants can be enforceable restrictive covenants if they touch and concern the land."
+    },
+    {
+      "id": "property_032",
+      "question": "Can a possibility of reverter last indefinitely?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["future_interests", "possibility_of_reverter"],
+      "explanation": "Possibility of reverter (following fee simple determinable) is not subject to the Rule Against Perpetuities."
+    },
+    {
+      "id": "property_033",
+      "question": "Does a tenant have a duty to pay rent even if the premises are destroyed?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["landlord_tenant", "destruction"],
+      "explanation": "Modern law excuses rent when premises are destroyed without tenant's fault, ending the lease."
+    },
+    {
+      "id": "property_034",
+      "question": "Is acceptance required for delivery of a deed to be effective?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["deeds", "acceptance"],
+      "explanation": "Both delivery by grantor and acceptance by grantee are required to transfer title by deed."
+    },
+    {
+      "id": "property_035",
+      "question": "Can zoning ordinances be unconstitutional takings?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["land_use", "takings"],
+      "explanation": "Zoning that goes too far in restricting use can be a regulatory taking requiring just compensation."
+    },
+    {
+      "id": "property_036",
+      "question": "Does a joint tenancy require four unities?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["concurrent_ownership", "joint_tenancy"],
+      "explanation": "Joint tenancy requires unity of time, title, interest, and possession (four unities)."
+    },
+    {
+      "id": "property_037",
+      "question": "Can an easement be terminated by abandonment?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["easements", "termination"],
+      "explanation": "Easements can be terminated by abandonment, which requires intent plus conduct showing intent to abandon."
+    },
+    {
+      "id": "property_038",
+      "question": "Is a right of entry exempt from the Rule Against Perpetuities?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["future_interests", "right_of_entry"],
+      "explanation": "Right of entry (following fee simple subject to condition subsequent) is not subject to the Rule Against Perpetuities."
+    },
+    {
+      "id": "property_039",
+      "question": "Can a tenant assign the lease without landlord consent?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["landlord_tenant", "assignment"],
+      "explanation": "Tenants can assign leases unless the lease prohibits assignment or requires landlord consent."
+    },
+    {
+      "id": "property_040",
+      "question": "Does a warranty deed include covenants of title?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["deeds", "warranty_deed"],
+      "explanation": "A warranty deed includes covenants of seisin, right to convey, against encumbrances, quiet enjoyment, and warranty."
+    },
+    {
+      "id": "property_041",
+      "question": "Is notice required to terminate a periodic tenancy?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["landlord_tenant", "periodic_tenancy"],
+      "explanation": "Periodic tenancies continue indefinitely until terminated by proper notice from either party."
+    },
+    {
+      "id": "property_042",
+      "question": "Can an easement by necessity be created when land is landlocked?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["easements", "necessity"],
+      "explanation": "An easement by necessity arises when land becomes landlocked due to severance from a common owner."
+    },
+    {
+      "id": "property_043",
+      "question": "Does a sublease create privity of estate between landlord and sublessee?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["landlord_tenant", "sublease"],
+      "explanation": "Subleases do not create privity of estate with the landlord; the original tenant remains liable."
+    },
+    {
+      "id": "property_044",
+      "question": "Is color of title required for adverse possession?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["adverse_possession", "color_of_title"],
+      "explanation": "Color of title is not required but can shorten the statutory period or expand the area claimed."
+    },
+    {
+      "id": "property_045",
+      "question": "Can partition be compelled by one tenant in common?",
+      "expected_answer": "yes",
+      "difficulty": "easy",
+      "topics": ["concurrent_ownership", "partition"],
+      "explanation": "Any tenant in common has the right to compel partition, either in kind or by sale."
+    },
+    {
+      "id": "property_046",
+      "question": "Does an implied easement arise from prior existing use?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["easements", "implied"],
+      "explanation": "An implied easement can arise from prior use if the use was apparent, continuous, and reasonably necessary."
+    },
+    {
+      "id": "property_047",
+      "question": "Is equitable conversion applicable when a land sale contract is signed?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["contracts", "equitable_conversion"],
+      "explanation": "Equitable conversion treats the buyer as owner in equity and seller as holding legal title in trust after contract signing."
+    },
+    {
+      "id": "property_048",
+      "question": "Can a defeasible fee be subject to the Rule Against Perpetuities?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["future_interests", "defeasible_fees"],
+      "explanation": "Executory interests following defeasible fees are subject to the Rule Against Perpetuities."
+    },
+    {
+      "id": "property_049",
+      "question": "Does a tenancy at will require notice to terminate?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["landlord_tenant", "tenancy_at_will"],
+      "explanation": "Most jurisdictions require reasonable notice to terminate a tenancy at will, though historically no notice was required."
+    },
+    {
+      "id": "property_050",
+      "question": "Can recording acts defeat earlier unrecorded interests?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["recording_acts"],
+      "explanation": "Recording acts protect subsequent purchasers from earlier unrecorded interests if statutory requirements are met."
+    }
+  ]
+}
