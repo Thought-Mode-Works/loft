@@ -4,7 +4,6 @@ Unit tests for performance metrics.
 Issue #277: Legal Question Test Suite
 """
 
-
 import pytest
 
 from loft.evaluation.metrics import MetricsCalculator, PerformanceMetrics
