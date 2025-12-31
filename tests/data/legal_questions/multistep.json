@@ -1,0 +1,396 @@
+{
+  "domain": "multistep_reasoning",
+  "description": "Complex legal questions requiring multi-step reasoning across multiple principles",
+  "questions": [
+    {
+      "id": "multi_001",
+      "question": "If a minor enters into a contract under duress, can the contract be enforced?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["contracts", "capacity", "duress"],
+      "reasoning_steps": [
+        "Minors lack capacity to enter binding contracts",
+        "Duress also makes contracts voidable",
+        "Either defense alone is sufficient"
+      ],
+      "explanation": "The contract is unenforceable due to both lack of capacity (minority) and duress. Either defense alone would suffice."
+    },
+    {
+      "id": "multi_002",
+      "question": "Can a landlord be liable in negligence for injuries from a latent defect to an invitee tenant?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["torts", "landlord_tenant", "premises_liability"],
+      "reasoning_steps": [
+        "Landlords owe duty to disclose latent defects",
+        "Invitees are owed highest duty of care",
+        "Failure to disclose can constitute negligence"
+      ],
+      "explanation": "Landlords must disclose known latent defects. As an invitee, the tenant is owed the highest duty. Failure to disclose could be negligence."
+    },
+    {
+      "id": "multi_003",
+      "question": "If a joint tenant adversely possesses additional land, does the jointly owned property include the adversely possessed land?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["property", "concurrent_ownership", "adverse_possession"],
+      "reasoning_steps": [
+        "Adverse possession requires hostile possession",
+        "Joint tenants cannot possess hostilely against each other for joint property",
+        "Additional land would be held individually, not jointly"
+      ],
+      "explanation": "Adverse possession of new land would be individual ownership. Joint tenants cannot adversely possess against each other for existing joint property."
+    },
+    {
+      "id": "multi_004",
+      "question": "Is a content-based restriction on commercial speech subject to strict scrutiny?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["constitutional", "first_amendment", "commercial_speech"],
+      "reasoning_steps": [
+        "Content-based restrictions typically trigger strict scrutiny",
+        "Commercial speech receives intermediate scrutiny",
+        "The lower commercial speech standard applies"
+      ],
+      "explanation": "While content-based restrictions normally face strict scrutiny, commercial speech receives only intermediate scrutiny under Central Hudson."
+    },
+    {
+      "id": "multi_005",
+      "question": "Can a contract for sale of land be enforced through specific performance if it violates the Statute of Frauds?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["contracts", "remedies", "statute_of_frauds"],
+      "reasoning_steps": [
+        "Specific performance requires enforceable contract",
+        "Statute of Frauds makes oral land contracts unenforceable",
+        "Cannot specifically enforce unenforceable contract"
+      ],
+      "explanation": "Specific performance is only available for enforceable contracts. Oral land contracts violate the Statute of Frauds and are unenforceable."
+    },
+    {
+      "id": "multi_006",
+      "question": "If a defendant commits battery in self-defense but uses excessive force, is the privilege negated?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["torts", "intentional_torts", "defenses"],
+      "reasoning_steps": [
+        "Self-defense is a privilege against battery",
+        "The privilege only extends to reasonable force",
+        "Excessive force exceeds the privilege"
+      ],
+      "explanation": "Self-defense privilege is limited to reasonable force. Excessive force exceeds the privilege and constitutes battery."
+    },
+    {
+      "id": "multi_007",
+      "question": "Does a fee simple determinable followed by an executory interest violate the Rule Against Perpetuities?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["property", "future_interests", "rule_against_perpetuities"],
+      "reasoning_steps": [
+        "Fee simple determinable normally followed by possibility of reverter",
+        "Executory interest to third party is subject to RAP",
+        "If event could occur beyond perpetuities period, interest is void"
+      ],
+      "explanation": "Executory interests are subject to RAP. An executory interest following a determinable fee is void if it might vest too remotely."
+    },
+    {
+      "id": "multi_008",
+      "question": "Can Congress regulate local gun possession under the Commerce Clause?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["constitutional", "commerce_clause", "federalism"],
+      "reasoning_steps": [
+        "Commerce Clause allows regulation of activities affecting interstate commerce",
+        "United States v. Lopez held gun possession near schools is not economic activity",
+        "Non-economic, local activity cannot be regulated"
+      ],
+      "explanation": "Lopez held that purely local, non-economic activity like gun possession cannot be regulated under Commerce Clause."
+    },
+    {
+      "id": "multi_009",
+      "question": "If promissory estoppel is used to enforce a promise, can the promisee also claim expectation damages?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["contracts", "promissory_estoppel", "remedies"],
+      "reasoning_steps": [
+        "Promissory estoppel is an alternative to contract enforcement",
+        "Reliance damages, not expectation damages, are typical for promissory estoppel",
+        "Recovery is limited to reliance damages"
+      ],
+      "explanation": "Promissory estoppel typically awards reliance damages, not expectation damages, as it's based on detrimental reliance, not a bargain."
+    },
+    {
+      "id": "multi_010",
+      "question": "Can a manufacturerbe strictly liable if the plaintiff assumed the risk of the defect?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["torts", "strict_liability", "defenses"],
+      "reasoning_steps": [
+        "Strict liability applies to defective products",
+        "Assumption of risk may be a defense",
+        "Most jurisdictions allow comparative fault in strict liability"
+      ],
+      "explanation": "While assumption of risk can be a defense, many jurisdictions apply comparative fault to strict liability, reducing but not eliminating recovery."
+    },
+    {
+      "id": "multi_011",
+      "question": "If a tenant sublets without permission but the lease is silent on subletting, can the landlord terminate the lease?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["property", "landlord_tenant", "sublease"],
+      "reasoning_steps": [
+        "Tenants can generally transfer interests unless restricted",
+        "If lease is silent, subletting is permitted",
+        "Landlord cannot terminate for permitted activity"
+      ],
+      "explanation": "Absent lease restriction, tenants have the right to sublease. The landlord cannot terminate for exercise of a permitted right."
+    },
+    {
+      "id": "multi_012",
+      "question": "Is a law prohibiting flag burning subject to strict scrutiny even though it's not based on viewpoint?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["constitutional", "first_amendment", "symbolic_speech"],
+      "reasoning_steps": [
+        "Flag burning is symbolic speech",
+        "Content-based restrictions on speech trigger strict scrutiny",
+        "Even if not viewpoint-based, restriction is content-based"
+      ],
+      "explanation": "Texas v. Johnson held flag burning is protected symbolic speech. Content-based restrictions face strict scrutiny, regardless of viewpoint neutrality."
+    },
+    {
+      "id": "multi_013",
+      "question": "Can a contract with an unconscionable clause be partially enforced?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["contracts", "unconscionability"],
+      "reasoning_steps": [
+        "Unconscionability can void a contract or clause",
+        "Courts can sever unconscionable clauses",
+        "Remaining contract can be enforced if severable"
+      ],
+      "explanation": "Courts can sever unconscionable clauses and enforce the remainder if the contract is divisible and the rest is not unconscionable."
+    },
+    {
+      "id": "multi_014",
+      "question": "If a plaintiff is 60% at fault in a modified comparative negligence jurisdiction with a 50% bar, can they recover?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["torts", "comparative_negligence"],
+      "reasoning_steps": [
+        "Modified comparative negligence allows recovery if plaintiff's fault is below threshold",
+        "50% bar means plaintiff cannot recover if 50% or more at fault",
+        "60% exceeds the threshold"
+      ],
+      "explanation": "In modified comparative negligence with a 50% bar, plaintiffs 50% or more at fault cannot recover. 60% bars recovery."
+    },
+    {
+      "id": "multi_015",
+      "question": "Can a covenant not to compete in a property deed be enforced if it violates the Rule Against Perpetuities?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["property", "covenants", "rule_against_perpetuities"],
+      "reasoning_steps": [
+        "Restrictive covenants must comply with RAP if they create future interests",
+        "Violation of RAP voids the interest",
+        "Void covenant cannot be enforced"
+      ],
+      "explanation": "If the covenant creates a future interest violating RAP, that interest is void and unenforceable."
+    },
+    {
+      "id": "multi_016",
+      "question": "Does the Takings Clause apply to states through the Fourteenth Amendment?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["constitutional", "takings", "incorporation"],
+      "reasoning_steps": [
+        "Takings Clause is in Fifth Amendment",
+        "Fourteenth Amendment incorporates most Bill of Rights protections",
+        "Takings Clause is incorporated against states"
+      ],
+      "explanation": "The Takings Clause has been incorporated through the Fourteenth Amendment and applies to state and local governments."
+    },
+    {
+      "id": "multi_017",
+      "question": "If a contract is formed by performance of a unilateral contract, can it be revoked before complete performance?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["contracts", "unilateral_contract", "revocation"],
+      "reasoning_steps": [
+        "Unilateral contracts are accepted by performance",
+        "Modern rule prevents revocation once performance begins",
+        "Offeror cannot revoke during performance"
+      ],
+      "explanation": "Under modern doctrine, offers for unilateral contracts become irrevocable once performance begins to prevent unfairness."
+    },
+    {
+      "id": "multi_018",
+      "question": "Can a public figure successfully sue for intentional infliction of emotional distress based on a political cartoon?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["torts", "constitutional", "first_amendment"],
+      "reasoning_steps": [
+        "IIED requires extreme and outrageous conduct",
+        "First Amendment protects satire and political speech",
+        "Public figures face higher bar for speech torts"
+      ],
+      "explanation": "Hustler v. Falwell held that public figures cannot recover for IIED based on satire absent showing of actual malice and false statements of fact."
+    },
+    {
+      "id": "multi_019",
+      "question": "If an easement by necessity no longer serves its purpose because of changed circumstances, does it terminate?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["property", "easements", "termination"],
+      "reasoning_steps": [
+        "Easements by necessity arise from necessity",
+        "When necessity ceases, easement terminates",
+        "Changed circumstances removing necessity end the easement"
+      ],
+      "explanation": "Easements by necessity terminate when the necessity ceases to exist, such as when alternative access becomes available."
+    },
+    {
+      "id": "multi_020",
+      "question": "Can a state law that discriminates against interstate commerce be saved by the market participant exception?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["constitutional", "dormant_commerce_clause", "market_participant"],
+      "reasoning_steps": [
+        "Dormant Commerce Clause prohibits discriminating against interstate commerce",
+        "Market participant exception allows states to prefer in-state interests when acting as market participants",
+        "Exception applies if state is buyer/seller, not regulator"
+      ],
+      "explanation": "The market participant exception permits states to favor in-state interests when acting as market participants rather than regulators."
+    },
+    {
+      "id": "multi_021",
+      "question": "If a contract modification lacks consideration but is made in good faith under the UCC, is it enforceable?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["contracts", "modification", "ucc"],
+      "reasoning_steps": [
+        "Common law requires consideration for modifications",
+        "UCC § 2-209 allows modifications without consideration",
+        "Good faith is required under UCC"
+      ],
+      "explanation": "UCC § 2-209 dispenses with the consideration requirement for good faith modifications of sale of goods contracts."
+    },
+    {
+      "id": "multi_022",
+      "question": "Can negligent infliction of emotional distress be recovered if the plaintiff witnessed injury to a stranger?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["torts", "emotional_distress", "bystander"],
+      "reasoning_steps": [
+        "NIED to bystanders requires close relationship",
+        "Zone of danger or close family relationship typically required",
+        "Witnessing injury to stranger insufficient"
+      ],
+      "explanation": "Bystander NIED recovery generally requires the plaintiff to be a close family member of the victim, not merely a witness to a stranger's injury."
+    },
+    {
+      "id": "multi_023",
+      "question": "If a life tenant commits waste, can the remainderman sue before the life estate ends?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["property", "waste", "future_interests"],
+      "reasoning_steps": [
+        "Life tenants cannot commit waste",
+        "Remaindermen have vested interest in future possession",
+        "Waste damages future interest, giving standing now"
+      ],
+      "explanation": "Remaindermen can sue for waste during the life estate to protect their future interest in the property."
+    },
+    {
+      "id": "multi_024",
+      "question": "Is a state law requiring a 24-hour waiting period for abortions subject to undue burden analysis?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["constitutional", "due_process", "abortion"],
+      "reasoning_steps": [
+        "Abortion involves fundamental privacy right",
+        "Planned Parenthood v. Casey established undue burden test",
+        "Waiting period restrictions analyzed under this standard"
+      ],
+      "explanation": "Under Casey, pre-viability abortion restrictions are evaluated using the undue burden standard, not strict scrutiny."
+    },
+    {
+      "id": "multi_025",
+      "question": "Can specific performance be ordered for a contract to provide personal services?",
+      "expected_answer": "no",
+      "difficulty": "medium",
+      "topics": ["contracts", "remedies", "specific_performance"],
+      "reasoning_steps": [
+        "Specific performance is equitable remedy",
+        "Courts will not order personal services",
+        "Violates Thirteenth Amendment concerns and impracticality"
+      ],
+      "explanation": "Specific performance is not available for personal services contracts due to involuntary servitude concerns and impracticality of enforcement."
+    },
+    {
+      "id": "multi_026",
+      "question": "If a plaintiff's negligence is a but-for cause but not a proximate cause, can they recover?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["torts", "causation"],
+      "reasoning_steps": [
+        "Negligence requires both actual and proximate cause",
+        "But-for cause is actual causation",
+        "Proximate cause limits liability to foreseeable harms"
+      ],
+      "explanation": "Both actual causation (but-for) and proximate causation (legal cause/foreseeability) are required. Lacking proximate cause bars recovery."
+    },
+    {
+      "id": "multi_027",
+      "question": "Can a joint tenant's creditor force partition of joint tenancy property?",
+      "expected_answer": "yes",
+      "difficulty": "hard",
+      "topics": ["property", "concurrent_ownership", "partition"],
+      "reasoning_steps": [
+        "Joint tenants have undivided interests",
+        "Creditors can reach debtor's property interests",
+        "Partition is available to separate interests"
+      ],
+      "explanation": "A creditor can force partition to reach the debtor joint tenant's interest, though severance may destroy right of survivorship."
+    },
+    {
+      "id": "multi_028",
+      "question": "Does a content-neutral law that substantially burdens religious exercise violate the Free Exercise Clause?",
+      "expected_answer": "no",
+      "difficulty": "hard",
+      "topics": ["constitutional", "free_exercise"],
+      "reasoning_steps": [
+        "Free Exercise Clause protects religious practice",
+        "Employment Division v. Smith allows neutral laws of general applicability",
+        "Substantial burden alone insufficient if law is neutral"
+      ],
+      "explanation": "Under Smith, neutral laws of general applicability do not violate Free Exercise even if they substantially burden religion."
+    },
+    {
+      "id": "multi_029",
+      "question": "If a contract contains both valid and invalid clauses, can the valid portions be enforced through severance?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["contracts", "severability"],
+      "reasoning_steps": [
+        "Contracts can be divisible or entire",
+        "Courts can sever illegal or unenforceable clauses",
+        "Remaining valid portions enforceable if severable"
+      ],
+      "explanation": "Courts can sever invalid clauses and enforce the remainder if the parties would have agreed to the contract without the invalid provision."
+    },
+    {
+      "id": "multi_030",
+      "question": "Can a manufacturer be liable under strict liability and negligence for the same defective product injury?",
+      "expected_answer": "yes",
+      "difficulty": "medium",
+      "topics": ["torts", "strict_liability", "negligence"],
+      "reasoning_steps": [
+        "Multiple theories can apply to same facts",
+        "Strict liability and negligence have different elements",
+        "Plaintiff can plead alternative theories"
+      ],
+      "explanation": "A plaintiff can assert both strict liability and negligence claims for a defective product, though recovery is limited to one set of damages."
+    }
+  ]
+}

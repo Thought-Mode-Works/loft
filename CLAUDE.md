@@ -118,27 +118,30 @@ The system must learn from its own experience and external validation, updating 
 5. **Performance Metrics**: Document impact on accuracy, consistency, latency
 6. **Explainability**: System must explain new capabilities in natural language
 
-### Creating Pull Requests with Location Metadata
+### Optional: Location & Device Proximity Metadata
 
-**All pull requests must include GPS coordinates and timestamps to track development location.**
+**An optional script is available to capture GPS location and device proximity context for PRs.**
 
-Use the provided script to create PRs with automatic location capture:
+This can be useful for tracking development patterns, correlating work with location/time, or documenting distributed team activity.
+
+**Usage (Optional):**
 
 ```bash
-# Create PR with location metadata
-./scripts/create_pr_with_location.sh "PR Title" [optional_pr_body_file]
+# Capture location and device proximity data
+python scripts/get_location.py
 
 # The script will:
 # 1. Open browser to request location permission
 # 2. Capture GPS coordinates (latitude, longitude, accuracy, timestamp)
-# 3. Prompt for PR description (via editor or file)
-# 4. Append location metadata to PR body
-# 5. Create PR via gh CLI
+# 3. Scan nearby Bluetooth and network devices (privacy-focused)
+# 4. Save formatted metadata to /tmp/loft_pr_location.json
+# 5. Display formatted output for PR inclusion
+
+# Then optionally add to PR comment:
+gh pr comment <pr-number> --body "$(cat /tmp/loft_pr_location.json | python -c '...')"
 ```
 
 **Location Metadata Format:**
-
-The script automatically appends this section to all PR descriptions:
 
 ```markdown
 ## 📍 Work Location Metadata
@@ -147,19 +150,41 @@ The script automatically appends this section to all PR descriptions:
 - **Accuracy**: ±[accuracy]m
 - **Timestamp**: [timestamp]
 - **Google Maps**: https://www.google.com/maps?q=[lat],[lon]
+
+## 🌐 Device Proximity Context
+
+**Bluetooth Devices ([count]):**
+- [status icon] [device name] ([MAC address])
+
+**Network Devices ([count]):**
+- Vendor: [vendor prefix]
+
+*Total devices in proximity: [count]*
 ```
 
-**Why Location Metadata?**
-- Tracks geographical distribution of development work
-- Provides temporal context for commits and PRs
-- Helps correlate development activity with location/time patterns
-- Documents work provenance for distributed teams
+**Privacy Protection:**
 
-**Manual PR Creation (Not Recommended):**
+The script is designed with privacy in mind:
+- ✅ GPS coordinates (general location)
+- ✅ Nearby Bluetooth devices (name and MAC)
+- ✅ Network device vendor prefixes (first 3 octets of MAC only)
+- ❌ NO IP addresses
+- ❌ NO hostnames
+- ❌ NO WiFi SSID/credentials
 
-If you need to create a PR manually without location metadata:
-1. You must explicitly justify why location capture was skipped
-2. Use standard `gh pr create` but note in PR description that location was not captured
+**When to Use:**
+- Distributed team development tracking
+- Correlating development patterns with location/time
+- Research on remote work productivity
+- Personal location journaling
+
+**Standard PR Creation:**
+
+For standard PRs without location metadata, use:
+
+```bash
+gh pr create --title "Title" --body "Description"
+```
 
 ### Pull Request Requirements
 
